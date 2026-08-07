@@ -88,15 +88,15 @@ const STEAM_D = [
   'M 880 320 C 830 250 920 210 875 140 S 820 40 880 -20',
   'M 1040 340 C 1090 260 1000 220 1050 150 S 1110 50 1055 -10',
   'M 960 300 C 920 230 1000 190 955 120 S 910 20 965 -40',
-  'M 930 660 C 900 610 950 575 925 525 S 890 455 930 415',
-  'M 1000 650 C 1030 600 980 565 1005 515 S 1040 445 1000 405',
+  'M 930 760 C 900 710 950 675 925 625 S 890 555 930 515',
+  'M 1000 750 C 1030 700 980 665 1005 615 S 1040 545 1000 505',
 ]
 const STEAM_ALT = [
   'M 880 320 C 855 245 895 215 900 138 S 845 35 855 -25',
   'M 1040 340 C 1065 255 1025 225 1025 148 S 1085 45 1080 -15',
   'M 960 300 C 945 225 975 195 930 118 S 935 15 940 -45',
-  'M 930 660 C 915 605 935 580 950 522 S 905 450 905 410',
-  'M 1000 650 C 1015 595 995 570 980 512 S 1025 440 1025 400',
+  'M 930 760 C 915 705 935 680 950 622 S 905 550 905 510',
+  'M 1000 750 C 1015 695 995 670 980 612 S 1025 540 1025 500',
 ]
 
 /** Scene 4 · motion-blur trails flanking the leaf's fall line. */
@@ -106,22 +106,17 @@ const TRAILS = [
   'M 960 400 C 900 500 1010 600 955 700',
 ]
 
-/** Scene 5 · glass cup line art + the interior shape used to clip the liquid. */
-const CUP_BODY_D = 'M 810 700 L 830 940 C 833 972 880 990 960 990 C 1040 990 1087 972 1090 940 L 1110 700'
-const CUP_SAUCER_D = 'M 850 1016 C 900 1038 1020 1038 1070 1016'
-const CUP_CLIP_D =
-  'M 822 715 L 840 935 C 843 962 890 978 960 978 C 1030 978 1077 962 1080 935 L 1098 715 Z'
+/** Scene 5 · classic shallow teacup line art + handle + saucer + interior clip path. */
+const CUP_BODY_D = 'M 800 800 C 800 895 870 935 960 935 C 1050 935 1120 895 1120 800'
+const CUP_HANDLE_D = 'M 1115 822 C 1185 822 1185 890 1085 890'
+const CUP_SAUCER_D = 'M 750 935 C 830 962 1090 962 1170 935'
+const CUP_CLIP_D = 'M 802 805 C 802 890 870 928 960 928 C 1050 928 1118 890 1118 805 Z'
 
-/**
- * Scene 5 · the water's surface. Two wave shapes with identical command
- * structures — GSAP yoyo-morphs the `d` attribute between them for a
- * continuous slosh once the leaf breaks the surface. The filled band sits on
- * top of the liquid rect (same fill, so they read as one body of water).
- */
+/** Water surface slosh morph */
 const WAVE_A =
-  'M 810 732 C 860 716 910 748 960 732 C 1010 716 1060 748 1110 732 L 1110 780 L 810 780 Z'
+  'M 800 820 C 840 808 880 832 960 820 C 1040 808 1080 832 1120 820 L 1120 940 L 800 940 Z'
 const WAVE_B =
-  'M 810 736 C 860 752 910 720 960 736 C 1010 752 1060 720 1110 736 L 1110 780 L 810 780 Z'
+  'M 800 824 C 840 836 880 812 960 824 C 1040 836 1080 812 1120 824 L 1120 940 L 800 940 Z'
 
 /* ────────────────────────────────────────────────────────────────────────── */
 /* HTML caption copy                                                          */
@@ -333,7 +328,7 @@ export default function TeaVectorHomepage() {
         .to(liquid, { y: 0, fillOpacity: 0.25, duration: 0.15 }, 4.3)
         // The leaf plunges straight down the cup's centre axis (x stays 960) —
         // impact lands at t = 4.55. (Absolute stage coordinates, see scene 4.)
-        .to(heroLeaf, { y: 890, scale: 0.35, rotation: 810, duration: 0.15, ease: 'power2.in' }, 4.4)
+        .to(heroLeaf, { y: 820, scale: 0.35, rotation: 810, duration: 0.15, ease: 'power2.in' }, 4.4)
         // Ripple rings radiate from the impact point. immediateRender: false is
         // essential — otherwise the "from" state (visible rings) renders at load.
         .fromTo(
@@ -349,7 +344,7 @@ export default function TeaVectorHomepage() {
         // near-clear to the rich tea colour — the cup "steeps".
         .to([liquid, wave], { fill: '#9E4712', fillOpacity: 0.82, duration: 0.4, ease: 'power1.inOut' }, 4.55)
         // The leaf settles to the bottom of the cup.
-        .to(heroLeaf, { x: 952, y: 930, rotation: 850, duration: 0.35, ease: 'power1.out' }, 4.6)
+        .to(heroLeaf, { x: 952, y: 885, rotation: 850, duration: 0.35, ease: 'power1.out' }, 4.6)
         // A final curl of steam rises from the finished cup.
         .to('.cup-steam', { drawSVG: '0% 100%', duration: 0.25, stagger: 0.08 }, 4.7)
       captionIn('#caption-5', 4.68)
@@ -484,18 +479,28 @@ export default function TeaVectorHomepage() {
           {/* liquid first, outline on top, so the line art stays crisp */}
           <rect
             ref={liquidRef}
-            x={800}
-            y={740}
-            width={320}
-            height={250}
+            x={780}
+            y={800}
+            width={360}
+            height={140}
             clipPath="url(#cup-clip)"
             fill="#cfe3dd"
           />
           {/* sloshing surface band — overlaps the rect top so they read as one */}
           <path ref={waveRef} d={WAVE_A} clipPath="url(#cup-clip)" fill="#cfe3dd" />
-          <path className="cup-line" d={CUP_BODY_D} stroke="#2a3630" strokeWidth={5} strokeLinecap="round" />
-          <ellipse className="cup-line" cx={960} cy={700} rx={150} ry={26} stroke="#2a3630" strokeWidth={4} />
-          <path className="cup-line" d={CUP_SAUCER_D} stroke="#2a3630" strokeWidth={4} strokeLinecap="round" />
+          
+          {/* Teacup saucer dish */}
+          <path className="cup-line" d={CUP_SAUCER_D} stroke="#1c2620" strokeWidth={4} strokeLinecap="round" />
+          
+          {/* Teacup main body bowl */}
+          <path className="cup-line" d={CUP_BODY_D} stroke="#1c2620" strokeWidth={4.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          
+          {/* Teacup handle loop */}
+          <path className="cup-line" d={CUP_HANDLE_D} stroke="#1c2620" strokeWidth={4.5} strokeLinecap="round" fill="none" />
+          
+          {/* Teacup top rim lip */}
+          <ellipse className="cup-line" cx={960} cy={800} rx={160} ry={24} stroke="#1c2620" strokeWidth={4} fill="none" />
+
           <g filter="url(#steam-glow)">
             {STEAM_D.slice(3).map((d) => (
               <path
@@ -510,7 +515,7 @@ export default function TeaVectorHomepage() {
             ))}
           </g>
           {[0, 1, 2, 3].map((i) => (
-            <circle key={i} className="ripple" cx={960} cy={740} r={20} stroke="#d48806" strokeWidth={3} />
+            <circle key={i} className="ripple" cx={960} cy={820} r={20} stroke="#d48806" strokeWidth={3} />
           ))}
         </g>
       </svg>
