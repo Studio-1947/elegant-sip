@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  /* Google Sans Flex (variable) is loaded in index.html; Tailwind's default
+     body font derives from --font-sans, so every utility inherits it. */
+  --font-sans: "Google Sans Flex", system-ui, sans-serif;
+}
+
+html {
+  /* Native scrolling drives GSAP ScrollTrigger — no smooth-scroll lib needed. */
+  scroll-behavior: auto;
+  background-color: #ffffff;
+}
+
+body {
+  margin: 0;
+  overscroll-behavior: none;
+}
