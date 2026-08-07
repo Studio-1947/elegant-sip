@@ -1,0 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Directory for instrumented code leveraged by Istanbul
+coverage
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Production build
+dist/
+build/
+
+# Stores
+.DS_Store
+*.pem
+
+# Local env files
+.env.local
+.env.*.local
+
+# IDE & AG Kit local storage
+.antigravity/
+.ag-kit-backups/
