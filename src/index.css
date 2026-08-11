@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "lenis/dist/lenis.css";
 
 @theme {
   /* Google Sans Flex (variable) is loaded in index.html; Tailwind's default
@@ -7,7 +8,7 @@
 }
 
 html {
-  /* Native scrolling drives the scroll trigger animation — no smooth-scroll lib needed. */
+  /* Lenis handles smooth scroll — keep native scroll-behavior off to avoid conflicts. */
   scroll-behavior: auto;
   background-color: #ffffff;
 }

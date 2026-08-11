@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
+import HeroScrollSection from './HeroScrollSection'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
+import Lenis from 'lenis'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
-
-const START_FRAME = 1
-const END_FRAME = 102
-const TOTAL_FRAMES = END_FRAME - START_FRAME + 1 // 102
 
 const getLoadingMessage = (percent: number) => {
   if (percent < 20) return "Gathering the harvest..."
@@ -19,191 +17,140 @@ const getLoadingMessage = (percent: number) => {
 
 export default function TeaVectorHomepage() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const currentFrameRef = useRef<number>(START_FRAME)
-  const imagesRef = useRef<{ [key: number]: HTMLImageElement }>({})
-  const requestRef = useRef<number | null>(null)
-  const [loadedCount, setLoadedCount] = useState(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [loadingPercentage, setLoadingPercentage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [fadeLoader, setFadeLoader] = useState(false)
   const [isNavbar, setIsNavbar] = useState(false)
+  const lenisRef = useRef<Lenis | null>(null)
 
-  // Render a specific frame (index 1 to 273) dynamically onto the Canvas stage
-  const renderFrame = (frameIndex: number) => {
-    currentFrameRef.current = frameIndex
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const displayWidth = window.innerWidth
-    const displayHeight = window.innerHeight
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-
-    if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
-      canvas.width = displayWidth * dpr
-      canvas.height = displayHeight * dpr
-    }
-
-    ctx.save()
-    ctx.scale(dpr, dpr)
-    ctx.clearRect(0, 0, displayWidth, displayHeight)
-
-    // Calculate aspect-ratio cover positioning for 2560x1440 stage inside window
-    const stageW = 2560
-    const stageH = 1440
-    const stageRatio = stageW / stageH
-    const displayRatio = displayWidth / displayHeight
-
-    let scale = displayWidth / stageW
-    let offsetX = 0
-    let offsetY = 0
-
-    if (displayRatio > stageRatio) {
-      scale = displayWidth / stageW
-      offsetY = (displayHeight - stageH * scale) / 2
-    } else {
-      scale = displayHeight / stageH
-      offsetX = (displayWidth - stageW * scale) / 2
-    }
-
-    ctx.translate(offsetX, offsetY)
-    ctx.scale(scale, scale)
-
-    // Draw the image if loaded
-    const img = imagesRef.current[frameIndex]
-    if (img && img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(img, 0, 0, stageW, stageH)
-    } else {
-      // Fallback: search for the nearest loaded frame to prevent flickering
-      let nearestImg = null
-      let minDiff = Infinity
-      for (let i = START_FRAME; i <= END_FRAME; i++) {
-        const loadedImg = imagesRef.current[i]
-        if (loadedImg && loadedImg.complete && loadedImg.naturalWidth > 0) {
-          const diff = Math.abs(i - frameIndex)
-          if (diff < minDiff) {
-            minDiff = diff
-            nearestImg = loadedImg
-          }
-        }
-      }
-      if (nearestImg) {
-        ctx.drawImage(nearestImg, 0, 0, stageW, stageH)
-      } else {
-        // Fallback color while loading first image
-        ctx.fillStyle = '#060b08'
-        ctx.fillRect(0, 0, stageW, stageH)
-      }
-    }
-
-    ctx.restore()
-  }
-
-  // Preload all WebP frames on mount
- useEffect(() => {
-  const loadedImages: { [key: number]: HTMLImageElement } = {}
-  let count = 0
-
-  for (let i = START_FRAME; i <= END_FRAME; i++) {
-    const img = new Image()
-    img.src = `/webp/frame (${i}).jpg`
-    loadedImages[i] = img
-
-    const markLoaded = () => {
-      count++
-      setLoadedCount(count)
-      if (i === currentFrameRef.current) {
-        renderFrame(currentFrameRef.current)
-      }
-    }
-
-    img.onload = () => {
-      img
-        .decode()
-        .then(markLoaded)
-        .catch(markLoaded) // decode() can reject on some browsers/edge cases — still proceed
-    }
-
-    img.onerror = () => {
-      console.error(`Failed to load frame: /webp/frame (${i}).jpg`)
-    }
-  }
-
-  imagesRef.current = loadedImages
-}, [])
-
-  // Handle loader fade out when all images are loaded
+  // Initialize Lenis smooth scroll synced to GSAP ticker
   useEffect(() => {
-    if (loadedCount === TOTAL_FRAMES) {
+    const lenis = new Lenis({
+      lerp: 0.08,
+      smoothWheel: true,
+      syncTouch: true,
+    })
+
+    lenisRef.current = lenis
+
+    // Sync Lenis scroll position with ScrollTrigger on every frame
+    lenis.on('scroll', ScrollTrigger.update)
+
+    // Drive Lenis from GSAP's ticker for perfect frame sync
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000)
+    })
+    gsap.ticker.lagSmoothing(0)
+
+    return () => {
+      lenis.destroy()
+      lenisRef.current = null
+    }
+  }, [])
+
+  // Track video loading progress and trigger loader fade-out
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const updateProgress = () => {
+      if (video.buffered.length > 0 && video.duration > 0) {
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1)
+        const percent = Math.round((bufferedEnd / video.duration) * 100)
+        setLoadingPercentage(percent)
+      }
+    }
+
+    const onCanPlayThrough = () => {
+      setLoadingPercentage(100)
       setFadeLoader(true)
       const timer = setTimeout(() => {
         setLoading(false)
       }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [loadedCount])
 
-  // Setup resize listeners and render initial frame
-  useEffect(() => {
-    const handleResize = () => {
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current)
-      }
-      requestRef.current = requestAnimationFrame(() => {
-        renderFrame(currentFrameRef.current)
-      })
+    video.addEventListener('progress', updateProgress)
+    video.addEventListener('canplaythrough', onCanPlayThrough)
+
+    // Fallback: if already fully buffered before listeners attached
+    if (video.readyState >= 4) {
+      onCanPlayThrough()
     }
 
-    // Small delay to ensure browser layout has resolved on load
-    const timer = setTimeout(() => {
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current)
-      }
-      requestRef.current = requestAnimationFrame(() => {
-        renderFrame(START_FRAME)
-      })
-    }, 100)
-
-    window.addEventListener('resize', handleResize)
     return () => {
-      clearTimeout(timer)
-      window.removeEventListener('resize', handleResize)
+      video.removeEventListener('progress', updateProgress)
+      video.removeEventListener('canplaythrough', onCanPlayThrough)
     }
   }, [])
 
- useGSAP(
-  () => {
-    renderFrame(START_FRAME)
+  // Scroll-driven video scrubbing via GSAP ScrollTrigger
+  useGSAP(
+    () => {
+      const video = videoRef.current
+      if (!video) return
 
-    const scrollTriggerInstance = ScrollTrigger.create({
-      trigger: '#video-scroll-track',
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 0.1,
-      onUpdate: (self) => {
-        const frameIndex = Math.min(
-          END_FRAME,
-          Math.max(START_FRAME, Math.round(START_FRAME + self.progress * (TOTAL_FRAMES - 1)))
-        )
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#video-scroll-track',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: true,
+          onUpdate: (self) => {
+            const isAtEnd = self.progress > 0.95
+            setIsNavbar(isAtEnd)
+          },
+        },
+      })
 
-        if (frameIndex !== currentFrameRef.current) {
-          renderFrame(frameIndex)
+      // Scrub video currentTime from 0 → duration based on scroll progress
+      const addScrubAnimation = () => {
+        if (video.duration && video.duration > 0) {
+          tl.fromTo(
+            video,
+            { currentTime: 0 },
+            { currentTime: video.duration, ease: 'none' },
+            0,
+          )
         }
+      }
 
-        const isAtEnd = self.progress > 0.95
-        setIsNavbar(isAtEnd)
-      },
-    })
+      // Wait for metadata so video.duration is available
+      video.onloadedmetadata = addScrubAnimation
 
-    return () => {
-      scrollTriggerInstance.kill()
-    }
-  },
-  { scope: containerRef },
-)
+      // Fallback: metadata may already be loaded
+      if (video.readyState >= 1) {
+        addScrubAnimation()
+      }
+    },
+    { scope: containerRef },
+  )
 
-  const loadingPercentage = Math.round((loadedCount / TOTAL_FRAMES) * 100)
+  // Video parallax: fade and scale the background as ScrollExpand section takes over
+  useGSAP(
+    () => {
+      if (loading) return
+
+      gsap.fromTo(
+        videoRef.current,
+        { y: 0, scale: 1, opacity: 1 },
+        {
+          y: '-15vh',
+          scale: 0.92,
+          opacity: 0.3,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '#video-scroll-track',
+            start: 'bottom bottom',
+            end: 'bottom top',
+            scrub: true,
+          },
+        },
+      )
+    },
+    { scope: containerRef, dependencies: [loading] },
+  )
 
   // Center when scrolling, top-left when animation ends
   const brandStyle = isNavbar 
@@ -315,16 +262,27 @@ export default function TeaVectorHomepage() {
         </header>
       )}
 
-      {/* Fixed Fullscreen Canvas Stage */}
+      {/* Fixed Fullscreen Video Stage */}
       <div className="fixed inset-0 z-0 h-full w-full overflow-hidden bg-black">
-        <canvas
-          ref={canvasRef}
+        <video
+          ref={videoRef}
+          src="/video.mp4"
           className="h-full w-full object-cover block"
+          muted
+          playsInline
+          preload="auto"
         />
       </div>
 
-      {/* 500vh Scroll Runway for Frame Scrubbing */}
+      {/* 500vh Scroll Runway for Video Scrubbing */}
       <div id="video-scroll-track" className="relative z-10 h-[500vh] pointer-events-none" />
+
+      {/* ═══════════════════════════════════════════════════════════════
+          CONTENT PAGE — ScrollExpand cinematic reveal
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="relative z-20">
+        <HeroScrollSection />
+      </div>
     </div>
   )
 }
