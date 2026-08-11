@@ -1,4 +1,97 @@
+import { useState } from 'react'
 import ScrollExpand from './ScrollExpand'
+
+interface Product {
+  id: string
+  name: string
+  price: number
+  description: string
+  imageSrc: string
+}
+
+function ProductCard({ name, price, description, imageSrc }: Product) {
+  const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
+  const [isAdded, setIsAdded] = useState(false)
+
+  const handleDecrease = () => {
+    if (quantity > 1) setQuantity(quantity - 1)
+  }
+
+  const handleIncrease = () => {
+    setQuantity(quantity + 1)
+  }
+
+  const handleAddToCart = () => {
+    setIsAdding(true)
+    setTimeout(() => {
+      setIsAdding(false)
+      setIsAdded(true)
+      setTimeout(() => {
+        setIsAdded(false)
+      }, 2000)
+    }, 800)
+  }
+
+  return (
+    <div className="group bg-white rounded-2xl border border-[#1b261b]/10 overflow-hidden flex flex-col transition-all duration-500 hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
+      {/* Product Image Wrapper */}
+      <div className="relative aspect-[4/5] bg-[#fdfdfd] overflow-hidden">
+        <img 
+          src={imageSrc} 
+          alt={name} 
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+        />
+      </div>
+
+      {/* Info Block */}
+      <div className="p-6 md:p-8 flex flex-col flex-grow">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide">{name}</h3>
+          <span className="text-[#1b261b] text-base lg:text-lg font-bold">${price}.00</span>
+        </div>
+        <p className="text-[#4a584a] text-xs leading-relaxed mb-6 flex-grow">{description}</p>
+
+        {/* Quantity & CTA Row */}
+        <div className="flex flex-col sm:flex-row gap-4 items-stretch mt-auto">
+          {/* Quantity Selector */}
+          <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-4 py-2 sm:w-28 bg-[#f9faf7]">
+            <button 
+              onClick={handleDecrease}
+              className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-lg leading-none transition-colors px-1"
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <span className="text-[#1b261b] font-mono text-sm font-semibold select-none">{quantity}</span>
+            <button 
+              onClick={handleIncrease}
+              className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-lg leading-none transition-colors px-1"
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Add to Cart CTA */}
+          <button 
+            onClick={handleAddToCart}
+            disabled={isAdding || isAdded}
+            className={`flex-grow text-xs font-bold tracking-widest uppercase py-3 px-6 rounded-lg transition-all duration-300 active:scale-[0.98] ${
+              isAdded 
+                ? 'bg-[#8bb56e] text-white' 
+                : isAdding
+                ? 'bg-[#1b261b]/50 text-white/50 cursor-wait'
+                : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
+            }`}
+          >
+            {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : 'Add to Cart'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /**
  * HeroScrollSection
@@ -107,60 +200,122 @@ export default function HeroScrollSection() {
           </div>
 
           {/* ── Three Pillars ── */}
-          <section className="px-6 md:px-16 lg:px-24 pb-32 max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+          <section className="px-6 md:px-12 lg:px-16 pb-32 max-w-[1360px] mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
 
-              <div className="group p-8 md:p-10 rounded-2xl border border-[#1b261b]/10 bg-[#1b261b]/[0.02] hover:bg-[#1b261b]/[0.05] transition-all duration-500">
-                <div className="w-12 h-12 rounded-full border border-[#8bb56e]/50 flex items-center justify-center mb-6 group-hover:border-[#8bb56e] transition-colors duration-500">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#8bb56e]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-                    <path d="M12 2c3 3.5 4 8 0 16" />
-                    <path d="M12 2c-3 3.5-4 8 0 16" />
-                    <path d="M2 12h20" />
-                  </svg>
+              <div className="group relative p-8 md:p-10 rounded-2xl border border-white/10 bg-black min-h-[420px] md:min-h-[500px] lg:min-h-[540px] flex flex-col justify-end overflow-hidden transition-all duration-500">
+                {/* Background Image with Light Hover Effect */}
+                <img 
+                  src="/origin.webp" 
+                  alt="Origin" 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                {/* Slight Black Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />
+
+                {/* Text Content */}
+                <div className="relative z-10 md:min-h-[170px] lg:min-h-[145px] flex flex-col justify-start">
+                  <h3 className="text-white text-xl font-bold uppercase tracking-wide mb-3">Origin</h3>
+                  <p className="text-white/85 text-sm leading-relaxed">
+                    From the highland terraces of Darjeeling to the ancient gardens
+                    of Uji, we partner directly with generational growers who share
+                    our obsession with terroir and seasonal harvests.
+                  </p>
                 </div>
-                <h3 className="text-[#1b261b] text-xl font-bold uppercase tracking-wide mb-3">Origin</h3>
-                <p className="text-[#4a584a] text-sm leading-relaxed">
-                  From the highland terraces of Darjeeling to the ancient gardens
-                  of Uji, we partner directly with generational growers who share
-                  our obsession with terroir and seasonal harvests.
-                </p>
               </div>
 
-              <div className="group p-8 md:p-10 rounded-2xl border border-[#1b261b]/10 bg-[#1b261b]/[0.02] hover:bg-[#1b261b]/[0.05] transition-all duration-500">
-                <div className="w-12 h-12 rounded-full border border-[#8bb56e]/50 flex items-center justify-center mb-6 group-hover:border-[#8bb56e] transition-colors duration-500">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#8bb56e]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" />
-                  </svg>
+              <div className="group relative p-8 md:p-10 rounded-2xl border border-white/10 bg-black min-h-[420px] md:min-h-[500px] lg:min-h-[540px] flex flex-col justify-end overflow-hidden transition-all duration-500">
+                {/* Background Image with Light Hover Effect */}
+                <img 
+                  src="/craft.webp" 
+                  alt="Craft" 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                {/* Slight Black Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />
+
+                {/* Text Content */}
+                <div className="relative z-10 md:min-h-[170px] lg:min-h-[145px] flex flex-col justify-start">
+                  <h3 className="text-white text-xl font-bold uppercase tracking-wide mb-3">Craft</h3>
+                  <p className="text-white/85 text-sm leading-relaxed">
+                    Every batch is hand-rolled, shade-dried, and slow-oxidized
+                    under the guidance of our tea masters. No shortcuts, no
+                    mechanized blending — just centuries-old technique.
+                  </p>
                 </div>
-                <h3 className="text-[#1b261b] text-xl font-bold uppercase tracking-wide mb-3">Craft</h3>
-                <p className="text-[#4a584a] text-sm leading-relaxed">
-                  Every batch is hand-rolled, shade-dried, and slow-oxidized
-                  under the guidance of our tea masters. No shortcuts, no
-                  mechanized blending — just centuries-old technique.
-                </p>
               </div>
 
-              <div className="group p-8 md:p-10 rounded-2xl border border-[#1b261b]/10 bg-[#1b261b]/[0.02] hover:bg-[#1b261b]/[0.05] transition-all duration-500">
-                <div className="w-12 h-12 rounded-full border border-[#8bb56e]/50 flex items-center justify-center mb-6 group-hover:border-[#8bb56e] transition-colors duration-500">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#8bb56e]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8h1a4 4 0 010 8h-1" />
-                    <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z" />
-                    <path d="M6 1v3M10 1v3M14 1v3" />
-                  </svg>
+              <div className="group relative p-8 md:p-10 rounded-2xl border border-white/10 bg-black min-h-[420px] md:min-h-[500px] lg:min-h-[540px] flex flex-col justify-end overflow-hidden transition-all duration-500">
+                {/* Background Image with Light Hover Effect */}
+                <img 
+                  src="/experience.webp" 
+                  alt="Experience" 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                {/* Slight Black Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />
+
+                {/* Text Content */}
+                <div className="relative z-10 md:min-h-[170px] lg:min-h-[145px] flex flex-col justify-start">
+                  <h3 className="text-white text-xl font-bold uppercase tracking-wide mb-3">Experience</h3>
+                  <p className="text-white/85 text-sm leading-relaxed">
+                    Brewing is ritual. We include steeping guides, temperature
+                    curves, and tasting notes with every order — so each cup
+                    unfolds exactly as the leaves intended.
+                  </p>
                 </div>
-                <h3 className="text-[#1b261b] text-xl font-bold uppercase tracking-wide mb-3">Experience</h3>
-                <p className="text-[#4a584a] text-sm leading-relaxed">
-                  Brewing is ritual. We include steeping guides, temperature
-                  curves, and tasting notes with every order — so each cup
-                  unfolds exactly as the leaves intended.
-                </p>
               </div>
 
+              </div>
+            </section>
+
+            {/* Showcase Image 2 (Full Viewport Width Edge-to-Edge) */}
+            <div className="w-full overflow-hidden relative">
+              <img
+                src="/tea1_1.png"
+                alt="Ember Charm Tea Canister"
+                className="w-full h-auto block object-cover"
+              />
+              {/* Stronger blur gradient overlay at the bottom for smooth transition to light background */}
+              <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#f9faf7] via-[#f9faf7] via-[#f9faf7]/60 to-transparent pointer-events-none backdrop-blur-[1px]" />
             </div>
-          </section>
 
-          {/* ── Philosophy Quote ── */}
+            {/* ── Products Section ── */}
+            <section className="px-6 md:px-12 lg:px-16 py-32 max-w-[1360px] mx-auto bg-[#f9faf7]">
+              <div className="text-center max-w-2xl mx-auto mb-16 md:mb-24">
+                <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Signature Blends</span>
+                <h2 className="text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-6">Our Collections</h2>
+                <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
+                  Hand-selected whole leaf teas sourced directly from estate gardens and packaged to preserve complex terroir and freshness.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+                <ProductCard
+                  id="ember-charm"
+                  name="Ember Charm"
+                  price={28}
+                  description="A deeply oxidized roasted oolong tea layered with warm cinnamon wood, dark cacao, and roasted chestnut notes. Perfect for slow, contemplative afternoons."
+                  imageSrc="/embercharm.webp"
+                />
+                <ProductCard
+                  id="morning-dew"
+                  name="Morning Dew"
+                  price={24}
+                  description="Ethereal first-flush green tea leaves hand-harvested at dawn and naturally scented with night-blooming jasmine flowers. Bright, floral, and clarifying."
+                  imageSrc="/morningdew.webp"
+                />
+                <ProductCard
+                  id="summer-breeze"
+                  name="Summer Breeze"
+                  price={26}
+                  description="A delicate sun-dried white peony tea balanced with organic lemongrass and sun-ripened citrus peels. Refreshing, crisp, and clean."
+                  imageSrc="/summerbreeze.webp"
+                />
+              </div>
+            </section>
+
+            {/* ── Philosophy Quote ── */}
           <section className="px-6 md:px-16 lg:px-24 py-28 max-w-4xl mx-auto text-center border-t border-b border-[#1b261b]/10">
             <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#8bb56e]/40 mx-auto mb-8" fill="currentColor">
               <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z" />

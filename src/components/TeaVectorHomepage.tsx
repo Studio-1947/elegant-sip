@@ -162,7 +162,7 @@ export default function TeaVectorHomepage() {
       }
     : {
         left: '50%',
-        transform: 'translate(-50%, 2vh)',
+        transform: 'translate(-50%, 10vh)',
       }
 
   return (
