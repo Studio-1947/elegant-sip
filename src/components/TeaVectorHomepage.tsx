@@ -1,561 +1,330 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin'
 import { useGSAP } from '@gsap/react'
 
-import { SCROLL_TRIGGER_DEFAULTS, SCENE_COUNT } from '../scrollConfig'
+gsap.registerPlugin(useGSAP, ScrollTrigger)
 
-// DrawSVGPlugin has been part of the free public gsap package since 3.13.
-gsap.registerPlugin(useGSAP, ScrollTrigger, DrawSVGPlugin)
+const START_FRAME = 1
+const END_FRAME = 102
+const TOTAL_FRAMES = END_FRAME - START_FRAME + 1 // 102
 
-/* ────────────────────────────────────────────────────────────────────────── */
-/* Vector data — all geometry lives in a 1920×1080 viewBox                    */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-/** Scene 1 · Mountain terrain contour lines (positioned along the bottom of Chapter 1) */
-const RIDGES = [
-  // Top curve with peak on left-center, dipping & intersecting on right
-  'M -50 680 C 400 420 700 440 1000 620 C 1300 780 1550 550 1970 480',
-  // Upper-mid curve gently rising across center and dipping right
-  'M -50 720 C 500 780 950 660 1450 600 C 1680 570 1850 700 1970 750',
-  // Lower-mid curve with central peak, dipping mid-right and rising right
-  'M -50 860 C 320 640 580 640 880 830 C 1180 1000 1520 860 1970 700',
-  // Bottom curve swooping down lower-middle and rising up right
-  'M -50 800 C 480 970 980 900 1480 840 C 1680 810 1850 910 1970 960',
-]
-
-/** Scene 1 · Alternate morph target for continuous ambient mountain wave animation */
-const RIDGES_ALT = [
-  'M -50 660 C 430 450 670 410 1000 645 C 1270 750 1580 520 1970 495',
-  'M -50 735 C 470 750 970 680 1450 580 C 1710 580 1830 680 1970 730',
-  'M -50 840 C 350 660 550 610 880 850 C 1150 980 1540 830 1970 715',
-  'M -50 815 C 450 940 1000 920 1480 820 C 1660 830 1870 890 1970 945',
-]
-
-/** Scene 1 · Sleek vector cloud path matching new reference image (flat base, rounded lobes) */
-const CLOUD_OUTLINE_D =
-  'M 20 0 C -45 0 -70 -40 -50 -75 C -35 -100 -5 -115 15 -110 C 25 -150 65 -185 115 -185 C 135 -185 155 -178 170 -165 C 190 -210 235 -240 290 -240 C 350 -240 400 -200 415 -145 C 440 -150 470 -135 485 -110 C 510 -75 490 0 430 0 Z'
-
-interface CloudSpot {
-  x: number
-  y: number
-  scale: number
+const getLoadingMessage = (percent: number) => {
+  if (percent < 20) return "Gathering the harvest..."
+  if (percent < 40) return "Selecting the finest leaves..."
+  if (percent < 65) return "Preparing the sensory flight..."
+  if (percent < 85) return "Refining the steeping temperature..."
+  return "Enjoying the first sip..."
 }
 
-/** Positions for clouds flanking the title at the text horizontal level */
-const CLOUD_SPOTS: CloudSpot[] = [
-  { x: 60, y: 320, scale: 0.55 },
-  { x: 1410, y: 320, scale: 0.55 },
-]
-
-/** Distant background tea hill terraces (clean, soft backdrop) */
-const TERRACE_LINES = [
-  'M -50 720 C 350 680 750 640 1050 680 S 1650 740 1970 700',
-  'M -50 820 C 450 790 850 770 1200 810 S 1750 860 1970 830',
-  'M 1200 620 C 1450 660 1730 690 1970 715',
-]
-
-/** Scene 3 · hero leaf (large close-up), local origin at its stem attachment. */
-const HERO_LEAF_D = 'M 0 90 C 85 45 110 -75 0 -190 C -110 -75 -85 45 0 90 Z'
-const HERO_VEINS = [
-  'M 0 70 L 0 -170',
-  'M 0 20 C 30 8 48 -10 62 -40',
-  'M 0 20 C -30 8 -48 -10 -62 -40',
-  'M 0 -45 C 26 -56 40 -72 50 -96',
-  'M 0 -45 C -26 -56 -40 -72 -50 -96',
-]
-
-/**
- * Scene 3 · plucker gesture as line art (matches the stroke aesthetic):
- * two arm contour lines flowing in from the right, an index finger and a
- * thumb closing to a pinch just off the hero leaf's tip.
- */
-const HAND_LINES = [
-  'M 1920 150 C 1740 170 1560 215 1420 280 C 1330 320 1240 345 1150 350',
-  'M 1920 300 C 1760 310 1600 340 1470 385 C 1390 412 1310 425 1230 420',
-  'M 1150 350 C 1090 352 1035 335 1000 300 C 988 288 990 272 1005 268 C 1020 264 1040 274 1052 288',
-  'M 1230 420 C 1165 418 1105 395 1062 358 C 1050 347 1052 332 1066 328',
-]
-
-/**
- * Scene 3 + 5 · steam paths and their morph targets. Base and alt strings have
- * identical command structures, so GSAP can interpolate the raw `d` attribute
- * for a continuous flowing morph — no MorphSVG needed.
- * Indices 0–2 swirl around the hero leaf; 3–4 rise from the finished cup.
- */
-const STEAM_D = [
-  'M 880 320 C 830 250 920 210 875 140 S 820 40 880 -20',
-  'M 1040 340 C 1090 260 1000 220 1050 150 S 1110 50 1055 -10',
-  'M 960 300 C 920 230 1000 190 955 120 S 910 20 965 -40',
-  'M 930 760 C 900 710 950 675 925 625 S 890 555 930 515',
-  'M 1000 750 C 1030 700 980 665 1005 615 S 1040 545 1000 505',
-]
-const STEAM_ALT = [
-  'M 880 320 C 855 245 895 215 900 138 S 845 35 855 -25',
-  'M 1040 340 C 1065 255 1025 225 1025 148 S 1085 45 1080 -15',
-  'M 960 300 C 945 225 975 195 930 118 S 935 15 940 -45',
-  'M 930 760 C 915 705 935 680 950 622 S 905 550 905 510',
-  'M 1000 750 C 1015 695 995 670 980 612 S 1025 540 1025 500',
-]
-
-/** Scene 4 · motion-blur trails flanking the leaf's fall line. */
-const TRAILS = [
-  'M 880 430 C 820 540 900 620 850 720',
-  'M 1040 450 C 1100 560 1020 640 1070 740',
-  'M 960 400 C 900 500 1010 600 955 700',
-]
-
-/** Scene 5 · classic shallow teacup line art + handle + saucer + interior clip path. */
-const CUP_BODY_D = 'M 800 800 C 800 895 870 935 960 935 C 1050 935 1120 895 1120 800'
-const CUP_HANDLE_D = 'M 1115 822 C 1185 822 1185 890 1085 890'
-const CUP_SAUCER_D = 'M 750 935 C 830 962 1090 962 1170 935'
-const CUP_CLIP_D = 'M 802 805 C 802 890 870 928 960 928 C 1050 928 1118 890 1118 805 Z'
-
-/** Water surface slosh morph */
-const WAVE_A =
-  'M 800 820 C 840 808 880 832 960 820 C 1040 808 1080 832 1120 820 L 1120 940 L 800 940 Z'
-const WAVE_B =
-  'M 800 824 C 840 836 880 812 960 824 C 1040 836 1080 812 1120 824 L 1120 940 L 800 940 Z'
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/* HTML caption copy                                                          */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-interface Caption {
-  id: string
-  pos: string
-  eyebrow: string
-  title: string
-  titleClass: string
-  body: string
-}
-
-const CAPTIONS: Caption[] = [
-  {
-    id: 'caption-1',
-    pos: 'inset-x-0 top-24 flex flex-col items-center justify-center text-center md:top-28',
-    eyebrow: 'Chapter I · The Terroir',
-    title: 'ELEGANTSIP',
-    titleClass: 'text-6xl md:text-8xl tracking-[0.12em]',
-    body: 'Two thousand metres up, where clouds graze the ridgeline, our gardens wake slowly.',
-  },
-  {
-    id: 'caption-2',
-    pos: 'left-6 top-1/2 max-w-sm -translate-y-1/2 md:left-20',
-    eyebrow: 'Chapter II · The Flush',
-    title: 'Two Leaves & a Bud',
-    titleClass: 'text-4xl md:text-6xl',
-    body: 'Spring rain draws new growth from old wood — the first flush reaches for the light.',
-  },
-  {
-    id: 'caption-3',
-    pos: 'left-6 top-1/2 max-w-sm -translate-y-1/2 md:left-20',
-    eyebrow: 'Chapter III · The Pluck',
-    title: 'Chosen by Hand',
-    titleClass: 'text-4xl md:text-6xl',
-    body: 'A practised pinch, a quiet snap. Only the tenderest leaf makes the basket.',
-  },
-  {
-    id: 'caption-4',
-    pos: 'right-6 top-1/2 max-w-sm -translate-y-1/2 text-right md:right-20',
-    eyebrow: 'Chapter IV · The Turn',
-    title: 'Green Gives Way to Gold',
-    titleClass: 'text-4xl md:text-6xl',
-    body: 'Bruised and breathing, the leaf oxidises — chlorophyll surrendering to amber.',
-  },
-  {
-    id: 'caption-5',
-    pos: 'right-6 bottom-20 max-w-sm text-right md:right-20',
-    eyebrow: 'Chapter V · The Infusion',
-    title: 'The Golden Cup',
-    titleClass: 'text-4xl md:text-6xl',
-    body: 'Ninety seconds in living water, and the mountain finally speaks.',
-  },
-]
-
-const SECTIONS = ['terrain', 'growth', 'pluck', 'oxidation', 'infusion']
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/* Component                                                                  */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-/**
- * TeaVectorHomepage — the whole experience: fixed SVG stage, HTML captions,
- * a 500vh scroll runway, and one scrubbed GSAP master timeline.
- *
- * Timebase: 1 timeline-second per scene; scene N occupies [N-1, N].
- */
 export default function TeaVectorHomepage() {
-  const rootRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const currentFrameRef = useRef<number>(START_FRAME)
+  const imagesRef = useRef<{ [key: number]: HTMLImageElement }>({})
+  const requestRef = useRef<number | null>(null)
+  const [loadedCount, setLoadedCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [fadeLoader, setFadeLoader] = useState(false)
+  const [isNavbar, setIsNavbar] = useState(false)
 
-  // Strictly typed refs for the elements the timeline drives directly.
-  const mountainsRef = useRef<SVGGElement>(null)
-  const plantRef = useRef<SVGGElement>(null)
-  const heroLeafRef = useRef<SVGGElement>(null)
-  const heroLeafBodyRef = useRef<SVGPathElement>(null)
-  const handRef = useRef<SVGGElement>(null)
-  const cupRef = useRef<SVGGElement>(null)
-  const liquidRef = useRef<SVGRectElement>(null)
-  const waveRef = useRef<SVGPathElement>(null)
+  // Render a specific frame (index 1 to 273) dynamically onto the Canvas stage
+  const renderFrame = (frameIndex: number) => {
+    currentFrameRef.current = frameIndex
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-  useGSAP(
-    () => {
-      const heroLeaf = heroLeafRef.current
-      const leafBody = heroLeafBodyRef.current
-      const liquid = liquidRef.current
-      const wave = waveRef.current
-      if (!heroLeaf || !leafBody || !liquid || !wave) return
+    const displayWidth = window.innerWidth
+    const displayHeight = window.innerHeight
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
 
-      /* ── Initial states, applied synchronously at mount ─────────────────
-       * Everything is authored in its FINAL position; gsap.set() winds each
-       * element back to its pre-scene state. Doing this outside the timeline
-       * (rather than with fromTo) sidesteps every immediateRender surprise. */
-      gsap.set(
-        '.ridge, .terrace-line, .stem, .leaf-outline, .leaf-vein, .hero-vein, .steam, .trail, .cup-line, .hand-line',
-        {
-          drawSVG: '0% 0%',
-        },
-      )
-      gsap.set('.leaf', { scale: 0, transformOrigin: '50% 100%' })
-      gsap.set('.berry-cluster', { scale: 0, transformOrigin: '50% 50%' })
-      gsap.set(heroLeaf, { scale: 0, transformOrigin: '50% 50%' })
-      gsap.set(handRef.current, { x: 400, autoAlpha: 0 })
-      gsap.set(liquid, { y: 60, fillOpacity: 0 })
-      gsap.set(wave, { autoAlpha: 0, fillOpacity: 0.25 })
-      gsap.set('.ripple', { attr: { r: 20 }, autoAlpha: 0 })
-      gsap.set('#plant-scene, #hero-scene, #cup-scene', { autoAlpha: 0 })
+    if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+      canvas.width = displayWidth * dpr
+      canvas.height = displayHeight * dpr
+    }
 
-      /* ── Ambient loops (mount-time, NOT scroll-scrubbed) ────────────────
-       * Continuous organic morphing of mountain contours, steam, and water.
-       * Base and alt `d` strings share command structure for smooth morphing. */
-      gsap.to('.ridge', {
-        attr: { d: (i: number) => RIDGES_ALT[i] },
-        duration: 4.5,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-        stagger: 0.35,
+    ctx.save()
+    ctx.scale(dpr, dpr)
+    ctx.clearRect(0, 0, displayWidth, displayHeight)
+
+    // Calculate aspect-ratio cover positioning for 2560x1440 stage inside window
+    const stageW = 2560
+    const stageH = 1440
+    const stageRatio = stageW / stageH
+    const displayRatio = displayWidth / displayHeight
+
+    let scale = displayWidth / stageW
+    let offsetX = 0
+    let offsetY = 0
+
+    if (displayRatio > stageRatio) {
+      scale = displayWidth / stageW
+      offsetY = (displayHeight - stageH * scale) / 2
+    } else {
+      scale = displayHeight / stageH
+      offsetX = (displayWidth - stageW * scale) / 2
+    }
+
+    ctx.translate(offsetX, offsetY)
+    ctx.scale(scale, scale)
+
+    // Draw the image if loaded
+    const img = imagesRef.current[frameIndex]
+    if (img && img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, 0, 0, stageW, stageH)
+    } else {
+      // Fallback: search for the nearest loaded frame to prevent flickering
+      let nearestImg = null
+      let minDiff = Infinity
+      for (let i = START_FRAME; i <= END_FRAME; i++) {
+        const loadedImg = imagesRef.current[i]
+        if (loadedImg && loadedImg.complete && loadedImg.naturalWidth > 0) {
+          const diff = Math.abs(i - frameIndex)
+          if (diff < minDiff) {
+            minDiff = diff
+            nearestImg = loadedImg
+          }
+        }
+      }
+      if (nearestImg) {
+        ctx.drawImage(nearestImg, 0, 0, stageW, stageH)
+      } else {
+        // Fallback color while loading first image
+        ctx.fillStyle = '#060b08'
+        ctx.fillRect(0, 0, stageW, stageH)
+      }
+    }
+
+    ctx.restore()
+  }
+
+  // Preload all WebP frames on mount
+ useEffect(() => {
+  const loadedImages: { [key: number]: HTMLImageElement } = {}
+  let count = 0
+
+  for (let i = START_FRAME; i <= END_FRAME; i++) {
+    const img = new Image()
+    img.src = `/webp/frame (${i}).jpg`
+    loadedImages[i] = img
+
+    const markLoaded = () => {
+      count++
+      setLoadedCount(count)
+      if (i === currentFrameRef.current) {
+        renderFrame(currentFrameRef.current)
+      }
+    }
+
+    img.onload = () => {
+      img
+        .decode()
+        .then(markLoaded)
+        .catch(markLoaded) // decode() can reject on some browsers/edge cases — still proceed
+    }
+
+    img.onerror = () => {
+      console.error(`Failed to load frame: /webp/frame (${i}).jpg`)
+    }
+  }
+
+  imagesRef.current = loadedImages
+}, [])
+
+  // Handle loader fade out when all images are loaded
+  useEffect(() => {
+    if (loadedCount === TOTAL_FRAMES) {
+      setFadeLoader(true)
+      const timer = setTimeout(() => {
+        setLoading(false)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [loadedCount])
+
+  // Setup resize listeners and render initial frame
+  useEffect(() => {
+    const handleResize = () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current)
+      }
+      requestRef.current = requestAnimationFrame(() => {
+        renderFrame(currentFrameRef.current)
       })
-      gsap.to('.steam', {
-        attr: { d: (i: number) => STEAM_ALT[i] },
-        duration: 3,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-        stagger: 0.4,
+    }
+
+    // Small delay to ensure browser layout has resolved on load
+    const timer = setTimeout(() => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current)
+      }
+      requestRef.current = requestAnimationFrame(() => {
+        renderFrame(START_FRAME)
       })
-      gsap.to('.cloud', {
-        x: (i: number) => (i % 2 === 0 ? '+=45' : '-=35'),
-        y: (i: number) => (i % 2 === 0 ? '-=15' : '+=12'),
-        duration: 6.5,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-        stagger: 0.6,
-      })
-      // The water's slosh runs on real time too (it's invisible until impact
-      // flips the wave's autoAlpha on, so the loop can simply always run).
-      gsap.to(wave, { attr: { d: WAVE_B }, duration: 1.1, ease: 'sine.inOut', repeat: -1, yoyo: true })
+    }, 100)
 
-      // Mount intro (NOT scroll-scrubbed): landing view mountain contours draw
-      // on load matching reference image, and caption fades in with them.
-      gsap
-        .timeline({ defaults: { ease: 'power2.inOut' } })
-        .to('.ridge', { drawSVG: '0% 100%', duration: 1.2, stagger: 0.15 }, 0)
-        .from('#caption-1', { autoAlpha: 0, y: 30, duration: 1.2, ease: 'power2.out' }, 0.2)
+    window.addEventListener('resize', handleResize)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
-      /* ── Master timeline ──────────────────────────────────────────────── */
-      const tl = gsap.timeline({
-        defaults: { ease: 'none' },
-        scrollTrigger: { ...SCROLL_TRIGGER_DEFAULTS },
-      })
+ useGSAP(
+  () => {
+    renderFrame(START_FRAME)
 
-      const captionIn = (id: string, at: number) =>
-        tl.fromTo(id, { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 0.2, immediateRender: false }, at)
-      const captionOut = (id: string, at: number) =>
-        tl.to(id, { autoAlpha: 0, y: -30, duration: 0.15 }, at)
-
-      /* ---- Scene 1 (0–1) · Vector mountain terrain ---------------------- */
-      // (The ridge draw-on happens in the mount intro above.) Scroll drives a
-      // gentle parallax: near ridges drift faster than far ones.
-      tl.to('.ridge', { x: (i: number) => -30 - i * 25, duration: 0.6 }, 0.25)
-      tl.to('#scroll-hint', { autoAlpha: 0, duration: 0.08 }, 0.06)
-      captionOut('#caption-1', 0.78)
-      // The mountains stay as a faint backdrop for the rest of the story.
-      tl.to(mountainsRef.current, { autoAlpha: 0.12, duration: 0.2 }, 0.86)
-
-      /* ---- Scene 2 (1–2) · Authentic Tea Plant Growth (from uploaded SVG) - */
-      tl.to('#plant-scene', { autoAlpha: 1, duration: 0.05 }, 1)
-        // Background terrace hill lines draw on
-        .to('.terrace-line', { drawSVG: '0% 100%', duration: 0.35, stagger: 0.05 }, 1.0)
-        // Authentic tea plant scales up & fades in smoothly
-        .fromTo(
-          '#tea-plant-svg',
-          { scale: 0.6, autoAlpha: 0, transformOrigin: '50% 100%' },
-          { scale: 1, autoAlpha: 1, duration: 0.55, ease: 'back.out(1.4)' },
-          1.05,
+    const scrollTriggerInstance = ScrollTrigger.create({
+      trigger: '#video-scroll-track',
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 0.1,
+      onUpdate: (self) => {
+        const frameIndex = Math.min(
+          END_FRAME,
+          Math.max(START_FRAME, Math.round(START_FRAME + self.progress * (TOTAL_FRAMES - 1)))
         )
-      captionIn('#caption-2', 1.2)
-      captionOut('#caption-2', 1.8)
 
-      /* ---- Scene 3 (2–3) · Chapter III (vector animation temporarily removed) - */
-      tl.to(plantRef.current, { autoAlpha: 0, duration: 0.3 }, 2)
-      tl.to('#hero-scene', { autoAlpha: 0, duration: 1 }, 2)
-      captionIn('#caption-3', 2.2)
-      captionOut('#caption-3', 2.8)
+        if (frameIndex !== currentFrameRef.current) {
+          renderFrame(frameIndex)
+        }
 
-      /* ---- Scene 4 (3–4) · Rotating fall & colour morph ----------------- */
-      // The leaf detaches: two full turns about its own 2D centre as it falls.
-      // NOTE: GSAP absorbed the group's authored translate(960 460) as x/y, so
-      // these are ABSOLUTE stage coordinates, not offsets — y: 660 is 200 down.
-      tl.to(heroLeaf, { y: 660, rotation: 720, scale: 0.55, duration: 0.95, ease: 'power1.inOut' }, 3)
-        // THE signature interpolation: GSAP tweens the SVG fill through colour
-        // space from raw green (#4CAF50) to oxidised amber (#D48806).
-        .to(leafBody, { fill: '#D48806', duration: 0.8, ease: 'power1.in' }, 3.05)
-        .to('.hero-vein', { stroke: '#8a5a10', duration: 0.8 }, 3.05)
-        // Motion-blur trails draw down the fall line, then dissolve.
-        .to('.trail', { drawSVG: '0% 100%', duration: 0.45, stagger: 0.1 }, 3.05)
-        .to('.trail', { autoAlpha: 0, duration: 0.2 }, 3.75)
-      captionIn('#caption-4', 3.15)
-      captionOut('#caption-4', 3.75)
+        const isAtEnd = self.progress > 0.95
+        setIsNavbar(isAtEnd)
+      },
+    })
 
-      /* ---- Scene 5 (4–5) · Glass cup & liquid infusion ------------------ */
-      tl.to('#cup-scene', { autoAlpha: 1, duration: 0.05 }, 4)
-        // The cup draws itself as pure line art.
-        .to('.cup-line', { drawSVG: '0% 100%', duration: 0.35, stagger: 0.05, ease: 'power1.inOut' }, 4.02)
-        // Clear water settles in (a clipped rect rising behind the outline).
-        .to(liquid, { y: 0, fillOpacity: 0.25, duration: 0.15 }, 4.3)
-        // The leaf plunges straight down the cup's centre axis (x stays 960) —
-        // impact lands at t = 4.55. (Absolute stage coordinates, see scene 4.)
-        .to(heroLeaf, { y: 820, scale: 0.35, rotation: 810, duration: 0.15, ease: 'power2.in' }, 4.4)
-        // Ripple rings radiate from the impact point. immediateRender: false is
-        // essential — otherwise the "from" state (visible rings) renders at load.
-        .fromTo(
-          '.ripple',
-          { attr: { r: 20 }, autoAlpha: 0.9 },
-          { attr: { r: 380 }, autoAlpha: 0, duration: 0.4, stagger: 0.06, ease: 'power1.out', immediateRender: false },
-          4.55,
-        )
-        // The surface starts sloshing the instant the leaf breaks it (the wave
-        // morph loop is already running on real time — this just reveals it).
-        .to(wave, { autoAlpha: 1, duration: 0.04 }, 4.55)
-        // The infusion: liquid + wave fills interpolate together from
-        // near-clear to the rich tea colour — the cup "steeps".
-        .to([liquid, wave], { fill: '#9E4712', fillOpacity: 0.82, duration: 0.4, ease: 'power1.inOut' }, 4.55)
-        // The leaf settles to the bottom of the cup.
-        .to(heroLeaf, { x: 952, y: 885, rotation: 850, duration: 0.35, ease: 'power1.out' }, 4.6)
-        // A final curl of steam rises from the finished cup.
-        .to('.cup-steam', { drawSVG: '0% 100%', duration: 0.25, stagger: 0.08 }, 4.7)
-      captionIn('#caption-5', 4.68)
-    },
-    { scope: rootRef },
-  )
+    return () => {
+      scrollTriggerInstance.kill()
+    }
+  },
+  { scope: containerRef },
+)
+
+  const loadingPercentage = Math.round((loadedCount / TOTAL_FRAMES) * 100)
+
+  // Center when scrolling, top-left when animation ends
+  const brandStyle = isNavbar 
+    ? {
+        left: '32px',
+        transform: 'translate(0, 0)',
+      }
+    : {
+        left: '50%',
+        transform: 'translate(-50%, 2vh)',
+      }
 
   return (
-    <div ref={rootRef} className="bg-white text-[#1c2620]">
-      {/* z-10 · the fixed SVG stage — every story visual is a vector in here */}
-      <svg
-        className="pointer-events-none fixed inset-0 z-10 h-full w-full"
-        viewBox="0 0 1920 1080"
-        preserveAspectRatio="xMidYMid slice"
-        fill="none"
-        aria-hidden
-      >
-        <defs>
-          {/* soft glow for the aroma paths */}
-          <filter id="steam-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          {/* confines the liquid to the cup's interior silhouette */}
-          <clipPath id="cup-clip">
-            <path d={CUP_CLIP_D} />
-          </clipPath>
-          {/* crops stray margin marks from the tea plant graphic */}
-          <clipPath id="plant-crop">
-            <rect x="735" y="260" width="500" height="560" />
-          </clipPath>
-        </defs>
-
-        {/* ── Scene 1 · mountain terrain contour lines & hand-drawn ink clouds ── */}
-        <g ref={mountainsRef} id="mountain-scene">
-          {/* Mountain terrain contour lines */}
-          {RIDGES.map((d, i) => (
-            <path
-              key={d}
-              className="ridge"
-              d={d}
-              stroke="#1c2620"
-              strokeWidth={4.2 - i * 0.4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
-
-          {/* Sleek vector clouds matching reference image (flat base, thick border, offset shadow) */}
-          {CLOUD_SPOTS.map((c, i) => (
-            <g key={i} className="cloud" transform={`translate(${c.x} ${c.y}) scale(${c.scale})`}>
-              {/* Offset shadow backdrop layer */}
-              <path
-                d={CLOUD_OUTLINE_D}
-                fill="#d8e0da"
-                stroke="#c5d0c8"
-                strokeWidth={5.5 / c.scale}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                transform="translate(-6, 7)"
-              />
-              {/* Main crisp white cloud body with thick dark outline */}
-              <path
-                d={CLOUD_OUTLINE_D}
-                fill="#ffffff"
-                stroke="#1c2620"
-                strokeWidth={5.5 / c.scale}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            </g>
-          ))}
-        </g>
-
-        {/* ── Scene 2 · tea plant (refined single branch vector line art) ───────── */}
-        <g ref={plantRef} id="plant-scene">
-          {/* Soft distant terrace lines */}
-          {TERRACE_LINES.map((d, i) => (
-            <path
-              key={i}
-              className="terrace-line"
-              d={d}
-              stroke="#2a3630"
-              strokeWidth={1.8 - i * 0.25}
-              opacity={0.35}
-            />
-          ))}
-
-          {/* Authentic tea plant vector graphic from uploaded teaplant.svg */}
-          <image
-            id="tea-plant-svg"
-            href="/teaplant.svg"
-            x="680"
-            y="260"
-            width="560"
-            height="560"
-            preserveAspectRatio="xMidYMid meet"
-            clipPath="url(#plant-crop)"
-            style={{ mixBlendMode: 'multiply' }}
-          />
-        </g>
-
-        {/* ── Scenes 3–5 · hero leaf, plucker, aroma ─────────────────────── */}
-        <g id="hero-scene">
-          <g ref={heroLeafRef} transform="translate(960 460)">
-            <path ref={heroLeafBodyRef} id="hero-leaf-body" d={HERO_LEAF_D} fill="#4CAF50" />
-            {HERO_VEINS.map((d) => (
-              <path key={d} className="hero-vein" d={d} stroke="#2e7031" strokeWidth={3} strokeLinecap="round" />
-            ))}
-          </g>
-          <g id="leaf-steam" filter="url(#steam-glow)">
-            {STEAM_D.slice(0, 3).map((d) => (
-              <path key={d} className="steam" d={d} stroke="#b0a489" strokeWidth={3} strokeLinecap="round" opacity={0.8} />
-            ))}
-          </g>
-          <g ref={handRef}>
-            {HAND_LINES.map((d) => (
-              <path key={d} className="hand-line" d={d} stroke="#2a3630" strokeWidth={3.5} strokeLinecap="round" />
-            ))}
-          </g>
-          {TRAILS.map((d) => (
-            <path key={d} className="trail" d={d} stroke="#d48806" strokeWidth={2.5} strokeLinecap="round" opacity={0.7} />
-          ))}
-        </g>
-
-        {/* ── Scene 5 · glass cup & infusion ─────────────────────────────── */}
-        {/* centred, so the leaf's straight-down fall lands mid-cup */}
-        <g ref={cupRef} id="cup-scene">
-          {/* liquid first, outline on top, so the line art stays crisp */}
-          <rect
-            ref={liquidRef}
-            x={780}
-            y={800}
-            width={360}
-            height={140}
-            clipPath="url(#cup-clip)"
-            fill="#cfe3dd"
-          />
-          {/* sloshing surface band — overlaps the rect top so they read as one */}
-          <path ref={waveRef} d={WAVE_A} clipPath="url(#cup-clip)" fill="#cfe3dd" />
-          
-          {/* Teacup saucer dish */}
-          <path className="cup-line" d={CUP_SAUCER_D} stroke="#1c2620" strokeWidth={4} strokeLinecap="round" />
-          
-          {/* Teacup main body bowl */}
-          <path className="cup-line" d={CUP_BODY_D} stroke="#1c2620" strokeWidth={4.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          
-          {/* Teacup handle loop */}
-          <path className="cup-line" d={CUP_HANDLE_D} stroke="#1c2620" strokeWidth={4.5} strokeLinecap="round" fill="none" />
-          
-          {/* Teacup top rim lip */}
-          <ellipse className="cup-line" cx={960} cy={800} rx={160} ry={24} stroke="#1c2620" strokeWidth={4} fill="none" />
-
-          <g filter="url(#steam-glow)">
-            {STEAM_D.slice(3).map((d) => (
-              <path
-                key={d}
-                className="steam cup-steam"
-                d={d}
-                stroke="#b0a489"
-                strokeWidth={3}
-                strokeLinecap="round"
-                opacity={0.75}
-              />
-            ))}
-          </g>
-          {[0, 1, 2, 3].map((i) => (
-            <circle key={i} className="ripple" cx={960} cy={820} r={20} stroke="#d48806" strokeWidth={3} />
-          ))}
-        </g>
-      </svg>
-
-      {/* z-20 · scroll runway: five invisible 100vh sections drive the scrub */}
-      <main id="scroll-track" className="pointer-events-none relative z-20">
-        {SECTIONS.map((s) => (
-          <section key={s} id={`section-${s}`} className="h-screen" aria-hidden />
-        ))}
-      </main>
-
-      {/* z-30 · per-scene captions */}
-      {CAPTIONS.map((c) => (
-        <div
-          key={c.id}
-          id={c.id}
-          className={`pointer-events-none fixed z-30 ${c.id === 'caption-1' ? '' : 'opacity-0'} ${c.pos}`}
+    <div ref={containerRef} className="relative bg-black min-h-screen">
+      {/* Premium Full-Screen Loading Overlay */}
+      {loading && (
+        <div 
+          className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#060b08] transition-opacity duration-1000 ease-in-out ${
+            fadeLoader ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
         >
-          <div className="max-w-2xl px-6">
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-[#d48806] md:text-sm">{c.eyebrow}</p>
-            <h2 className={`mb-4 font-medium leading-tight ${c.titleClass}`}>{c.title}</h2>
-            <p className="text-sm leading-relaxed text-[#1c2620]/70 md:text-base">{c.body}</p>
-            {c.id === 'caption-5' && (
-              <a
-                href="#"
-                className="pointer-events-auto mt-8 inline-block border border-[#d48806] px-8 py-3 text-xs uppercase tracking-[0.3em] text-[#1c2620] transition-colors hover:bg-[#d48806] hover:text-white"
-              >
-                Shop the First Flush
-              </a>
-            )}
+          <div className="text-center space-y-6">
+            <h1 className="text-white text-5xl md:text-6xl font-extrabold tracking-tight uppercase font-sans animate-pulse">
+              Elegant Sip
+            </h1>
+            <p className="text-[#8bb56e] text-sm font-mono tracking-widest uppercase">
+              The Journey of Tea
+            </p>
+            <div className="w-64 h-[1px] bg-white/10 mx-auto relative overflow-hidden">
+              <div 
+                className="absolute top-0 left-0 h-full bg-[#8bb56e] transition-all duration-300 ease-out"
+                style={{ width: `${loadingPercentage}%` }}
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-white/60 text-xs font-light italic">
+                {getLoadingMessage(loadingPercentage)}
+              </p>
+              <p className="text-white/30 text-[10px] font-mono tracking-wider">
+                Loading Experience... {loadingPercentage}%
+              </p>
+            </div>
           </div>
         </div>
-      ))}
+      )}
 
-      {/* scroll hint — fades within the first few % of scroll */}
-      <div id="scroll-hint" className="pointer-events-none fixed inset-x-0 bottom-8 z-30 flex justify-center">
-        <span className="animate-pulse text-xs uppercase tracking-[0.3em] text-[#1c2620]/50">
-          Scroll to steep · {SCENE_COUNT} chapters
-        </span>
+      {/* Fixed Header & Navigation Bar */}
+      {!loading && (
+        <header 
+          className={`fixed top-0 left-0 right-0 z-40 px-8 py-6 transition-all duration-700 ease-in-out ${
+            isNavbar 
+              ? 'bg-black/60 backdrop-blur-md border-b border-white/5 h-20' 
+              : 'bg-transparent h-32 pointer-events-none'
+          }`}
+        >
+          {/* Brand Container (Centered when scrolling, Top-Left when finished) */}
+          <div 
+            style={brandStyle} 
+            className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto ${
+              isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
+            }`}
+          >
+            {/* Custom SVG Logo (Minimalist tea leaf line art) */}
+            <svg 
+              viewBox="0 0 100 100" 
+              className={`transition-all duration-700 ease-in-out fill-none stroke-current text-[#8bb56e] ${
+                isNavbar ? 'w-8 h-8' : 'w-16 h-16'
+              }`}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M50 20 C65 35 75 55 50 80 C25 55 35 35 50 20 Z" />
+              <path d="M50 20 C50 40 50 60 50 80" strokeWidth="1.5" />
+              <path d="M50 40 Q60 45 68 38" strokeWidth="1" />
+              <path d="M50 50 Q40 55 32 48" strokeWidth="1" />
+              <path d="M50 60 Q62 65 65 58" strokeWidth="1" />
+              <path d="M50 70 Q38 75 35 68" strokeWidth="1" />
+            </svg>
+
+            <span 
+              className={`font-sans uppercase transition-all duration-700 ease-in-out text-white font-bold ${
+                isNavbar ? 'text-xl tracking-tight' : 'text-5xl md:text-6xl tracking-tight'
+              }`}
+            >
+              Elegant Sip
+            </span>
+          </div>
+
+          {/* Right Action Container (Cart & User CTAs - active when navbar is active) */}
+          <div 
+            className={`absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-6 transition-all duration-700 ease-in-out ${
+              isNavbar ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
+            }`}
+          >
+            {/* Cart Button */}
+            <button className="text-white hover:text-[#8bb56e] transition-colors relative p-2 focus:outline-none cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              <span className="absolute top-0 right-0 w-2 h-2 bg-[#8bb56e] rounded-full animate-ping" />
+            </button>
+
+            {/* Login CTA */}
+            <button className="px-5 py-2 border border-white/20 hover:border-[#8bb56e] rounded-full text-xs font-mono tracking-wider uppercase text-white hover:bg-[#8bb56e] hover:text-black transition-all duration-300 cursor-pointer">
+              Login
+            </button>
+          </div>
+        </header>
+      )}
+
+      {/* Fixed Fullscreen Canvas Stage */}
+      <div className="fixed inset-0 z-0 h-full w-full overflow-hidden bg-black">
+        <canvas
+          ref={canvasRef}
+          className="h-full w-full object-cover block"
+        />
       </div>
+
+      {/* 500vh Scroll Runway for Frame Scrubbing */}
+      <div id="video-scroll-track" className="relative z-10 h-[500vh] pointer-events-none" />
     </div>
   )
 }

@@ -7,7 +7,7 @@
 }
 
 html {
-  /* Native scrolling drives GSAP ScrollTrigger — no smooth-scroll lib needed. */
+  /* Native scrolling drives the scroll trigger animation — no smooth-scroll lib needed. */
   scroll-behavior: auto;
   background-color: #ffffff;
 }
