@@ -22,6 +22,7 @@ export default function TeaVectorHomepage() {
   const [loading, setLoading] = useState(true)
   const [fadeLoader, setFadeLoader] = useState(false)
   const [isNavbar, setIsNavbar] = useState(false)
+  const [useDarkText, setUseDarkText] = useState(false)
   const lenisRef = useRef<Lenis | null>(null)
 
   // Initialize Lenis smooth scroll synced to GSAP ticker
@@ -100,6 +101,7 @@ export default function TeaVectorHomepage() {
           onUpdate: (self) => {
             const isAtEnd = self.progress > 0.95
             setIsNavbar(isAtEnd)
+            setUseDarkText(isAtEnd || self.progress > 0.45)
           },
         },
       })
@@ -202,7 +204,7 @@ export default function TeaVectorHomepage() {
         <header 
           className={`fixed top-0 left-0 right-0 z-40 px-8 py-6 transition-all duration-700 ease-in-out ${
             isNavbar 
-              ? 'bg-black/60 backdrop-blur-md border-b border-white/5 h-20' 
+              ? 'bg-white/70 backdrop-blur-md border-b border-[#1b261b]/10 h-20' 
               : 'bg-transparent h-32 pointer-events-none'
           }`}
         >
@@ -232,8 +234,10 @@ export default function TeaVectorHomepage() {
             </svg>
 
             <span 
-              className={`font-sans uppercase transition-all duration-700 ease-in-out text-white font-bold ${
-                isNavbar ? 'text-xl tracking-tight' : 'text-5xl md:text-6xl tracking-tight'
+              className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${
+                isNavbar 
+                  ? 'text-xl tracking-tight text-[#1b261b]' 
+                  : `text-5xl md:text-6xl tracking-tight ${useDarkText ? 'text-black' : 'text-white'}`
               }`}
             >
               Elegant Sip
@@ -247,7 +251,11 @@ export default function TeaVectorHomepage() {
             }`}
           >
             {/* Cart Button */}
-            <button className="text-white hover:text-[#8bb56e] transition-colors relative p-2 focus:outline-none cursor-pointer">
+            <button 
+              className={`transition-colors relative p-2 focus:outline-none cursor-pointer ${
+                isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'
+              }`}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
@@ -255,7 +263,13 @@ export default function TeaVectorHomepage() {
             </button>
 
             {/* Login CTA */}
-            <button className="px-5 py-2 border border-white/20 hover:border-[#8bb56e] rounded-full text-xs font-mono tracking-wider uppercase text-white hover:bg-[#8bb56e] hover:text-black transition-all duration-300 cursor-pointer">
+            <button 
+              className={`px-5 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                isNavbar 
+                  ? 'border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]' 
+                  : 'border-white/20 text-white hover:bg-[#8bb56e] hover:text-black hover:border-[#8bb56e]'
+              }`}
+            >
               Login
             </button>
           </div>

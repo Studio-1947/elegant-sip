@@ -134,7 +134,7 @@ export default function ScrollExpand({
     >
       {/* Sticky anchor so the frame stays centred during the pin */}
       <div
-        className={`${isFixed ? 'relative' : 'sticky top-0'} w-full h-screen flex flex-col items-center justify-center overflow-hidden bg-black`}
+        className={`${isFixed ? 'relative' : 'sticky top-0'} w-full h-screen flex flex-col items-center justify-center overflow-hidden bg-white`}
       >
         {/* ── Expanding Media Frame ── */}
         <div
