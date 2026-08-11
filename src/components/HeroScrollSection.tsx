@@ -26,22 +26,22 @@ export default function HeroScrollSection() {
 
           {/* Floating Parallax Vector Tea Leaves */}
           <div className="absolute top-[10%] left-[5%] pointer-events-none z-10 opacity-30 hidden lg:block">
-            <svg width="120" height="120" viewBox="0 0 100 100" fill="none" stroke="#8bb56e" strokeWidth="1.5">
+        {/*     <svg width="120" height="120" viewBox="0 0 100 100" fill="none" stroke="#8bb56e" strokeWidth="1.5">
               <path d="M50 10 C70 30 80 55 50 90 C20 55 30 30 50 10 Z" />
               <path d="M50 10 L50 90" strokeWidth="1" strokeDasharray="3,3" />
               <path d="M50 30 Q65 35 75 25" strokeWidth="0.8" />
               <path d="M50 45 Q35 50 25 40" strokeWidth="0.8" />
               <path d="M50 60 Q65 65 70 55" strokeWidth="0.8" />
-            </svg>
+            </svg> */}
           </div>
 
           <div className="absolute top-[40%] right-[6%] pointer-events-none z-10 opacity-25 hidden lg:block">
-            <svg width="160" height="160" viewBox="0 0 100 100" fill="none" stroke="#8bb56e" strokeWidth="1">
+            {/* <svg width="160" height="160" viewBox="0 0 100 100" fill="none" stroke="#8bb56e" strokeWidth="1">
               <path d="M50 10 C75 35 70 70 50 90 C30 70 25 35 50 10 Z" />
               <path d="M50 10 Q50 50 50 90" />
               <path d="M50 35 Q68 40 72 30" />
               <path d="M50 55 Q32 60 28 50" />
-            </svg>
+            </svg> */}
           </div>
 
           {/* Gradient transition from transparent video to solid light paper */}
@@ -67,31 +67,31 @@ export default function HeroScrollSection() {
           {/* ── Stats Card Grid ── */}
           <section className="px-6 md:px-16 lg:px-24 pb-10 max-w-6xl mx-auto">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 border-y border-[#1b261b]/10 bg-white">
+            <div className="grid grid-cols-1 md:grid-cols-3 md:grid-rows-[auto_auto_auto] md:gap-y-2 border-y border-[#1b261b]/10 bg-white">
               {/* Card 1 */}
-              <div className="p-8 border-b md:border-b-0 md:border-r border-[#1b261b]/10 text-left">
-                <span className="text-[#166534] text-5xl font-bold tracking-tight block mb-4">1,489+</span>
-                <h4 className="text-base font-bold text-[#1b261b] mb-2">Local Gardens Registered</h4>
+              <div className="p-8 border-b md:border-b-0 md:border-r border-[#1b261b]/10 text-left md:row-span-3 md:grid md:grid-rows-subgrid">
+                <span className="text-[#1b261b] text-3xl lg:text-4xl font-bold tracking-tight block mb-4 md:mb-0">Direct-from-Garden</span>
+                <h4 className="text-base font-bold text-[#1b261b] mb-2 md:mb-0">No Auction Middlemen</h4>
                 <p className="text-xs text-[#4a584a] leading-relaxed">
-                  Join thousands of verified estate partners and smallholder tea growers who trust our platform to share their harvest with enthusiasts.
+                  We source straight from small tea estates and growers, cutting out auction houses so more value reaches the people who actually grow the leaf.
                 </p>
               </div>
 
               {/* Card 2 */}
-              <div className="p-8 border-b md:border-b-0 md:border-r border-[#1b261b]/10 text-left">
-                <span className="text-[#166534] text-5xl font-bold tracking-tight block mb-4">₹1</span>
-                <h4 className="text-base font-bold text-[#1b261b] mb-2">Fair Trade Premium</h4>
+              <div className="p-8 border-b md:border-b-0 md:border-r border-[#1b261b]/10 text-left md:row-span-3 md:grid md:grid-rows-subgrid">
+                <span className="text-[#1b261b] text-3xl lg:text-4xl font-bold tracking-tight block mb-4 md:mb-0">Single-Origin</span>
+                <h4 className="text-base font-bold text-[#1b261b] mb-2 md:mb-0">Darjeeling Sourced</h4>
                 <p className="text-xs text-[#4a584a] leading-relaxed">
-                  Our direct sourcing model ensures maximum value reaches local growers while providing you with exceptional single-origin teas.
+                  Every batch comes from identified gardens in the Darjeeling hills — not blended, not anonymous. You'll know exactly where your tea is from.
                 </p>
               </div>
 
               {/* Card 3 */}
-              <div className="p-8 text-left">
-                <span className="text-[#166534] text-5xl font-bold tracking-tight block mb-4">₹23,789+</span>
-                <h4 className="text-base font-bold text-[#1b261b] mb-2">Average Monthly Earnings Per Plucker</h4>
+              <div className="p-8 text-left md:row-span-3 md:grid md:grid-rows-subgrid">
+                <span className="text-[#1b261b] text-3xl lg:text-4xl font-bold tracking-tight block mb-4 md:mb-0">Freshly Packed</span>
+                <h4 className="text-base font-bold text-[#1b261b] mb-2 md:mb-0">Harvest to Doorstep</h4>
                 <p className="text-xs text-[#4a584a] leading-relaxed">
-                  Tea pluckers earn significantly more through our direct partnership program compared to traditional auctions with high broker fees.
+                  We ship close to harvest instead of sitting in warehouses for months, so what you get is closer to how it tasted in the garden.
                 </p>
               </div>
             </div>
@@ -195,7 +195,7 @@ export default function HeroScrollSection() {
           <footer className="px-6 md:px-16 lg:px-24 py-16 border-t border-[#1b261b]/10 max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="flex items-center gap-3">
-                <svg
+               {/*  <svg
                   viewBox="0 0 100 100"
                   className="w-6 h-6 fill-none stroke-current text-[#8bb56e]"
                   strokeWidth="2.5"
@@ -204,7 +204,7 @@ export default function HeroScrollSection() {
                 >
                   <path d="M50 20 C65 35 75 55 50 80 C25 55 35 35 50 20 Z" />
                   <path d="M50 20 C50 40 50 60 50 80" strokeWidth="1.5" />
-                </svg>
+                </svg> */}
                 <span className="text-[#1b261b] text-sm font-bold uppercase tracking-tight">
                   Elegant Sip
                 </span>

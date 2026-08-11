@@ -35,7 +35,6 @@ export default function ScrollExpand({
   src,
   alt = '',
   title,
-  scrollHint,
   mediaZoom = 1,
   height,
   children,

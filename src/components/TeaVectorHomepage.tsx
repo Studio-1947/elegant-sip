@@ -216,7 +216,7 @@ export default function TeaVectorHomepage() {
             }`}
           >
             {/* Custom SVG Logo (Minimalist tea leaf line art) */}
-            <svg 
+           {/*  <svg 
               viewBox="0 0 100 100" 
               className={`transition-all duration-700 ease-in-out fill-none stroke-current text-[#8bb56e] ${
                 isNavbar ? 'w-8 h-8' : 'w-16 h-16'
@@ -232,7 +232,7 @@ export default function TeaVectorHomepage() {
               <path d="M50 60 Q62 65 65 58" strokeWidth="1" />
               <path d="M50 70 Q38 75 35 68" strokeWidth="1" />
             </svg>
-
+ */}
             <span 
               className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${
                 isNavbar 
