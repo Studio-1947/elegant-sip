@@ -286,6 +286,7 @@ export default function TeaVectorHomepage() {
           playsInline
           preload="auto"
         />
+        <div className="grain-overlay" />
       </div>
 
       {/* 500vh Scroll Runway for Video Scrubbing */}

@@ -17,3 +17,40 @@ body {
   margin: 0;
   overscroll-behavior: none;
 }
+
+/* GPU-Accelerated Dynamic Film Grain Overlay */
+.grain-overlay {
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  opacity: 0.40; /* Standard opacity for clear visibility of photocopy sand texture */
+  background-image: url("/grain.png");
+  background-repeat: repeat;
+  background-size: 180px; /* Small scale for high density speckles */
+  pointer-events: none;
+  z-index: 1; /* Overlay on top of video, below primary content layers */
+  mix-blend-mode: overlay;
+  animation: grain-animation 1s steps(10) infinite;
+  will-change: transform;
+}
+
+@keyframes grain-animation {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -25%); }
+  40% { transform: translate(-5%, 25%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 15%); }
+  80% { transform: translate(3%, 35%); }
+  90% { transform: translate(-10%, 10%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain-overlay {
+    animation: none;
+  }
+}

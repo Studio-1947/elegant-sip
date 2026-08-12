@@ -33,3 +33,4 @@ build/
 # IDE & AG Kit local storage
 .antigravity/
 .ag-kit-backups/
+.agents/
