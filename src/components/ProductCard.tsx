@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useCart } from './CartContext'
 
 export interface Product {
   id: string
@@ -8,10 +9,11 @@ export interface Product {
   imageSrc: string
 }
 
-export default function ProductCard({ name, price, description, imageSrc }: Product) {
+export default function ProductCard({ id, name, price, description, imageSrc }: Product) {
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
+  const { addToCart } = useCart()
 
   const handleDecrease = () => {
     if (quantity > 1) setQuantity(quantity - 1)
@@ -23,6 +25,7 @@ export default function ProductCard({ name, price, description, imageSrc }: Prod
 
   const handleAddToCart = () => {
     setIsAdding(true)
+    addToCart({ id, name, price, imageSrc }, quantity)
     setTimeout(() => {
       setIsAdding(false)
       setIsAdded(true)

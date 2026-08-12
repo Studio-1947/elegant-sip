@@ -4,6 +4,8 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import Lenis from 'lenis'
+import { useCart } from './CartContext'
+import CartPage from './CartPage'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 
@@ -24,6 +26,13 @@ export default function TeaVectorHomepage() {
   const [isNavbar, setIsNavbar] = useState(false)
   const [useDarkText, setUseDarkText] = useState(false)
   const lenisRef = useRef<Lenis | null>(null)
+  const [activeView, setActiveView] = useState<'home' | 'cart'>('home')
+  const { cartCount } = useCart()
+
+  const handleViewChange = (view: 'home' | 'cart') => {
+    setActiveView(view)
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
 
   // Initialize Lenis smooth scroll synced to GSAP ticker
   useEffect(() => {
@@ -203,39 +212,22 @@ export default function TeaVectorHomepage() {
       {!loading && (
         <header 
           className={`fixed top-0 left-0 right-0 z-40 px-8 py-6 transition-all duration-700 ease-in-out ${
-            isNavbar 
+            (isNavbar || activeView === 'cart')
               ? 'bg-white/70 backdrop-blur-md border-b border-[#1b261b]/10 h-20' 
               : 'bg-transparent h-32 pointer-events-none'
           }`}
         >
           {/* Brand Container (Centered when scrolling, Top-Left when finished) */}
           <div 
-            style={brandStyle} 
-            className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto ${
-              isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
+            style={(isNavbar || activeView === 'cart') ? { left: '32px', transform: 'translate(0, 0)' } : brandStyle} 
+            className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto cursor-pointer ${
+              (isNavbar || activeView === 'cart') ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
             }`}
+            onClick={() => handleViewChange('home')}
           >
-            {/* Custom SVG Logo (Minimalist tea leaf line art) */}
-           {/*  <svg 
-              viewBox="0 0 100 100" 
-              className={`transition-all duration-700 ease-in-out fill-none stroke-current text-[#8bb56e] ${
-                isNavbar ? 'w-8 h-8' : 'w-16 h-16'
-              }`}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M50 20 C65 35 75 55 50 80 C25 55 35 35 50 20 Z" />
-              <path d="M50 20 C50 40 50 60 50 80" strokeWidth="1.5" />
-              <path d="M50 40 Q60 45 68 38" strokeWidth="1" />
-              <path d="M50 50 Q40 55 32 48" strokeWidth="1" />
-              <path d="M50 60 Q62 65 65 58" strokeWidth="1" />
-              <path d="M50 70 Q38 75 35 68" strokeWidth="1" />
-            </svg>
- */}
             <span 
               className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${
-                isNavbar 
+                (isNavbar || activeView === 'cart') 
                   ? 'text-xl tracking-tight text-[#1b261b]' 
                   : `text-5xl md:text-6xl tracking-tight ${useDarkText ? 'text-black' : 'text-white'}`
               }`}
@@ -247,25 +239,34 @@ export default function TeaVectorHomepage() {
           {/* Right Action Container (Cart & User CTAs - active when navbar is active) */}
           <div 
             className={`absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-6 transition-all duration-700 ease-in-out ${
-              isNavbar ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
+              (isNavbar || activeView === 'cart') ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
             }`}
           >
             {/* Cart Button */}
             <button 
+              onClick={() => handleViewChange('cart')}
               className={`transition-colors relative p-2 focus:outline-none cursor-pointer ${
-                isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'
+                (isNavbar || activeView === 'cart') 
+                  ? (activeView === 'cart' ? 'text-[#8bb56e]' : 'text-[#1b261b] hover:text-[#8bb56e]') 
+                  : 'text-white hover:text-[#8bb56e]'
               }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              <span className="absolute top-0 right-0 w-2 h-2 bg-[#8bb56e] rounded-full animate-ping" />
+              {cartCount > 0 ? (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#8bb56e] text-white text-[9px] font-mono font-bold flex items-center justify-center rounded-full px-1 border border-white">
+                  {cartCount}
+                </span>
+              ) : (
+                <span className="absolute top-0 right-0 w-2 h-2 bg-[#8bb56e] rounded-full animate-ping" />
+              )}
             </button>
 
             {/* Login CTA */}
             <button 
               className={`px-5 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
-                isNavbar 
+                (isNavbar || activeView === 'cart') 
                   ? 'border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]' 
                   : 'border-white/20 text-white hover:bg-[#8bb56e] hover:text-black hover:border-[#8bb56e]'
               }`}
@@ -277,26 +278,34 @@ export default function TeaVectorHomepage() {
       )}
 
       {/* Fixed Fullscreen Video Stage */}
-      <div className="fixed inset-0 z-0 h-full w-full overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          src="/video.mp4"
-          className="h-full w-full object-cover block"
-          muted
-          playsInline
-          preload="auto"
-        />
-        <div className="grain-overlay" />
-      </div>
+      {activeView === 'home' && (
+        <div className="fixed inset-0 z-0 h-full w-full overflow-hidden bg-black">
+          <video
+            ref={videoRef}
+            src="/video.mp4"
+            className="h-full w-full object-cover block"
+            muted
+            playsInline
+            preload="auto"
+          />
+          <div className="grain-overlay" />
+        </div>
+      )}
 
       {/* 500vh Scroll Runway for Video Scrubbing */}
-      <div id="video-scroll-track" className="relative z-10 h-[500vh] pointer-events-none" />
+      {activeView === 'home' && (
+        <div id="video-scroll-track" className="relative z-10 h-[500vh] pointer-events-none" />
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════
-          CONTENT PAGE — ScrollExpand cinematic reveal
+          CONTENT PAGE — Switchable view stage
           ═══════════════════════════════════════════════════════════════ */}
       <div className="relative z-20">
-        <HeroScrollSection />
+        {activeView === 'cart' ? (
+          <CartPage onBackToHome={() => handleViewChange('home')} />
+        ) : (
+          <HeroScrollSection />
+        )}
       </div>
     </div>
   )
