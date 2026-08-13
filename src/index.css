@@ -5,6 +5,7 @@
   /* Google Sans Flex (variable) is loaded in index.html; Tailwind's default
      body font derives from --font-sans, so every utility inherits it. */
   --font-sans: "Google Sans Flex", system-ui, sans-serif;
+  --font-mono: "Inter", sans-serif;
 }
 
 html {
@@ -53,4 +54,13 @@ body {
   .grain-overlay {
     animation: none;
   }
+}
+
+/* Hide scrollbars but keep scrolling functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }

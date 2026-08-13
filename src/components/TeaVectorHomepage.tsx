@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react'
 import Lenis from 'lenis'
 import { useCart } from './CartContext'
 import CartPage from './CartPage'
+import TeaDiscoveryQuizModal from './TeaDiscoveryQuizModal'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 
@@ -28,6 +29,7 @@ export default function TeaVectorHomepage() {
   const lenisRef = useRef<Lenis | null>(null)
   const [activeView, setActiveView] = useState<'home' | 'cart'>('home')
   const { cartCount } = useCart()
+  const [isQuizOpen, setIsQuizOpen] = useState(false)
 
   const handleViewChange = (view: 'home' | 'cart') => {
     setActiveView(view)
@@ -307,6 +309,34 @@ export default function TeaVectorHomepage() {
           <HeroScrollSection />
         )}
       </div>
+
+      {/* Floating Tea Quiz Card (only active when scrolled down to content) */}
+      {activeView === 'home' && isNavbar && (
+        <div className="fixed bottom-8 right-8 z-40 animate-fade-in">
+          <div className="bg-white/90 backdrop-blur-md border border-[#1b261b]/10 text-[#1b261b] rounded-2xl p-4 shadow-[0_8px_30px_rgba(27,38,27,0.08)] max-w-[240px] flex flex-col gap-3 transition-all duration-300 hover:border-[#1b261b]/20 hover:-translate-y-1">
+            <div className="flex items-start gap-3">
+              <div className="bg-[#8bb56e]/10 p-2 rounded-lg text-[#8bb56e] flex-shrink-0 animate-pulse">
+                <svg className="w-5.5 h-5.5 text-[#8bb56e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-xs font-mono font-bold tracking-wide uppercase text-[#8bb56e]">Taste Matcher</h4>
+                <p className="text-[10px] text-[#4a584a] mt-0.5 leading-normal">Find the ideal tea flavor profile for your palate.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsQuizOpen(true)}
+              className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-[10px] font-mono tracking-wider font-bold py-2 rounded-lg transition-colors cursor-pointer text-center uppercase"
+            >
+              Start Discovery
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tea Discovery Quiz Modal */}
+      <TeaDiscoveryQuizModal isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} />
     </div>
   )
 }
