@@ -1,9 +1,13 @@
 import { TESTIMONIALS } from '../data/products'
+import { useScrollReveal } from '../lib/useScrollReveal'
 
 export default function TestimonialsSection() {
+  const headerRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *' })
+  const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.15 })
+
   return (
     <section className="px-6 md:px-12 lg:px-16 py-28 max-w-[1400px] mx-auto bg-[#f9faf7]">
-      <div className="text-center max-w-2xl mx-auto mb-16">
+      <div ref={headerRef} className="text-center max-w-2xl mx-auto mb-16">
         <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Kind Words</span>
         <h2 className="text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-6">
           Loved by Tea Drinkers
@@ -13,7 +17,7 @@ export default function TestimonialsSection() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
         {TESTIMONIALS.map((t) => (
           <figure
             key={t.name}

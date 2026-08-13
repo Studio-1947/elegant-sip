@@ -1,6 +1,6 @@
 /* ────────────────────────────────────────────────────────────────────────────
  * Elegant Sip — single source of truth for all shop + content data.
- * Products, the bundle, reviews, testimonials, FAQs, and journal articles
+ * Products, reviews, testimonials, FAQs, and journal articles
  * all live here so the shop, quiz, cart, and pages can never drift apart.
  * ──────────────────────────────────────────────────────────────────────────── */
 
@@ -49,8 +49,6 @@ export interface Product {
   origin?: TeaOrigin
   flavorProfile?: FlavorProfile
   brewingGuide?: BrewingGuide
-  isBundle?: boolean
-  contains?: string[]
 }
 
 /* ── Products ─────────────────────────────────────────────────────────────── */
@@ -134,26 +132,10 @@ export const PRODUCTS: Product[] = [
       notes: "Excellent over ice — brew double strength, then pour over ice for a crisp iced tea with no bitterness.",
     },
   },
-  {
-    id: "elegant-trio",
-    name: "The Elegant Trio",
-    price: 66,
-    compareAtPrice: 78,
-    description:
-      "All three signature blends — Ember Charm, Morning Dew, and Summer Breeze — in one curated collection. The complete journey from dark to light.",
-    longDescription:
-      "The complete Elegant Sip journey in one box. Ember Charm for slow evenings, Morning Dew for bright mornings, and Summer Breeze for golden afternoons — each in its full 50g pack, each with its brewing card. The perfect introduction to single-origin tea, or a beautifully considered gift.",
-    imageSrc: "/tea1_1.png",
-    category: "Collection",
-    isBundle: true,
-    contains: ["ember-charm", "morning-dew", "summer-breeze"],
-  },
 ]
 
 export const getProduct = (id: string | undefined): Product | undefined =>
   PRODUCTS.find((p) => p.id === id)
-
-export const BUNDLE_SAVINGS = 12
 
 /* ── Reviews ──────────────────────────────────────────────────────────────── */
 
@@ -249,7 +231,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     quote:
-      "Ordered the Trio as a gift, ended up keeping it for myself. The brewing cards made every steep feel intentional. This is what luxury tea should be.",
+      "Ordered a few tins as a gift, ended up keeping them for myself. The brewing cards made every steep feel intentional. This is what luxury tea should be.",
     name: "David O.",
     location: "Austin, TX",
     rating: 5,

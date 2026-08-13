@@ -25,7 +25,6 @@ export default function Footer() {
             <h3 className="text-[10px] font-mono tracking-[0.3em] uppercase text-[#8bb56e] mb-5">Shop</h3>
             <ul className="space-y-3 text-xs text-[#4a584a]">
               <li><Link to="/shop" className="hover:text-[#8bb56e] transition-colors">The Collection</Link></li>
-              <li><Link to="/product/elegant-trio" className="hover:text-[#8bb56e] transition-colors">The Elegant Trio</Link></li>
               <li><Link to="/wishlist" className="hover:text-[#8bb56e] transition-colors">Wishlist</Link></li>
               <li>
                 <button onClick={openQuiz} className="hover:text-[#8bb56e] transition-colors cursor-pointer">

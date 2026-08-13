@@ -1,6 +1,7 @@
 import ProductCard from './ProductCard'
 import { PRODUCTS } from '../data/products'
 import { useUi } from './UiContext'
+import { useScrollReveal } from '../lib/useScrollReveal'
 
 interface ProductsSectionProps {
   showHeading?: boolean
@@ -8,9 +9,11 @@ interface ProductsSectionProps {
 
 export default function ProductsSection({ showHeading = true }: ProductsSectionProps) {
   const { openQuiz } = useUi()
+  const sectionRef = useScrollReveal<HTMLElement>({ target: ':scope > div' })
+  const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.15 })
 
   return (
-    <section className="px-6 md:px-12 lg:px-16 py-32 max-w-[1400px] mx-auto bg-[#f9faf7]">
+    <section ref={sectionRef} className="px-6 md:px-12 lg:px-16 py-32 max-w-[1400px] mx-auto bg-[#f9faf7]">
       {showHeading && (
         <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
           <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Signature Blends</span>
@@ -42,7 +45,7 @@ export default function ProductsSection({ showHeading = true }: ProductsSectionP
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 max-w-6xl mx-auto">
+      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 max-w-6xl mx-auto">
         {PRODUCTS.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}

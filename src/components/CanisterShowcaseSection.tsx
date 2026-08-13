@@ -1,50 +1,21 @@
-import { useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useGSAP } from '@gsap/react'
-
-gsap.registerPlugin(useGSAP, ScrollTrigger)
+import { useScrollReveal } from '../lib/useScrollReveal'
 
 export default function CanisterShowcaseSection() {
-  const showcaseRef = useRef<HTMLDivElement>(null)
-  const textOverlayRef = useRef<HTMLDivElement>(null)
-
-  useGSAP(() => {
-    if (!textOverlayRef.current || !showcaseRef.current) return
-
-    gsap.fromTo(
-      textOverlayRef.current,
-      {
-        opacity: 0,
-        y: 40,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: showcaseRef.current,
-          start: 'top 75%',
-          toggleActions: 'play none none reverse',
-        },
-      }
-    )
-  }, { scope: showcaseRef })
+  const textOverlayRef = useScrollReveal<HTMLDivElement>()
 
   return (
-    <div className="w-full overflow-hidden relative" ref={showcaseRef}>
+    <div className="w-full overflow-hidden relative">
       <img
         src="/tea1_1.png"
         alt="Ember Charm Tea Canister"
         loading="lazy"
         className="w-full h-auto block object-cover"
       />
-      
+
       {/* Text Overlay on the Left Side */}
-      <div 
+      <div
         ref={textOverlayRef}
-        className="absolute left-[6%] md:left-[10%] top-[10%] sm:top-[15%] md:top-[20%] max-w-[45%] sm:max-w-[40%] text-left z-10 select-none opacity-0"
+        className="absolute left-[6%] md:left-[10%] top-[10%] sm:top-[15%] md:top-[20%] max-w-[45%] sm:max-w-[40%] text-left z-10 select-none"
       >
         <span className="text-[#8bb56e] text-[10px] sm:text-xs md:text-sm font-mono tracking-[0.3em] uppercase block mb-1 sm:mb-2 md:mb-4">
           Single Origin

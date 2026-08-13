@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCart } from './CartContext'
-import { getProduct, getRating, type Product } from '../data/products'
+import { getRating, type Product } from '../data/products'
 import { Link } from '../lib/router'
 import { track } from '../lib/analytics'
 
@@ -11,7 +11,6 @@ export default function ProductCard({ product }: { product: Product }) {
   const { addToCart, toggleWishlist, isWishlisted } = useCart()
   const rating = getRating(product.id)
   const wishlisted = isWishlisted(product.id)
-  const contained = product.contains?.map((id) => getProduct(id)).filter(Boolean) ?? []
   const saveAmount = product.compareAtPrice ? product.compareAtPrice - product.price : 0
 
   const handleDecrease = () => {
@@ -84,7 +83,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </svg>
         </button>
 
-        {/* Save badge for bundle */}
+        {/* Save badge for sale pricing */}
         {saveAmount > 0 && (
           <span className="absolute top-4 left-4 z-20 bg-[#8bb56e] text-white text-[9px] font-mono tracking-widest uppercase font-bold px-2.5 py-1 rounded-full">
             Save ${saveAmount}
@@ -92,27 +91,9 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
 
         {/* Hover Details Panel (desktop) */}
-        {(product.flavorProfile || product.origin || product.isBundle) && (
+        {(product.flavorProfile || product.origin) && (
           <div className="absolute inset-0 bg-black/95 backdrop-blur-sm text-white p-6 flex flex-col justify-between opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-500 ease-out z-10">
-            {product.isBundle && contained.length > 0 ? (
-              <div className="space-y-2">
-                <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-white/10 pb-1">Includes</span>
-                <div className="space-y-2 text-xs">
-                  {contained.map((item) => (
-                    <div key={item!.id} className="flex justify-between items-center">
-                      <span className="font-medium">{item!.name}</span>
-                      <span className="text-white/60">${item!.price}.00</span>
-                    </div>
-                  ))}
-                  <div className="border-t border-white/10 pt-2 flex justify-between items-center text-[#8bb56e]">
-                    <span>Full value</span>
-                    <span>${product.compareAtPrice}.00</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                {product.origin && (
+            <>                {product.origin && (
                   <div className="space-y-2">
                     <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-white/10 pb-1">Tea Origin</span>
                     <div className="grid grid-cols-2 gap-y-1 text-xs">
@@ -158,7 +139,6 @@ export default function ProductCard({ product }: { product: Product }) {
                   </div>
                 )}
               </>
-            )}
 
             <div className="text-[10px] font-mono text-center text-[#8bb56e]">
               View details & brewing guide on mobile

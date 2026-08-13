@@ -1,13 +1,17 @@
+import { useScrollReveal } from '../lib/useScrollReveal'
+
 export default function ThreePillarsSection() {
+  const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > div', stagger: 0.15 })
+
   return (
     <section className="px-6 md:px-12 lg:px-16 pb-32 max-w-[1360px] mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
-        
+      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+
         {/* Origin Card */}
         <div className="group relative p-8 md:p-10 rounded-2xl border border-white/10 bg-black min-h-[420px] md:min-h-[500px] lg:min-h-[540px] flex flex-col justify-end overflow-hidden transition-all duration-500">
-          <img 
-            src="/origin.webp" 
-            alt="Origin" 
+          <img
+            src="/origin.webp"
+            alt="Origin"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />
@@ -23,9 +27,9 @@ export default function ThreePillarsSection() {
 
         {/* Craft Card */}
         <div className="group relative p-8 md:p-10 rounded-2xl border border-white/10 bg-black min-h-[420px] md:min-h-[500px] lg:min-h-[540px] flex flex-col justify-end overflow-hidden transition-all duration-500">
-          <img 
-            src="/craft.webp" 
-            alt="Craft" 
+          <img
+            src="/craft.webp"
+            alt="Craft"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />
@@ -41,9 +45,9 @@ export default function ThreePillarsSection() {
 
         {/* Experience Card */}
         <div className="group relative p-8 md:p-10 rounded-2xl border border-white/10 bg-black min-h-[420px] md:min-h-[500px] lg:min-h-[540px] flex flex-col justify-end overflow-hidden transition-all duration-500">
-          <img 
-            src="/experience.webp" 
-            alt="Experience" 
+          <img
+            src="/experience.webp"
+            alt="Experience"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getProduct, getProduct as findProduct, getReviews, getRating, PRODUCTS } from '../data/products'
+import { getProduct, getReviews, getRating, PRODUCTS } from '../data/products'
 import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
 import { useCart } from './CartContext'
 import { track } from '../lib/analytics'
@@ -95,7 +95,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
           {/* Info */}
           <div>
             <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-3">
-              {product.isBundle ? 'Curated Collection' : product.category}
+              {product.category}
             </span>
             <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight leading-[1.05] mb-4">{product.name}</h1>
 
@@ -122,23 +122,6 @@ export default function ProductDetailPage({ id }: { id?: string }) {
 
             <p className="text-sm text-[#4a584a] leading-relaxed mb-6">{product.description}</p>
             <p className="text-xs text-[#4a584a]/80 leading-relaxed mb-8">{product.longDescription}</p>
-
-            {product.isBundle && product.contains && (
-              <div className="bg-white border border-[#1b261b]/10 rounded-xl p-4 mb-8">
-                <span className="text-[10px] font-mono tracking-widest uppercase text-[#8bb56e] block mb-2">This collection includes</span>
-                <div className="space-y-1.5">
-                  {product.contains.map((cid) => {
-                    const item = findProduct(cid)
-                    return item ? (
-                      <Link key={cid} to={`/product/${item.id}`} className="flex justify-between items-center text-xs group">
-                        <span className="group-hover:text-[#8bb56e] transition-colors">{item.name}</span>
-                        <span className="text-[#4a584a]">${item.price}.00</span>
-                      </Link>
-                    ) : null
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Qty + CTA */}
             <div className="flex flex-col sm:flex-row gap-4 mb-10">

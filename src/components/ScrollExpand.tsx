@@ -1,6 +1,7 @@
 import { useEffect, useRef, ReactNode } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { markContentRevealed } from '../lib/contentReveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -68,6 +69,12 @@ export default function ScrollExpand({
           scrub: 1.2,
           pin: !isFixed,
           anticipatePin: 1,
+          // Let child section reveals know the content is actually on screen.
+          onUpdate: () => {
+            if (childrenEl && parseFloat(getComputedStyle(childrenEl).opacity) >= 0.5) {
+              markContentRevealed()
+            }
+          },
         },
       })
 

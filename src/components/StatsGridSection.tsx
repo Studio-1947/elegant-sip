@@ -1,7 +1,11 @@
+import { useScrollReveal } from '../lib/useScrollReveal'
+
 export default function StatsGridSection() {
+  const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > div' })
+
   return (
     <section className="px-6 md:px-16 lg:px-24 pb-10 max-w-6xl mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-3 md:grid-rows-[auto_auto_auto] md:gap-y-2 border-y border-[#1b261b]/10 bg-white">
+      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-3 md:grid-rows-[auto_auto_auto] md:gap-y-2 border-y border-[#1b261b]/10 bg-white">
         {/* Card 1 */}
         <div className="p-8 border-b md:border-b-0 md:border-r border-[#1b261b]/10 text-left md:row-span-3 md:grid md:grid-rows-subgrid">
           <span className="text-[#1b261b] text-3xl lg:text-4xl font-bold tracking-tight block mb-4 md:mb-0">Direct-from-Garden</span>

@@ -1,6 +1,10 @@
+import { useScrollReveal } from '../lib/useScrollReveal'
+
 export default function HeroIntroSection() {
+  const ref = useScrollReveal<HTMLElement>({ target: ':scope > *' })
+
   return (
-    <section className="px-6 md:px-16 lg:px-24 pt-16 pb-24 max-w-6xl mx-auto text-center">
+    <section ref={ref} className="px-6 md:px-16 lg:px-24 pt-16 pb-24 max-w-6xl mx-auto text-center">
       <p className="text-[#8bb56e] text-xs font-mono tracking-[0.35em] uppercase mb-6">
         Est. 2024 · Single Origin · Hand-Crafted
       </p>

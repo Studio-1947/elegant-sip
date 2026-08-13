@@ -1,4 +1,7 @@
+import { useScrollReveal } from '../lib/useScrollReveal'
+
 export default function StatsBarSection() {
+  const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > div' })
   const stats = [
     { value: '12+', label: 'Origin Regions' },
     { value: '47', label: 'Single-Origin Blends' },
@@ -8,7 +11,7 @@ export default function StatsBarSection() {
 
   return (
     <section className="px-6 md:px-16 lg:px-24 py-20 max-w-5xl mx-auto">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div ref={gridRef} className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
         {stats.map((stat) => (
           <div key={stat.label}>
             <p className="text-[#8bb56e] text-3xl md:text-4xl font-bold tracking-tight">{stat.value}</p>
