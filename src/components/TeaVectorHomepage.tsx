@@ -1,14 +1,33 @@
-import { useEffect, useRef, useState } from 'react'
-import HeroScrollSection from './HeroScrollSection'
+import { useEffect, useState, type ReactNode } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useGSAP } from '@gsap/react'
 import Lenis from 'lenis'
-import { useCart } from './CartContext'
+import HomeExperience from './HomeExperience'
 import CartPage from './CartPage'
-import TeaDiscoveryQuizModal from './TeaDiscoveryQuizModal'
+import CheckoutPage from './CheckoutPage'
+import ShopPage from './ShopPage'
+import WishlistPage from './WishlistPage'
+import AboutPage from './AboutPage'
+import JournalPage, { JournalArticlePage } from './JournalPage'
+import FaqPage from './FaqPage'
+import ContactPage from './ContactPage'
+import ProductDetailPage from './ProductDetailPage'
+import Footer from './Footer'
+import { useCart } from './CartContext'
+import { useAuth } from './AuthContext'
+import { useUi } from './UiContext'
+import { useHashRoute, parseRoute, Link } from '../lib/router'
+import { setLenis } from '../lib/scroll'
 
-gsap.registerPlugin(useGSAP, ScrollTrigger)
+gsap.registerPlugin(ScrollTrigger)
+
+const NAV_LINKS = [
+  { to: '/shop', label: 'Shop' },
+  { to: '/journal', label: 'Journal' },
+  { to: '/about', label: 'About' },
+  { to: '/faq', label: 'FAQ' },
+  { to: '/contact', label: 'Contact' },
+]
 
 const getLoadingMessage = (percent: number) => {
   if (percent < 20) return "Gathering the harvest..."
@@ -19,37 +38,54 @@ const getLoadingMessage = (percent: number) => {
 }
 
 export default function TeaVectorHomepage() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const route = useHashRoute()
+  const { name: routeName, id: routeId } = parseRoute(route)
+  const isHome = routeName === 'home'
+  const { cartCount } = useCart()
+  const { user, logout } = useAuth()
+  const { openLogin } = useUi()
+
   const [loadingPercentage, setLoadingPercentage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [fadeLoader, setFadeLoader] = useState(false)
-  const [isNavbar, setIsNavbar] = useState(false)
-  const [useDarkText, setUseDarkText] = useState(false)
-  const lenisRef = useRef<Lenis | null>(null)
-  const [activeView, setActiveView] = useState<'home' | 'cart'>('home')
-  const { cartCount } = useCart()
-  const [isQuizOpen, setIsQuizOpen] = useState(false)
+  const [scrubProgress, setScrubProgress] = useState(0)
 
-  const handleViewChange = (view: 'home' | 'cart') => {
-    setActiveView(view)
-    window.scrollTo({ top: 0, behavior: 'instant' })
-  }
-
-  // Initialize Lenis smooth scroll synced to GSAP ticker
+  // Loader: time-capped with a hard fallback so users are never stuck if the video fails
   useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced) {
+      setLoading(false)
+      return
+    }
+    let percent = 0
+    const interval = window.setInterval(() => {
+      percent = percent + (92 - percent) * 0.15
+      setLoadingPercentage(Math.round(percent))
+    }, 120)
+    const timer = window.setTimeout(() => {
+      window.clearInterval(interval)
+      setLoadingPercentage(100)
+      setFadeLoader(true)
+      window.setTimeout(() => setLoading(false), 900)
+    }, 3200)
+    return () => {
+      window.clearInterval(interval)
+      window.clearTimeout(timer)
+    }
+  }, [])
+
+  // Initialize Lenis smooth scroll synced to GSAP ticker (skipped for reduced motion)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
     const lenis = new Lenis({
       lerp: 0.08,
       smoothWheel: true,
       syncTouch: true,
     })
+    setLenis(lenis)
 
-    lenisRef.current = lenis
-
-    // Sync Lenis scroll position with ScrollTrigger on every frame
     lenis.on('scroll', ScrollTrigger.update)
-
-    // Drive Lenis from GSAP's ticker for perfect frame sync
     gsap.ticker.add((time) => {
       lenis.raf(time * 1000)
     })
@@ -57,130 +93,74 @@ export default function TeaVectorHomepage() {
 
     return () => {
       lenis.destroy()
-      lenisRef.current = null
+      setLenis(null)
     }
   }, [])
 
-  // Track video loading progress and trigger loader fade-out
+  // Reset scrub progress on any route change so the header returns to its
+  // centered/transparent state when landing back on the home experience.
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
+    setScrubProgress(0)
+  }, [route])
 
-    const updateProgress = () => {
-      if (video.buffered.length > 0 && video.duration > 0) {
-        const bufferedEnd = video.buffered.end(video.buffered.length - 1)
-        const percent = Math.round((bufferedEnd / video.duration) * 100)
-        setLoadingPercentage(percent)
-      }
-    }
+  // Header chrome derived from scrub progress or non-home routes
+  const isNavbar = !isHome || scrubProgress > 0.95
+  const useDarkText = isNavbar || scrubProgress > 0.45
 
-    const onCanPlayThrough = () => {
-      setLoadingPercentage(100)
-      setFadeLoader(true)
-      const timer = setTimeout(() => {
-        setLoading(false)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
+  const handleProgress = (progress: number) => {
+    setScrubProgress(progress)
+  }
 
-    video.addEventListener('progress', updateProgress)
-    video.addEventListener('canplaythrough', onCanPlayThrough)
+  const brandStyle = isNavbar
+    ? { left: '32px', transform: 'translate(0, 0)' }
+    : { left: '50%', transform: 'translate(-50%, 10vh)' }
 
-    // Fallback: if already fully buffered before listeners attached
-    if (video.readyState >= 4) {
-      onCanPlayThrough()
-    }
-
-    return () => {
-      video.removeEventListener('progress', updateProgress)
-      video.removeEventListener('canplaythrough', onCanPlayThrough)
-    }
-  }, [])
-
-  // Scroll-driven video scrubbing via GSAP ScrollTrigger
-  useGSAP(
-    () => {
-      const video = videoRef.current
-      if (!video) return
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: '#video-scroll-track',
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: true,
-          onUpdate: (self) => {
-            const isAtEnd = self.progress > 0.95
-            setIsNavbar(isAtEnd)
-            setUseDarkText(isAtEnd || self.progress > 0.45)
-          },
-        },
-      })
-
-      // Scrub video currentTime from 0 → duration based on scroll progress
-      const addScrubAnimation = () => {
-        if (video.duration && video.duration > 0) {
-          tl.fromTo(
-            video,
-            { currentTime: 0 },
-            { currentTime: video.duration, ease: 'none' },
-            0,
-          )
-        }
-      }
-
-      // Wait for metadata so video.duration is available
-      video.onloadedmetadata = addScrubAnimation
-
-      // Fallback: metadata may already be loaded
-      if (video.readyState >= 1) {
-        addScrubAnimation()
-      }
-    },
-    { scope: containerRef },
-  )
-
-  // Video parallax: fade and scale the background as ScrollExpand section takes over
-  useGSAP(
-    () => {
-      if (loading) return
-
-      gsap.fromTo(
-        videoRef.current,
-        { y: 0, scale: 1, opacity: 1 },
-        {
-          y: '-15vh',
-          scale: 0.92,
-          opacity: 0.3,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '#video-scroll-track',
-            start: 'bottom bottom',
-            end: 'bottom top',
-            scrub: true,
-          },
-        },
-      )
-    },
-    { scope: containerRef, dependencies: [loading] },
-  )
-
-  // Center when scrolling, top-left when animation ends
-  const brandStyle = isNavbar 
-    ? {
-        left: '32px',
-        transform: 'translate(0, 0)',
-      }
-    : {
-        left: '50%',
-        transform: 'translate(-50%, 10vh)',
-      }
+  let page: ReactNode
+  switch (routeName) {
+    case 'shop':
+      page = <ShopPage />
+      break
+    case 'product':
+      page = <ProductDetailPage id={routeId} />
+      break
+    case 'cart':
+      page = <CartPage />
+      break
+    case 'checkout':
+      page = <CheckoutPage />
+      break
+    case 'wishlist':
+      page = <WishlistPage />
+      break
+    case 'about':
+      page = <AboutPage />
+      break
+    case 'journal':
+      page = routeId ? <JournalArticlePage id={routeId} /> : <JournalPage />
+      break
+    case 'faq':
+      page = <FaqPage />
+      break
+    case 'contact':
+      page = <ContactPage />
+      break
+    default:
+      page = <HomeExperience ready={!loading} onProgress={handleProgress} />
+  }
 
   return (
-    <div ref={containerRef} className="relative bg-black min-h-screen">
+    <div className="relative bg-black min-h-screen">
+      {/* Accessibility skip link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-white focus:text-[#1b261b] focus:px-5 focus:py-3 focus:rounded-lg focus:text-xs focus:font-bold focus:shadow-lg"
+      >
+        Skip to content
+      </a>
+
       {/* Premium Full-Screen Loading Overlay */}
       {loading && (
-        <div 
+        <div
           className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#060b08] transition-opacity duration-1000 ease-in-out ${
             fadeLoader ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
@@ -193,7 +173,7 @@ export default function TeaVectorHomepage() {
               The Journey of Tea
             </p>
             <div className="w-64 h-[1px] bg-white/10 mx-auto relative overflow-hidden">
-              <div 
+              <div
                 className="absolute top-0 left-0 h-full bg-[#8bb56e] transition-all duration-300 ease-out"
                 style={{ width: `${loadingPercentage}%` }}
               />
@@ -212,44 +192,84 @@ export default function TeaVectorHomepage() {
 
       {/* Fixed Header & Navigation Bar */}
       {!loading && (
-        <header 
+        <header
           className={`fixed top-0 left-0 right-0 z-40 px-8 py-6 transition-all duration-700 ease-in-out ${
-            (isNavbar || activeView === 'cart')
-              ? 'bg-white/70 backdrop-blur-md border-b border-[#1b261b]/10 h-20' 
+            isNavbar
+              ? 'bg-white/70 backdrop-blur-md border-b border-[#1b261b]/10 h-20'
               : 'bg-transparent h-32 pointer-events-none'
           }`}
         >
-          {/* Brand Container (Centered when scrolling, Top-Left when finished) */}
-          <div 
-            style={(isNavbar || activeView === 'cart') ? { left: '32px', transform: 'translate(0, 0)' } : brandStyle} 
+          {/* Brand Container */}
+          <div
+            style={isNavbar ? { left: '32px', transform: 'translate(0, 0)' } : brandStyle}
             className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto cursor-pointer ${
-              (isNavbar || activeView === 'cart') ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
+              isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
             }`}
-            onClick={() => handleViewChange('home')}
           >
-            <span 
-              className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${
-                (isNavbar || activeView === 'cart') 
-                  ? 'text-xl tracking-tight text-[#1b261b]' 
-                  : `text-5xl md:text-6xl tracking-tight ${useDarkText ? 'text-black' : 'text-white'}`
-              }`}
-            >
-              Elegant Sip
-            </span>
+            <Link to="/" aria-label="Elegant Sip home">
+              <span
+                className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${
+                  isNavbar
+                    ? 'text-xl tracking-tight text-[#1b261b]'
+                    : `text-5xl md:text-6xl tracking-tight ${useDarkText ? 'text-black' : 'text-white'}`
+                }`}
+              >
+                Elegant Sip
+              </span>
+            </Link>
           </div>
 
-          {/* Right Action Container (Cart & User CTAs - active when navbar is active) */}
-          <div 
-            className={`absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-6 transition-all duration-700 ease-in-out ${
-              (isNavbar || activeView === 'cart') ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
+          {/* Nav links (active when navbar is active) */}
+          <nav
+            aria-label="Primary"
+            className={`absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-8 transition-all duration-700 ease-in-out ${
+              isNavbar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
           >
-            {/* Cart Button */}
-            <button 
-              onClick={() => handleViewChange('cart')}
-              className={`transition-colors relative p-2 focus:outline-none cursor-pointer ${
-                (isNavbar || activeView === 'cart') 
-                  ? (activeView === 'cart' ? 'text-[#8bb56e]' : 'text-[#1b261b] hover:text-[#8bb56e]') 
+            {NAV_LINKS.map((link) => {
+              const active = routeName === link.to.slice(1)
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`text-[11px] font-mono tracking-widest uppercase transition-colors ${
+                    active
+                      ? 'text-[#8bb56e] font-bold'
+                      : 'text-[#1b261b] hover:text-[#8bb56e]'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* Right Action Container */}
+          <div
+            className={`absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-5 transition-all duration-700 ease-in-out ${
+              isNavbar ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
+            }`}
+          >
+            {/* Wishlist */}
+            <Link
+              to="/wishlist"
+              aria-label="Wishlist"
+              className={`transition-colors relative p-2 ${isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'}`}
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              </svg>
+            </Link>
+
+            {/* Cart */}
+            <Link
+              to="/cart"
+              aria-label="Cart"
+              className={`transition-colors relative p-2 ${
+                routeName === 'cart'
+                  ? 'text-[#8bb56e]'
+                  : isNavbar
+                  ? 'text-[#1b261b] hover:text-[#8bb56e]'
                   : 'text-white hover:text-[#8bb56e]'
               }`}
             >
@@ -263,80 +283,48 @@ export default function TeaVectorHomepage() {
               ) : (
                 <span className="absolute top-0 right-0 w-2 h-2 bg-[#8bb56e] rounded-full animate-ping" />
               )}
-            </button>
+            </Link>
 
-            {/* Login CTA */}
-            <button 
-              className={`px-5 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
-                (isNavbar || activeView === 'cart') 
-                  ? 'border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]' 
-                  : 'border-white/20 text-white hover:bg-[#8bb56e] hover:text-black hover:border-[#8bb56e]'
-              }`}
-            >
-              Login
-            </button>
+            {/* Account */}
+            {user ? (
+              <div className="hidden md:flex items-center gap-3">
+                <span className="text-xs font-mono uppercase tracking-wider text-[#4a584a] max-w-[120px] truncate">
+                  {user.name.split(' ')[0]}
+                </span>
+                <button
+                  onClick={logout}
+                  className="px-4 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={openLogin}
+                className={`px-5 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                  isNavbar
+                    ? 'border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]'
+                    : 'border-white/20 text-white hover:bg-[#8bb56e] hover:text-black hover:border-[#8bb56e]'
+                }`}
+              >
+                Login
+              </button>
+            )}
           </div>
         </header>
       )}
 
-      {/* Fixed Fullscreen Video Stage */}
-      {activeView === 'home' && (
-        <div className="fixed inset-0 z-0 h-full w-full overflow-hidden bg-black">
-          <video
-            ref={videoRef}
-            src="/video.mp4"
-            className="h-full w-full object-cover block"
-            muted
-            playsInline
-            preload="auto"
-          />
-          <div className="grain-overlay" />
+      {/* Main content */}
+      <main id="main-content" className="relative z-20">
+        {page}
+      </main>
+
+      {/* App-level footer for non-home pages */}
+      {!isHome && (
+        <div className="relative z-10">
+          <Footer />
         </div>
       )}
-
-      {/* 500vh Scroll Runway for Video Scrubbing */}
-      {activeView === 'home' && (
-        <div id="video-scroll-track" className="relative z-10 h-[500vh] pointer-events-none" />
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════
-          CONTENT PAGE — Switchable view stage
-          ═══════════════════════════════════════════════════════════════ */}
-      <div className="relative z-20">
-        {activeView === 'cart' ? (
-          <CartPage onBackToHome={() => handleViewChange('home')} />
-        ) : (
-          <HeroScrollSection />
-        )}
-      </div>
-
-      {/* Floating Tea Quiz Card (only active when scrolled down to content) */}
-      {activeView === 'home' && isNavbar && (
-        <div className="fixed bottom-8 right-8 z-40 animate-fade-in">
-          <div className="bg-white/90 backdrop-blur-md border border-[#1b261b]/10 text-[#1b261b] rounded-2xl p-4 shadow-[0_8px_30px_rgba(27,38,27,0.08)] max-w-[240px] flex flex-col gap-3 transition-all duration-300 hover:border-[#1b261b]/20 hover:-translate-y-1">
-            <div className="flex items-start gap-3">
-              <div className="bg-[#8bb56e]/10 p-2 rounded-lg text-[#8bb56e] flex-shrink-0 animate-pulse">
-                <svg className="w-5.5 h-5.5 text-[#8bb56e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="text-xs font-mono font-bold tracking-wide uppercase text-[#8bb56e]">Taste Matcher</h4>
-                <p className="text-[10px] text-[#4a584a] mt-0.5 leading-normal">Find the ideal tea flavor profile for your palate.</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsQuizOpen(true)}
-              className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-[10px] font-mono tracking-wider font-bold py-2 rounded-lg transition-colors cursor-pointer text-center uppercase"
-            >
-              Start Discovery
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Tea Discovery Quiz Modal */}
-      <TeaDiscoveryQuizModal isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} />
     </div>
   )
 }

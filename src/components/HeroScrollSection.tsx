@@ -6,8 +6,11 @@ import ThreePillarsSection from './ThreePillarsSection'
 import CanisterShowcaseSection from './CanisterShowcaseSection'
 import ProductsSection from './ProductsSection'
 import PackageShowcaseSection from './PackageShowcaseSection'
+import TestimonialsSection from './TestimonialsSection'
 import PhilosophyQuoteSection from './PhilosophyQuoteSection'
 import StatsBarSection from './StatsBarSection'
+import TrustBadgesSection from './TrustBadgesSection'
+import NewsletterSection from './NewsletterSection'
 import Footer from './Footer'
 
 /**
@@ -39,8 +42,11 @@ export default function HeroScrollSection() {
           <CanisterShowcaseSection />
           <ProductsSection />
           <PackageShowcaseSection />
+          <TestimonialsSection />
           <PhilosophyQuoteSection />
           <StatsBarSection />
+          <TrustBadgesSection />
+          <NewsletterSection />
           <Footer />
         </div>
       </ScrollExpand>

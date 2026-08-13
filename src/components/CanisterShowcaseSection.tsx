@@ -37,6 +37,7 @@ export default function CanisterShowcaseSection() {
       <img
         src="/tea1_1.png"
         alt="Ember Charm Tea Canister"
+        loading="lazy"
         className="w-full h-auto block object-cover"
       />
       

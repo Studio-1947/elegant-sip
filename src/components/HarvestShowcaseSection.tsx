@@ -4,6 +4,7 @@ export default function HarvestShowcaseSection() {
       <img
         src="/harvest.webp"
         alt="Tea plantation at harvest"
+        loading="lazy"
         className="w-full h-auto block object-cover"
       />
     </div>

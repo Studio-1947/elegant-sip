@@ -5,6 +5,7 @@ export default function PackageShowcaseSection() {
         <img
           src="/package.webp"
           alt="Elegant Tea Packaging Showcase"
+          loading="lazy"
           className="w-full h-auto block object-cover rounded-2xl border border-[#1b261b]/10 shadow-[0_12px_40px_rgba(27,38,27,0.04)]"
         />
       </div>
