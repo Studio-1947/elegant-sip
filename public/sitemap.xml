@@ -26,11 +26,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/product/discovery-sampler</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://elegantsip.com/#/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

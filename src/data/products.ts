@@ -157,18 +157,6 @@ export const PRODUCTS: Product[] = [
       notes: "Excellent over ice — brew double strength, then pour over ice for a crisp iced tea with no bitterness.",
     },
   },
-  {
-    id: "discovery-sampler",
-    name: "Discovery Sampler",
-    price: 24,
-    description:
-      "All three signature teas in one set — 25 g each of Ember Charm, Morning Dew, and Summer Breeze, with a brewing card for every leaf. The easiest way to find your cup.",
-    longDescription:
-      "Three gardens, three styles, one box. The Discovery Sampler holds 25 g each of our roasted oolong, jasmine-scented green, and citrus white — enough for roughly ten cups of each — plus a brewing card tuned to every tea. Ideal as a first order, or as a gift for someone whose taste you haven't figured out yet. When you find the one, your next tin is 10% off with the code inside the box.",
-    imageSrc: "/package.webp",
-    category: "Sampler",
-    variants: [{ size: "3 × 25 g set", price: 24, stock: 30 }],
-  },
 ]
 
 export const getProduct = (id: string | undefined): Product | undefined =>
