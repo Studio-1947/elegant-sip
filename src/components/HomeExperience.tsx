@@ -35,9 +35,10 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
           trigger: '#video-scroll-track',
           start: 'top top',
           end: 'bottom bottom',
-          // Smooth the scrub over ~0.6s so a small wheel tick glides through
-          // the video frames instead of jumping to a single discrete seek.
-          scrub: 0.6,
+          // Smooth the scrub over ~1s so wheel ticks glide through the frames
+          // like playback. The video is encoded all-intra (every frame a
+          // keyframe), so each intermediate seek decodes instantly.
+          scrub: 1,
           onUpdate: (self) => {
             onProgress(self.progress)
             const content = self.progress > 0.95
