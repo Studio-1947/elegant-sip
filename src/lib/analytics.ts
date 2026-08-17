@@ -26,9 +26,29 @@ export type AnalyticsEvent =
   | 'signup'
   | 'contact_submitted'
 
+const CONSENT_KEY = 'elegant_sip_consent'
+
+export function analyticsProvider(): string | undefined {
+  return import.meta.env.VITE_ANALYTICS_PROVIDER as string | undefined
+}
+
+/** null = no decision yet */
+export function hasAnalyticsConsent(): boolean | null {
+  const stored = localStorage.getItem(CONSENT_KEY)
+  if (stored === 'granted') return true
+  if (stored === 'denied') return false
+  return null
+}
+
+export function setAnalyticsConsent(granted: boolean) {
+  localStorage.setItem(CONSENT_KEY, granted ? 'granted' : 'denied')
+}
+
 export function track(event: AnalyticsEvent, props: Record<string, unknown> = {}) {
-  const provider = import.meta.env.VITE_ANALYTICS_PROVIDER as string | undefined
+  const provider = analyticsProvider()
   if (!provider) return
+  // Events only fire once the visitor has accepted the analytics notice.
+  if (hasAnalyticsConsent() !== true) return
 
   if (provider === 'plausible') {
     const w = window as unknown as { plausible?: (e: string, opts: { props: Record<string, unknown> }) => void }

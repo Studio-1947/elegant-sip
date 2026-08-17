@@ -1,24 +1,53 @@
 import { useState } from 'react'
 import { track } from '../lib/analytics'
 
+/**
+ * Set VITE_NEWSLETTER_ENDPOINT to an ESP subscribe URL (Mailchimp, Brevo, or a
+ * Formspree form) that accepts POST { email } as JSON. Without it, signups are
+ * stored locally so nothing breaks — either way the welcome discount code is
+ * shown on-screen rather than promised by email.
+ */
+const NEWSLETTER_ENDPOINT = import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export default function NewsletterSection() {
   const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<'idle' | 'error' | 'done'>('idle')
+  const [status, setStatus] = useState<'idle' | 'error' | 'sending' | 'done'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email.includes('@') || email.length < 3) {
+    if (!EMAIL_PATTERN.test(email)) {
+      setErrorMsg('Please enter a valid email address.')
       setStatus('error')
       return
     }
-    try {
-      const subscribers = JSON.parse(localStorage.getItem('elegant_sip_subscribers') || '[]')
-      localStorage.setItem('elegant_sip_subscribers', JSON.stringify([...subscribers, email]))
-    } catch {
-      localStorage.setItem('elegant_sip_subscribers', JSON.stringify([email]))
+    if (NEWSLETTER_ENDPOINT) {
+      setStatus('sending')
+      try {
+        const res = await fetch(NEWSLETTER_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ email }),
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      } catch {
+        setErrorMsg('Something went wrong — please try again in a moment.')
+        setStatus('error')
+        return
+      }
+    } else {
+      try {
+        const subscribers: string[] = JSON.parse(localStorage.getItem('elegant_sip_subscribers') || '[]')
+        if (!subscribers.includes(email)) {
+          localStorage.setItem('elegant_sip_subscribers', JSON.stringify([...subscribers, email]))
+        }
+      } catch {
+        localStorage.setItem('elegant_sip_subscribers', JSON.stringify([email]))
+      }
     }
     setStatus('done')
-    track('newsletter_signup', { email })
+    track('newsletter_signup')
   }
 
   return (
@@ -36,9 +65,11 @@ export default function NewsletterSection() {
               </svg>
             </div>
             <h3 className="text-white text-2xl md:text-3xl font-bold uppercase tracking-tight mb-3">Welcome to the Circle</h3>
-            <p className="text-white/70 text-sm leading-relaxed">
-              Your first taste of the Tea Circle is on its way. Check your inbox for a welcome
-              note — including 10% off your first order.
+            <p className="text-white/70 text-sm leading-relaxed mb-6">
+              You're in. Enjoy 10% off your first order with the code below — just enter it at checkout.
+            </p>
+            <p className="inline-block bg-[#8bb56e]/15 border border-[#8bb56e]/40 rounded-lg px-6 py-3 text-[#8bb56e] font-mono font-bold tracking-[0.2em] text-lg select-all">
+              WELCOME10
             </p>
           </div>
         ) : (
@@ -66,13 +97,14 @@ export default function NewsletterSection() {
               />
               <button
                 type="submit"
-                className="bg-[#8bb56e] hover:bg-[#9cc580] text-[#1b261b] text-xs font-bold tracking-widest uppercase py-3.5 px-6 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+                disabled={status === 'sending'}
+                className="bg-[#8bb56e] hover:bg-[#9cc580] disabled:opacity-60 disabled:cursor-wait text-[#1b261b] text-xs font-bold tracking-widest uppercase py-3.5 px-6 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
               >
-                Join Free
+                {status === 'sending' ? 'Joining…' : 'Join Free'}
               </button>
             </form>
             {status === 'error' && (
-              <p className="text-xs text-[#e0b35c] mt-3" role="alert">Please enter a valid email address.</p>
+              <p className="text-xs text-[#e0b35c] mt-3" role="alert">{errorMsg}</p>
             )}
             <p className="text-white/40 text-[10px] font-mono mt-4">No spam, ever. Unsubscribe anytime.</p>
           </div>

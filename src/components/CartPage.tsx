@@ -1,19 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCart } from './CartContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
+import { getOrderPricing, TAX_RATE } from '../lib/pricing'
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, cartTotal, discount, coupon, applyCoupon, removeCoupon } = useCart()
   const [couponInput, setCouponInput] = useState('')
   const [couponError, setCouponError] = useState<string | null>(null)
-  const [orderNotes, setOrderNotes] = useState('')
+  // Notes are persisted so checkout can attach them to the placed order.
+  const [orderNotes, setOrderNotes] = useState(() => localStorage.getItem('elegant_sip_order_notes') || '')
+
+  useEffect(() => {
+    localStorage.setItem('elegant_sip_order_notes', orderNotes)
+  }, [orderNotes])
 
   useDocumentMeta('Your Cart — Elegant Sip', 'Review your Elegant Sip order.')
 
-  const shippingFee = cartTotal - discount > 50 ? 0 : 5.0
-  const estimatedTax = Math.round((cartTotal - discount) * 0.08 * 100) / 100
-  const finalTotal = Math.round((cartTotal - discount + shippingFee + estimatedTax) * 100) / 100
+  const { shippingFee, estimatedTax, finalTotal, amountToFreeShipping } = getOrderPricing(cartTotal, discount)
 
   const handleApplyCoupon = () => {
     if (applyCoupon(couponInput)) {
@@ -24,8 +28,8 @@ export default function CartPage() {
     }
   }
 
-  const handleRemove = (id: string) => {
-    removeFromCart(id)
+  const handleRemove = (id: string, size: string) => {
+    removeFromCart(id, size)
     track('remove_from_cart', { product: id })
   }
 
@@ -63,7 +67,7 @@ export default function CartPage() {
           <div className="lg:col-span-2 space-y-6">
             {cart.map((item) => (
               <div
-                key={item.id}
+                key={`${item.id}__${item.size}`}
                 className="flex items-center gap-6 p-4 md:p-6 bg-white border border-[#1b261b]/10 rounded-2xl shadow-[0_4px_20px_rgba(27,38,27,0.02)]"
               >
                 <Link to={`/product/${item.id}`} className="flex-shrink-0">
@@ -82,9 +86,9 @@ export default function CartPage() {
                     <Link to={`/product/${item.id}`} className="hover:text-[#8bb56e] transition-colors">
                       <h3 className="text-base md:text-lg font-bold">{item.name}</h3>
                     </Link>
-                    <p className="text-xs text-[#4a584a] mt-1">${item.price}.00 per pack</p>
+                    <p className="text-xs text-[#4a584a] mt-1">{item.size} · ${item.price}.00 each</p>
                     <button
-                      onClick={() => handleRemove(item.id)}
+                      onClick={() => handleRemove(item.id, item.size)}
                       className="text-xs font-mono tracking-wider text-red-600 hover:text-red-700 transition-colors mt-3 block focus:outline-none cursor-pointer"
                     >
                       Remove
@@ -95,7 +99,7 @@ export default function CartPage() {
                   <div className="flex items-center gap-6 justify-between md:justify-end">
                     <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-3 py-1.5 w-24 bg-[#f9faf7]">
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}
                         className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-sm leading-none transition-colors"
                         aria-label={`Decrease quantity of ${item.name}`}
                       >
@@ -103,7 +107,7 @@ export default function CartPage() {
                       </button>
                       <span className="text-[#1b261b] font-mono text-xs font-semibold select-none">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
                         className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-sm leading-none transition-colors"
                         aria-label={`Increase quantity of ${item.name}`}
                       >
@@ -191,13 +195,13 @@ export default function CartPage() {
                 </span>
               </div>
               <div className="flex justify-between text-[#4a584a]">
-                <span>Estimated Tax (8%)</span>
+                <span>Estimated Tax ({Math.round(TAX_RATE * 100)}%)</span>
                 <span className="font-mono">${estimatedTax.toFixed(2)}</span>
               </div>
 
               {shippingFee > 0 && (
                 <p className="text-[10px] text-[#8bb56e] font-mono italic">
-                  Spend ${(50 - (cartTotal - discount)).toFixed(0)} more for Free Shipping
+                  Spend ${amountToFreeShipping.toFixed(2)} more for Free Shipping
                 </p>
               )}
 

@@ -1,35 +1,58 @@
-import { useState } from 'react'
-import { getProduct, getReviews, getRating, PRODUCTS } from '../data/products'
+import { useEffect, useState } from 'react'
+import { getProduct, getReviews, getDefaultVariant, getGardenByEstate, PRODUCTS, type Review } from '../data/products'
 import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
 import { useCart } from './CartContext'
 import { track } from '../lib/analytics'
+import { getLocalReviews, addLocalReview } from '../lib/localReviews'
+import { hasPurchased } from '../lib/orders'
 import ProductCard from './ProductCard'
 
 export default function ProductDetailPage({ id }: { id?: string }) {
   const product = getProduct(id)
   const [quantity, setQuantity] = useState(1)
+  const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
+  const [localReviews, setLocalReviews] = useState<Review[]>([])
+  const [reviewForm, setReviewForm] = useState({ author: '', rating: 5, text: '' })
+  const [reviewOpen, setReviewOpen] = useState(false)
   const { addToCart } = useCart()
+
+  // Reset per-product state when navigating between products (same component instance)
+  useEffect(() => {
+    setQuantity(1)
+    setSelectedSize(null)
+    setIsAdding(false)
+    setIsAdded(false)
+    setReviewOpen(false)
+    setReviewForm({ author: '', rating: 5, text: '' })
+    setLocalReviews(id ? getLocalReviews(id) : [])
+  }, [id])
+
+  const variant = product
+    ? product.variants.find((v) => v.size === selectedSize) ?? getDefaultVariant(product)
+    : undefined
+  const variantInStock = (variant?.stock ?? 0) > 0
 
   useDocumentMeta(
     product ? `${product.name} — Elegant Sip` : 'Product not found — Elegant Sip',
     product ? product.description : undefined,
   )
   useJsonLd(
-    product
+    product && variant
       ? {
           '@context': 'https://schema.org',
           '@type': 'Product',
           name: product.name,
           description: product.description,
           image: product.imageSrc,
-          offers: {
+          offers: product.variants.map((v) => ({
             '@type': 'Offer',
             priceCurrency: 'USD',
-            price: product.price,
-            availability: 'https://schema.org/InStock',
-          },
+            price: v.price,
+            name: v.size,
+            availability: v.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          })),
           ...(product.origin
             ? {
                 additionalProperty: [
@@ -55,19 +78,46 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     )
   }
 
-  const rating = getRating(product.id)
-  const reviews = getReviews(product.id)
+  const reviews = [...localReviews, ...getReviews(product.id)]
+  const rating =
+    reviews.length === 0
+      ? { average: 0, count: 0 }
+      : {
+          average: Math.round((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) * 10) / 10,
+          count: reviews.length,
+        }
   const related = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 3)
+  const activeVariant = variant!
+  const garden = product.origin ? getGardenByEstate(product.origin.estate) : undefined
 
   const handleAddToCart = () => {
+    if (!variantInStock) return
     setIsAdding(true)
-    addToCart({ id: product.id, name: product.name, price: product.price, imageSrc: product.imageSrc }, quantity)
+    addToCart(
+      { id: product.id, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
+      quantity,
+    )
     track('add_to_cart', { product: product.id, quantity, source: 'product_detail' })
     setTimeout(() => {
       setIsAdding(false)
       setIsAdded(true)
+      setQuantity(1)
       setTimeout(() => setIsAdded(false), 2000)
     }, 800)
+  }
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!reviewForm.author.trim() || !reviewForm.text.trim()) return
+    const entry = addLocalReview(product.id, {
+      author: reviewForm.author.trim(),
+      rating: reviewForm.rating,
+      text: reviewForm.text.trim(),
+      verified: hasPurchased(product.id),
+    })
+    setLocalReviews((prev) => [entry, ...prev])
+    setReviewForm({ author: '', rating: 5, text: '' })
+    setReviewOpen(false)
   }
 
   return (
@@ -117,11 +167,54 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               {product.compareAtPrice && (
                 <span className="text-[#4a584a]/50 text-lg line-through">${product.compareAtPrice}.00</span>
               )}
-              <span className="text-3xl font-bold">${product.price}.00</span>
+              <span className="text-3xl font-bold">${activeVariant.price}.00</span>
+              <span className="text-xs font-mono text-[#4a584a]">/ {activeVariant.size}</span>
             </div>
 
             <p className="text-sm text-[#4a584a] leading-relaxed mb-6">{product.description}</p>
             <p className="text-xs text-[#4a584a]/80 leading-relaxed mb-8">{product.longDescription}</p>
+
+            {/* Size picker */}
+            {product.variants.length > 1 && (
+              <div className="mb-6">
+                <span className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-2.5">Size</span>
+                <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Size">
+                  {product.variants.map((v) => {
+                    const selected = v.size === activeVariant.size
+                    const soldOut = v.stock <= 0
+                    return (
+                      <button
+                        key={v.size}
+                        role="radio"
+                        aria-checked={selected}
+                        disabled={soldOut}
+                        onClick={() => {
+                          setSelectedSize(v.size)
+                          setQuantity(1)
+                        }}
+                        className={`px-4 py-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                          soldOut
+                            ? 'border-[#1b261b]/10 text-[#4a584a]/40 line-through cursor-not-allowed bg-[#f9faf7]'
+                            : selected
+                            ? 'border-[#1b261b] bg-[#1b261b] text-white'
+                            : 'border-[#1b261b]/20 bg-white text-[#1b261b] hover:border-[#8bb56e]'
+                        }`}
+                      >
+                        {v.size} · ${v.price}
+                        {soldOut && <span className="no-underline ml-1.5 text-[9px] font-mono uppercase">Sold out</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Scarcity — an honest lot count, in the brand's voice */}
+            {variantInStock && activeVariant.stock <= 5 && (
+              <p className="text-xs font-mono text-[#b0782e] mb-6">
+                Only {activeVariant.stock} left in this lot — when it's gone, it's gone until next harvest.
+              </p>
+            )}
 
             {/* Qty + CTA */}
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
@@ -135,7 +228,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 </button>
                 <span className="font-mono text-sm font-semibold select-none">{quantity}</span>
                 <button
-                  onClick={() => setQuantity((q) => q + 1)}
+                  onClick={() => setQuantity((q) => Math.min(q + 1, activeVariant.stock))}
                   className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-lg leading-none transition-colors px-1"
                   aria-label="Increase quantity"
                 >
@@ -144,12 +237,14 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               </div>
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding || isAdded}
+                disabled={isAdding || isAdded || !variantInStock}
                 className={`flex-grow text-xs font-bold tracking-widest uppercase py-4 px-8 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
-                  isAdded ? 'bg-[#8bb56e] text-white' : isAdding ? 'bg-[#1b261b]/50 text-white/50 cursor-wait' : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
+                  !variantInStock
+                    ? 'bg-[#1b261b]/10 text-[#4a584a]/60 cursor-not-allowed'
+                    : isAdded ? 'bg-[#8bb56e] text-white' : isAdding ? 'bg-[#1b261b]/50 text-white/50 cursor-wait' : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
                 }`}
               >
-                {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add to Cart • $${product.price * quantity}.00`}
+                {!variantInStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add to Cart • $${activeVariant.price * quantity}.00`}
               </button>
             </div>
 
@@ -185,10 +280,23 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 ).map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-4">
                     <dt className="text-[#4a584a]">{label}</dt>
-                    <dd className="font-medium text-right">{value}</dd>
+                    <dd className="font-medium text-right">
+                      {label === 'Estate' && garden ? (
+                        <Link to="/gardens" className="underline decoration-[#8bb56e]/50 underline-offset-2 hover:text-[#8bb56e] transition-colors">
+                          {value}
+                        </Link>
+                      ) : (
+                        value
+                      )}
+                    </dd>
                   </div>
                 ))}
               </dl>
+              {garden && (
+                <Link to="/gardens" className="inline-block mt-4 text-[10px] font-mono tracking-widest uppercase text-[#8bb56e] hover:text-[#1b261b] transition-colors">
+                  Visit the garden →
+                </Link>
+              )}
             </div>
           )}
 
@@ -249,7 +357,75 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 {rating.count > 0 ? `${rating.average} / 5 from ${rating.count} reviews` : 'Reviews'}
               </h2>
             </div>
+            <button
+              onClick={() => setReviewOpen((o) => !o)}
+              className="self-start md:self-auto border border-[#1b261b]/20 hover:border-[#1b261b] hover:bg-white text-[#1b261b] text-[10px] font-bold tracking-widest uppercase py-3 px-6 rounded-lg transition-all cursor-pointer"
+            >
+              {reviewOpen ? 'Cancel' : 'Write a Review'}
+            </button>
           </div>
+
+          {reviewOpen && (
+            <form onSubmit={handleReviewSubmit} className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8 mb-8 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="rv-name" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Your name</label>
+                  <input
+                    id="rv-name"
+                    type="text"
+                    required
+                    value={reviewForm.author}
+                    onChange={(e) => setReviewForm((f) => ({ ...f, author: e.target.value }))}
+                    className="w-full bg-[#f9faf7] border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors"
+                  />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Rating</span>
+                  <div className="flex gap-1 items-center h-[46px]" role="radiogroup" aria-label="Rating">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        role="radio"
+                        aria-checked={reviewForm.rating === n}
+                        aria-label={`${n} star${n > 1 ? 's' : ''}`}
+                        onClick={() => setReviewForm((f) => ({ ...f, rating: n }))}
+                        className="cursor-pointer"
+                      >
+                        <svg className="w-6 h-6" viewBox="0 0 20 20" fill={n <= reviewForm.rating ? '#8bb56e' : 'none'} stroke="#8bb56e" strokeWidth="1.2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label htmlFor="rv-text" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Your review</label>
+                <textarea
+                  id="rv-text"
+                  required
+                  rows={4}
+                  value={reviewForm.text}
+                  onChange={(e) => setReviewForm((f) => ({ ...f, text: e.target.value }))}
+                  placeholder="How does it taste? How did you brew it?"
+                  className="w-full bg-[#f9faf7] border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors resize-none placeholder:text-[#1b261b]/25"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-[10px] font-mono text-[#4a584a]/60">
+                  Demo store: reviews are saved in this browser. "Verified purchase" appears only if you've ordered this tea here.
+                </p>
+                <button
+                  type="submit"
+                  className="bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3 px-8 rounded-lg transition-colors cursor-pointer"
+                >
+                  Submit Review
+                </button>
+              </div>
+            </form>
+          )}
+
           {reviews.length === 0 ? (
             <p className="text-sm text-[#4a584a] bg-white border border-[#1b261b]/10 rounded-2xl p-6">
               No reviews yet for this tea. Be the first to tell us how it tastes.

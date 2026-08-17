@@ -37,15 +37,25 @@ export interface Review {
   verified?: boolean
 }
 
+export interface ProductVariant {
+  /** Display label, e.g. "50 g tin" */
+  size: string
+  price: number
+  /** Units left in the current lot; 0 renders as sold out. */
+  stock: number
+}
+
 export interface Product {
   id: string
   name: string
+  /** Base price — always equals the first variant's price. */
   price: number
   compareAtPrice?: number
   description: string
   longDescription?: string
   imageSrc: string
   category: string
+  variants: ProductVariant[]
   origin?: TeaOrigin
   flavorProfile?: FlavorProfile
   brewingGuide?: BrewingGuide
@@ -64,6 +74,11 @@ export const PRODUCTS: Product[] = [
       "Ember Charm begins its life in the Wuyi Mountains, where rocky mineral soils give Dahongpao its signature 'yan yun' — the mineral, stone-fruit depth that oolong lovers chase. After a spring harvest at 3,200 feet, the leaves are withered over charcoal and slow-roasted until the sugars caramelize into cinnamon, cacao, and roasted chestnut. The result is a tea that drinks like a fireside conversation: warm, unhurried, and worth the third and fourth steep.",
     imageSrc: "/embercharm.webp",
     category: "Oolong",
+    variants: [
+      { size: "50 g tin", price: 28, stock: 18 },
+      { size: "100 g tin", price: 48, stock: 9 },
+      { size: "250 g pouch", price: 98, stock: 3 },
+    ],
     origin: {
       origin: "Wuyi Mountains, Fujian",
       estate: "Wuyi Rock Garden",
@@ -90,6 +105,11 @@ export const PRODUCTS: Product[] = [
       "Harvested before sunrise in the mist of Guangxi's Cloud Mist Gardens, Morning Dew captures the first light of the garden in a cup. The leaves are picked only on dewy mornings, then gently fixed and naturally scented over three nights with fresh jasmine blossoms — never artificial flavor. The first sip is bright and vegetal; the finish lingers with jasmine and a whisper of sweetness. Clarity in leaf form.",
     imageSrc: "/morningdew.webp",
     category: "Green",
+    variants: [
+      { size: "50 g tin", price: 24, stock: 24 },
+      { size: "100 g tin", price: 42, stock: 14 },
+      { size: "250 g pouch", price: 86, stock: 6 },
+    ],
     origin: {
       origin: "Hengxian, Guangxi",
       estate: "Cloud Mist Gardens",
@@ -116,6 +136,11 @@ export const PRODUCTS: Product[] = [
       "White peony (Bai Mu Dan) is among the least processed teas in the world — withered and sun-dried until it simply is what it is. Summer Breeze pairs that honeyed softness with organic lemongrass and sun-ripened citrus peels for a tea that tastes like an open window. It is barely there, and that is the point: refreshing, crisp, and clean enough to drink all afternoon, hot or iced.",
     imageSrc: "/summerbreeze.webp",
     category: "White",
+    variants: [
+      { size: "50 g tin", price: 26, stock: 20 },
+      { size: "100 g tin", price: 45, stock: 11 },
+      { size: "250 g pouch", price: 92, stock: 0 },
+    ],
     origin: {
       origin: "Fuding, Fujian",
       estate: "White Tea Valley",
@@ -132,10 +157,32 @@ export const PRODUCTS: Product[] = [
       notes: "Excellent over ice — brew double strength, then pour over ice for a crisp iced tea with no bitterness.",
     },
   },
+  {
+    id: "discovery-sampler",
+    name: "Discovery Sampler",
+    price: 24,
+    description:
+      "All three signature teas in one set — 25 g each of Ember Charm, Morning Dew, and Summer Breeze, with a brewing card for every leaf. The easiest way to find your cup.",
+    longDescription:
+      "Three gardens, three styles, one box. The Discovery Sampler holds 25 g each of our roasted oolong, jasmine-scented green, and citrus white — enough for roughly ten cups of each — plus a brewing card tuned to every tea. Ideal as a first order, or as a gift for someone whose taste you haven't figured out yet. When you find the one, your next tin is 10% off with the code inside the box.",
+    imageSrc: "/package.webp",
+    category: "Sampler",
+    variants: [{ size: "3 × 25 g set", price: 24, stock: 30 }],
+  },
 ]
 
 export const getProduct = (id: string | undefined): Product | undefined =>
   PRODUCTS.find((p) => p.id === id)
+
+export const getVariant = (productId: string, size: string): ProductVariant | undefined =>
+  getProduct(productId)?.variants.find((v) => v.size === size)
+
+/** First purchasable variant, falling back to the base variant when everything is sold out. */
+export const getDefaultVariant = (product: Product): ProductVariant =>
+  product.variants.find((v) => v.stock > 0) ?? product.variants[0]
+
+export const isInStock = (product: Product): boolean =>
+  product.variants.some((v) => v.stock > 0)
 
 /* ── Reviews ──────────────────────────────────────────────────────────────── */
 
@@ -211,6 +258,60 @@ export const getRating = (id: string | undefined): { average: number; count: num
   const average = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
   return { average: Math.round(average * 10) / 10, count: reviews.length }
 }
+
+/* ── Gardens (origin profiles — "the garden is the brand") ────────────────── */
+
+export interface Garden {
+  id: string
+  name: string
+  region: string
+  elevation: string
+  imageSrc: string
+  story: string[]
+  productIds: string[]
+}
+
+export const GARDENS: Garden[] = [
+  {
+    id: "wuyi-rock-garden",
+    name: "Wuyi Rock Garden",
+    region: "Wuyi Mountains, Fujian",
+    elevation: "3,200 ft",
+    imageSrc: "/origin.webp",
+    story: [
+      "The Wuyi Mountains are a UNESCO landscape of sheer cliffs and mineral-rich rocky soil — the birthplace of oolong itself. Tea bushes here grow in narrow gorges where reflected warmth from the rock walls and constant mist create the slow growth that concentrates flavor.",
+      "Our partner plots sit at 3,200 feet, planted with Dahongpao cultivar bushes. After the spring pluck, the leaves are withered over charcoal and slow-roasted in small batches — the craft behind Ember Charm's cinnamon-and-cacao depth and the mineral 'yan yun' finish that oolong lovers chase.",
+    ],
+    productIds: ["ember-charm"],
+  },
+  {
+    id: "cloud-mist-gardens",
+    name: "Cloud Mist Gardens",
+    region: "Hengxian, Guangxi",
+    elevation: "2,800 ft",
+    imageSrc: "/craft.webp",
+    story: [
+      "Hengxian is the jasmine capital of the world, and Cloud Mist Gardens is where our green tea and its scenting flowers grow within sight of each other. The garden picks only on dewy mornings, before sunrise, when the leaf is at its most delicate.",
+      "Morning Dew is scented here the traditional way: fresh night-blooming jasmine layered with the tea over three consecutive nights, never sprayed, never flavored. The result is a leaf that carries the garden's morning into your cup.",
+    ],
+    productIds: ["morning-dew"],
+  },
+  {
+    id: "white-tea-valley",
+    name: "White Tea Valley",
+    region: "Fuding, Fujian",
+    elevation: "1,800 ft",
+    imageSrc: "/experience.webp",
+    story: [
+      "Fuding is the historic home of white tea, where the Fuding Fada cultivar grows fat, downy buds prized for Bai Mu Dan. The valley's tea is among the least processed in the world — withered in the sun until it simply is what it is.",
+      "Summer Breeze starts here as classic white peony, then meets organic lemongrass and sun-ripened citrus peel. Minimal intervention is the entire philosophy: the leaf is dried, rested, and packed within weeks of the late-spring pluck.",
+    ],
+    productIds: ["summer-breeze"],
+  },
+]
+
+export const getGardenByEstate = (estate: string | undefined): Garden | undefined =>
+  GARDENS.find((g) => g.name === estate)
 
 /* ── Testimonials (homepage social proof) ─────────────────────────────────── */
 
@@ -318,6 +419,7 @@ export interface JournalArticle {
   title: string
   excerpt: string
   category: string
+  author: string
   date: string
   readTime: string
   imageSrc: string
@@ -332,6 +434,7 @@ export const JOURNAL: JournalArticle[] = [
     excerpt:
       "The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices — and the most patience.",
     category: "Craft",
+    author: "The Elegant Sip Tasting Team",
     date: "March 12, 2026",
     readTime: "4 min read",
     imageSrc: "/origin.webp",
@@ -349,6 +452,7 @@ export const JOURNAL: JournalArticle[] = [
     excerpt:
       "Temperature, time, leaf amount, and the often-misunderstood art of the re-steep. Everything you need to stop guessing and start tasting.",
     category: "Brewing",
+    author: "The Elegant Sip Tasting Team",
     date: "January 28, 2026",
     readTime: "5 min read",
     imageSrc: "/craft.webp",
@@ -366,6 +470,7 @@ export const JOURNAL: JournalArticle[] = [
     excerpt:
       "No auction houses, no middlemen, no anonymity. How we built direct relationships with the gardens that grow the leaves we sell.",
     category: "Sourcing",
+    author: "The Elegant Sip Tasting Team",
     date: "November 5, 2025",
     readTime: "6 min read",
     imageSrc: "/harvest.webp",

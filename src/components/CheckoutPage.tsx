@@ -1,11 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
+import { getOrderPricing, SHIPPING_METHODS, TAX_RATE, type ShippingMethodId } from '../lib/pricing'
+import { saveOrder, getOrders } from '../lib/orders'
 
 type Step = 1 | 2 | 3
+
+const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Australia', 'India', 'Other']
+
+const POSTAL_RULES: Record<string, { pattern: RegExp; hint: string }> = {
+  'United States': { pattern: /^\d{5}(-\d{4})?$/, hint: 'Enter a valid US ZIP code (e.g. 97201).' },
+  Canada: { pattern: /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/, hint: 'Enter a valid Canadian postal code (e.g. V6B 1A1).' },
+  'United Kingdom': { pattern: /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s?\d[A-Za-z]{2}$/, hint: 'Enter a valid UK postcode (e.g. SW1A 1AA).' },
+  Australia: { pattern: /^\d{4}$/, hint: 'Enter a valid Australian postcode (4 digits).' },
+  India: { pattern: /^\d{6}$/, hint: 'Enter a valid PIN code (6 digits).' },
+}
+const GENERIC_POSTAL = { pattern: /^[A-Za-z\d][A-Za-z\d\s-]{1,9}$/, hint: 'Enter a valid postal code.' }
 
 interface FormState {
   email: string
@@ -43,13 +56,36 @@ export default function CheckoutPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
   const [orderNumber, setOrderNumber] = useState<string | null>(null)
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>('standard')
+  const [placing, setPlacing] = useState(false)
+  const [prefilled, setPrefilled] = useState(false)
+
+  // Prefill from the signed-in user and the most recent order on this device.
+  useEffect(() => {
+    const last = getOrders()[0]
+    if (!user && !last) return
+    const [lastFirst = '', ...lastRest] = (last?.name ?? '').split(' ')
+    setForm((f) => {
+      const next = {
+        ...f,
+        email: f.email || user?.email || last?.email || '',
+        firstName: f.firstName || lastFirst,
+        lastName: f.lastName || lastRest.join(' '),
+        address: f.address || last?.address || '',
+        city: f.city || last?.city || '',
+        zip: f.zip || last?.zip || '',
+        country: last?.country || f.country,
+      }
+      if (next.email || next.address) setPrefilled(true)
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   useDocumentMeta('Checkout — Elegant Sip', 'Secure checkout for your Elegant Sip order.')
 
   const subtotal = cartTotal
-  const shippingFee = subtotal - discount > 50 ? 0 : 5.0
-  const estimatedTax = Math.round((subtotal - discount) * 0.08 * 100) / 100
-  const finalTotal = Math.round((subtotal - discount + shippingFee + estimatedTax) * 100) / 100
+  const { shippingFee, estimatedTax, finalTotal } = getOrderPricing(cartTotal, discount, shippingMethod)
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((f) => ({ ...f, [field]: value }))
@@ -63,7 +99,8 @@ export default function CheckoutPage() {
     if (!form.lastName.trim()) next.lastName = 'Required.'
     if (!form.address.trim()) next.address = 'Required.'
     if (!form.city.trim()) next.city = 'Required.'
-    if (!/^\d{4,6}$/.test(form.zip.trim())) next.zip = 'Enter a valid ZIP code.'
+    const postal = POSTAL_RULES[form.country] ?? GENERIC_POSTAL
+    if (!postal.pattern.test(form.zip.trim())) next.zip = postal.hint
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -88,7 +125,30 @@ export default function CheckoutPage() {
   }
 
   const placeOrder = () => {
+    if (placing || orderNumber) return
+    setPlacing(true)
     const num = `ES-${Date.now().toString().slice(-6)}`
+    const notes = localStorage.getItem('elegant_sip_order_notes') || ''
+    saveOrder({
+      number: num,
+      date: new Date().toISOString(),
+      items: cart,
+      subtotal,
+      discount,
+      coupon,
+      shippingFee,
+      tax: estimatedTax,
+      total: finalTotal,
+      shippingMethod,
+      email: form.email,
+      name: `${form.firstName} ${form.lastName}`.trim(),
+      address: form.address,
+      city: form.city,
+      zip: form.zip,
+      country: form.country,
+      ...(notes ? { notes } : {}),
+    })
+    localStorage.removeItem('elegant_sip_order_notes')
     setOrderNumber(num)
     clearCart()
     track('purchase', { order: num, value: finalTotal, items: cart.length })
@@ -107,11 +167,14 @@ export default function CheckoutPage() {
           <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-3">Order Confirmed</span>
           <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">Thank you!</h1>
           <p className="text-sm text-[#4a584a] leading-relaxed mb-6">
-            Your order <span className="font-mono font-bold text-[#1b261b]">{orderNumber}</span> is being packed
-            and will ship within 24 hours. A confirmation has been sent to your email.
+            Your order <span className="font-mono font-bold text-[#1b261b]">{orderNumber}</span> has been placed
+            and saved to this device — you can review it anytime from your account.
           </p>
           <p className="text-xs text-[#4a584a]/70 italic mb-8">"Every cup is a snapshot of a place and a moment."</p>
           <div className="flex flex-col gap-3">
+            <Link to={`/order/${orderNumber}`} className="w-full bg-[#8bb56e] hover:bg-[#9cc580] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-colors text-center">
+              View Order Details
+            </Link>
             <Link to="/shop" className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-colors text-center">
               Continue Shopping
             </Link>
@@ -177,7 +240,13 @@ export default function CheckoutPage() {
             {step === 1 && (
               <div>
                 <h2 className="text-lg font-bold uppercase tracking-wide mb-6">Shipping Information</h2>
-                {!user && (
+                {user ? (
+                  prefilled && (
+                    <div className="bg-[#8bb56e]/5 border border-[#8bb56e]/20 rounded-xl p-4 mb-6 text-xs text-[#4a584a]">
+                      Welcome back, {user.name.split(' ')[0]} — we've prefilled your details from your last order.
+                    </div>
+                  )
+                ) : (
                   <div className="bg-[#8bb56e]/5 border border-[#8bb56e]/20 rounded-xl p-4 mb-6 text-xs text-[#4a584a] flex items-center justify-between gap-4">
                     <span>Have an account? Check out faster with saved details.</span>
                     <button onClick={openLogin} className="text-[#8bb56e] font-bold uppercase tracking-widest hover:text-[#1b261b] transition-colors flex-shrink-0 cursor-pointer">
@@ -215,11 +284,58 @@ export default function CheckoutPage() {
                       {errors.city && <p className="text-[11px] text-red-600 mt-1">{errors.city}</p>}
                     </div>
                     <div>
-                      <label htmlFor="co-zip" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">ZIP</label>
-                      <input id="co-zip" type="text" value={form.zip} onChange={(e) => setField('zip', e.target.value)} placeholder="97201" className={inputClass('zip')} />
+                      <label htmlFor="co-zip" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Postal / ZIP</label>
+                      <input id="co-zip" type="text" value={form.zip} onChange={(e) => setField('zip', e.target.value)} placeholder={form.country === 'United States' ? '97201' : ''} className={inputClass('zip')} />
                       {errors.zip && <p className="text-[11px] text-red-600 mt-1">{errors.zip}</p>}
                     </div>
                   </div>
+                  <div>
+                    <label htmlFor="co-country" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Country</label>
+                    <select
+                      id="co-country"
+                      value={form.country}
+                      onChange={(e) => setField('country', e.target.value)}
+                      className={`${inputClass('country')} cursor-pointer`}
+                    >
+                      {COUNTRIES.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Shipping method */}
+                  <fieldset className="pt-2">
+                    <legend className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-2.5">Shipping Method</legend>
+                    <div className="space-y-2.5">
+                      {SHIPPING_METHODS.map((m) => {
+                        const fee = getOrderPricing(cartTotal, discount, m.id).shippingFee
+                        const selected = shippingMethod === m.id
+                        return (
+                          <label
+                            key={m.id}
+                            className={`flex items-center justify-between gap-4 border rounded-xl px-4 py-3.5 cursor-pointer transition-all ${
+                              selected ? 'border-[#8bb56e] bg-[#8bb56e]/5' : 'border-[#1b261b]/15 hover:border-[#1b261b]/40'
+                            }`}
+                          >
+                            <span className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="shipping-method"
+                                checked={selected}
+                                onChange={() => setShippingMethod(m.id)}
+                                className="accent-[#8bb56e]"
+                              />
+                              <span>
+                                <span className="block text-sm font-bold">{m.label}</span>
+                                <span className="block text-[11px] text-[#4a584a]">{m.detail}</span>
+                              </span>
+                            </span>
+                            <span className="text-sm font-bold font-mono">{fee === 0 ? 'Free' : `$${fee.toFixed(2)}`}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </fieldset>
                 </div>
               </div>
             )}
@@ -270,11 +386,11 @@ export default function CheckoutPage() {
                 <h2 className="text-lg font-bold uppercase tracking-wide mb-6">Review Your Order</h2>
                 <div className="space-y-3 mb-6">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 border border-[#1b261b]/10 rounded-xl p-3">
+                    <div key={`${item.id}__${item.size}`} className="flex items-center gap-4 border border-[#1b261b]/10 rounded-xl p-3">
                       <img src={item.imageSrc} alt={item.name} className="w-14 h-16 object-cover rounded-lg" />
                       <div className="flex-grow">
                         <p className="text-sm font-bold">{item.name}</p>
-                        <p className="text-[11px] text-[#4a584a]">Qty {item.quantity}</p>
+                        <p className="text-[11px] text-[#4a584a]">{item.size} · Qty {item.quantity}</p>
                       </div>
                       <span className="text-sm font-bold">${item.price * item.quantity}.00</span>
                     </div>
@@ -282,6 +398,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="bg-[#f9faf7] border border-[#1b261b]/10 rounded-xl p-4 text-xs space-y-1.5 text-[#4a584a]">
                   <p><span className="font-bold text-[#1b261b]">Ship to:</span> {form.firstName} {form.lastName}, {form.address}, {form.city} {form.zip}, {form.country}</p>
+                  <p><span className="font-bold text-[#1b261b]">Shipping:</span> {SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.label} ({SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.detail})</p>
                   <p><span className="font-bold text-[#1b261b]">Contact:</span> {form.email}</p>
                   <p><span className="font-bold text-[#1b261b]">Card:</span> •••• {form.cardNumber.replace(/\s/g, '').slice(-4) || '4242'}</p>
                 </div>
@@ -309,9 +426,10 @@ export default function CheckoutPage() {
               ) : (
                 <button
                   onClick={placeOrder}
-                  className="flex-grow bg-[#8bb56e] hover:bg-[#9cc580] text-white text-xs font-bold tracking-widest uppercase py-3.5 px-8 rounded-lg transition-colors cursor-pointer"
+                  disabled={placing}
+                  className="flex-grow bg-[#8bb56e] hover:bg-[#9cc580] disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold tracking-widest uppercase py-3.5 px-8 rounded-lg transition-colors cursor-pointer"
                 >
-                  Place Order • ${finalTotal.toFixed(2)}
+                  {placing ? 'Placing Order…' : `Place Order • $${finalTotal.toFixed(2)}`}
                 </button>
               )}
             </div>
@@ -322,8 +440,8 @@ export default function CheckoutPage() {
             <h2 className="text-lg font-bold uppercase tracking-wide border-b border-[#1b261b]/10 pb-4 mb-6">Order Summary</h2>
             <div className="space-y-3 text-xs mb-6">
               {cart.map((item) => (
-                <div key={item.id} className="flex justify-between gap-3">
-                  <span className="text-[#4a584a]">{item.name} <span className="text-[#4a584a]/60">× {item.quantity}</span></span>
+                <div key={`${item.id}__${item.size}`} className="flex justify-between gap-3">
+                  <span className="text-[#4a584a]">{item.name} <span className="text-[#4a584a]/60">({item.size}) × {item.quantity}</span></span>
                   <span className="font-mono font-semibold">${item.price * item.quantity}.00</span>
                 </div>
               ))}
@@ -344,7 +462,7 @@ export default function CheckoutPage() {
                 <span className="font-mono">{shippingFee === 0 ? 'Free' : `$${shippingFee.toFixed(2)}`}</span>
               </div>
               <div className="flex justify-between text-[#4a584a]">
-                <span>Estimated Tax (8%)</span>
+                <span>Estimated Tax ({Math.round(TAX_RATE * 100)}%)</span>
                 <span className="font-mono">${estimatedTax.toFixed(2)}</span>
               </div>
               <div className="border-t border-[#1b261b]/10 pt-3 mt-3 flex justify-between text-base font-bold">

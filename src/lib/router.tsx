@@ -30,12 +30,14 @@ export function navigate(to: string) {
 export interface RouteParts {
   name: string
   id?: string
+  query: URLSearchParams
 }
 
 export function parseRoute(route: string): RouteParts {
-  const clean = route.startsWith('/') ? route.slice(1) : route
+  const [path, queryString = ''] = route.split('?')
+  const clean = path.startsWith('/') ? path.slice(1) : path
   const [name, id] = clean.split('/')
-  return { name: name || 'home', id }
+  return { name: name || 'home', id, query: new URLSearchParams(queryString) }
 }
 
 interface LinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {

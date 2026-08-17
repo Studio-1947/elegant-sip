@@ -1,5 +1,5 @@
 import { useCart } from './CartContext'
-import { getProduct } from '../data/products'
+import { getProduct, getDefaultVariant, isInStock } from '../data/products'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
 
@@ -59,12 +59,14 @@ export default function WishlistPage() {
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   <button
                     onClick={() => {
-                      addToCart({ id: item.id, name: item.name, price: item.price, imageSrc: item.imageSrc }, 1)
+                      const variant = getDefaultVariant(item)
+                      addToCart({ id: item.id, name: item.name, price: variant.price, imageSrc: item.imageSrc, size: variant.size }, 1)
                       track('add_to_cart', { product: item.id, source: 'wishlist' })
                     }}
-                    className="bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-[10px] font-bold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-colors cursor-pointer"
+                    disabled={!isInStock(item)}
+                    className="bg-[#1b261b] hover:bg-[#2b3a2b] disabled:bg-[#1b261b]/10 disabled:text-[#4a584a]/60 disabled:cursor-not-allowed text-white text-[10px] font-bold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-colors cursor-pointer"
                   >
-                    Add to Cart
+                    {isInStock(item) ? 'Add to Cart' : 'Sold Out'}
                   </button>
                   <button
                     onClick={() => toggleWishlist(item.id)}

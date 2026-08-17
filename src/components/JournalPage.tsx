@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { getArticle, JOURNAL } from '../data/products'
-import { Link, useDocumentMeta } from '../lib/router'
+import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
 
 export function JournalArticlePage({ id }: { id?: string }) {
   const article = getArticle(id)
@@ -7,6 +8,21 @@ export function JournalArticlePage({ id }: { id?: string }) {
   useDocumentMeta(
     article ? `${article.title} — The Elegant Sip Journal` : 'Journal — Elegant Sip',
     article ? article.excerpt : undefined,
+  )
+  useJsonLd(
+    article
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: article.title,
+          description: article.excerpt,
+          image: article.imageSrc,
+          datePublished: article.date,
+          author: { '@type': 'Organization', name: article.author },
+          publisher: { '@type': 'Organization', name: 'Elegant Sip' },
+          articleSection: article.category,
+        }
+      : null,
   )
 
   if (!article) {
@@ -31,7 +47,9 @@ export function JournalArticlePage({ id }: { id?: string }) {
 
         <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">{article.category}</span>
         <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-tight leading-[1.1] mb-6">{article.title}</h1>
-        <div className="flex items-center gap-4 text-[11px] font-mono text-[#4a584a]/70 uppercase tracking-wider mb-10">
+        <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-[#4a584a]/70 uppercase tracking-wider mb-10">
+          <span>{article.author}</span>
+          <span className="w-1 h-1 rounded-full bg-[#8bb56e]" />
           <span>{article.date}</span>
           <span className="w-1 h-1 rounded-full bg-[#8bb56e]" />
           <span>{article.readTime}</span>
@@ -73,6 +91,10 @@ export default function JournalPage() {
     'Stories from the gardens, brewing guides, and the craft behind single-origin tea.',
   )
 
+  const categories = ['All', ...Array.from(new Set(JOURNAL.map((a) => a.category)))]
+  const [category, setCategory] = useState('All')
+  const articles = category === 'All' ? JOURNAL : JOURNAL.filter((a) => a.category === category)
+
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-32 pb-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-5xl mx-auto">
@@ -80,12 +102,30 @@ export default function JournalPage() {
         <h1 className="text-4xl md:text-6xl font-bold uppercase tracking-tight leading-[1.05] mb-6">
           Notes from <span className="text-[#8bb56e]">the Garden</span>
         </h1>
-        <p className="text-[#4a584a] text-sm md:text-base max-w-2xl leading-relaxed mb-16">
+        <p className="text-[#4a584a] text-sm md:text-base max-w-2xl leading-relaxed mb-10">
           Craft, sourcing, and the ritual of brewing — written by the people who buy, taste, and pack every lot.
         </p>
 
+        {/* Category filter */}
+        <div className="flex flex-wrap gap-3 mb-12">
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              aria-pressed={category === c}
+              className={`text-xs font-bold tracking-wide py-2 px-5 rounded-full border transition-colors cursor-pointer ${
+                category === c
+                  ? 'bg-[#1b261b] border-[#1b261b] text-white'
+                  : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#8bb56e]'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {JOURNAL.map((article) => (
+          {articles.map((article) => (
             <Link key={article.id} to={`/journal/${article.id}`} className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-all hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1 flex flex-col">
               <div className="overflow-hidden">
                 <img src={article.imageSrc} alt={article.imageAlt} loading="lazy" className="w-full aspect-[16/9] object-cover transition-transform duration-700 group-hover:scale-105" />

@@ -3,9 +3,9 @@ import { useScrollReveal } from '../lib/useScrollReveal'
 export default function StatsBarSection() {
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > div' })
   const stats = [
-    { value: '12+', label: 'Origin Regions' },
-    { value: '47', label: 'Single-Origin Blends' },
-    { value: '8K+', label: 'Cups Served Monthly' },
+    { value: '3', label: 'Named Gardens' },
+    { value: '6', label: 'Steeps per Leaf' },
+    { value: '30-Day', label: 'Taste Guarantee' },
     { value: '100%', label: 'Hand-Crafted' },
   ]
 

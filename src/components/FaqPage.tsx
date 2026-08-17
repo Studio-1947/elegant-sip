@@ -1,11 +1,20 @@
 import { FAQS } from '../data/products'
-import { useDocumentMeta } from '../lib/router'
+import { useDocumentMeta, useJsonLd } from '../lib/router'
 
 export default function FaqPage() {
   useDocumentMeta(
     'FAQ — Elegant Sip',
     'Answers about shipping, returns, the Elegant Sip Promise, and how to brew single-origin tea.',
   )
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  })
 
   const categories = Array.from(new Set(FAQS.map((f) => f.category)))
 

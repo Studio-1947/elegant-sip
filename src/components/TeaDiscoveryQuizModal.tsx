@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from './CartContext'
-import { QUIZ_OPTIONS, getProduct, type Product } from '../data/products'
+import { QUIZ_OPTIONS, getProduct, getDefaultVariant, type Product } from '../data/products'
 import { Link } from '../lib/router'
 import { track } from '../lib/analytics'
 
@@ -43,8 +43,9 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
 
   const handleAddToCart = () => {
     if (!match) return
+    const variant = getDefaultVariant(match)
     setIsAdding(true)
-    addToCart({ id: match.id, name: match.name, price: match.price, imageSrc: match.imageSrc }, 1)
+    addToCart({ id: match.id, name: match.name, price: variant.price, imageSrc: match.imageSrc, size: variant.size }, 1)
     track('add_to_cart', { product: match.id, source: 'quiz' })
     setTimeout(() => {
       setIsAdding(false)

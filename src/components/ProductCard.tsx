@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCart } from './CartContext'
-import { getRating, type Product } from '../data/products'
+import { getRating, getDefaultVariant, isInStock, type Product } from '../data/products'
 import { Link } from '../lib/router'
 import { track } from '../lib/analytics'
 
@@ -12,22 +12,30 @@ export default function ProductCard({ product }: { product: Product }) {
   const rating = getRating(product.id)
   const wishlisted = isWishlisted(product.id)
   const saveAmount = product.compareAtPrice ? product.compareAtPrice - product.price : 0
+  const defaultVariant = getDefaultVariant(product)
+  const inStock = isInStock(product)
+  const hasMultipleSizes = product.variants.length > 1
 
   const handleDecrease = () => {
     if (quantity > 1) setQuantity(quantity - 1)
   }
 
   const handleIncrease = () => {
-    setQuantity(quantity + 1)
+    setQuantity((q) => Math.min(q + 1, defaultVariant.stock))
   }
 
   const handleAddToCart = () => {
+    if (!inStock) return
     setIsAdding(true)
-    addToCart({ id: product.id, name: product.name, price: product.price, imageSrc: product.imageSrc }, quantity)
+    addToCart(
+      { id: product.id, name: product.name, price: defaultVariant.price, imageSrc: product.imageSrc, size: defaultVariant.size },
+      quantity,
+    )
     track('add_to_cart', { product: product.id, quantity, source: 'product_card' })
     setTimeout(() => {
       setIsAdding(false)
       setIsAdded(true)
+      setQuantity(1)
       setTimeout(() => {
         setIsAdded(false)
       }, 2000)
@@ -157,7 +165,10 @@ export default function ProductCard({ product }: { product: Product }) {
             {product.compareAtPrice && (
               <span className="text-[#4a584a]/50 text-xs line-through">${product.compareAtPrice}.00</span>
             )}
-            <span className="text-[#1b261b] text-base lg:text-lg font-bold">${product.price}.00</span>
+            <span className="text-[#1b261b] text-base lg:text-lg font-bold">
+              {hasMultipleSizes && <span className="text-xs font-normal text-[#4a584a]">from </span>}
+              ${product.price}.00
+            </span>
           </span>
         </div>
 
@@ -203,16 +214,18 @@ export default function ProductCard({ product }: { product: Product }) {
           {/* Add to Cart CTA */}
           <button
             onClick={handleAddToCart}
-            disabled={isAdding || isAdded}
+            disabled={isAdding || isAdded || !inStock}
             className={`flex-grow text-xs font-bold tracking-widest uppercase py-3 px-6 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
-              isAdded
+              !inStock
+                ? 'bg-[#1b261b]/10 text-[#4a584a]/60 cursor-not-allowed'
+                : isAdded
                 ? 'bg-[#8bb56e] text-white'
                 : isAdding
                 ? 'bg-[#1b261b]/50 text-white/50 cursor-wait'
                 : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
             }`}
           >
-            {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : 'Add to Cart'}
+            {!inStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : 'Add to Cart'}
           </button>
         </div>
       </div>

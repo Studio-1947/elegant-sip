@@ -2,16 +2,49 @@ import { useState } from 'react'
 import { useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
 
+/**
+ * Set VITE_CONTACT_ENDPOINT to a JSON form backend (e.g. a Formspree form URL
+ * like https://formspree.io/f/xxxxxxx) to submit messages directly. Without it,
+ * the form falls back to opening the visitor's email app with the message
+ * prefilled, so no message is ever silently dropped.
+ */
+const CONTACT_ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT as string | undefined
+const CONTACT_EMAIL = 'hello@elegantsip.com'
+
 export default function ContactPage() {
   useDocumentMeta('Contact — Elegant Sip', 'Get in touch with the Elegant Sip team about orders, sourcing, or wholesale.')
 
-  const [sent, setSent] = useState(false)
+  const [sent, setSent] = useState<'endpoint' | 'mailto' | null>(null)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', email: '', subject: 'Order question', message: '' })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSent(true)
-    track('contact_submitted', { subject: form.subject })
+    if (CONTACT_ENDPOINT) {
+      setSending(true)
+      setError(null)
+      try {
+        const res = await fetch(CONTACT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(form),
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        setSent('endpoint')
+        track('contact_submitted', { subject: form.subject })
+      } catch {
+        setError(`Something went wrong sending your message. Please email us directly at ${CONTACT_EMAIL}.`)
+      } finally {
+        setSending(false)
+      }
+    } else {
+      const body = `Name: ${form.name}\nEmail: ${form.email}\n\n${form.message}`
+      const subject = `[${form.subject}] Message from ${form.name}`
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      setSent('mailto')
+      track('contact_submitted', { subject: form.subject })
+    }
   }
 
   if (sent) {
@@ -23,12 +56,22 @@ export default function ContactPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">Message sent</h1>
+          <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">
+            {sent === 'endpoint' ? 'Message sent' : 'Almost there'}
+          </h1>
           <p className="text-sm text-[#4a584a] leading-relaxed mb-8">
-            Thank you, {form.name.split(' ')[0] || 'friend'}. We reply to every message within one business day.
+            {sent === 'endpoint' ? (
+              <>Thank you, {form.name.split(' ')[0] || 'friend'}. We reply to every message within one business day.</>
+            ) : (
+              <>
+                Your email app has opened with your message addressed to{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold hover:text-[#8bb56e] transition-colors">{CONTACT_EMAIL}</a>
+                {' '}— hit send there and we'll reply within one business day.
+              </>
+            )}
           </p>
           <button
-            onClick={() => setSent(false)}
+            onClick={() => setSent(null)}
             className="w-full border border-[#1b261b]/20 hover:border-[#1b261b] hover:bg-[#f9faf7] text-[#1b261b] text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-all cursor-pointer"
           >
             Send Another
@@ -124,11 +167,13 @@ export default function ContactPage() {
               className="w-full bg-[#f9faf7] border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors resize-none"
             />
           </div>
+          {error && <p className="text-xs text-red-600" role="alert">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+            disabled={sending}
+            className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold tracking-widest uppercase py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
           >
-            Send Message
+            {sending ? 'Sending…' : 'Send Message'}
           </button>
         </form>
       </div>

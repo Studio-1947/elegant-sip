@@ -18,7 +18,10 @@ interface HomeExperienceProps {
 export default function HomeExperience({ onProgress, ready }: HomeExperienceProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [progress, setProgress] = useState(0)
+  const progressBarRef = useRef<HTMLDivElement>(null)
+  // Only the threshold crossing lives in React state; raw progress would
+  // re-render this whole subtree on every scroll frame.
+  const [isContent, setIsContent] = useState(false)
   const { openQuiz } = useUi()
 
   // Scroll-driven video scrubbing via GSAP ScrollTrigger
@@ -32,10 +35,17 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
           trigger: '#video-scroll-track',
           start: 'top top',
           end: 'bottom bottom',
-          scrub: true,
+          // Smooth the scrub over ~0.6s so a small wheel tick glides through
+          // the video frames instead of jumping to a single discrete seek.
+          scrub: 0.6,
           onUpdate: (self) => {
             onProgress(self.progress)
-            setProgress(self.progress)
+            const content = self.progress > 0.95
+            setIsContent((c) => (c === content ? c : content))
+            // Progress bar is driven directly — no React render per frame.
+            if (progressBarRef.current) {
+              progressBarRef.current.style.width = `${Math.round(self.progress * 100)}%`
+            }
           },
         },
       })
@@ -80,7 +90,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
             trigger: '#video-scroll-track',
             start: 'bottom bottom',
             end: 'bottom top',
-            scrub: true,
+            scrub: 0.6,
           },
         },
       )
@@ -95,8 +105,6 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
     scrollToY(targetY)
   }
 
-  const isContent = progress > 0.95
-
   return (
     <div ref={containerRef} className="relative">
       {/* Fixed Fullscreen Video Stage */}
@@ -104,12 +112,12 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         <video
           ref={videoRef}
           src="/video.mp4"
+          poster="/poster.webp"
           className="h-full w-full object-cover block"
           muted
           playsInline
           preload="auto"
         />
-        <div className="grain-overlay" />
       </div>
 
       {/* 500vh Scroll Runway for Video Scrubbing */}
@@ -125,12 +133,9 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         </button>
       )}
 
-      {/* Scrub progress indicator */}
+      {/* Scrub progress indicator (width driven directly by the scroll handler) */}
       <div className="fixed bottom-0 left-0 right-0 z-30 h-[3px] bg-white/10 pointer-events-none">
-        <div
-          className="h-full bg-[#8bb56e] transition-[width] duration-150 ease-out"
-          style={{ width: `${Math.round(progress * 100)}%` }}
-        />
+        <div ref={progressBarRef} className="h-full bg-[#8bb56e]" style={{ width: '0%' }} />
       </div>
 
       {/* Content (revealed after the video runway) */}

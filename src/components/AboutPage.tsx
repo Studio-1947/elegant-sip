@@ -16,7 +16,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans">
       {/* Hero — offset below the fixed navbar so the full image is visible */}
       <div className="relative overflow-hidden pt-20">
-        <img src="/gopal.jpg" alt="Terraced tea garden at Gopal Dhara estate" className="w-full h-[70vh] object-cover" />
+        <img src="/gopal.jpg" alt="Terraced tea garden at Gopal Dhara estate" width={1280} height={828} fetchPriority="high" className="w-full h-[70vh] object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end">
           <div className="max-w-5xl mx-auto w-full px-6 md:px-12 pb-14">
             <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Our Story</span>

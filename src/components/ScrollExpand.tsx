@@ -70,8 +70,12 @@ export default function ScrollExpand({
           pin: !isFixed,
           anticipatePin: 1,
           // Let child section reveals know the content is actually on screen.
-          onUpdate: () => {
-            if (childrenEl && parseFloat(getComputedStyle(childrenEl).opacity) >= 0.5) {
+          // Threshold on timeline progress — reading computed styles here would
+          // force a style recalc on every scroll frame. 0.75 matches the point
+          // where the children tween passes ~50% opacity; markContentRevealed
+          // latches after the first call.
+          onUpdate: (self) => {
+            if (childrenEl && self.progress >= 0.75) {
               markContentRevealed()
             }
           },
@@ -150,7 +154,6 @@ export default function ScrollExpand({
             width: '72vw',
             height: '56vh',
             borderRadius: '24px',
-            willChange: 'width, height, border-radius',
           }}
         >
           <img

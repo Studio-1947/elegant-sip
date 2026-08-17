@@ -12,6 +12,13 @@ import JournalPage, { JournalArticlePage } from './JournalPage'
 import FaqPage from './FaqPage'
 import ContactPage from './ContactPage'
 import ProductDetailPage from './ProductDetailPage'
+import NotFoundPage from './NotFoundPage'
+import OrderPage from './OrderPage'
+import AccountPage from './AccountPage'
+import BrewingGuidePage from './BrewingGuidePage'
+import GardensPage from './GardensPage'
+import ConsentBanner from './ConsentBanner'
+import { PrivacyPage, TermsPage, ShippingReturnsPage } from './LegalPages'
 import Footer from './Footer'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
@@ -48,7 +55,10 @@ export default function TeaVectorHomepage() {
   const [loadingPercentage, setLoadingPercentage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [fadeLoader, setFadeLoader] = useState(false)
-  const [scrubProgress, setScrubProgress] = useState(0)
+  // Quantized scrub state: only the two thresholds the header cares about.
+  // Storing raw progress here would re-render the whole app shell every frame.
+  const [scrub, setScrub] = useState({ past45: false, past95: false })
+  const [menuOpen, setMenuOpen] = useState(false)
 
   // Loader: time-capped with a hard fallback so users are never stuck if the video fails
   useEffect(() => {
@@ -100,15 +110,29 @@ export default function TeaVectorHomepage() {
   // Reset scrub progress on any route change so the header returns to its
   // centered/transparent state when landing back on the home experience.
   useEffect(() => {
-    setScrubProgress(0)
+    setScrub({ past45: false, past95: false })
+    setMenuOpen(false)
   }, [route])
 
+  // Close the mobile menu on Escape
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [menuOpen])
+
   // Header chrome derived from scrub progress or non-home routes
-  const isNavbar = !isHome || scrubProgress > 0.95
-  const useDarkText = isNavbar || scrubProgress > 0.45
+  const isNavbar = !isHome || scrub.past95
+  const useDarkText = isNavbar || scrub.past45
 
   const handleProgress = (progress: number) => {
-    setScrubProgress(progress)
+    const past45 = progress > 0.45
+    const past95 = progress > 0.95
+    // Bail out unless a threshold was actually crossed — this runs every scroll frame.
+    setScrub((s) => (s.past45 === past45 && s.past95 === past95 ? s : { past45, past95 }))
   }
 
   const brandStyle = isNavbar
@@ -144,8 +168,32 @@ export default function TeaVectorHomepage() {
     case 'contact':
       page = <ContactPage />
       break
-    default:
+    case 'order':
+      page = <OrderPage id={routeId} />
+      break
+    case 'account':
+      page = <AccountPage />
+      break
+    case 'brewing':
+      page = <BrewingGuidePage />
+      break
+    case 'gardens':
+      page = <GardensPage />
+      break
+    case 'privacy':
+      page = <PrivacyPage />
+      break
+    case 'terms':
+      page = <TermsPage />
+      break
+    case 'shipping':
+      page = <ShippingReturnsPage />
+      break
+    case 'home':
       page = <HomeExperience ready={!loading} onProgress={handleProgress} />
+      break
+    default:
+      page = <NotFoundPage />
   }
 
   return (
@@ -192,6 +240,7 @@ export default function TeaVectorHomepage() {
 
       {/* Fixed Header & Navigation Bar */}
       {!loading && (
+        <>
         <header
           className={`fixed top-0 left-0 right-0 z-40 px-8 py-6 transition-all duration-700 ease-in-out ${
             isNavbar
@@ -222,6 +271,7 @@ export default function TeaVectorHomepage() {
           {/* Nav links (active when navbar is active) */}
           <nav
             aria-label="Primary"
+            inert={!isNavbar}
             className={`absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-8 transition-all duration-700 ease-in-out ${
               isNavbar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
@@ -246,7 +296,8 @@ export default function TeaVectorHomepage() {
 
           {/* Right Action Container */}
           <div
-            className={`absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-5 transition-all duration-700 ease-in-out ${
+            inert={!isNavbar}
+            className={`absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-3 md:gap-5 transition-all duration-700 ease-in-out ${
               isNavbar ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
             }`}
           >
@@ -285,12 +336,34 @@ export default function TeaVectorHomepage() {
               )}
             </Link>
 
+            {/* Menu toggle (mobile & tablet) */}
+            <button
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
+              className={`lg:hidden p-2 transition-colors cursor-pointer ${
+                isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'
+              }`}
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+                )}
+              </svg>
+            </button>
+
             {/* Account */}
             {user ? (
               <div className="hidden md:flex items-center gap-3">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#4a584a] max-w-[120px] truncate">
+                <Link
+                  to="/account"
+                  className="text-xs font-mono uppercase tracking-wider text-[#4a584a] hover:text-[#8bb56e] transition-colors max-w-[120px] truncate"
+                >
                   {user.name.split(' ')[0]}
-                </span>
+                </Link>
                 <button
                   onClick={logout}
                   className="px-4 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]"
@@ -312,6 +385,58 @@ export default function TeaVectorHomepage() {
             )}
           </div>
         </header>
+
+        {/* Mobile navigation panel */}
+        {menuOpen && (
+          <div
+            id="mobile-menu"
+            className="lg:hidden fixed top-20 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#1b261b]/10 shadow-[0_12px_40px_rgba(27,38,27,0.08)]"
+          >
+            <nav aria-label="Primary mobile" className="px-8 py-6 flex flex-col">
+              {NAV_LINKS.map((link) => {
+                const active = routeName === link.to.slice(1)
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 last:border-0 transition-colors ${
+                      active ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              })}
+              {user && (
+                <Link
+                  to="/account"
+                  className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${
+                    routeName === 'account' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                  }`}
+                >
+                  My Account
+                </Link>
+              )}
+              {user && (
+                <div className="flex items-center justify-between pt-4 mt-2 border-t border-[#1b261b]/10 md:hidden">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#4a584a] max-w-[160px] truncate">
+                    {user.name.split(' ')[0]}
+                  </span>
+                  <button
+                    onClick={() => {
+                      logout()
+                      setMenuOpen(false)
+                    }}
+                    className="px-4 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </nav>
+          </div>
+        )}
+        </>
       )}
 
       {/* Main content */}
@@ -325,6 +450,8 @@ export default function TeaVectorHomepage() {
           <Footer />
         </div>
       )}
+
+      <ConsentBanner />
     </div>
   )
 }

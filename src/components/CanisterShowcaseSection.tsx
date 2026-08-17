@@ -6,9 +6,11 @@ export default function CanisterShowcaseSection() {
   return (
     <div className="w-full overflow-hidden relative">
       <img
-        src="/tea1_1.png"
+        src="/tea1_1.webp"
         alt="Ember Charm Tea Canister"
         loading="lazy"
+        width={2560}
+        height={1440}
         className="w-full h-auto block object-cover"
       />
 

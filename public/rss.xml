@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>The Elegant Sip Journal</title>
+    <link>https://elegantsip.com/#/journal</link>
+    <description>Craft, sourcing, and the ritual of brewing — notes from the gardens behind Elegant Sip's single-origin teas.</description>
+    <language>en-us</language>
+    <atom:link href="https://elegantsip.com/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>The Art of the First Flush</title>
+      <link>https://elegantsip.com/#/journal/art-of-first-flush</link>
+      <guid isPermaLink="false">art-of-first-flush</guid>
+      <pubDate>Thu, 12 Mar 2026 08:00:00 GMT</pubDate>
+      <description>The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices — and the most patience.</description>
+      <category>Craft</category>
+    </item>
+    <item>
+      <title>A Field Guide to Steeping</title>
+      <link>https://elegantsip.com/#/journal/field-guide-to-steeping</link>
+      <guid isPermaLink="false">field-guide-to-steeping</guid>
+      <pubDate>Wed, 28 Jan 2026 08:00:00 GMT</pubDate>
+      <description>Temperature, time, leaf amount, and the often-misunderstood art of the re-steep. Everything you need to stop guessing and start tasting.</description>
+      <category>Brewing</category>
+    </item>
+    <item>
+      <title>From Mist to Cup: Our Sourcing Journey</title>
+      <link>https://elegantsip.com/#/journal/from-mist-to-cup</link>
+      <guid isPermaLink="false">from-mist-to-cup</guid>
+      <pubDate>Wed, 05 Nov 2025 08:00:00 GMT</pubDate>
+      <description>No auction houses, no middlemen, no anonymity. How we built direct relationships with the gardens that grow the leaves we sell.</description>
+      <category>Sourcing</category>
+    </item>
+  </channel>
+</rss>
