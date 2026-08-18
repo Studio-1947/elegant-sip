@@ -24,7 +24,7 @@ import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { useHashRoute, parseRoute, Link } from '../lib/router'
-import { useIsMobile } from '../lib/useMediaQuery'
+import { useIsMobile, useIsCompact } from '../lib/useMediaQuery'
 import { setLenis } from '../lib/scroll'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -62,11 +62,11 @@ export default function TeaVectorHomepage() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   // Loader: time-capped with a hard fallback so users are never stuck if the
-  // video fails. Skipped on phones — the mobile home is static and loads fast.
+  // video fails. Skipped below lg — the compact home paints immediately.
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const mobile = window.matchMedia('(max-width: 767px)').matches
-    if (reduced || mobile) {
+    const compact = window.matchMedia('(max-width: 1023px)').matches
+    if (reduced || compact) {
       setLoading(false)
       return
     }
@@ -128,10 +128,12 @@ export default function TeaVectorHomepage() {
   }, [menuOpen])
 
   const isMobile = useIsMobile()
+  const isCompact = useIsCompact()
 
   // Header chrome derived from scrub progress or non-home routes.
-  // On phones the navbar is always engaged — the mobile home has no video intro.
-  const isNavbar = !isHome || scrub.past95 || isMobile
+  // Below lg the navbar is always engaged — the compact home has no video intro
+  // that the header needs to stay out of the way for.
+  const isNavbar = !isHome || scrub.past95 || isCompact
   const useDarkText = isNavbar || scrub.past45
 
   const handleProgress = (progress: number) => {

@@ -23,8 +23,8 @@ export default function StatsGridSection() {
 
   return (
     <section className="px-6 md:px-16 lg:px-24 pb-10 max-w-6xl mx-auto">
-      {/* Phone: numbered promise list */}
-      <div className="md:hidden">
+      {/* Phone & tablet: numbered promise list */}
+      <div className="lg:hidden max-w-2xl">
         {PROMISES.map((item, i) => (
           <div key={item.title} className="flex gap-6 py-7 border-b border-[#1b261b]/10 last:border-b-0">
             <span className="text-[#8bb56e] font-mono font-bold text-sm pt-0.5">0{i + 1}</span>
@@ -38,7 +38,7 @@ export default function StatsGridSection() {
       </div>
 
       {/* Desktop: bordered subgrid cards */}
-      <div ref={gridRef} className="hidden md:grid grid-cols-3 grid-rows-[auto_auto_auto] gap-y-2 border-y border-[#1b261b]/10 bg-white">
+      <div ref={gridRef} className="hidden lg:grid grid-cols-3 grid-rows-[auto_auto_auto] gap-y-2 border-y border-[#1b261b]/10 bg-white">
         {PROMISES.map((item, i) => (
           <div
             key={item.title}

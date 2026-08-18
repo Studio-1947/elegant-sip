@@ -5,7 +5,7 @@ import { useGSAP } from '@gsap/react'
 import HeroScrollSection from './HeroScrollSection'
 import MobileHome from './MobileHome'
 import { useUi } from './UiContext'
-import { useIsMobile } from '../lib/useMediaQuery'
+import { useIsCompact } from '../lib/useMediaQuery'
 import { scrollToY } from '../lib/scroll'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
@@ -25,7 +25,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
   // re-render this whole subtree on every scroll frame.
   const [isContent, setIsContent] = useState(false)
   const { openQuiz } = useUi()
-  const isMobile = useIsMobile()
+  const isCompact = useIsCompact()
 
   // Scroll-driven video scrubbing via GSAP ScrollTrigger
   useGSAP(
@@ -109,8 +109,9 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
     scrollToY(targetY)
   }
 
-  // Phones get the static, linear homepage — no video scrub, no pinned runway.
-  if (isMobile) {
+  // Phones and portrait tablets get the compact homepage (portrait video hero,
+  // linear flow) — the landscape scrub + pinned runway is a desktop experience.
+  if (isCompact) {
     return <MobileHome />
   }
 

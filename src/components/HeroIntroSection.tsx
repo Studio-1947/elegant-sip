@@ -6,8 +6,8 @@ export default function HeroIntroSection() {
   return (
     <section ref={ref} className="px-6 md:px-16 lg:px-24 pt-16 pb-24 max-w-6xl mx-auto text-center">
       <p className="text-[#8bb56e] text-xs font-mono tracking-[0.35em] uppercase mb-6">
-        <span className="md:hidden">Our Promise</span>
-        <span className="hidden md:inline">Est. 2024 · Single Origin · Hand-Crafted</span>
+        <span className="lg:hidden">Our Promise</span>
+        <span className="hidden lg:inline">Est. 2024 · Single Origin · Hand-Crafted</span>
       </p>
       <h2 className="text-[#1b261b] text-4xl md:text-6xl lg:text-7xl font-bold uppercase tracking-tight leading-[1.1] mb-8">
         Where Every Leaf<br />

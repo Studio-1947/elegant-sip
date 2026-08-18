@@ -17,3 +17,6 @@ export function useMediaQuery(query: string): boolean {
 
 /** The app's mobile breakpoint — below Tailwind's `md`. */
 export const useIsMobile = () => useMediaQuery('(max-width: 767px)')
+
+/** Phones AND portrait tablets — below Tailwind's `lg`. The compact home experience. */
+export const useIsCompact = () => useMediaQuery('(max-width: 1023px)')

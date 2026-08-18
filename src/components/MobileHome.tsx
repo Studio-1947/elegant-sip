@@ -132,16 +132,16 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
         {/* Hero copy overlay */}
         <div ref={overlayRef}>
           {/* Wordmark */}
-          <span className="absolute top-[13%] left-1/2 -translate-x-1/2 text-white text-4xl font-bold uppercase tracking-tight whitespace-nowrap drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
+          <span className="absolute top-[13%] left-1/2 -translate-x-1/2 text-white text-4xl md:text-6xl font-bold uppercase tracking-tight whitespace-nowrap drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
             Elegant Sip
           </span>
 
           {/* Copy + CTAs */}
-          <div className="absolute bottom-10 left-6 right-6">
-            <span className="text-[#8bb56e] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
+          <div className="absolute bottom-10 left-6 right-6 md:left-12 md:right-12 md:bottom-14">
+            <span className="text-[#8bb56e] text-[11px] md:text-xs font-mono font-bold tracking-[0.3em] uppercase block mb-3">
               Single-Origin Darjeeling
             </span>
-            <h1 className="text-white text-[2.35rem] font-bold leading-[1.1] tracking-tight mb-7">
+            <h1 className="text-white text-[2.35rem] md:text-6xl font-bold leading-[1.1] tracking-tight mb-7 max-w-xl md:max-w-2xl">
               From mist-covered hills to your cup.
             </h1>
             <div className="flex flex-wrap items-center gap-3">
@@ -186,9 +186,9 @@ export default function MobileHome() {
 
       {/* ── Brew elegance banner ── */}
       <section className="relative">
-        <img src="/hero.webp" alt="Tea plantation in the hills" loading="lazy" width={1920} height={1172} className="w-full h-72 object-cover" />
+        <img src="/hero.webp" alt="Tea plantation in the hills" loading="lazy" width={1920} height={1172} className="w-full h-72 md:h-[26rem] object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-        <h2 className="absolute bottom-6 left-6 right-6 text-white text-xl font-bold uppercase tracking-wide">
+        <h2 className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-12 text-white text-xl md:text-3xl font-bold uppercase tracking-wide">
           Brew Elegance | Sip Luxury
         </h2>
       </section>

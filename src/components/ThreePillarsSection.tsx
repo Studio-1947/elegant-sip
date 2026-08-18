@@ -22,23 +22,23 @@ export default function ThreePillarsSection() {
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > div', stagger: 0.15 })
 
   return (
-    <section className="bg-[#1b261b] md:bg-transparent px-6 md:px-12 lg:px-16 py-14 md:py-0 md:pb-32 max-w-[1360px] mx-auto mb-14 md:mb-0">
-      {/* Phone: dark section heading */}
-      <div className="md:hidden mb-8">
+    <section className="bg-[#1b261b] lg:bg-transparent px-6 md:px-12 lg:px-16 py-14 md:py-16 lg:py-0 lg:pb-32 max-w-[1360px] mx-auto mb-14 lg:mb-0">
+      {/* Phone & tablet: dark section heading */}
+      <div className="lg:hidden mb-8">
         <span className="text-[#8bb56e] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
           From Garden to Cup
         </span>
-        <h2 className="text-white text-3xl font-bold tracking-tight">Grown. Crafted. Experienced.</h2>
+        <h2 className="text-white text-3xl md:text-4xl font-bold tracking-tight">Grown. Crafted. Experienced.</h2>
       </div>
 
-      {/* Phone: horizontal card carousel */}
-      <div className="md:hidden flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-6 px-6">
+      {/* Phone & tablet: horizontal card carousel */}
+      <div className="lg:hidden flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-6 px-6 md:-mx-12 md:px-12">
         {PILLARS.map((pillar) => (
           <div
             key={pillar.title}
-            className="min-w-[80vw] max-w-[340px] snap-center rounded-2xl overflow-hidden bg-[#2b3a2b] flex flex-col"
+            className="min-w-[80vw] sm:min-w-[52vw] md:min-w-[40vw] max-w-[340px] md:max-w-[380px] snap-center rounded-2xl overflow-hidden bg-[#2b3a2b] flex flex-col"
           >
-            <img src={pillar.imageSrc} alt="" loading="lazy" className="w-full h-48 object-cover" />
+            <img src={pillar.imageSrc} alt="" loading="lazy" className="w-full h-48 md:h-56 object-cover" />
             <div className="p-6">
               <h3 className="text-white text-base font-bold uppercase tracking-wide mb-3">{pillar.title}</h3>
               <p className="text-white/80 text-sm leading-relaxed">{pillar.text}</p>
@@ -48,7 +48,7 @@ export default function ThreePillarsSection() {
       </div>
 
       {/* Desktop: full-height image cards */}
-      <div ref={gridRef} className="hidden md:grid grid-cols-3 gap-8 lg:gap-10">
+      <div ref={gridRef} className="hidden lg:grid grid-cols-3 gap-8 lg:gap-10">
         {PILLARS.map((pillar) => (
           <div
             key={pillar.title}
