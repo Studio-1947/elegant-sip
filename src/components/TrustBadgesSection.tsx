@@ -43,7 +43,7 @@ export default function TrustBadgesSection() {
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > div' })
 
   return (
-    <section className="px-6 md:px-12 lg:px-16 pb-32 max-w-[1400px] mx-auto">
+    <section className="hidden md:block px-6 md:px-12 lg:px-16 pb-32 max-w-[1400px] mx-auto">
       <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {BADGES.map((badge) => (
           <div

@@ -93,12 +93,12 @@ export default function NewsletterSection() {
                   if (status === 'error') setStatus('idle')
                 }}
                 placeholder="you@example.com"
-                className="flex-grow bg-white/10 border border-white/15 rounded-lg px-4 py-3.5 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-[#8bb56e] transition-colors"
+                className="flex-grow bg-white/10 border border-white/15 rounded-full sm:rounded-lg px-5 sm:px-4 py-3.5 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-[#8bb56e] transition-colors"
               />
               <button
                 type="submit"
                 disabled={status === 'sending'}
-                className="bg-[#8bb56e] hover:bg-[#9cc580] disabled:opacity-60 disabled:cursor-wait text-[#1b261b] text-xs font-bold tracking-widest uppercase py-3.5 px-6 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+                className="bg-[#8bb56e] hover:bg-[#9cc580] disabled:opacity-60 disabled:cursor-wait text-[#1b261b] text-xs font-bold tracking-widest uppercase py-3.5 px-6 rounded-full sm:rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
               >
                 {status === 'sending' ? 'Joining…' : 'Join Free'}
               </button>

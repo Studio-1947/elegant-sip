@@ -5,15 +5,18 @@ export default function StatsBarSection() {
   const stats = [
     { value: '3', label: 'Named Gardens' },
     { value: '6', label: 'Steeps per Leaf' },
-    { value: '30-Day', label: 'Taste Guarantee' },
-    { value: '100%', label: 'Hand-Crafted' },
+    { value: 'Free', label: 'Shipping over ₹4,000' },
+    { value: '100%', label: 'Freshness Guarantee' },
   ]
 
   return (
-    <section className="px-6 md:px-16 lg:px-24 py-20 max-w-5xl mx-auto">
-      <div ref={gridRef} className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-        {stats.map((stat) => (
-          <div key={stat.label}>
+    <section className="px-6 md:px-16 lg:px-24 py-10 md:py-20 max-w-5xl mx-auto">
+      <div ref={gridRef} className="grid grid-cols-2 md:grid-cols-4 gap-0 md:gap-8 text-center border-y border-[#1b261b]/10 md:border-0">
+        {stats.map((stat, i) => (
+          <div
+            key={stat.label}
+            className={`py-8 md:py-0 px-2 border-[#1b261b]/10 md:border-0 ${i % 2 === 0 ? 'border-r' : ''} ${i < 2 ? 'border-b' : ''}`}
+          >
             <p className="text-[#8bb56e] text-3xl md:text-4xl font-bold tracking-tight">{stat.value}</p>
             <p className="text-[#4a584a]/60 text-[11px] font-mono tracking-widest uppercase mt-2">{stat.label}</p>
           </div>

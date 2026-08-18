@@ -366,7 +366,7 @@ export const FAQS: Faq[] = [
     category: "Orders & Shipping",
     question: "Can I change or cancel my order after placing it?",
     answer:
-      "If your order hasn't shipped yet (usually within the first few hours), email hello@elegantsip.com and we'll update or cancel it for you. Once it's with the carrier, we'll help you redirect it instead.",
+      "If your order hasn't shipped yet (usually within the first few hours), email elegantsipdarjeeling@gmail.com and we'll update or cancel it for you. Once it's with the carrier, we'll help you redirect it instead.",
   },
   {
     category: "Returns & Guarantee",

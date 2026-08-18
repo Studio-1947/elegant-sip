@@ -24,7 +24,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-const CONTACT_EMAIL = 'hello@elegantsip.com'
+const CONTACT_EMAIL = 'elegantsipdarjeeling@gmail.com'
 
 export function PrivacyPage() {
   useDocumentMeta('Privacy Policy — Elegant Sip', 'How Elegant Sip collects, uses, and protects your information.')

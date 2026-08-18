@@ -466,9 +466,11 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-2">Continue the Journey</span>
               <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight">You May Also Love</h2>
             </div>
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-8">
+            <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 -mx-6 px-6 md:mx-0 md:px-0 md:grid md:grid-cols-3 md:gap-8">
               {related.map((item) => (
-                <ProductCard key={item.id} product={item} />
+                <div key={item.id} className="min-w-[80vw] sm:min-w-[46vw] md:min-w-0 snap-center flex">
+                  <ProductCard product={item} />
+                </div>
               ))}
             </div>
           </div>

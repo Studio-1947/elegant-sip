@@ -3,7 +3,9 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import HeroScrollSection from './HeroScrollSection'
+import MobileHome from './MobileHome'
 import { useUi } from './UiContext'
+import { useIsMobile } from '../lib/useMediaQuery'
 import { scrollToY } from '../lib/scroll'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
@@ -23,6 +25,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
   // re-render this whole subtree on every scroll frame.
   const [isContent, setIsContent] = useState(false)
   const { openQuiz } = useUi()
+  const isMobile = useIsMobile()
 
   // Scroll-driven video scrubbing via GSAP ScrollTrigger
   useGSAP(
@@ -77,7 +80,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
   // Video parallax: fade and scale the background as content takes over
   useGSAP(
     () => {
-      if (!ready) return
+      if (!ready || !videoRef.current) return
 
       gsap.fromTo(
         videoRef.current,
@@ -104,6 +107,11 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
     if (!track) return
     const targetY = track.getBoundingClientRect().bottom + window.scrollY - window.innerHeight
     scrollToY(targetY)
+  }
+
+  // Phones get the static, linear homepage — no video scrub, no pinned runway.
+  if (isMobile) {
+    return <MobileHome />
   }
 
   return (

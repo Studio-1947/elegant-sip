@@ -24,6 +24,7 @@ import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { useHashRoute, parseRoute, Link } from '../lib/router'
+import { useIsMobile } from '../lib/useMediaQuery'
 import { setLenis } from '../lib/scroll'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -60,10 +61,12 @@ export default function TeaVectorHomepage() {
   const [scrub, setScrub] = useState({ past45: false, past95: false })
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // Loader: time-capped with a hard fallback so users are never stuck if the video fails
+  // Loader: time-capped with a hard fallback so users are never stuck if the
+  // video fails. Skipped on phones — the mobile home is static and loads fast.
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduced) {
+    const mobile = window.matchMedia('(max-width: 767px)').matches
+    if (reduced || mobile) {
       setLoading(false)
       return
     }
@@ -124,8 +127,11 @@ export default function TeaVectorHomepage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [menuOpen])
 
-  // Header chrome derived from scrub progress or non-home routes
-  const isNavbar = !isHome || scrub.past95
+  const isMobile = useIsMobile()
+
+  // Header chrome derived from scrub progress or non-home routes.
+  // On phones the navbar is always engaged — the mobile home has no video intro.
+  const isNavbar = !isHome || scrub.past95 || isMobile
   const useDarkText = isNavbar || scrub.past45
 
   const handleProgress = (progress: number) => {
@@ -135,10 +141,12 @@ export default function TeaVectorHomepage() {
     setScrub((s) => (s.past45 === past45 && s.past95 === past95 ? s : { past45, past95 }))
   }
 
-  // Brand pinned near the edge on phones, 32px on desktop.
+  // Brand: centered on phones (mockup layout), pinned left on desktop.
   const brandLeft = 'clamp(16px, 4vw, 32px)'
   const brandStyle = isNavbar
-    ? { left: brandLeft, transform: 'translate(0, 0)' }
+    ? isMobile
+      ? { left: '50%', transform: 'translate(-50%, 0)' }
+      : { left: brandLeft, transform: 'translate(0, 0)' }
     : { left: '50%', transform: 'translate(-50%, 10vh)' }
 
   let page: ReactNode
@@ -252,7 +260,7 @@ export default function TeaVectorHomepage() {
         >
           {/* Brand Container */}
           <div
-            style={isNavbar ? { left: brandLeft, transform: 'translate(0, 0)' } : brandStyle}
+            style={brandStyle}
             className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto cursor-pointer ${
               isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
             }`}
@@ -269,6 +277,23 @@ export default function TeaVectorHomepage() {
               </span>
             </Link>
           </div>
+
+          {/* Menu toggle — left side on phones (mockup layout) */}
+          <button
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 p-2 text-[#1b261b] hover:text-[#8bb56e] transition-colors cursor-pointer pointer-events-auto"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+              )}
+            </svg>
+          </button>
 
           {/* Nav links (active when navbar is active) */}
           <nav
@@ -307,7 +332,7 @@ export default function TeaVectorHomepage() {
             <Link
               to="/wishlist"
               aria-label="Wishlist"
-              className={`hidden sm:block transition-colors relative p-2 ${isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'}`}
+              className={`hidden md:block transition-colors relative p-2 ${isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'}`}
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
@@ -338,13 +363,13 @@ export default function TeaVectorHomepage() {
               )}
             </Link>
 
-            {/* Menu toggle (mobile & tablet) */}
+            {/* Menu toggle (tablet — phones use the left-side toggle) */}
             <button
               onClick={() => setMenuOpen((open) => !open)}
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
-              className={`lg:hidden p-2 transition-colors cursor-pointer ${
+              className={`hidden md:block lg:hidden p-2 transition-colors cursor-pointer ${
                 isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'
               }`}
             >
@@ -376,7 +401,7 @@ export default function TeaVectorHomepage() {
             ) : (
               <button
                 onClick={openLogin}
-                className={`px-3.5 py-1.5 sm:px-5 sm:py-2 border rounded-full text-[11px] sm:text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                className={`hidden md:block px-3.5 py-1.5 sm:px-5 sm:py-2 border rounded-full text-[11px] sm:text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
                   isNavbar
                     ? 'border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]'
                     : 'border-white/20 text-white hover:bg-[#8bb56e] hover:text-black hover:border-[#8bb56e]'
@@ -411,12 +436,23 @@ export default function TeaVectorHomepage() {
               })}
               <Link
                 to="/wishlist"
-                className={`sm:hidden py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${
+                className={`md:hidden py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${
                   routeName === 'wishlist' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
                 }`}
               >
                 Wishlist
               </Link>
+              {!user && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false)
+                    openLogin()
+                  }}
+                  className="md:hidden py-3.5 text-left text-xs font-mono tracking-widest uppercase text-[#1b261b] hover:text-[#8bb56e] transition-colors cursor-pointer"
+                >
+                  Login
+                </button>
+              )}
               {user && (
                 <Link
                   to="/account"

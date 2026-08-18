@@ -64,7 +64,7 @@ export default function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="group bg-white rounded-2xl border border-[#1b261b]/10 overflow-hidden flex flex-col transition-all duration-500 hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
+    <div className="group w-full bg-white rounded-2xl border border-[#1b261b]/10 overflow-hidden flex flex-col transition-all duration-500 hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
       {/* Product Image Wrapper with Hover Overlay */}
       <div className="relative aspect-[4/5] bg-[#fdfdfd] overflow-hidden">
         <Link to={`/product/${product.id}`} aria-label={`View ${product.name}`}>
@@ -81,13 +81,13 @@ export default function ProductCard({ product }: { product: Product }) {
           onClick={handleWishlist}
           aria-label={wishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
           aria-pressed={wishlisted}
-          className={`absolute top-2 right-2 sm:top-4 sm:right-4 z-20 w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300 cursor-pointer border ${
+          className={`absolute top-4 right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300 cursor-pointer border ${
             wishlisted
               ? 'bg-[#8bb56e] text-white border-[#8bb56e]'
               : 'bg-white/80 text-[#1b261b] border-white/40 hover:bg-white'
           }`}
         >
-          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
         </button>
@@ -157,25 +157,25 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
 
       {/* Info Block */}
-      <div className="p-2.5 sm:p-4 md:p-6 lg:p-8 flex flex-col flex-grow">
-        <div className="flex flex-col gap-0.5 md:flex-row md:justify-between md:items-start mb-1.5 md:mb-2">
+      <div className="p-6 md:p-8 flex flex-col flex-grow">
+        <div className="flex justify-between items-start gap-3 mb-2">
           <Link to={`/product/${product.id}`} className="hover:text-[#8bb56e] transition-colors">
-            <h3 className="text-[#1b261b] text-xs sm:text-base lg:text-xl font-bold font-sans tracking-wide leading-snug">{product.name}</h3>
+            <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide">{product.name}</h3>
           </Link>
-          <span className="flex md:flex-col items-baseline md:items-end gap-1.5 md:gap-0">
+          <span className="flex flex-col items-end">
             {product.compareAtPrice && (
-              <span className="text-[#4a584a]/50 text-[10px] sm:text-xs line-through">{formatINR(product.compareAtPrice)}</span>
+              <span className="text-[#4a584a]/50 text-xs line-through">{formatINR(product.compareAtPrice)}</span>
             )}
-            <span className="text-[#1b261b] text-[11px] sm:text-sm lg:text-lg font-bold">
-              {hasMultipleSizes && <span className="text-[9px] sm:text-xs font-normal text-[#4a584a]">from </span>}
+            <span className="text-[#1b261b] text-base lg:text-lg font-bold whitespace-nowrap">
+              {hasMultipleSizes && <span className="text-xs font-normal text-[#4a584a]">from </span>}
               {formatINR(product.price)}
             </span>
           </span>
         </div>
 
-        {/* Star rating (hidden on the compact phone card) */}
+        {/* Star rating */}
         {rating.count > 0 && (
-          <div className="hidden sm:flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3">
             <div className="flex gap-0.5 text-[#8bb56e] text-xs" aria-label={`Rated ${rating.average} out of 5 stars`}>
               {[...Array(5)].map((_, i) => (
                 <svg key={i} className="w-3 h-3" viewBox="0 0 20 20" fill={i < Math.round(rating.average) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2">
@@ -189,12 +189,12 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        <p className="hidden sm:block text-[#4a584a] text-xs leading-relaxed mb-6 flex-grow">{product.description}</p>
+        <p className="text-[#4a584a] text-xs leading-relaxed mb-6 flex-grow line-clamp-3 md:line-clamp-none">{product.description}</p>
 
         {/* Quantity & CTA Row */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch mt-auto pt-2 sm:pt-0">
-          {/* Quantity Selector (hidden on the compact phone card) */}
-          <div className="hidden sm:flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-4 py-2 sm:w-28 bg-[#f9faf7]">
+        <div className="flex flex-row gap-3 sm:gap-4 items-stretch mt-auto">
+          {/* Quantity Selector */}
+          <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-full md:rounded-lg px-4 py-2 w-24 sm:w-28 bg-[#f9faf7] flex-shrink-0">
             <button
               onClick={handleDecrease}
               className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-lg leading-none transition-colors px-1"
@@ -216,7 +216,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             onClick={handleAddToCart}
             disabled={isAdding || isAdded || !inStock}
-            className={`flex-grow text-[9px] sm:text-xs font-bold tracking-wide sm:tracking-widest uppercase py-2 sm:py-3 px-1.5 sm:px-6 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
+            className={`flex-grow text-[10px] sm:text-xs font-bold tracking-widest uppercase py-3 px-3 sm:px-6 rounded-full md:rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
               !inStock
                 ? 'bg-[#1b261b]/10 text-[#4a584a]/60 cursor-not-allowed'
                 : isAdded

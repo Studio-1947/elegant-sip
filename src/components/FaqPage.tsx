@@ -25,7 +25,7 @@ export default function FaqPage() {
         <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight mb-6">Frequently Asked Questions</h1>
         <p className="text-sm text-[#4a584a] leading-relaxed mb-16">
           Everything about ordering, freshness, returns, and brewing. Can't find what you need?
-          Write to <a href="mailto:hello@elegantsip.com" className="text-[#8bb56e] hover:text-[#1b261b] transition-colors">hello@elegantsip.com</a>.
+          Write to <a href="mailto:elegantsipdarjeeling@gmail.com" className="text-[#8bb56e] hover:text-[#1b261b] transition-colors">elegantsipdarjeeling@gmail.com</a>.
         </p>
 
         <div className="space-y-16">

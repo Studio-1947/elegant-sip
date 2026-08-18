@@ -19,6 +19,20 @@ body {
   overscroll-behavior: none;
 }
 
+/* Mobile marquee ticker */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ticker-track {
+  animation: ticker 20s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+}
+
 /* Hide scrollbars but keep scrolling functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
