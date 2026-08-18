@@ -6,6 +6,7 @@ import HeroScrollSection from './HeroScrollSection'
 import MobileHome from './MobileHome'
 import { useUi } from './UiContext'
 import { useIsCompact } from '../lib/useMediaQuery'
+import { reportVideoProgress, markVideoFailed } from '../lib/videoLoading'
 import { scrollToY } from '../lib/scroll'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
@@ -54,24 +55,52 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         },
       })
 
-      // Scrub video currentTime from 0 → duration based on scroll progress
+      // Scrub video currentTime from 0 → duration based on scroll progress.
+      // Seeks go through a proxy and are clamped to the buffered range — an
+      // unbuffered seek aborts the in-flight range request, and on slow
+      // networks that becomes a storm of canceled requests and a frozen frame.
+      const proxy = { t: 0 }
+      const applySeek = () => {
+        if (video.buffered.length === 0) return
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1) - 0.05
+        const t = Math.min(proxy.t, Math.max(0, bufferedEnd))
+        if (Math.abs(video.currentTime - t) > 1 / 60) video.currentTime = t
+      }
+      let scrubAdded = false
       const addScrubAnimation = () => {
-        if (video.duration && video.duration > 0) {
-          tl.fromTo(
-            video,
-            { currentTime: 0 },
-            { currentTime: video.duration, ease: 'none' },
-            0,
-          )
-        }
+        if (scrubAdded || !video.duration || video.duration <= 0) return
+        scrubAdded = true
+        tl.fromTo(proxy, { t: 0 }, { t: video.duration, ease: 'none', onUpdate: applySeek }, 0)
+        reportBuffer()
       }
 
+      // Feed the loading overlay with real download progress.
+      const reportBuffer = () => {
+        if (!video.duration || video.buffered.length === 0) return
+        reportVideoProgress(video.buffered.end(video.buffered.length - 1) / video.duration)
+      }
+      const onVideoError = () => markVideoFailed()
+
       // Wait for metadata so video.duration is available
-      video.onloadedmetadata = addScrubAnimation
+      video.addEventListener('loadedmetadata', addScrubAnimation)
 
       // Fallback: metadata may already be loaded
       if (video.readyState >= 1) {
         addScrubAnimation()
+      }
+
+      // As more data buffers in, let the frame catch up to the scrub target.
+      video.addEventListener('progress', applySeek)
+      video.addEventListener('progress', reportBuffer)
+      video.addEventListener('loadeddata', reportBuffer)
+      video.addEventListener('error', onVideoError)
+
+      return () => {
+        video.removeEventListener('loadedmetadata', addScrubAnimation)
+        video.removeEventListener('progress', applySeek)
+        video.removeEventListener('progress', reportBuffer)
+        video.removeEventListener('loadeddata', reportBuffer)
+        video.removeEventListener('error', onVideoError)
       }
     },
     { scope: containerRef },

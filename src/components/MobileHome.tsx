@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { Link } from '../lib/router'
 import { useUi } from './UiContext'
+import { reportVideoProgress, markVideoFailed } from '../lib/videoLoading'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 import HeroIntroSection from './HeroIntroSection'
@@ -74,13 +75,39 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
           },
         },
       })
-      const addScrub = () => {
-        if (video.duration && video.duration > 0) {
-          tl.fromTo(video, { currentTime: 0 }, { currentTime: video.duration, ease: 'none' }, 0)
-        }
+
+      // Scrub through a proxy and clamp every seek to the buffered range.
+      // Seeking into unbuffered video aborts the in-flight range request and
+      // starts a new one — on slow networks that becomes a storm of canceled
+      // requests and a frozen, janky animation. Clamped, the playhead simply
+      // trails the download and catches up as data arrives.
+      const proxy = { t: 0 }
+      const applySeek = () => {
+        if (video.buffered.length === 0) return
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1) - 0.05
+        const t = Math.min(proxy.t, Math.max(0, bufferedEnd))
+        if (Math.abs(video.currentTime - t) > 1 / 60) video.currentTime = t
       }
+      let scrubAdded = false
+      const addScrub = () => {
+        if (scrubAdded || !video.duration || video.duration <= 0) return
+        scrubAdded = true
+        tl.fromTo(proxy, { t: 0 }, { t: video.duration, ease: 'none', onUpdate: applySeek }, 0)
+        reportBuffer()
+      }
+      // Feed the loading overlay with real download progress.
+      const reportBuffer = () => {
+        if (!video.duration || video.buffered.length === 0) return
+        reportVideoProgress(video.buffered.end(video.buffered.length - 1) / video.duration)
+      }
+      const onVideoError = () => markVideoFailed()
       video.addEventListener('loadedmetadata', addScrub)
       if (video.readyState >= 1) addScrub()
+      // As more data buffers in, let the frame catch up to the scrub target.
+      video.addEventListener('progress', applySeek)
+      video.addEventListener('progress', reportBuffer)
+      video.addEventListener('loadeddata', reportBuffer)
+      video.addEventListener('error', onVideoError)
 
       // Fade the hero copy out over the first stretch of the journey, and
       // drop its hit-target once it's mostly gone so the video can be enjoyed.
@@ -101,7 +128,13 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
         })
       }
 
-      return () => video.removeEventListener('loadedmetadata', addScrub)
+      return () => {
+        video.removeEventListener('loadedmetadata', addScrub)
+        video.removeEventListener('progress', applySeek)
+        video.removeEventListener('progress', reportBuffer)
+        video.removeEventListener('loadeddata', reportBuffer)
+        video.removeEventListener('error', onVideoError)
+      }
     },
     { scope: sectionRef, dependencies: [reduced] },
   )

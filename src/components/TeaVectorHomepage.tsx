@@ -23,8 +23,9 @@ import Footer from './Footer'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
-import { useHashRoute, parseRoute, Link } from '../lib/router'
+import { useHashRoute, parseRoute, getRoute, Link } from '../lib/router'
 import { useIsMobile, useIsCompact } from '../lib/useMediaQuery'
+import { getVideoProgress } from '../lib/videoLoading'
 import { setLenis } from '../lib/scroll'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -61,29 +62,45 @@ export default function TeaVectorHomepage() {
   const [scrub, setScrub] = useState({ past45: false, past95: false })
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // Loader: time-capped with a hard fallback so users are never stuck if the
-  // video fails. Skipped below lg — the compact home paints immediately.
+  // Loader: holds until the hero video is actually buffered enough to scrub,
+  // showing REAL download progress. Escape hatches so nobody is ever trapped:
+  // buffering stall (browser chose partial preload — the clamped scrub handles
+  // the rest), video error, or a 25s hard cap. Only the homepage has a video;
+  // every other route paints immediately. Reduced-motion skips it entirely.
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const compact = window.matchMedia('(max-width: 1023px)').matches
-    if (reduced || compact) {
+    const home = parseRoute(getRoute()).name === 'home'
+    if (reduced || !home) {
       setLoading(false)
       return
     }
-    let percent = 0
-    const interval = window.setInterval(() => {
-      percent = percent + (92 - percent) * 0.15
-      setLoadingPercentage(Math.round(percent))
-    }, 120)
-    const timer = window.setTimeout(() => {
-      window.clearInterval(interval)
+    const start = Date.now()
+    let lastValue = 0
+    let lastChange = Date.now()
+    let fadeTimer: number | undefined
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
+      window.clearInterval(poll)
       setLoadingPercentage(100)
       setFadeLoader(true)
-      window.setTimeout(() => setLoading(false), 900)
-    }, 3200)
+      fadeTimer = window.setTimeout(() => setLoading(false), 900)
+    }
+    const poll = window.setInterval(() => {
+      const fraction = getVideoProgress()
+      if (fraction > lastValue) {
+        lastValue = fraction
+        lastChange = Date.now()
+      }
+      setLoadingPercentage(Math.round(Math.min(fraction, 0.99) * 100))
+      const elapsed = Date.now() - start
+      const stalled = lastValue > 0 && Date.now() - lastChange > 5000
+      if ((fraction >= 0.99 && elapsed > 1600) || stalled || elapsed > 25000) finish()
+    }, 150)
     return () => {
-      window.clearInterval(interval)
-      window.clearTimeout(timer)
+      window.clearInterval(poll)
+      if (fadeTimer) window.clearTimeout(fadeTimer)
     }
   }, [])
 
