@@ -3,6 +3,7 @@ import { useCart } from './CartContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
 import { getOrderPricing, TAX_RATE } from '../lib/pricing'
+import { formatINR } from '../lib/currency'
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, cartTotal, discount, coupon, applyCoupon, removeCoupon } = useCart()
@@ -86,7 +87,7 @@ export default function CartPage() {
                     <Link to={`/product/${item.id}`} className="hover:text-[#8bb56e] transition-colors">
                       <h3 className="text-base md:text-lg font-bold">{item.name}</h3>
                     </Link>
-                    <p className="text-xs text-[#4a584a] mt-1">{item.size} · ${item.price}.00 each</p>
+                    <p className="text-xs text-[#4a584a] mt-1">{item.size} · {formatINR(item.price)} each</p>
                     <button
                       onClick={() => handleRemove(item.id, item.size)}
                       className="text-xs font-mono tracking-wider text-red-600 hover:text-red-700 transition-colors mt-3 block focus:outline-none cursor-pointer"
@@ -115,7 +116,7 @@ export default function CartPage() {
                       </button>
                     </div>
                     <span className="text-base md:text-lg font-bold min-w-[70px] text-right">
-                      ${item.price * item.quantity}.00
+                      {formatINR(item.price * item.quantity)}
                     </span>
                   </div>
                 </div>
@@ -180,34 +181,34 @@ export default function CartPage() {
             <div className="space-y-4 text-xs">
               <div className="flex justify-between text-[#4a584a]">
                 <span>Subtotal</span>
-                <span className="font-mono">${cartTotal.toFixed(2)}</span>
+                <span className="font-mono">{formatINR(cartTotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-[#8bb56e]">
                   <span>Discount ({coupon})</span>
-                  <span className="font-mono">−${discount.toFixed(2)}</span>
+                  <span className="font-mono">−{formatINR(discount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-[#4a584a]">
                 <span>Shipping</span>
                 <span className="font-mono">
-                  {shippingFee === 0 ? 'Free' : `$${shippingFee.toFixed(2)}`}
+                  {shippingFee === 0 ? 'Free' : formatINR(shippingFee)}
                 </span>
               </div>
               <div className="flex justify-between text-[#4a584a]">
-                <span>Estimated Tax ({Math.round(TAX_RATE * 100)}%)</span>
-                <span className="font-mono">${estimatedTax.toFixed(2)}</span>
+                <span>GST ({Math.round(TAX_RATE * 100)}%)</span>
+                <span className="font-mono">{formatINR(estimatedTax)}</span>
               </div>
 
               {shippingFee > 0 && (
                 <p className="text-[10px] text-[#8bb56e] font-mono italic">
-                  Spend ${amountToFreeShipping.toFixed(2)} more for Free Shipping
+                  Spend {formatINR(amountToFreeShipping)} more for Free Shipping
                 </p>
               )}
 
               <div className="border-t border-[#1b261b]/10 pt-4 mt-4 flex justify-between text-base font-bold">
                 <span>Total</span>
-                <span className="font-mono">${finalTotal.toFixed(2)}</span>
+                <span className="font-mono">{formatINR(finalTotal)}</span>
               </div>
             </div>
 

@@ -3,8 +3,10 @@
  * thresholds and rates can never drift between the two.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-export const FREE_SHIPPING_THRESHOLD = 50
-export const TAX_RATE = 0.08
+/* All amounts in whole Indian Rupees. */
+export const FREE_SHIPPING_THRESHOLD = 4000
+/** GST rate applied to tea in India. */
+export const TAX_RATE = 0.05
 
 export type ShippingMethodId = 'standard' | 'express'
 
@@ -18,8 +20,8 @@ export interface ShippingMethod {
 }
 
 export const SHIPPING_METHODS: ShippingMethod[] = [
-  { id: 'standard', label: 'Standard', detail: '2–4 business days', fee: 5, freeOver: FREE_SHIPPING_THRESHOLD },
-  { id: 'express', label: 'Express', detail: '1–2 business days', fee: 15, freeOver: null },
+  { id: 'standard', label: 'Standard', detail: '2–4 business days', fee: 150, freeOver: FREE_SHIPPING_THRESHOLD },
+  { id: 'express', label: 'Express', detail: '1–2 business days', fee: 450, freeOver: null },
 ]
 
 export interface OrderPricing {
@@ -39,8 +41,9 @@ export function getOrderPricing(
   const subtotalAfterDiscount = Math.max(0, cartTotal - discount)
   const shippingFee =
     method.freeOver !== null && subtotalAfterDiscount >= method.freeOver ? 0 : method.fee
-  const estimatedTax = Math.round(subtotalAfterDiscount * TAX_RATE * 100) / 100
-  const finalTotal = Math.round((subtotalAfterDiscount + shippingFee + estimatedTax) * 100) / 100
+  // Whole-rupee amounts — INR retail carries no paise.
+  const estimatedTax = Math.round(subtotalAfterDiscount * TAX_RATE)
+  const finalTotal = subtotalAfterDiscount + shippingFee + estimatedTax
   const amountToFreeShipping =
     method.freeOver !== null ? Math.max(0, method.freeOver - subtotalAfterDiscount) : 0
   return { shippingFee, estimatedTax, finalTotal, amountToFreeShipping }

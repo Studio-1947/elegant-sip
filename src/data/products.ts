@@ -67,7 +67,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "ember-charm",
     name: "Ember Charm",
-    price: 28,
+    price: 2350,
     description:
       "A deeply oxidized roasted oolong tea layered with warm cinnamon wood, dark cacao, and roasted chestnut notes. Perfect for slow, contemplative afternoons.",
     longDescription:
@@ -75,9 +75,9 @@ export const PRODUCTS: Product[] = [
     imageSrc: "/embercharm.webp",
     category: "Oolong",
     variants: [
-      { size: "50 g tin", price: 28, stock: 18 },
-      { size: "100 g tin", price: 48, stock: 9 },
-      { size: "250 g pouch", price: 98, stock: 3 },
+      { size: "50 g tin", price: 2350, stock: 18 },
+      { size: "100 g tin", price: 4050, stock: 9 },
+      { size: "250 g pouch", price: 8250, stock: 3 },
     ],
     origin: {
       origin: "Wuyi Mountains, Fujian",
@@ -98,7 +98,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "morning-dew",
     name: "Morning Dew",
-    price: 24,
+    price: 2000,
     description:
       "Ethereal first-flush green tea leaves hand-harvested at dawn and naturally scented with night-blooming jasmine flowers. Bright, floral, and clarifying.",
     longDescription:
@@ -106,9 +106,9 @@ export const PRODUCTS: Product[] = [
     imageSrc: "/morningdew.webp",
     category: "Green",
     variants: [
-      { size: "50 g tin", price: 24, stock: 24 },
-      { size: "100 g tin", price: 42, stock: 14 },
-      { size: "250 g pouch", price: 86, stock: 6 },
+      { size: "50 g tin", price: 2000, stock: 24 },
+      { size: "100 g tin", price: 3550, stock: 14 },
+      { size: "250 g pouch", price: 7200, stock: 6 },
     ],
     origin: {
       origin: "Hengxian, Guangxi",
@@ -129,7 +129,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "summer-breeze",
     name: "Summer Breeze",
-    price: 26,
+    price: 2200,
     description:
       "A delicate sun-dried white peony tea balanced with organic lemongrass and sun-ripened citrus peels. Refreshing, crisp, and clean.",
     longDescription:
@@ -137,9 +137,9 @@ export const PRODUCTS: Product[] = [
     imageSrc: "/summerbreeze.webp",
     category: "White",
     variants: [
-      { size: "50 g tin", price: 26, stock: 20 },
-      { size: "100 g tin", price: 45, stock: 11 },
-      { size: "250 g pouch", price: 92, stock: 0 },
+      { size: "50 g tin", price: 2200, stock: 20 },
+      { size: "100 g tin", price: 3800, stock: 11 },
+      { size: "250 g pouch", price: 7750, stock: 0 },
     ],
     origin: {
       origin: "Fuding, Fujian",
@@ -354,7 +354,7 @@ export const FAQS: Faq[] = [
     category: "Orders & Shipping",
     question: "How fast is shipping, and is it really free?",
     answer:
-      "Orders over $50 ship free anywhere in the US. Standard delivery takes 2–4 business days; express options are available at checkout. Every order ships within 24 hours of being packed — we pack close to harvest so the leaf arrives as fresh as possible.",
+      "Orders of ₹4,000 or more ship free anywhere in India. Standard delivery takes 2–4 business days; express options are available at checkout. Every order ships within 24 hours of being packed — we pack close to harvest so the leaf arrives as fresh as possible.",
   },
   {
     category: "Orders & Shipping",

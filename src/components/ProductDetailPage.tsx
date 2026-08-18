@@ -5,6 +5,8 @@ import { useCart } from './CartContext'
 import { track } from '../lib/analytics'
 import { getLocalReviews, addLocalReview } from '../lib/localReviews'
 import { hasPurchased } from '../lib/orders'
+import { formatINR } from '../lib/currency'
+import { FREE_SHIPPING_THRESHOLD } from '../lib/pricing'
 import ProductCard from './ProductCard'
 
 export default function ProductDetailPage({ id }: { id?: string }) {
@@ -48,7 +50,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
           image: product.imageSrc,
           offers: product.variants.map((v) => ({
             '@type': 'Offer',
-            priceCurrency: 'USD',
+            priceCurrency: 'INR',
             price: v.price,
             name: v.size,
             availability: v.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
@@ -137,7 +139,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
             <img src={product.imageSrc} alt={product.name} className="w-full h-auto object-cover" />
             {product.compareAtPrice && (
               <span className="absolute top-5 left-5 bg-[#8bb56e] text-white text-[10px] font-mono tracking-widest uppercase font-bold px-3 py-1.5 rounded-full">
-                Save ${product.compareAtPrice - product.price}
+                Save {formatINR(product.compareAtPrice - product.price)}
               </span>
             )}
           </div>
@@ -165,9 +167,9 @@ export default function ProductDetailPage({ id }: { id?: string }) {
 
             <div className="flex items-baseline gap-3 mb-6">
               {product.compareAtPrice && (
-                <span className="text-[#4a584a]/50 text-lg line-through">${product.compareAtPrice}.00</span>
+                <span className="text-[#4a584a]/50 text-lg line-through">{formatINR(product.compareAtPrice)}</span>
               )}
-              <span className="text-3xl font-bold">${activeVariant.price}.00</span>
+              <span className="text-3xl font-bold">{formatINR(activeVariant.price)}</span>
               <span className="text-xs font-mono text-[#4a584a]">/ {activeVariant.size}</span>
             </div>
 
@@ -200,7 +202,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                             : 'border-[#1b261b]/20 bg-white text-[#1b261b] hover:border-[#8bb56e]'
                         }`}
                       >
-                        {v.size} · ${v.price}
+                        {v.size} · {formatINR(v.price)}
                         {soldOut && <span className="no-underline ml-1.5 text-[9px] font-mono uppercase">Sold out</span>}
                       </button>
                     )
@@ -244,14 +246,14 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                     : isAdded ? 'bg-[#8bb56e] text-white' : isAdding ? 'bg-[#1b261b]/50 text-white/50 cursor-wait' : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
                 }`}
               >
-                {!variantInStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add to Cart • $${activeVariant.price * quantity}.00`}
+                {!variantInStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add to Cart • ${formatINR(activeVariant.price * quantity)}`}
               </button>
             </div>
 
             {/* Trust microcopy */}
             <ul className="space-y-2 text-xs text-[#4a584a]">
               <li className="flex items-center gap-2">
-                <span className="text-[#8bb56e]">✓</span> Free shipping on orders over $50
+                <span className="text-[#8bb56e]">✓</span> Free shipping on orders of {formatINR(FREE_SHIPPING_THRESHOLD)} or more
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-[#8bb56e]">✓</span> The Elegant Sip Promise — 30-day satisfaction guarantee
@@ -464,7 +466,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-2">Continue the Journey</span>
               <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight">You May Also Love</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-8">
               {related.map((item) => (
                 <ProductCard key={item.id} product={item} />
               ))}

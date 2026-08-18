@@ -1,4 +1,5 @@
 import { GARDENS, getProduct } from '../data/products'
+import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
 import { useScrollReveal } from '../lib/useScrollReveal'
 
@@ -75,7 +76,7 @@ export default function GardensPage() {
                             <img src={tea.imageSrc} alt="" className="w-9 h-10 object-cover rounded-lg" />
                             <span>
                               <span className="block text-xs font-bold group-hover:text-[#8bb56e] transition-colors">{tea.name}</span>
-                              <span className="block text-[10px] text-[#4a584a]">from ${tea.price}.00</span>
+                              <span className="block text-[10px] text-[#4a584a]">from {formatINR(tea.price)}</span>
                             </span>
                           </Link>
                         ))}

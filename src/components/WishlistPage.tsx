@@ -2,6 +2,7 @@ import { useCart } from './CartContext'
 import { getProduct, getDefaultVariant, isInStock } from '../data/products'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
+import { formatINR } from '../lib/currency'
 
 export default function WishlistPage() {
   const { wishlist, toggleWishlist, addToCart } = useCart()
@@ -54,7 +55,7 @@ export default function WishlistPage() {
                     <h3 className="text-base md:text-lg font-bold">{item.name}</h3>
                   </Link>
                   <p className="text-xs text-[#4a584a] mt-0.5">{item.category}</p>
-                  <p className="text-sm font-bold mt-1.5">${item.price}.00</p>
+                  <p className="text-sm font-bold mt-1.5">{formatINR(item.price)}</p>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   <button

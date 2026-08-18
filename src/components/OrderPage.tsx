@@ -1,5 +1,6 @@
 import { getOrder } from '../lib/orders'
 import { SHIPPING_METHODS } from '../lib/pricing'
+import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
 
 export default function OrderPage({ id }: { id?: string }) {
@@ -56,7 +57,7 @@ export default function OrderPage({ id }: { id?: string }) {
                   <Link to={`/product/${item.id}`} className="text-sm font-bold hover:text-[#8bb56e] transition-colors">{item.name}</Link>
                   <p className="text-[11px] text-[#4a584a]">{item.size} · Qty {item.quantity}</p>
                 </div>
-                <span className="text-sm font-bold font-mono">${(item.price * item.quantity).toFixed(2)}</span>
+                <span className="text-sm font-bold font-mono">{formatINR(item.price * item.quantity)}</span>
               </div>
             ))}
           </div>
@@ -66,17 +67,17 @@ export default function OrderPage({ id }: { id?: string }) {
         <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8 mb-6">
           <h2 className="text-sm font-bold uppercase tracking-wide border-b border-[#1b261b]/10 pb-4 mb-5">Summary</h2>
           <div className="space-y-2.5 text-xs">
-            <div className="flex justify-between text-[#4a584a]"><span>Subtotal</span><span className="font-mono">${order.subtotal.toFixed(2)}</span></div>
+            <div className="flex justify-between text-[#4a584a]"><span>Subtotal</span><span className="font-mono">{formatINR(order.subtotal)}</span></div>
             {order.discount > 0 && (
-              <div className="flex justify-between text-[#8bb56e]"><span>Discount{order.coupon ? ` (${order.coupon})` : ''}</span><span className="font-mono">−${order.discount.toFixed(2)}</span></div>
+              <div className="flex justify-between text-[#8bb56e]"><span>Discount{order.coupon ? ` (${order.coupon})` : ''}</span><span className="font-mono">−{formatINR(order.discount)}</span></div>
             )}
             <div className="flex justify-between text-[#4a584a]">
               <span>Shipping{method ? ` — ${method.label}` : ''}</span>
-              <span className="font-mono">{order.shippingFee === 0 ? 'Free' : `$${order.shippingFee.toFixed(2)}`}</span>
+              <span className="font-mono">{order.shippingFee === 0 ? 'Free' : formatINR(order.shippingFee)}</span>
             </div>
-            <div className="flex justify-between text-[#4a584a]"><span>Estimated Tax</span><span className="font-mono">${order.tax.toFixed(2)}</span></div>
+            <div className="flex justify-between text-[#4a584a]"><span>GST</span><span className="font-mono">{formatINR(order.tax)}</span></div>
             <div className="border-t border-[#1b261b]/10 pt-3 mt-3 flex justify-between text-base font-bold">
-              <span>Total</span><span className="font-mono">${order.total.toFixed(2)}</span>
+              <span>Total</span><span className="font-mono">{formatINR(order.total)}</span>
             </div>
           </div>
         </div>

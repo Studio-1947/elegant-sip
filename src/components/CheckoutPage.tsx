@@ -6,10 +6,11 @@ import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
 import { getOrderPricing, SHIPPING_METHODS, TAX_RATE, type ShippingMethodId } from '../lib/pricing'
 import { saveOrder, getOrders } from '../lib/orders'
+import { formatINR } from '../lib/currency'
 
 type Step = 1 | 2 | 3
 
-const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Australia', 'India', 'Other']
+const COUNTRIES = ['India', 'United States', 'Canada', 'United Kingdom', 'Australia', 'Other']
 
 const POSTAL_RULES: Record<string, { pattern: RegExp; hint: string }> = {
   'United States': { pattern: /^\d{5}(-\d{4})?$/, hint: 'Enter a valid US ZIP code (e.g. 97201).' },
@@ -41,7 +42,7 @@ const EMPTY_FORM: FormState = {
   address: '',
   city: '',
   zip: '',
-  country: 'United States',
+  country: 'India',
   cardNumber: '',
   cardName: '',
   expiry: '',
@@ -285,7 +286,7 @@ export default function CheckoutPage() {
                     </div>
                     <div>
                       <label htmlFor="co-zip" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Postal / ZIP</label>
-                      <input id="co-zip" type="text" value={form.zip} onChange={(e) => setField('zip', e.target.value)} placeholder={form.country === 'United States' ? '97201' : ''} className={inputClass('zip')} />
+                      <input id="co-zip" type="text" value={form.zip} onChange={(e) => setField('zip', e.target.value)} placeholder={form.country === 'India' ? '734101' : ''} className={inputClass('zip')} />
                       {errors.zip && <p className="text-[11px] text-red-600 mt-1">{errors.zip}</p>}
                     </div>
                   </div>
@@ -330,7 +331,7 @@ export default function CheckoutPage() {
                                 <span className="block text-[11px] text-[#4a584a]">{m.detail}</span>
                               </span>
                             </span>
-                            <span className="text-sm font-bold font-mono">{fee === 0 ? 'Free' : `$${fee.toFixed(2)}`}</span>
+                            <span className="text-sm font-bold font-mono">{fee === 0 ? 'Free' : formatINR(fee)}</span>
                           </label>
                         )
                       })}
@@ -392,7 +393,7 @@ export default function CheckoutPage() {
                         <p className="text-sm font-bold">{item.name}</p>
                         <p className="text-[11px] text-[#4a584a]">{item.size} · Qty {item.quantity}</p>
                       </div>
-                      <span className="text-sm font-bold">${item.price * item.quantity}.00</span>
+                      <span className="text-sm font-bold">{formatINR(item.price * item.quantity)}</span>
                     </div>
                   ))}
                 </div>
@@ -429,7 +430,7 @@ export default function CheckoutPage() {
                   disabled={placing}
                   className="flex-grow bg-[#8bb56e] hover:bg-[#9cc580] disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold tracking-widest uppercase py-3.5 px-8 rounded-lg transition-colors cursor-pointer"
                 >
-                  {placing ? 'Placing Order…' : `Place Order • $${finalTotal.toFixed(2)}`}
+                  {placing ? 'Placing Order…' : `Place Order • ${formatINR(finalTotal)}`}
                 </button>
               )}
             </div>
@@ -442,32 +443,32 @@ export default function CheckoutPage() {
               {cart.map((item) => (
                 <div key={`${item.id}__${item.size}`} className="flex justify-between gap-3">
                   <span className="text-[#4a584a]">{item.name} <span className="text-[#4a584a]/60">({item.size}) × {item.quantity}</span></span>
-                  <span className="font-mono font-semibold">${item.price * item.quantity}.00</span>
+                  <span className="font-mono font-semibold">{formatINR(item.price * item.quantity)}</span>
                 </div>
               ))}
             </div>
             <div className="space-y-2.5 text-xs border-t border-[#1b261b]/10 pt-4">
               <div className="flex justify-between text-[#4a584a]">
                 <span>Subtotal</span>
-                <span className="font-mono">${subtotal.toFixed(2)}</span>
+                <span className="font-mono">{formatINR(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-[#8bb56e]">
                   <span>Discount ({coupon})</span>
-                  <span className="font-mono">−${discount.toFixed(2)}</span>
+                  <span className="font-mono">−{formatINR(discount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-[#4a584a]">
                 <span>Shipping</span>
-                <span className="font-mono">{shippingFee === 0 ? 'Free' : `$${shippingFee.toFixed(2)}`}</span>
+                <span className="font-mono">{shippingFee === 0 ? 'Free' : formatINR(shippingFee)}</span>
               </div>
               <div className="flex justify-between text-[#4a584a]">
-                <span>Estimated Tax ({Math.round(TAX_RATE * 100)}%)</span>
-                <span className="font-mono">${estimatedTax.toFixed(2)}</span>
+                <span>GST ({Math.round(TAX_RATE * 100)}%)</span>
+                <span className="font-mono">{formatINR(estimatedTax)}</span>
               </div>
               <div className="border-t border-[#1b261b]/10 pt-3 mt-3 flex justify-between text-base font-bold">
                 <span>Total</span>
-                <span className="font-mono">${finalTotal.toFixed(2)}</span>
+                <span className="font-mono">{formatINR(finalTotal)}</span>
               </div>
             </div>
             <p className="text-[10px] font-mono text-[#8bb56e] italic mt-4">🔒 Demo checkout — no real payment is processed.</p>

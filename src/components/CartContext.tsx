@@ -161,7 +161,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0)
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
-  const discount = coupon && COUPONS[coupon] ? Math.round(cartTotal * COUPONS[coupon] * 100) / 100 : 0
+  // Whole-rupee discount — INR retail carries no paise.
+  const discount = coupon && COUPONS[coupon] ? Math.round(cartTotal * COUPONS[coupon]) : 0
 
   return (
     <CartContext.Provider

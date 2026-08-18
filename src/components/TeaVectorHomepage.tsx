@@ -135,8 +135,10 @@ export default function TeaVectorHomepage() {
     setScrub((s) => (s.past45 === past45 && s.past95 === past95 ? s : { past45, past95 }))
   }
 
+  // Brand pinned near the edge on phones, 32px on desktop.
+  const brandLeft = 'clamp(16px, 4vw, 32px)'
   const brandStyle = isNavbar
-    ? { left: '32px', transform: 'translate(0, 0)' }
+    ? { left: brandLeft, transform: 'translate(0, 0)' }
     : { left: '50%', transform: 'translate(-50%, 10vh)' }
 
   let page: ReactNode
@@ -250,7 +252,7 @@ export default function TeaVectorHomepage() {
         >
           {/* Brand Container */}
           <div
-            style={isNavbar ? { left: '32px', transform: 'translate(0, 0)' } : brandStyle}
+            style={isNavbar ? { left: brandLeft, transform: 'translate(0, 0)' } : brandStyle}
             className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto cursor-pointer ${
               isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
             }`}
@@ -259,7 +261,7 @@ export default function TeaVectorHomepage() {
               <span
                 className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${
                   isNavbar
-                    ? 'text-xl tracking-tight text-[#1b261b]'
+                    ? 'text-lg sm:text-xl tracking-tight text-[#1b261b]'
                     : `text-5xl md:text-6xl tracking-tight ${useDarkText ? 'text-black' : 'text-white'}`
                 }`}
               >
@@ -297,15 +299,15 @@ export default function TeaVectorHomepage() {
           {/* Right Action Container */}
           <div
             inert={!isNavbar}
-            className={`absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-3 md:gap-5 transition-all duration-700 ease-in-out ${
+            className={`absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-3 md:gap-5 transition-all duration-700 ease-in-out ${
               isNavbar ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
             }`}
           >
-            {/* Wishlist */}
+            {/* Wishlist (in the mobile menu on phones) */}
             <Link
               to="/wishlist"
               aria-label="Wishlist"
-              className={`transition-colors relative p-2 ${isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'}`}
+              className={`hidden sm:block transition-colors relative p-2 ${isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'}`}
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
@@ -374,7 +376,7 @@ export default function TeaVectorHomepage() {
             ) : (
               <button
                 onClick={openLogin}
-                className={`px-5 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                className={`px-3.5 py-1.5 sm:px-5 sm:py-2 border rounded-full text-[11px] sm:text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
                   isNavbar
                     ? 'border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]'
                     : 'border-white/20 text-white hover:bg-[#8bb56e] hover:text-black hover:border-[#8bb56e]'
@@ -407,6 +409,14 @@ export default function TeaVectorHomepage() {
                   </Link>
                 )
               })}
+              <Link
+                to="/wishlist"
+                className={`sm:hidden py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${
+                  routeName === 'wishlist' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                }`}
+              >
+                Wishlist
+              </Link>
               {user && (
                 <Link
                   to="/account"

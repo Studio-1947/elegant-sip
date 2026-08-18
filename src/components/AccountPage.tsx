@@ -2,6 +2,7 @@ import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { useCart } from './CartContext'
 import { getOrders } from '../lib/orders'
+import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
 
 export default function AccountPage() {
@@ -86,7 +87,7 @@ export default function AccountPage() {
                     {order.items.reduce((acc, i) => acc + i.quantity, 0)} items
                   </p>
                 </div>
-                <span className="text-sm font-bold font-mono">${order.total.toFixed(2)}</span>
+                <span className="text-sm font-bold font-mono">{formatINR(order.total)}</span>
               </Link>
             ))}
           </div>

@@ -111,7 +111,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
           No teas match your search. Try a different word — or take the Taste Matcher above.
         </p>
       ) : (
-        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 max-w-6xl mx-auto">
+        <div ref={gridRef} className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-8 lg:gap-10 max-w-6xl mx-auto">
           {visibleProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

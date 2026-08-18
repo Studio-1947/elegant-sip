@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from './CartContext'
 import { QUIZ_OPTIONS, getProduct, getDefaultVariant, type Product } from '../data/products'
+import { formatINR } from '../lib/currency'
 import { Link } from '../lib/router'
 import { track } from '../lib/analytics'
 
@@ -206,7 +207,7 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
                         : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white shadow-md'
                     }`}
                   >
-                    {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add Match to Cart • $${match.price}.00`}
+                    {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add Match to Cart • ${formatINR(match.price)}`}
                   </button>
 
                   <button
