@@ -4,7 +4,9 @@ import { PRODUCTS, getRating } from '../data/products'
 import { useUi } from './UiContext'
 import { useScrollReveal } from '../lib/useScrollReveal'
 
-const CATEGORIES = ['All', ...[...new Set(PRODUCTS.map((p) => p.category))].sort()]
+// Catalogue order, not alphabetical: First Flush → Second Flush → Third Flush →
+// Green → White → Needle → Herbal & Floral → Signature Blend.
+const CATEGORIES = ['All', ...new Set(PRODUCTS.map((p) => p.category))]
 
 const SORT_OPTIONS = [
   { value: 'featured', label: 'Sort: Featured' },
@@ -87,11 +89,10 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
                 key={c}
                 onClick={() => setCategory(c)}
                 aria-pressed={category === c}
-                className={`text-xs font-bold tracking-wide py-2.5 px-6 rounded-full border transition-colors cursor-pointer ${
-                  category === c
+                className={`text-xs font-bold tracking-wide py-2.5 px-6 rounded-full border transition-colors cursor-pointer ${category === c
                     ? 'bg-[#1b261b] border-[#1b261b] text-white'
                     : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#8bb56e]'
-                }`}
+                  }`}
               >
                 {c}
               </button>

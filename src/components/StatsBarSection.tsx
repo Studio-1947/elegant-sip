@@ -3,8 +3,8 @@ import { useScrollReveal } from '../lib/useScrollReveal'
 export default function StatsBarSection() {
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > div' })
   const stats = [
-    { value: '3', label: 'Named Gardens' },
-    { value: '6', label: 'Steeps per Leaf' },
+    { value: '4', label: 'Leaf Grades' },
+    { value: '3', label: 'Harvest Flushes' },
     { value: 'Free', label: 'Shipping over ₹4,000' },
     { value: '100%', label: 'Freshness Guarantee' },
   ]

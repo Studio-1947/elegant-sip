@@ -16,6 +16,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const defaultVariant = getDefaultVariant(product)
   const inStock = isInStock(product)
   const hasMultipleSizes = product.variants.length > 1
+  const comingSoon = product.status === 'coming-soon'
 
   const handleDecrease = () => {
     if (quantity > 1) setQuantity(quantity - 1)
@@ -163,13 +164,21 @@ export default function ProductCard({ product }: { product: Product }) {
             <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide">{product.name}</h3>
           </Link>
           <span className="flex flex-col items-end">
-            {product.compareAtPrice && (
-              <span className="text-[#4a584a]/50 text-xs line-through">{formatINR(product.compareAtPrice)}</span>
+            {comingSoon ? (
+              <span className="text-[9px] font-mono uppercase tracking-wider bg-[#8bb56e]/10 text-[#8bb56e] px-2.5 py-1 rounded-full whitespace-nowrap">
+                Coming Soon
+              </span>
+            ) : (
+              <>
+                {product.compareAtPrice && (
+                  <span className="text-[#4a584a]/50 text-xs line-through">{formatINR(product.compareAtPrice)}</span>
+                )}
+                <span className="text-[#1b261b] text-base lg:text-lg font-bold whitespace-nowrap">
+                  {hasMultipleSizes && <span className="text-xs font-normal text-[#4a584a]">from </span>}
+                  {formatINR(product.price)}
+                </span>
+              </>
             )}
-            <span className="text-[#1b261b] text-base lg:text-lg font-bold whitespace-nowrap">
-              {hasMultipleSizes && <span className="text-xs font-normal text-[#4a584a]">from </span>}
-              {formatINR(product.price)}
-            </span>
           </span>
         </div>
 
@@ -194,6 +203,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Quantity & CTA Row */}
         <div className="flex flex-row gap-3 sm:gap-4 items-stretch mt-auto">
           {/* Quantity Selector */}
+          {!comingSoon && (
           <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-full md:rounded-lg px-4 py-2 w-24 sm:w-28 bg-[#f9faf7] flex-shrink-0">
             <button
               onClick={handleDecrease}
@@ -211,13 +221,14 @@ export default function ProductCard({ product }: { product: Product }) {
               +
             </button>
           </div>
+          )}
 
           {/* Add to Cart CTA */}
           <button
             onClick={handleAddToCart}
-            disabled={isAdding || isAdded || !inStock}
+            disabled={isAdding || isAdded || !inStock || comingSoon}
             className={`flex-grow text-[10px] sm:text-xs font-bold tracking-widest uppercase py-3 px-3 sm:px-6 rounded-full md:rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
-              !inStock
+              !inStock || comingSoon
                 ? 'bg-[#1b261b]/10 text-[#4a584a]/60 cursor-not-allowed'
                 : isAdded
                 ? 'bg-[#8bb56e] text-white'
@@ -226,7 +237,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
             }`}
           >
-            {!inStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : 'Add to Cart'}
+            {comingSoon ? 'Coming Soon' : !inStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : 'Add to Cart'}
           </button>
         </div>
       </div>

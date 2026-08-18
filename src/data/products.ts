@@ -48,8 +48,10 @@ export interface ProductVariant {
 export interface Product {
   id: string
   name: string
-  /** Base price — always equals the first variant's price. */
+  /** Base "from" price — the lowest variant price. */
   price: number
+  /** Catalogue drafts render as "Coming Soon" and cannot be purchased. Defaults to active. */
+  status?: 'active' | 'coming-soon'
   compareAtPrice?: number
   description: string
   longDescription?: string
@@ -64,99 +66,94 @@ export interface Product {
 /* ── Products ─────────────────────────────────────────────────────────────── */
 
 export const PRODUCTS: Product[] = [
+  /* ── First Flush (Black Tea) ── */
   {
-    id: "ember-charm",
-    name: "Ember Charm",
-    price: 2350,
+    id: "first-flush-whole-leaf",
+    name: "First Flush Whole Leaf",
+    price: 600,
     description:
-      "A deeply oxidized roasted oolong tea layered with warm cinnamon wood, dark cacao, and roasted chestnut notes. Perfect for slow, contemplative afternoons.",
+      "The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling's first flush is famous for. Available in three quality tiers.",
     longDescription:
-      "Ember Charm begins its life in the Wuyi Mountains, where rocky mineral soils give Dahongpao its signature 'yan yun' — the mineral, stone-fruit depth that oolong lovers chase. After a spring harvest at 3,200 feet, the leaves are withered over charcoal and slow-roasted until the sugars caramelize into cinnamon, cacao, and roasted chestnut. The result is a tea that drinks like a fireside conversation: warm, unhurried, and worth the third and fourth steep.",
-    imageSrc: "/embercharm.webp",
-    category: "Oolong",
-    variants: [
-      { size: "50 g tin", price: 2350, stock: 18 },
-      { size: "100 g tin", price: 4050, stock: 9 },
-      { size: "250 g pouch", price: 8250, stock: 3 },
-    ],
-    origin: {
-      origin: "Wuyi Mountains, Fujian",
-      estate: "Wuyi Rock Garden",
-      elevation: "3,200 ft",
-      harvest: "Spring Roasted 2026",
-      cultivar: "Dahongpao",
-    },
-    flavorProfile: { strength: 5, astringency: 3, sweetness: 2, floral: 1, caffeine: 4 },
-    brewingGuide: {
-      temperature: "205°F / 96°C",
-      time: "45 seconds",
-      steeps: "Up to 6",
-      leafAmount: "1 tbsp per 8 oz",
-      notes: "Increase steeping time by 10 seconds each steep. The roasted notes deepen dramatically by steep three.",
-    },
-  },
-  {
-    id: "morning-dew",
-    name: "Morning Dew",
-    price: 2000,
-    description:
-      "Ethereal first-flush green tea leaves hand-harvested at dawn and naturally scented with night-blooming jasmine flowers. Bright, floral, and clarifying.",
-    longDescription:
-      "Harvested before sunrise in the mist of Guangxi's Cloud Mist Gardens, Morning Dew captures the first light of the garden in a cup. The leaves are picked only on dewy mornings, then gently fixed and naturally scented over three nights with fresh jasmine blossoms — never artificial flavor. The first sip is bright and vegetal; the finish lingers with jasmine and a whisper of sweetness. Clarity in leaf form.",
+      "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the plant has stored a season's worth of aromatics. Choose your tier — Basic, Classic, or Premium — each whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
     imageSrc: "/morningdew.webp",
-    category: "Green",
+    category: "First Flush",
     variants: [
-      { size: "50 g tin", price: 2000, stock: 24 },
-      { size: "100 g tin", price: 3550, stock: 14 },
-      { size: "250 g pouch", price: 7200, stock: 6 },
+      { size: "Basic · 100 g", price: 1000, stock: 20 },
+      { size: "Classic · 100 g", price: 600, stock: 20 },
+      { size: "Premium · 100 g", price: 600, stock: 20 },
     ],
-    origin: {
-      origin: "Hengxian, Guangxi",
-      estate: "Cloud Mist Gardens",
-      elevation: "2,800 ft",
-      harvest: "Early Spring 2026",
-      cultivar: "Yabukita",
-    },
-    flavorProfile: { strength: 2, astringency: 3, sweetness: 3, floral: 5, caffeine: 2 },
     brewingGuide: {
-      temperature: "175°F / 80°C",
-      time: "2 minutes",
-      steeps: "3",
+      temperature: "194°F / 90°C",
+      time: "3–4 minutes",
+      steeps: "2–3",
       leafAmount: "1 tsp per 8 oz",
-      notes: "Cooler water protects the delicate jasmine. Never boil green tea — bitterness is a temperature problem, not a leaf problem.",
+      notes: "Skip the milk — first flush is prized for its bright muscatel aromatics, and a slightly cooler pour keeps them intact.",
     },
   },
   {
-    id: "summer-breeze",
-    name: "Summer Breeze",
-    price: 2200,
+    id: "first-flush-broken-leaf",
+    name: "First Flush Broken Leaf",
+    price: 700,
     description:
-      "A delicate sun-dried white peony tea balanced with organic lemongrass and sun-ripened citrus peels. Refreshing, crisp, and clean.",
-    longDescription:
-      "White peony (Bai Mu Dan) is among the least processed teas in the world — withered and sun-dried until it simply is what it is. Summer Breeze pairs that honeyed softness with organic lemongrass and sun-ripened citrus peels for a tea that tastes like an open window. It is barely there, and that is the point: refreshing, crisp, and clean enough to drink all afternoon, hot or iced.",
-    imageSrc: "/summerbreeze.webp",
-    category: "White",
-    variants: [
-      { size: "50 g tin", price: 2200, stock: 20 },
-      { size: "100 g tin", price: 3800, stock: 11 },
-      { size: "250 g pouch", price: 7750, stock: 0 },
-    ],
-    origin: {
-      origin: "Fuding, Fujian",
-      estate: "White Tea Valley",
-      elevation: "1,800 ft",
-      harvest: "Late Spring 2026",
-      cultivar: "Fuding Fada",
-    },
-    flavorProfile: { strength: 1, astringency: 1, sweetness: 4, floral: 3, caffeine: 1 },
+      "Broken-leaf first flush — the same spring character with a quicker, stronger brew.",
+    imageSrc: "/origin.webp",
+    category: "First Flush",
+    variants: [{ size: "100 g", price: 700, stock: 20 }],
     brewingGuide: {
-      temperature: "185°F / 85°C",
-      time: "3 minutes",
-      steeps: "3–4",
-      leafAmount: "1.5 tbsp per 8 oz",
-      notes: "Excellent over ice — brew double strength, then pour over ice for a crisp iced tea with no bitterness.",
+      temperature: "203°F / 95°C",
+      time: "2–3 minutes",
+      steeps: "2",
+      leafAmount: "1 tsp per 8 oz",
+      notes: "Broken leaf brews faster and stronger than whole leaf — shorten the steep rather than the leaf.",
     },
   },
+  {
+    id: "first-flush-broken-mixed",
+    name: "First Flush Broken Mixed",
+    price: 300,
+    description:
+      "A robust mixed broken grade from the spring harvest — strong, brisk, and happy to take milk.",
+    imageSrc: "/origin.webp",
+    category: "First Flush",
+    variants: [{ size: "100 g", price: 300, stock: 20 }],
+  },
+  {
+    id: "first-flush-fannings",
+    name: "First Flush Fannings",
+    price: 200,
+    description:
+      "Fine first flush fannings — fast-brewing and full-strength. The working tea of the Darjeeling hills.",
+    imageSrc: "/origin.webp",
+    category: "First Flush",
+    variants: [{ size: "100 g", price: 200, stock: 20 }],
+  },
+
+  /* ── Second Flush (Black Tea) — arriving after the summer pluck ── */
+  {
+    id: "second-flush",
+    name: "Second Flush",
+    price: 0,
+    status: "coming-soon",
+    description:
+      "The summer pluck brings the deeper, fruitier side of Darjeeling. The lots are still with the garden — arriving after the summer harvest.",
+    imageSrc: "/summerbreeze.webp",
+    category: "Second Flush",
+    variants: [{ size: "100 g", price: 0, stock: 0 }],
+  },
+
+  /* ── Autumn (Third) Flush — arriving after the autumn pluck ── */
+  {
+    id: "autumn-flush",
+    name: "Third Flush",
+    price: 0,
+    status: "coming-soon",
+    description:
+      "The third pluck of the year rounds things out with a mellow, coppery cup. Arriving after the autumn harvest.",
+    imageSrc: "/origin.webp",
+    category: "Third Flush",
+    variants: [{ size: "100 g", price: 0, stock: 0 }],
+  },
+
 ]
 
 export const getProduct = (id: string | undefined): Product | undefined =>
@@ -174,68 +171,9 @@ export const isInStock = (product: Product): boolean =>
 
 /* ── Reviews ──────────────────────────────────────────────────────────────── */
 
-export const REVIEWS: Record<string, Review[]> = {
-  "ember-charm": [
-    {
-      id: "ec-1",
-      author: "Marcus W.",
-      rating: 5,
-      date: "July 2026",
-      text: "The roasted depth is unreal. Steep three is where it transforms — smoky chestnut and dark chocolate. My new evening ritual.",
-      verified: true,
-    },
-    {
-      id: "ec-2",
-      author: "Priya S.",
-      rating: 5,
-      date: "June 2026",
-      text: "Rich without being bitter. You can tell this was slow-roasted properly. Gave a tin to my father-in-law and he immediately ordered his own.",
-      verified: true,
-    },
-    {
-      id: "ec-3",
-      author: "Daniel R.",
-      rating: 4,
-      date: "May 2026",
-      text: "Very bold — exactly as described. I dialed back the steep to 30 seconds and it's perfect for me. Generous leaf-to-cup ratio.",
-    },
-  ],
-  "morning-dew": [
-    {
-      id: "md-1",
-      author: "Elena K.",
-      rating: 5,
-      date: "July 2026",
-      text: "The jasmine is present but never perfumy. It's the tea I didn't know I needed before noon. So bright and clean.",
-      verified: true,
-    },
-    {
-      id: "md-2",
-      author: "Tom H.",
-      rating: 5,
-      date: "June 2026",
-      text: "Tastes like a garden after rain. My whole office switched from coffee to this. Lasts three beautiful steeps.",
-      verified: true,
-    },
-  ],
-  "summer-breeze": [
-    {
-      id: "sb-1",
-      author: "Aisha M.",
-      rating: 5,
-      date: "July 2026",
-      text: "Made a pitcher for a brunch and it disappeared. The citrus peel is subtle and natural — no fake lemon flavor.",
-      verified: true,
-    },
-    {
-      id: "sb-2",
-      author: "James P.",
-      rating: 4,
-      date: "May 2026",
-      text: "Delicate and refreshing, exactly as promised. I prefer it iced. Would love a bigger size option.",
-    },
-  ],
-}
+// New catalogue starts unreviewed — customer reviews accumulate via the
+// product-page review form (see lib/localReviews.ts).
+export const REVIEWS: Record<string, Review[]> = {}
 
 export const getReviews = (id: string | undefined): Review[] =>
   id ? REVIEWS[id] ?? [] : []
@@ -270,7 +208,7 @@ export const GARDENS: Garden[] = [
       "The Wuyi Mountains are a UNESCO landscape of sheer cliffs and mineral-rich rocky soil — the birthplace of oolong itself. Tea bushes here grow in narrow gorges where reflected warmth from the rock walls and constant mist create the slow growth that concentrates flavor.",
       "Our partner plots sit at 3,200 feet, planted with Dahongpao cultivar bushes. After the spring pluck, the leaves are withered over charcoal and slow-roasted in small batches — the craft behind Ember Charm's cinnamon-and-cacao depth and the mineral 'yan yun' finish that oolong lovers chase.",
     ],
-    productIds: ["ember-charm"],
+    productIds: [],
   },
   {
     id: "cloud-mist-gardens",
@@ -282,7 +220,7 @@ export const GARDENS: Garden[] = [
       "Hengxian is the jasmine capital of the world, and Cloud Mist Gardens is where our green tea and its scenting flowers grow within sight of each other. The garden picks only on dewy mornings, before sunrise, when the leaf is at its most delicate.",
       "Morning Dew is scented here the traditional way: fresh night-blooming jasmine layered with the tea over three consecutive nights, never sprayed, never flavored. The result is a leaf that carries the garden's morning into your cup.",
     ],
-    productIds: ["morning-dew"],
+    productIds: [],
   },
   {
     id: "white-tea-valley",
@@ -294,7 +232,7 @@ export const GARDENS: Garden[] = [
       "Fuding is the historic home of white tea, where the Fuding Fada cultivar grows fat, downy buds prized for Bai Mu Dan. The valley's tea is among the least processed in the world — withered in the sun until it simply is what it is.",
       "Summer Breeze starts here as classic white peony, then meets organic lemongrass and sun-ripened citrus peel. Minimal intervention is the entire philosophy: the leaf is dried, rested, and packed within weeks of the late-spring pluck.",
     ],
-    productIds: ["summer-breeze"],
+    productIds: [],
   },
 ]
 
@@ -313,7 +251,7 @@ export interface Testimonial {
 export const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "I've been a tea drinker for twenty years and Elegant Sip is the first brand that made me understand what single-origin actually means. The Ember Charm is a masterclass.",
+      "I've been a tea drinker for twenty years and Elegant Sip is the first brand that made me understand what single-origin actually means. The First Flush Whole Leaf is a masterclass.",
     name: "Charlotte V.",
     location: "London, UK",
     rating: 5,
@@ -327,7 +265,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     quote:
-      "The Taste Matcher quiz recommended Morning Dew and it was spot on — I've already reordered twice. Beautifully packed, arrives fresh, tastes like the hills.",
+      "The Taste Matcher quiz recommended the First Flush Broken Leaf and it was spot on — I've already reordered twice. Beautifully packed, arrives fresh, tastes like the hills.",
     name: "Sofia R.",
     location: "Toronto, CA",
     rating: 5,
@@ -478,9 +416,9 @@ export const getArticle = (id: string | undefined): JournalArticle | undefined =
 /* ── Taste Matcher quiz mapping ───────────────────────────────────────────── */
 
 export const QUIZ_OPTIONS: Record<string, string> = {
-  "Strong & bold": "ember-charm",
-  "Light & floral": "morning-dew",
-  "Sweet & aromatic": "summer-breeze",
-  "Fresh & grassy": "morning-dew",
-  Spicy: "ember-charm",
+  "Strong & bold": "first-flush-broken-leaf",
+  "Light & floral": "first-flush-whole-leaf",
+  "Sweet & aromatic": "first-flush-whole-leaf",
+  "Fresh & grassy": "first-flush-fannings",
+  Spicy: "first-flush-broken-mixed",
 }

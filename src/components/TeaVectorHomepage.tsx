@@ -59,7 +59,7 @@ export default function TeaVectorHomepage() {
   const [fadeLoader, setFadeLoader] = useState(false)
   // Quantized scrub state: only the two thresholds the header cares about.
   // Storing raw progress here would re-render the whole app shell every frame.
-  const [scrub, setScrub] = useState({ past45: false, past95: false })
+  const [scrub, setScrub] = useState({ past95: false })
   const [menuOpen, setMenuOpen] = useState(false)
 
   // Loader: holds until the hero video is actually buffered enough to scrub,
@@ -130,7 +130,7 @@ export default function TeaVectorHomepage() {
   // Reset scrub progress on any route change so the header returns to its
   // centered/transparent state when landing back on the home experience.
   useEffect(() => {
-    setScrub({ past45: false, past95: false })
+    setScrub({ past95: false })
     setMenuOpen(false)
   }, [route])
 
@@ -151,13 +151,11 @@ export default function TeaVectorHomepage() {
   // Below lg the navbar is always engaged — the compact home has no video intro
   // that the header needs to stay out of the way for.
   const isNavbar = !isHome || scrub.past95 || isCompact
-  const useDarkText = isNavbar || scrub.past45
 
   const handleProgress = (progress: number) => {
-    const past45 = progress > 0.45
     const past95 = progress > 0.95
-    // Bail out unless a threshold was actually crossed — this runs every scroll frame.
-    setScrub((s) => (s.past45 === past45 && s.past95 === past95 ? s : { past45, past95 }))
+    // Bail out unless the threshold was actually crossed — this runs every scroll frame.
+    setScrub((s) => (s.past95 === past95 ? s : { past95 }))
   }
 
   // Brand: centered on phones (mockup layout), pinned left on desktop.
@@ -289,7 +287,7 @@ export default function TeaVectorHomepage() {
                 className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${
                   isNavbar
                     ? 'text-lg sm:text-xl tracking-tight text-[#1b261b]'
-                    : `text-5xl md:text-6xl tracking-tight ${useDarkText ? 'text-black' : 'text-white'}`
+                    : 'text-5xl md:text-6xl tracking-tight text-white'
                 }`}
               >
                 Elegant Sip

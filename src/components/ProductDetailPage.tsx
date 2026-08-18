@@ -35,6 +35,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     ? product.variants.find((v) => v.size === selectedSize) ?? getDefaultVariant(product)
     : undefined
   const variantInStock = (variant?.stock ?? 0) > 0
+  const comingSoon = product?.status === 'coming-soon'
 
   useDocumentMeta(
     product ? `${product.name} — Elegant Sip` : 'Product not found — Elegant Sip',
@@ -48,13 +49,18 @@ export default function ProductDetailPage({ id }: { id?: string }) {
           name: product.name,
           description: product.description,
           image: product.imageSrc,
-          offers: product.variants.map((v) => ({
-            '@type': 'Offer',
-            priceCurrency: 'INR',
-            price: v.price,
-            name: v.size,
-            availability: v.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          })),
+          // Coming-soon items have no price yet — declaring a ₹0 offer would be wrong.
+          ...(product.status !== 'coming-soon'
+            ? {
+                offers: product.variants.map((v) => ({
+                  '@type': 'Offer',
+                  priceCurrency: 'INR',
+                  price: v.price,
+                  name: v.size,
+                  availability: v.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                })),
+              }
+            : {}),
           ...(product.origin
             ? {
                 additionalProperty: [
@@ -88,7 +94,11 @@ export default function ProductDetailPage({ id }: { id?: string }) {
           average: Math.round((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) * 10) / 10,
           count: reviews.length,
         }
-  const related = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 3)
+  // Prefer same-category teas, fill from the rest of the catalogue.
+  const related = [
+    ...PRODUCTS.filter((p) => p.id !== product.id && p.category === product.category),
+    ...PRODUCTS.filter((p) => p.id !== product.id && p.category !== product.category),
+  ].slice(0, 3)
   const activeVariant = variant!
   const garden = product.origin ? getGardenByEstate(product.origin.estate) : undefined
 
@@ -165,13 +175,19 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               </div>
             )}
 
-            <div className="flex items-baseline gap-3 mb-6">
-              {product.compareAtPrice && (
-                <span className="text-[#4a584a]/50 text-lg line-through">{formatINR(product.compareAtPrice)}</span>
-              )}
-              <span className="text-3xl font-bold">{formatINR(activeVariant.price)}</span>
-              <span className="text-xs font-mono text-[#4a584a]">/ {activeVariant.size}</span>
-            </div>
+            {comingSoon ? (
+              <p className="inline-block bg-[#8bb56e]/10 border border-[#8bb56e]/30 rounded-lg px-4 py-2.5 text-[#8bb56e] text-xs font-mono font-bold tracking-widest uppercase mb-6">
+                Coming Soon — arriving with the next harvest
+              </p>
+            ) : (
+              <div className="flex items-baseline gap-3 mb-6">
+                {product.compareAtPrice && (
+                  <span className="text-[#4a584a]/50 text-lg line-through">{formatINR(product.compareAtPrice)}</span>
+                )}
+                <span className="text-3xl font-bold">{formatINR(activeVariant.price)}</span>
+                <span className="text-xs font-mono text-[#4a584a]">/ {activeVariant.size}</span>
+              </div>
+            )}
 
             <p className="text-sm text-[#4a584a] leading-relaxed mb-6">{product.description}</p>
             <p className="text-xs text-[#4a584a]/80 leading-relaxed mb-8">{product.longDescription}</p>
@@ -220,6 +236,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
 
             {/* Qty + CTA */}
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
+              {!comingSoon && (
               <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-4 py-3 sm:w-32 bg-white">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -237,16 +254,17 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                   +
                 </button>
               </div>
+              )}
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding || isAdded || !variantInStock}
+                disabled={isAdding || isAdded || !variantInStock || comingSoon}
                 className={`flex-grow text-xs font-bold tracking-widest uppercase py-4 px-8 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
-                  !variantInStock
+                  !variantInStock || comingSoon
                     ? 'bg-[#1b261b]/10 text-[#4a584a]/60 cursor-not-allowed'
                     : isAdded ? 'bg-[#8bb56e] text-white' : isAdding ? 'bg-[#1b261b]/50 text-white/50 cursor-wait' : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
                 }`}
               >
-                {!variantInStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add to Cart • ${formatINR(activeVariant.price * quantity)}`}
+                {comingSoon ? 'Coming Soon' : !variantInStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add to Cart • ${formatINR(activeVariant.price * quantity)}`}
               </button>
             </div>
 
