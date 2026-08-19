@@ -1,31 +1,38 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import HomeExperience from './HomeExperience'
-import CartPage from './CartPage'
-import CheckoutPage from './CheckoutPage'
-import ShopPage from './ShopPage'
-import WishlistPage from './WishlistPage'
-import AboutPage from './AboutPage'
-import JournalPage, { JournalArticlePage } from './JournalPage'
-import FaqPage from './FaqPage'
-import ContactPage from './ContactPage'
-import ProductDetailPage from './ProductDetailPage'
-import NotFoundPage from './NotFoundPage'
-import OrderPage from './OrderPage'
-import AccountPage from './AccountPage'
-import BrewingGuidePage from './BrewingGuidePage'
-import GardensPage from './GardensPage'
 import ConsentBanner from './ConsentBanner'
 import SiteHeader from './SiteHeader'
 import LoadingOverlay from './LoadingOverlay'
-import { PrivacyPage, TermsPage, ShippingReturnsPage } from './legal'
+import PageSkeleton from './PageSkeleton'
 import Footer from './Footer'
 import { useHashRoute, parseRoute, getRoute } from '../lib/router'
 import { useIsCompact } from '../lib/useMediaQuery'
 import { getVideoProgress } from '../lib/videoLoading'
 import { setLenis } from '../lib/scroll'
+
+// Non-home routes are code-split: each loads on demand with a skeleton page
+// as the Suspense fallback. The home experience stays in the main bundle.
+const ShopPage = lazy(() => import('./ShopPage'))
+const ProductDetailPage = lazy(() => import('./ProductDetailPage'))
+const CartPage = lazy(() => import('./CartPage'))
+const CheckoutPage = lazy(() => import('./CheckoutPage'))
+const WishlistPage = lazy(() => import('./WishlistPage'))
+const AboutPage = lazy(() => import('./AboutPage'))
+const JournalPage = lazy(() => import('./JournalPage'))
+const JournalArticlePage = lazy(() => import('./JournalPage').then((m) => ({ default: m.JournalArticlePage })))
+const FaqPage = lazy(() => import('./FaqPage'))
+const ContactPage = lazy(() => import('./ContactPage'))
+const OrderPage = lazy(() => import('./OrderPage'))
+const AccountPage = lazy(() => import('./AccountPage'))
+const BrewingGuidePage = lazy(() => import('./BrewingGuidePage'))
+const GardensPage = lazy(() => import('./GardensPage'))
+const PrivacyPage = lazy(() => import('./legal/PrivacyPage'))
+const TermsPage = lazy(() => import('./legal/TermsPage'))
+const ShippingReturnsPage = lazy(() => import('./legal/ShippingReturnsPage'))
+const NotFoundPage = lazy(() => import('./NotFoundPage'))
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -198,7 +205,7 @@ export default function TeaVectorHomepage() {
 
       {/* Main content */}
       <main id="main-content" className="relative z-20">
-        {page}
+        <Suspense fallback={<PageSkeleton />}>{page}</Suspense>
       </main>
 
       {/* App-level footer for non-home pages */}

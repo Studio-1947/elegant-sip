@@ -4,6 +4,7 @@ import { getRating, getDefaultVariant, isInStock, type Product } from '../data/p
 import { Link } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
+import SkeletonImage from './SkeletonImage'
 
 export default function ProductCard({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1)
@@ -69,10 +70,11 @@ export default function ProductCard({ product }: { product: Product }) {
       {/* Product Image Wrapper with Hover Overlay */}
       <div className="relative aspect-[4/5] bg-[#fdfdfd] overflow-hidden">
         <Link to={`/product/${product.id}`} aria-label={`View ${product.name}`}>
-          <img
+          <SkeletonImage
             src={product.imageSrc}
             alt={product.name}
             loading="lazy"
+            wrapperClassName="w-full h-full"
             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
         </Link>

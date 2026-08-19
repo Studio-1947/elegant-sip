@@ -1,4 +1,5 @@
 import { useScrollReveal } from '../lib/useScrollReveal'
+import SkeletonImage from './SkeletonImage'
 
 const EYEBROW = 'Single Origin'
 const PARAGRAPH =
@@ -28,7 +29,7 @@ export default function CanisterShowcaseSection() {
           <p className="text-[#4a584a] text-sm leading-relaxed">{PARAGRAPH}</p>
         </div>
         <div className="relative">
-          <img
+          <SkeletonImage
             src="/tea1_1.webp"
             alt="Ember Charm Tea Canister"
             loading="lazy"
@@ -51,7 +52,7 @@ export default function CanisterShowcaseSection() {
           <p className="text-[#4a584a] text-sm leading-relaxed max-w-sm">{PARAGRAPH}</p>
         </div>
         <div className="relative rounded-2xl overflow-hidden">
-          <img
+          <SkeletonImage
             src="/tea1_1.webp"
             alt="Ember Charm Tea Canister"
             loading="lazy"
@@ -63,7 +64,7 @@ export default function CanisterShowcaseSection() {
 
       {/* ── Desktop: full-bleed image with text overlay ── */}
       <div className="hidden lg:block relative">
-        <img
+        <SkeletonImage
           src="/tea1_1.webp"
           alt="Ember Charm Tea Canister"
           loading="lazy"

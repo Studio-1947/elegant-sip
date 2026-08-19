@@ -1,7 +1,9 @@
+import SkeletonImage from './SkeletonImage'
+
 export default function HarvestShowcaseSection() {
   return (
     <div className="w-full overflow-hidden pb-20">
-      <img
+      <SkeletonImage
         src="/harvest.webp"
         alt="Tea plantation at harvest"
         loading="lazy"

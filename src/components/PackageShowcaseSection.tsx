@@ -1,11 +1,12 @@
 import { Link } from '../lib/router'
+import SkeletonImage from './SkeletonImage'
 
 export default function PackageShowcaseSection() {
   return (
     <div className="w-full overflow-hidden bg-[#f9faf7] pb-24">
       <div className="max-w-[1360px] mx-auto px-0 md:px-12 lg:px-16">
         <div className="relative md:rounded-2xl overflow-hidden md:border md:border-[#1b261b]/10 md:shadow-[0_12px_40px_rgba(27,38,27,0.04)]">
-          <img
+          <SkeletonImage
             src="/package.webp"
             alt="Elegant Tea Packaging Showcase"
             loading="lazy"

@@ -1,4 +1,5 @@
 import { Link, useDocumentMeta } from '../lib/router'
+import SkeletonImage from './SkeletonImage'
 
 const TIMELINE = [
   { year: '2024', title: 'The first harvest', text: 'Elegant Sip is founded on a single conviction: tea should name its garden the way wine names its vineyard.' },
@@ -16,7 +17,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans">
       {/* Hero — offset below the fixed navbar so the full image is visible */}
       <div className="relative overflow-hidden pt-20">
-        <img src="/gopal.jpg" alt="Terraced tea garden at Gopal Dhara estate" width={1280} height={828} fetchPriority="high" className="w-full h-[70vh] object-cover" />
+        <SkeletonImage src="/gopal.jpg" alt="Terraced tea garden at Gopal Dhara estate" width={1280} height={828} fetchPriority="high" wrapperClassName="w-full h-[70vh]" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end">
           <div className="max-w-5xl mx-auto w-full px-6 md:px-12 pb-14">
             <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Our Story</span>

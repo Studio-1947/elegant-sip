@@ -33,6 +33,23 @@ body {
   }
 }
 
+/* Skeleton loading shimmer */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton {
+  background-color: #e9ede7;
+  background-image: linear-gradient(90deg, transparent 25%, rgba(255, 255, 255, 0.65) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 /* Hide scrollbars but keep scrolling functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

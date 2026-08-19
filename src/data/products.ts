@@ -78,9 +78,9 @@ export const PRODUCTS: Product[] = [
     imageSrc: "/morningdew.webp",
     category: "First Flush",
     variants: [
-      { size: "Basic · 100 g", price: 1000, stock: 20 },
+      { size: "Basic · 100 g", price: 600, stock: 20 },
       { size: "Classic · 100 g", price: 600, stock: 20 },
-      { size: "Premium · 100 g", price: 600, stock: 20 },
+      { size: "Premium · 100 g", price: 1000, stock: 20 },
     ],
     brewingGuide: {
       temperature: "194°F / 90°C",
@@ -93,12 +93,16 @@ export const PRODUCTS: Product[] = [
   {
     id: "first-flush-broken-leaf",
     name: "First Flush Broken Leaf",
-    price: 700,
+    price: 500,
     description:
       "Broken-leaf first flush — the same spring character with a quicker, stronger brew.",
     imageSrc: "/origin.webp",
     category: "First Flush",
-    variants: [{ size: "100 g", price: 700, stock: 20 }],
+    variants: [
+      { size: "Basic · 100 g", price: 500, stock: 20 },
+      { size: "Classic · 100 g", price: 600, stock: 20 },
+      { size: "Premium · 100 g", price: 700, stock: 20 },
+    ],
     brewingGuide: {
       temperature: "203°F / 95°C",
       time: "2–3 minutes",
@@ -110,22 +114,28 @@ export const PRODUCTS: Product[] = [
   {
     id: "first-flush-broken-mixed",
     name: "First Flush Broken Mixed",
-    price: 300,
+    price: 150,
     description:
       "A robust mixed broken grade from the spring harvest — strong, brisk, and happy to take milk.",
     imageSrc: "/origin.webp",
     category: "First Flush",
-    variants: [{ size: "100 g", price: 300, stock: 20 }],
+    variants: [
+      { size: "Basic · 100 g", price: 150, stock: 20 },
+      { size: "Premium · 100 g", price: 300, stock: 20 },
+    ],
   },
   {
     id: "first-flush-fannings",
     name: "First Flush Fannings",
-    price: 200,
+    price: 100,
     description:
       "Fine first flush fannings — fast-brewing and full-strength. The working tea of the Darjeeling hills.",
     imageSrc: "/origin.webp",
     category: "First Flush",
-    variants: [{ size: "100 g", price: 200, stock: 20 }],
+    variants: [
+      { size: "Basic · 100 g", price: 100, stock: 20 },
+      { size: "Premium · 100 g", price: 200, stock: 20 },
+    ],
   },
 
   /* ── Second Flush (Black Tea) — arriving after the summer pluck ── */

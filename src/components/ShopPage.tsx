@@ -1,6 +1,7 @@
 import ProductsSection from './ProductsSection'
 import TrustBadgesSection from './TrustBadgesSection'
 import NewsletterSection from './NewsletterSection'
+import SkeletonImage from './SkeletonImage'
 import { useDocumentMeta, useHashRoute, parseRoute } from '../lib/router'
 
 export default function ShopPage() {
@@ -18,14 +19,17 @@ export default function ShopPage() {
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans">
       {/* Banner — terraced garden backdrop */}
       <div className="relative overflow-hidden">
-        <img
-          src="/shopimg.webp"
-          alt=""
-          aria-hidden="true"
-          width={1920}
-          height={1080}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <div className="absolute inset-0">
+          <SkeletonImage
+            src="/shopimg.webp"
+            alt=""
+            aria-hidden="true"
+            width={1920}
+            height={1080}
+            wrapperClassName="w-full h-full"
+            className="w-full h-full object-cover"
+          />
+        </div>
         {/* Legibility scrim */}
         <div className="absolute inset-0 bg-[#0c130c]/55" />
 
