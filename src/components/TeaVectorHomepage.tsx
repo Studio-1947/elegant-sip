@@ -97,7 +97,10 @@ export default function TeaVectorHomepage() {
     const lenis = new Lenis({
       lerp: 0.08,
       smoothWheel: true,
-      syncTouch: true,
+      // Touch stays native: syncTouch re-drives touch scrolling through JS
+      // every frame, which reads as lag on mid-range phones — especially
+      // while the hero video is being scrubbed.
+      syncTouch: false,
     })
     setLenis(lenis)
 

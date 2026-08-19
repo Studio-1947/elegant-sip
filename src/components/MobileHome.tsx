@@ -86,7 +86,9 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
         if (video.buffered.length === 0) return
         const bufferedEnd = video.buffered.end(video.buffered.length - 1) - 0.05
         const t = Math.min(proxy.t, Math.max(0, bufferedEnd))
-        if (Math.abs(video.currentTime - t) > 1 / 60) video.currentTime = t
+        // The source is ~24fps (one frame ≈ 0.042s) — seeking finer than a
+        // frame is pure wasted decode, which shows up as jank on phones.
+        if (Math.abs(video.currentTime - t) > 0.035) video.currentTime = t
       }
       let scrubAdded = false
       const addScrub = () => {

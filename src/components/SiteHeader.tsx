@@ -57,7 +57,9 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
       <header
         className={`fixed top-0 left-0 right-0 z-40 px-8 py-6 transition-all duration-700 ease-in-out ${
           isNavbar
-            ? 'bg-white/70 backdrop-blur-md border-b border-[#1b261b]/10 h-20'
+            ? // Backdrop blur is desktop-only: re-blurring the scrubbing video
+              // behind the header every frame is expensive on phones.
+              'bg-white/90 lg:bg-white/70 lg:backdrop-blur-md border-b border-[#1b261b]/10 h-20'
             : 'bg-transparent h-32 pointer-events-none'
         }`}
       >
