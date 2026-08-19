@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
 import { PRODUCTS, getRating } from '../data/products'
 import { useUi } from './UiContext'
@@ -28,12 +28,18 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
   const { openQuiz } = useUi()
   const [category, setCategory] = useState('All')
   const [sort, setSort] = useState<SortValue>('featured')
+  const [search, setSearch] = useState(searchQuery)
   const sectionRef = useScrollReveal<HTMLElement>({ target: ':scope > div' })
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.15 })
 
+  // Sync when the outside query changes (e.g. arriving via a #/shop?q= link)
+  useEffect(() => {
+    setSearch(searchQuery)
+  }, [searchQuery])
+
   const visibleProducts = useMemo(() => {
     let filtered = category === 'All' ? [...PRODUCTS] : PRODUCTS.filter((p) => p.category === category)
-    const q = searchQuery.trim().toLowerCase()
+    const q = search.trim().toLowerCase()
     if (q) {
       filtered = filtered.filter((p) =>
         [p.name, p.description, p.category].some((text) => text.toLowerCase().includes(q)),
@@ -43,7 +49,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
     if (sort === 'price-desc') filtered.sort((a, b) => b.price - a.price)
     if (sort === 'rating') filtered.sort((a, b) => getRating(b.id).average - getRating(a.id).average)
     return filtered
-  }, [category, sort, searchQuery])
+  }, [category, sort, search])
 
   return (
     <section ref={sectionRef} className="px-6 md:px-12 lg:px-16 py-32 max-w-[1400px] mx-auto bg-[#f9faf7]">
@@ -81,6 +87,32 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
           <span className="hidden md:inline">Start Discovery</span>
         </button>
       </div>
+
+      {/* Search */}
+      {showFilters && (
+        <div className="max-w-6xl mx-auto mb-4">
+          <div className="relative w-full sm:max-w-md sm:mx-auto">
+            <label htmlFor="tea-search" className="sr-only">Search teas</label>
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a584a]/50 pointer-events-none"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input
+              id="tea-search"
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search teas — whole leaf, fannings, muscatel…"
+              className="w-full bg-white border border-[#1b261b]/10 rounded-full pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/30"
+            />
+          </div>
+        </div>
+      )}
 
       {showFilters && (
         /* relative z-30: the scroll-reveal leaves an inline transform on this bar

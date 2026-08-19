@@ -5,6 +5,7 @@ import { useGSAP } from '@gsap/react'
 import { Link } from '../lib/router'
 import { useUi } from './UiContext'
 import { reportVideoProgress, markVideoFailed } from '../lib/videoLoading'
+import { scrollToTop } from '../lib/scroll'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 import HeroIntroSection from './HeroIntroSection'
@@ -245,6 +246,19 @@ export default function MobileHome() {
       <StatsBarSection />
       <NewsletterSection />
       <Footer />
+
+      {/* ── Scroll to top (appears once the scroll animation is finished) ── */}
+      {journeyDone && (
+        <button
+          onClick={() => scrollToTop(false)}
+          aria-label="Scroll to top"
+          className="fixed bottom-4 right-4 z-40 w-11 h-11 rounded-full bg-white/95 border border-[#1b261b]/10 text-[#1b261b] shadow-[0_8px_30px_rgba(27,38,27,0.15)] flex items-center justify-center cursor-pointer animate-fade-in"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+          </svg>
+        </button>
+      )}
 
       {/* ── Floating Taste Matcher pill (appears after the scroll animation) ── */}
       {journeyDone && (
