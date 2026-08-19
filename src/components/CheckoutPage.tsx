@@ -1,58 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
-import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
-import { getOrderPricing, SHIPPING_METHODS, TAX_RATE, type ShippingMethodId } from '../lib/pricing'
+import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
 import { saveOrder, getOrders } from '../lib/orders'
 import { formatINR } from '../lib/currency'
-
-type Step = 1 | 2 | 3
-
-const COUNTRIES = ['India', 'United States', 'Canada', 'United Kingdom', 'Australia', 'Other']
-
-const POSTAL_RULES: Record<string, { pattern: RegExp; hint: string }> = {
-  'United States': { pattern: /^\d{5}(-\d{4})?$/, hint: 'Enter a valid US ZIP code (e.g. 97201).' },
-  Canada: { pattern: /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/, hint: 'Enter a valid Canadian postal code (e.g. V6B 1A1).' },
-  'United Kingdom': { pattern: /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s?\d[A-Za-z]{2}$/, hint: 'Enter a valid UK postcode (e.g. SW1A 1AA).' },
-  Australia: { pattern: /^\d{4}$/, hint: 'Enter a valid Australian postcode (4 digits).' },
-  India: { pattern: /^\d{6}$/, hint: 'Enter a valid PIN code (6 digits).' },
-}
-const GENERIC_POSTAL = { pattern: /^[A-Za-z\d][A-Za-z\d\s-]{1,9}$/, hint: 'Enter a valid postal code.' }
-
-interface FormState {
-  email: string
-  firstName: string
-  lastName: string
-  address: string
-  city: string
-  zip: string
-  country: string
-  cardNumber: string
-  cardName: string
-  expiry: string
-  cvc: string
-}
-
-const EMPTY_FORM: FormState = {
-  email: '',
-  firstName: '',
-  lastName: '',
-  address: '',
-  city: '',
-  zip: '',
-  country: 'India',
-  cardNumber: '',
-  cardName: '',
-  expiry: '',
-  cvc: '',
-}
+import { EMPTY_FORM, GENERIC_POSTAL, POSTAL_RULES, type FormState, type Step } from './checkout/checkoutData'
+import { EmptyCartScreen, OrderConfirmedScreen } from './checkout/CheckoutScreens'
+import CheckoutSummary from './checkout/CheckoutSummary'
+import ShippingStep from './checkout/ShippingStep'
 
 export default function CheckoutPage() {
   const { cart, cartTotal, discount, coupon, clearCart } = useCart()
   const { user } = useAuth()
-  const { openLogin } = useUi()
   const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
@@ -157,47 +118,11 @@ export default function CheckoutPage() {
   }
 
   if (orderNumber) {
-    return (
-      <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6">
-        <div className="max-w-lg mx-auto text-center bg-white border border-[#1b261b]/10 rounded-3xl p-10 md:p-14 shadow-[0_12px_40px_rgba(27,38,27,0.04)]">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#8bb56e]/15 flex items-center justify-center">
-            <svg className="w-8 h-8 text-[#8bb56e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-          </div>
-          <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-3">Order Confirmed</span>
-          <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">Thank you!</h1>
-          <p className="text-sm text-[#4a584a] leading-relaxed mb-6">
-            Your order <span className="font-mono font-bold text-[#1b261b]">{orderNumber}</span> has been placed
-            and saved to this device — you can review it anytime from your account.
-          </p>
-          <p className="text-xs text-[#4a584a]/70 italic mb-8">"Every cup is a snapshot of a place and a moment."</p>
-          <div className="flex flex-col gap-3">
-            <Link to={`/order/${orderNumber}`} className="w-full bg-[#8bb56e] hover:bg-[#9cc580] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-colors text-center">
-              View Order Details
-            </Link>
-            <Link to="/shop" className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-colors text-center">
-              Continue Shopping
-            </Link>
-            <Link to="/" className="w-full border border-[#1b261b]/20 hover:border-[#1b261b] hover:bg-[#f9faf7] text-[#1b261b] text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-all text-center">
-              Back to Experience
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
+    return <OrderConfirmedScreen orderNumber={orderNumber} />
   }
 
   if (cart.length === 0) {
-    return (
-      <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6 text-center">
-        <h1 className="text-3xl font-bold mb-4">Your cart is empty</h1>
-        <p className="text-sm text-[#4a584a] mb-8">Add a few teas before heading to checkout.</p>
-        <Link to="/shop" className="inline-block bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3 px-8 rounded-lg transition-colors">
-          Browse the Collection
-        </Link>
-      </div>
-    )
+    return <EmptyCartScreen />
   }
 
   const inputClass = (field: keyof FormState) =>
@@ -239,106 +164,17 @@ export default function CheckoutPage() {
           {/* Form */}
           <div className="lg:col-span-2 bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-10">
             {step === 1 && (
-              <div>
-                <h2 className="text-lg font-bold uppercase tracking-wide mb-6">Shipping Information</h2>
-                {user ? (
-                  prefilled && (
-                    <div className="bg-[#8bb56e]/5 border border-[#8bb56e]/20 rounded-xl p-4 mb-6 text-xs text-[#4a584a]">
-                      Welcome back, {user.name.split(' ')[0]} — we've prefilled your details from your last order.
-                    </div>
-                  )
-                ) : (
-                  <div className="bg-[#8bb56e]/5 border border-[#8bb56e]/20 rounded-xl p-4 mb-6 text-xs text-[#4a584a] flex items-center justify-between gap-4">
-                    <span>Have an account? Check out faster with saved details.</span>
-                    <button onClick={openLogin} className="text-[#8bb56e] font-bold uppercase tracking-widest hover:text-[#1b261b] transition-colors flex-shrink-0 cursor-pointer">
-                      Sign In
-                    </button>
-                  </div>
-                )}
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="co-email" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Email</label>
-                    <input id="co-email" type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} placeholder="you@example.com" className={inputClass('email')} />
-                    {errors.email && <p className="text-[11px] text-red-600 mt-1">{errors.email}</p>}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="co-first" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">First Name</label>
-                      <input id="co-first" type="text" value={form.firstName} onChange={(e) => setField('firstName', e.target.value)} placeholder="Avery" className={inputClass('firstName')} />
-                      {errors.firstName && <p className="text-[11px] text-red-600 mt-1">{errors.firstName}</p>}
-                    </div>
-                    <div>
-                      <label htmlFor="co-last" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Last Name</label>
-                      <input id="co-last" type="text" value={form.lastName} onChange={(e) => setField('lastName', e.target.value)} placeholder="Chen" className={inputClass('lastName')} />
-                      {errors.lastName && <p className="text-[11px] text-red-600 mt-1">{errors.lastName}</p>}
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="co-address" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Address</label>
-                    <input id="co-address" type="text" value={form.address} onChange={(e) => setField('address', e.target.value)} placeholder="Street address" className={inputClass('address')} />
-                    {errors.address && <p className="text-[11px] text-red-600 mt-1">{errors.address}</p>}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="co-city" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">City</label>
-                      <input id="co-city" type="text" value={form.city} onChange={(e) => setField('city', e.target.value)} placeholder="Portland" className={inputClass('city')} />
-                      {errors.city && <p className="text-[11px] text-red-600 mt-1">{errors.city}</p>}
-                    </div>
-                    <div>
-                      <label htmlFor="co-zip" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Postal / ZIP</label>
-                      <input id="co-zip" type="text" value={form.zip} onChange={(e) => setField('zip', e.target.value)} placeholder={form.country === 'India' ? '734101' : ''} className={inputClass('zip')} />
-                      {errors.zip && <p className="text-[11px] text-red-600 mt-1">{errors.zip}</p>}
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="co-country" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Country</label>
-                    <select
-                      id="co-country"
-                      value={form.country}
-                      onChange={(e) => setField('country', e.target.value)}
-                      className={`${inputClass('country')} cursor-pointer`}
-                    >
-                      {COUNTRIES.map((c) => (
-                        <option key={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Shipping method */}
-                  <fieldset className="pt-2">
-                    <legend className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-2.5">Shipping Method</legend>
-                    <div className="space-y-2.5">
-                      {SHIPPING_METHODS.map((m) => {
-                        const fee = getOrderPricing(cartTotal, discount, m.id).shippingFee
-                        const selected = shippingMethod === m.id
-                        return (
-                          <label
-                            key={m.id}
-                            className={`flex items-center justify-between gap-4 border rounded-xl px-4 py-3.5 cursor-pointer transition-all ${
-                              selected ? 'border-[#8bb56e] bg-[#8bb56e]/5' : 'border-[#1b261b]/15 hover:border-[#1b261b]/40'
-                            }`}
-                          >
-                            <span className="flex items-center gap-3">
-                              <input
-                                type="radio"
-                                name="shipping-method"
-                                checked={selected}
-                                onChange={() => setShippingMethod(m.id)}
-                                className="accent-[#8bb56e]"
-                              />
-                              <span>
-                                <span className="block text-sm font-bold">{m.label}</span>
-                                <span className="block text-[11px] text-[#4a584a]">{m.detail}</span>
-                              </span>
-                            </span>
-                            <span className="text-sm font-bold font-mono">{fee === 0 ? 'Free' : formatINR(fee)}</span>
-                          </label>
-                        )
-                      })}
-                    </div>
-                  </fieldset>
-                </div>
-              </div>
+              <ShippingStep
+                form={form}
+                errors={errors}
+                setField={setField}
+                inputClass={inputClass}
+                prefilled={prefilled}
+                shippingMethod={shippingMethod}
+                setShippingMethod={setShippingMethod}
+                cartTotal={cartTotal}
+                discount={discount}
+              />
             )}
 
             {step === 2 && (
@@ -437,42 +273,15 @@ export default function CheckoutPage() {
           </div>
 
           {/* Summary */}
-          <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8 shadow-[0_12px_40px_rgba(27,38,27,0.04)] lg:sticky lg:top-28">
-            <h2 className="text-lg font-bold uppercase tracking-wide border-b border-[#1b261b]/10 pb-4 mb-6">Order Summary</h2>
-            <div className="space-y-3 text-xs mb-6">
-              {cart.map((item) => (
-                <div key={`${item.id}__${item.size}`} className="flex justify-between gap-3">
-                  <span className="text-[#4a584a]">{item.name} <span className="text-[#4a584a]/60">({item.size}) × {item.quantity}</span></span>
-                  <span className="font-mono font-semibold">{formatINR(item.price * item.quantity)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="space-y-2.5 text-xs border-t border-[#1b261b]/10 pt-4">
-              <div className="flex justify-between text-[#4a584a]">
-                <span>Subtotal</span>
-                <span className="font-mono">{formatINR(subtotal)}</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-[#8bb56e]">
-                  <span>Discount ({coupon})</span>
-                  <span className="font-mono">−{formatINR(discount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-[#4a584a]">
-                <span>Shipping</span>
-                <span className="font-mono">{shippingFee === 0 ? 'Free' : formatINR(shippingFee)}</span>
-              </div>
-              <div className="flex justify-between text-[#4a584a]">
-                <span>GST ({Math.round(TAX_RATE * 100)}%)</span>
-                <span className="font-mono">{formatINR(estimatedTax)}</span>
-              </div>
-              <div className="border-t border-[#1b261b]/10 pt-3 mt-3 flex justify-between text-base font-bold">
-                <span>Total</span>
-                <span className="font-mono">{formatINR(finalTotal)}</span>
-              </div>
-            </div>
-            <p className="text-[10px] font-mono text-[#8bb56e] italic mt-4">🔒 Demo checkout — no real payment is processed.</p>
-          </div>
+          <CheckoutSummary
+            cart={cart}
+            subtotal={subtotal}
+            discount={discount}
+            coupon={coupon}
+            shippingFee={shippingFee}
+            estimatedTax={estimatedTax}
+            finalTotal={finalTotal}
+          />
         </div>
       </div>
     </div>

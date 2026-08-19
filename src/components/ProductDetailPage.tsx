@@ -3,11 +3,12 @@ import { getProduct, getReviews, getDefaultVariant, getGardenByEstate, PRODUCTS,
 import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
 import { useCart } from './CartContext'
 import { track } from '../lib/analytics'
-import { getLocalReviews, addLocalReview } from '../lib/localReviews'
-import { hasPurchased } from '../lib/orders'
+import { getLocalReviews } from '../lib/localReviews'
 import { formatINR } from '../lib/currency'
 import { FREE_SHIPPING_THRESHOLD } from '../lib/pricing'
 import ProductCard from './ProductCard'
+import ProductInfoCards from './ProductInfoCards'
+import ProductReviews from './ProductReviews'
 
 export default function ProductDetailPage({ id }: { id?: string }) {
   const product = getProduct(id)
@@ -16,8 +17,6 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
   const [localReviews, setLocalReviews] = useState<Review[]>([])
-  const [reviewForm, setReviewForm] = useState({ author: '', rating: 5, text: '' })
-  const [reviewOpen, setReviewOpen] = useState(false)
   const { addToCart } = useCart()
 
   // Reset per-product state when navigating between products (same component instance)
@@ -26,8 +25,6 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     setSelectedSize(null)
     setIsAdding(false)
     setIsAdded(false)
-    setReviewOpen(false)
-    setReviewForm({ author: '', rating: 5, text: '' })
     setLocalReviews(id ? getLocalReviews(id) : [])
   }, [id])
 
@@ -116,20 +113,6 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       setQuantity(1)
       setTimeout(() => setIsAdded(false), 2000)
     }, 800)
-  }
-
-  const handleReviewSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!reviewForm.author.trim() || !reviewForm.text.trim()) return
-    const entry = addLocalReview(product.id, {
-      author: reviewForm.author.trim(),
-      rating: reviewForm.rating,
-      text: reviewForm.text.trim(),
-      verified: hasPurchased(product.id),
-    })
-    setLocalReviews((prev) => [entry, ...prev])
-    setReviewForm({ author: '', rating: 5, text: '' })
-    setReviewOpen(false)
   }
 
   return (
@@ -284,198 +267,15 @@ export default function ProductDetailPage({ id }: { id?: string }) {
         </div>
 
         {/* Details: Origin + Flavor + Brewing */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
-          {product.origin && (
-            <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-6">
-              <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-2 mb-4">Tea Origin</span>
-              <dl className="space-y-2 text-xs">
-                {(
-                  [
-                    ['Origin', product.origin.origin],
-                    ['Estate', product.origin.estate],
-                    ['Elevation', product.origin.elevation],
-                    ['Harvest', product.origin.harvest],
-                    ['Cultivar', product.origin.cultivar],
-                  ] as [string, string][]
-                ).map(([label, value]) => (
-                  <div key={label} className="flex justify-between gap-4">
-                    <dt className="text-[#4a584a]">{label}</dt>
-                    <dd className="font-medium text-right">
-                      {label === 'Estate' && garden ? (
-                        <Link to="/gardens" className="underline decoration-[#8bb56e]/50 underline-offset-2 hover:text-[#8bb56e] transition-colors">
-                          {value}
-                        </Link>
-                      ) : (
-                        value
-                      )}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-              {garden && (
-                <Link to="/gardens" className="inline-block mt-4 text-[10px] font-mono tracking-widest uppercase text-[#8bb56e] hover:text-[#1b261b] transition-colors">
-                  Visit the garden →
-                </Link>
-              )}
-            </div>
-          )}
-
-          {product.flavorProfile && (
-            <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-6">
-              <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-2 mb-4">Flavor Profile</span>
-              <div className="space-y-3 text-xs">
-                {(
-                  [
-                    ['Strength', product.flavorProfile.strength],
-                    ['Astringency', product.flavorProfile.astringency],
-                    ['Sweetness', product.flavorProfile.sweetness],
-                    ['Floral', product.flavorProfile.floral],
-                    ['Caffeine', product.flavorProfile.caffeine],
-                  ] as [string, number][]
-                ).map(([label, value]) => (
-                  <div key={label}>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-[#4a584a]">{label}</span>
-                      <span className="font-mono">{value}/5</span>
-                    </div>
-                    <div className="h-1 bg-[#1b261b]/5 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#8bb56e] rounded-full" style={{ width: `${(value / 5) * 100}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {product.brewingGuide && (
-            <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-6">
-              <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-2 mb-4">Brewing Guide</span>
-              <dl className="space-y-2 text-xs">
-                {[
-                  ['Temperature', product.brewingGuide.temperature],
-                  ['Steep time', product.brewingGuide.time],
-                  ['Steeps', product.brewingGuide.steeps],
-                  ['Leaf', product.brewingGuide.leafAmount],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between gap-4">
-                    <dt className="text-[#4a584a]">{label}</dt>
-                    <dd className="font-medium text-right">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="text-[11px] text-[#4a584a] italic mt-4 leading-relaxed">{product.brewingGuide.notes}</p>
-            </div>
-          )}
-        </div>
+        <ProductInfoCards product={product} garden={garden} />
 
         {/* Reviews */}
-        <div className="mb-24">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-            <div>
-              <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-2">Customer Reviews</span>
-              <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight">
-                {rating.count > 0 ? `${rating.average} / 5 from ${rating.count} reviews` : 'Reviews'}
-              </h2>
-            </div>
-            <button
-              onClick={() => setReviewOpen((o) => !o)}
-              className="self-start md:self-auto border border-[#1b261b]/20 hover:border-[#1b261b] hover:bg-white text-[#1b261b] text-[10px] font-bold tracking-widest uppercase py-3 px-6 rounded-lg transition-all cursor-pointer"
-            >
-              {reviewOpen ? 'Cancel' : 'Write a Review'}
-            </button>
-          </div>
-
-          {reviewOpen && (
-            <form onSubmit={handleReviewSubmit} className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8 mb-8 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="rv-name" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Your name</label>
-                  <input
-                    id="rv-name"
-                    type="text"
-                    required
-                    value={reviewForm.author}
-                    onChange={(e) => setReviewForm((f) => ({ ...f, author: e.target.value }))}
-                    className="w-full bg-[#f9faf7] border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors"
-                  />
-                </div>
-                <div>
-                  <span className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Rating</span>
-                  <div className="flex gap-1 items-center h-[46px]" role="radiogroup" aria-label="Rating">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        role="radio"
-                        aria-checked={reviewForm.rating === n}
-                        aria-label={`${n} star${n > 1 ? 's' : ''}`}
-                        onClick={() => setReviewForm((f) => ({ ...f, rating: n }))}
-                        className="cursor-pointer"
-                      >
-                        <svg className="w-6 h-6" viewBox="0 0 20 20" fill={n <= reviewForm.rating ? '#8bb56e' : 'none'} stroke="#8bb56e" strokeWidth="1.2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
-                        </svg>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label htmlFor="rv-text" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Your review</label>
-                <textarea
-                  id="rv-text"
-                  required
-                  rows={4}
-                  value={reviewForm.text}
-                  onChange={(e) => setReviewForm((f) => ({ ...f, text: e.target.value }))}
-                  placeholder="How does it taste? How did you brew it?"
-                  className="w-full bg-[#f9faf7] border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors resize-none placeholder:text-[#1b261b]/25"
-                />
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <p className="text-[10px] font-mono text-[#4a584a]/60">
-                  Demo store: reviews are saved in this browser. "Verified purchase" appears only if you've ordered this tea here.
-                </p>
-                <button
-                  type="submit"
-                  className="bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3 px-8 rounded-lg transition-colors cursor-pointer"
-                >
-                  Submit Review
-                </button>
-              </div>
-            </form>
-          )}
-
-          {reviews.length === 0 ? (
-            <p className="text-sm text-[#4a584a] bg-white border border-[#1b261b]/10 rounded-2xl p-6">
-              No reviews yet for this tea. Be the first to tell us how it tastes.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {reviews.map((review) => (
-                <div key={review.id} className="bg-white border border-[#1b261b]/10 rounded-2xl p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex gap-0.5 text-[#8bb56e] text-xs">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} className="w-3.5 h-3.5" viewBox="0 0 20 20" fill={i < review.rating ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-[10px] font-mono text-[#4a584a]/60">{review.date}</span>
-                  </div>
-                  <p className="text-xs text-[#4a584a] leading-relaxed mb-4">{review.text}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold">{review.author}</span>
-                    {review.verified && (
-                      <span className="text-[9px] font-mono uppercase tracking-wider bg-[#8bb56e]/10 text-[#8bb56e] px-2 py-0.5 rounded-full">Verified</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductReviews
+          productId={product.id}
+          reviews={reviews}
+          rating={rating}
+          onAdded={(entry) => setLocalReviews((prev) => [entry, ...prev])}
+        />
 
         {/* Related */}
         {related.length > 0 && (

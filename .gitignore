@@ -34,3 +34,6 @@ build/
 .antigravity/
 .ag-kit-backups/
 .agents/
+
+# AI assistant context (local only)
+CLAUDE.md
