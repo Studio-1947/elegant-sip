@@ -56,7 +56,15 @@ export interface Product {
   description: string
   longDescription?: string
   imageSrc: string
+  /** Additional gallery images — the card shows switcher dots when present. */
+  images?: string[]
   category: string
+  /** Short flavor chips shown on the card, e.g. ["Floral", "Muscatel"]. */
+  tastingNotes?: string[]
+  /** Cup body on a 1 (light) to 5 (full) scale — drives the card's meter. */
+  bodyLevel?: number
+  /** Harvest badge on the card, e.g. "Spring 2026 Harvest". */
+  harvestLabel?: string
   variants: ProductVariant[]
   origin?: TeaOrigin
   flavorProfile?: FlavorProfile
@@ -77,6 +85,9 @@ export const PRODUCTS: Product[] = [
       "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the plant has stored a season's worth of aromatics. Choose your tier — Basic, Classic, or Premium — each whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
     imageSrc: "/morningdew.webp",
     category: "First Flush",
+    tastingNotes: ["Floral", "Muscatel", "Bright finish"],
+    bodyLevel: 2,
+    harvestLabel: "Spring 2026 Harvest",
     variants: [
       { size: "Basic · 100 g", price: 600, stock: 20 },
       { size: "Classic · 100 g", price: 600, stock: 20 },
@@ -98,6 +109,9 @@ export const PRODUCTS: Product[] = [
       "Broken-leaf first flush — the same spring character with a quicker, stronger brew.",
     imageSrc: "/origin.webp",
     category: "First Flush",
+    tastingNotes: ["Muscatel", "Brisk", "Strong cup"],
+    bodyLevel: 3,
+    harvestLabel: "Spring 2026 Harvest",
     variants: [
       { size: "Basic · 100 g", price: 500, stock: 20 },
       { size: "Classic · 100 g", price: 600, stock: 20 },
@@ -119,10 +133,20 @@ export const PRODUCTS: Product[] = [
       "A robust mixed broken grade from the spring harvest — strong, brisk, and happy to take milk.",
     imageSrc: "/origin.webp",
     category: "First Flush",
+    tastingNotes: ["Malty", "Strong", "Milk-friendly"],
+    bodyLevel: 4,
+    harvestLabel: "Spring 2026 Harvest",
     variants: [
       { size: "Basic · 100 g", price: 150, stock: 20 },
       { size: "Premium · 100 g", price: 300, stock: 20 },
     ],
+    brewingGuide: {
+      temperature: "212°F / 100°C",
+      time: "3–4 minutes",
+      steeps: "2",
+      leafAmount: "1 tsp per 8 oz",
+      notes: "A full boil and a longer steep bring out the malty depth — this grade takes milk happily.",
+    },
   },
   {
     id: "first-flush-fannings",
@@ -132,10 +156,20 @@ export const PRODUCTS: Product[] = [
       "Fine first flush fannings — fast-brewing and full-strength. The working tea of the Darjeeling hills.",
     imageSrc: "/origin.webp",
     category: "First Flush",
+    tastingNotes: ["Bold", "Fast-brewing", "Chai-ready"],
+    bodyLevel: 5,
+    harvestLabel: "Spring 2026 Harvest",
     variants: [
       { size: "Basic · 100 g", price: 100, stock: 20 },
       { size: "Premium · 100 g", price: 200, stock: 20 },
     ],
+    brewingGuide: {
+      temperature: "212°F / 100°C",
+      time: "2–3 minutes",
+      steeps: "1–2",
+      leafAmount: "1 tsp per 8 oz",
+      notes: "Fannings brew fast and strong — watch the clock, or lean in and make masala chai.",
+    },
   },
 
   /* ── Second Flush (Black Tea) — arriving after the summer pluck ── */
@@ -148,6 +182,9 @@ export const PRODUCTS: Product[] = [
       "The summer pluck brings the deeper, fruitier side of Darjeeling. The lots are still with the garden — arriving after the summer harvest.",
     imageSrc: "/summerbreeze.webp",
     category: "Second Flush",
+    tastingNotes: ["Fruity", "Muscatel", "Deep"],
+    bodyLevel: 4,
+    harvestLabel: "Summer 2026 Harvest",
     variants: [{ size: "100 g", price: 0, stock: 0 }],
   },
 
@@ -161,6 +198,9 @@ export const PRODUCTS: Product[] = [
       "The third pluck of the year rounds things out with a mellow, coppery cup. Arriving after the autumn harvest.",
     imageSrc: "/origin.webp",
     category: "Third Flush",
+    tastingNotes: ["Mellow", "Coppery", "Smooth"],
+    bodyLevel: 3,
+    harvestLabel: "Autumn 2026 Harvest",
     variants: [{ size: "100 g", price: 0, stock: 0 }],
   },
 ]

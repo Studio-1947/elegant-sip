@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
 import { PRODUCTS, getRating } from '../data/products'
 import { useUi } from './UiContext'
+import SelectDropdown from './SelectDropdown'
 import { useScrollReveal } from '../lib/useScrollReveal'
 
 // Catalogue order, not alphabetical: First Flush → Second Flush → Third Flush →
@@ -82,14 +83,18 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
       </div>
 
       {showFilters && (
-        <div className="max-w-6xl mx-auto mb-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center justify-center gap-3">
+        /* relative z-30: the scroll-reveal leaves an inline transform on this bar
+           and on the grid below, making both stacking contexts — without a higher
+           z-index here, the grid (later in DOM order) paints over the open dropdown. */
+        <div className="relative z-30 max-w-6xl mx-auto mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+          {/* Category chips — one swipeable row on phones, wrapping row from sm up */}
+          <div className="flex overflow-x-auto no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
             {CATEGORIES.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
                 aria-pressed={category === c}
-                className={`text-xs font-bold tracking-wide py-2.5 px-6 rounded-full border transition-colors cursor-pointer ${category === c
+                className={`flex-shrink-0 whitespace-nowrap text-xs font-bold tracking-wide py-2.5 px-5 sm:px-6 rounded-full border transition-colors cursor-pointer ${category === c
                     ? 'bg-[#1b261b] border-[#1b261b] text-white'
                     : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#8bb56e]'
                   }`}
@@ -98,16 +103,13 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
               </button>
             ))}
           </div>
-          <select
+          <SelectDropdown
             value={sort}
-            onChange={(e) => setSort(e.target.value as SortValue)}
-            aria-label="Sort products"
-            className="text-xs font-bold text-[#1b261b] bg-white border border-[#1b261b]/10 rounded-lg py-2.5 px-4 cursor-pointer focus:outline-none focus:border-[#8bb56e] transition-colors"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+            options={SORT_OPTIONS}
+            onChange={(v) => setSort(v as SortValue)}
+            ariaLabel="Sort products"
+            className="w-full sm:w-auto flex-shrink-0"
+          />
         </div>
       )}
 

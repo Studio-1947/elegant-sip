@@ -39,7 +39,7 @@ export default function ShopPage() {
           <div className="w-[1px] h-8 bg-gradient-to-b from-white/40 to-transparent animate-pulse" />
         </div>
 
-        <div className="relative min-h-[60vh] md:min-h-[102vh] flex flex-col items-center justify-center py-24 px-6 md:px-12 text-center max-w-3xl mx-auto">
+        <div className="relative min-h-[100vh] md:min-h-[102vh] flex flex-col items-center justify-center py-24 px-6 md:px-12 text-center max-w-3xl mx-auto">
           <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-5">
             The Collection
           </span>
