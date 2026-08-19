@@ -25,7 +25,7 @@ interface SiteHeaderProps {
 export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderProps) {
   const { cartCount } = useCart()
   const { user, logout } = useAuth()
-  const { openLogin } = useUi()
+  const { openLogin, openCart } = useUi()
   const isMobile = useIsMobile()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -34,14 +34,20 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
     setMenuOpen(false)
   }, [route])
 
-  // Close the mobile menu on Escape
+  // While the menu is open: close on Escape and lock background scrolling so
+  // attention stays on the menu items.
   useEffect(() => {
     if (!menuOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false)
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKey)
+    }
   }, [menuOpen])
 
   // Brand: centered on phones (mockup layout), pinned left on desktop.
@@ -144,10 +150,16 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
             </svg>
           </Link>
 
-          {/* Cart */}
+          {/* Cart — opens the drawer on phones, the full page on larger screens */}
           <Link
             to="/cart"
             aria-label="Cart"
+            onClick={(e) => {
+              if (isMobile) {
+                e.preventDefault()
+                openCart()
+              }
+            }}
             className={`transition-colors relative p-2 ${
               routeName === 'cart'
                 ? 'text-[#8bb56e]'
@@ -220,6 +232,13 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
 
       {/* Mobile navigation panel */}
       {menuOpen && (
+        <>
+        {/* Scrim: blurs and dims everything behind the open menu */}
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-[#0c130c]/40 backdrop-blur-sm"
+          onClick={() => setMenuOpen(false)}
+          aria-hidden="true"
+        />
         <div
           id="mobile-menu"
           className="lg:hidden fixed top-20 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#1b261b]/10 shadow-[0_12px_40px_rgba(27,38,27,0.08)]"
@@ -286,6 +305,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
             )}
           </nav>
         </div>
+        </>
       )}
     </>
   )

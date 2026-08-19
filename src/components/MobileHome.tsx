@@ -105,6 +105,10 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
       const onVideoError = () => markVideoFailed()
       video.addEventListener('loadedmetadata', addScrub)
       if (video.readyState >= 1) addScrub()
+      // iOS Safari ignores preload="auto" until playback begins — prime the
+      // buffer with a muted play/pause (allowed without a user gesture) so
+      // the download starts immediately.
+      video.play()?.then(() => video.pause()).catch(() => {})
       // As more data buffers in, let the frame catch up to the scrub target.
       video.addEventListener('progress', applySeek)
       video.addEventListener('progress', reportBuffer)

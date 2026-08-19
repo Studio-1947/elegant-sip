@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { FAQS } from '../data/products'
 import { useDocumentMeta, useJsonLd } from '../lib/router'
 
 export default function FaqPage() {
+  // Accordion: exactly one question open at a time (clicking it again closes it).
+  const [openQuestion, setOpenQuestion] = useState<string | null>(FAQS[0]?.question ?? null)
   useDocumentMeta(
     'FAQ — Elegant Sip',
     'Answers about shipping, returns, the Elegant Sip Promise, and how to brew single-origin tea.',
@@ -35,13 +38,20 @@ export default function FaqPage() {
                 {category}
               </h2>
               <div className="space-y-3">
-                {FAQS.filter((f) => f.category === category).map((faq, i) => (
+                {FAQS.filter((f) => f.category === category).map((faq) => (
                   <details
                     key={faq.question}
                     className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-shadow hover:shadow-[0_8px_24px_rgba(27,38,27,0.04)]"
-                    open={i === 0}
+                    open={openQuestion === faq.question}
                   >
-                    <summary className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none text-sm font-bold">
+                    <summary
+                      onClick={(e) => {
+                        // Controlled accordion: block the native toggle and let state decide.
+                        e.preventDefault()
+                        setOpenQuestion((current) => (current === faq.question ? null : faq.question))
+                      }}
+                      className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none text-sm font-bold"
+                    >
                       {faq.question}
                       <span className="text-[#8bb56e] transition-transform duration-300 group-open:rotate-45 text-lg leading-none flex-shrink-0">+</span>
                     </summary>

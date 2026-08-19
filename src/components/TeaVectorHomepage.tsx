@@ -81,7 +81,10 @@ export default function TeaVectorHomepage() {
       }
       setLoadingPercentage(Math.round(Math.min(fraction, 0.99) * 100))
       const elapsed = Date.now() - start
-      const stalled = lastValue > 0 && Date.now() - lastChange > 5000
+      // Stall covers the never-started case too: iOS Safari may not buffer at
+      // all until playback is primed — without this, iPhones sat on the loader
+      // until the hard cap. The buffered-clamped scrub handles whatever's left.
+      const stalled = Date.now() - lastChange > (lastValue > 0 ? 5000 : 4000)
       if ((fraction >= 0.99 && elapsed > 1600) || stalled || elapsed > 25000) finish()
     }, 150)
     return () => {
