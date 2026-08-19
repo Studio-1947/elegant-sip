@@ -4,7 +4,7 @@ import { getVariant, getProduct } from '../data/products'
 export interface CartItem {
   /** Product id */
   id: string
-  /** Variant size label, e.g. "50 g tin" */
+  /** Variant size label, e.g. "Classic · 100 g" */
   size: string
   name: string
   /** Unit price for this variant — always re-validated against the catalog. */

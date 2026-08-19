@@ -95,7 +95,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     quote:
-      "Ordered a few tins as a gift, ended up keeping them for myself. The brewing cards made every steep feel intentional. This is what luxury tea should be.",
+      "Ordered a few packs as a gift, ended up keeping them for myself. The brewing cards made every steep feel intentional. This is what luxury tea should be.",
     name: "David O.",
     location: "Austin, TX",
     rating: 5,
@@ -153,7 +153,7 @@ export const FAQS: Faq[] = [
     category: "Returns & Guarantee",
     question: "How fresh is the tea when it arrives?",
     answer:
-      "We roast and pack in small batches close to harvest, and our packaging is nitrogen-flushed and light-proof. Most orders are within weeks of their pack date — and the pack date is printed on every tin.",
+      "We roast and pack in small batches close to harvest, and our packaging is nitrogen-flushed and light-proof. Most orders are within weeks of their pack date — and the pack date is printed on every pack.",
   },
   {
     category: "Brewing",
@@ -171,7 +171,7 @@ export const FAQS: Faq[] = [
     category: "Brewing",
     question: "Where are your teas grown, really?",
     answer:
-      "Every tea is single-origin from an identified garden: Wuyi Mountains (Fujian), Cloud Mist Gardens (Guangxi), and White Tea Valley (Fuding). We buy direct from the estates — no auction houses, no blending, no anonymity. The garden is named on every tin.",
+      "Every tea is single-origin from an identified garden: Wuyi Mountains (Fujian), Cloud Mist Gardens (Guangxi), and White Tea Valley (Fuding). We buy direct from the estates — no auction houses, no blending, no anonymity. The garden is named on every pack.",
   },
 ]
 
@@ -205,7 +205,7 @@ export const JOURNAL: JournalArticle[] = [
     body: [
       "Every spring, tea gardens hold their breath. The first flush — the first harvest of new leaves after winter dormancy — is brief, unpredictable, and irreplaceable. In Darjeeling and the high gardens of Guangxi, pickers rise before dawn because the leaves change character by the hour. What is picked at sunrise carries morning dew in its cells; what is picked at noon has already begun to harden against the sun.",
       "Why does the first flush command such reverence? Because those first leaves spent the winter storing everything the plant needs for a new season: amino acids, sugars, and the delicate aromatic compounds that define a tea's character. Later harvests are more robust and more productive, but they can never reproduce the ethereal brightness of the first few weeks.",
-      "At Elegant Sip, we buy first-flush lots directly from the estates, then freeze the harvest date and garden name onto every tin. When you brew a first-flush green tea, you are tasting a specific morning in a specific valley — an event that will never occur again in exactly the same way.",
+      "At Elegant Sip, we buy first-flush lots directly from the estates, then freeze the harvest date and garden name onto every pack. When you brew a first-flush green tea, you are tasting a specific morning in a specific valley — an event that will never occur again in exactly the same way.",
       "That is the true luxury of single-origin tea: not rarity for its own sake, but the honest record of a place and a moment. Every cup is a snapshot of weather, soil, and timing — and no two are identical.",
     ],
   },
@@ -224,7 +224,7 @@ export const JOURNAL: JournalArticle[] = [
       "Ninety percent of disappointing tea is not the leaf's fault — it is a temperature problem. Boiling water is the default of most kitchens, and it is simply wrong for delicate teas. Green and white teas contain delicate aromatics that scorch above 185°F, turning sweet leaves bitter. Darker, more oxidized teas need the heat to release their depth.",
       "The second variable people ignore is time. A green tea steeped for three minutes instead of two is not 'stronger' in a good way — it is astringent in a bad one. Whole-leaf tea rewards precision: measure your leaves, time your steep, and let the leaf, not the clock, be the judge.",
       "And then there is the re-steep — the single greatest value in whole-leaf tea. A quality oolong can deliver five or six steepings, each revealing a different face of the leaf. The first steep is the introduction; the third is often the masterpiece. Resteeping is not thrift; it is the intended experience.",
-      "Every Elegant Sip tin ships with a brewing card tuned to that specific tea — temperature, time, leaf amount, and steep counts. Follow it once, then adjust to your palate. Within a week, you will taste the difference between a habit and a ritual.",
+      "Every Elegant Sip pack ships with a brewing card tuned to that specific tea — temperature, time, leaf amount, and steep counts. Follow it once, then adjust to your palate. Within a week, you will taste the difference between a habit and a ritual.",
     ],
   },
   {

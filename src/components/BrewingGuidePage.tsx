@@ -20,7 +20,7 @@ const GOLDEN_RULES = [
 export default function BrewingGuidePage() {
   useDocumentMeta(
     'Brewing Guide — Elegant Sip',
-    'Temperature, time, leaf amount, and steep counts for every Elegant Sip tea — the brewing card behind every tin.',
+    'Temperature, time, leaf amount, and steep counts for every Elegant Sip tea — the brewing card behind every pack.',
   )
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.12 })
 
@@ -36,7 +36,7 @@ export default function BrewingGuidePage() {
             From Leaf to <span className="text-[#8bb56e]">Golden Cup</span>
           </h1>
           <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
-            The same brewing card that ships with every tin — temperature, time, leaf amount, and
+            The same brewing card that ships with every pack — temperature, time, leaf amount, and
             steep counts, tuned to each tea. Follow it once, then adjust to your palate.
           </p>
         </div>

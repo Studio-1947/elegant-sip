@@ -38,7 +38,7 @@ export interface Review {
 }
 
 export interface ProductVariant {
-  /** Display label, e.g. "50 g tin" */
+  /** Display label, e.g. "Classic · 100 g" */
   size: string
   price: number
   /** Units left in the current lot; 0 renders as sold out. */

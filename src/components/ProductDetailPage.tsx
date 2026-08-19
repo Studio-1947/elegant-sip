@@ -260,7 +260,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 <span className="text-[#8bb56e]">✓</span> The Elegant Sip Promise — 30-day satisfaction guarantee
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-[#8bb56e]">✓</span> Packed within weeks of harvest, dated on every tin
+                <span className="text-[#8bb56e]">✓</span> Packed within weeks of harvest, dated on every pack
               </li>
             </ul>
           </div>
