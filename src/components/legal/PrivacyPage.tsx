@@ -1,5 +1,5 @@
 import { Link, useDocumentMeta } from '../../lib/router'
-import { CONTACT_EMAIL, ContactList, DataTable, LegalLayout, listClass, OnceLaunched, Section, StatusCallout, TemplateNote } from './shared'
+import { CONTACT_EMAIL, ContactList, DataTable, LegalLayout, listClass, OnceLaunched, Section, StatusCallout } from './shared'
 
 const LOCAL_DATA_ROWS: [string, string][] = [
   ['Cart contents', 'Remember items between visits'],
@@ -226,12 +226,7 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <TemplateNote>
-        This policy describes the site's actual technical behavior as of the last update. It is
-        provided as a template and should be reviewed by legal counsel before being relied upon
-        for real commercial operations, especially once real payment processing or backend
-        infrastructure is added.
-      </TemplateNote>
+    
     </LegalLayout>
   )
 }

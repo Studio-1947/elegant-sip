@@ -1,5 +1,5 @@
 import { useDocumentMeta } from '../../lib/router'
-import { CONTACT_EMAIL, ContactList, INSTAGRAM, LegalLayout, listClass, OnceLaunched, Section, StatusCallout, TemplateNote, WHATSAPP } from './shared'
+import { CONTACT_EMAIL, ContactList, INSTAGRAM, LegalLayout, listClass, OnceLaunched, Section, StatusCallout, WHATSAPP } from './shared'
 
 export default function TermsPage() {
   useDocumentMeta('Terms & Conditions — Elegant Sip', 'The terms that govern your use of elegantsip.com.')
@@ -248,13 +248,7 @@ export default function TermsPage() {
         <ContactList />
       </Section>
 
-      <TemplateNote>
-        This document is a template reflecting the Site's actual and planned functionality. It is
-        not a substitute for legal advice — please have it reviewed by a lawyer familiar with
-        Indian e-commerce and consumer-protection law before relying on it commercially, and
-        finalize the "Once launched" sections with real operational details (payment processor,
-        return window, shipping partner) before real checkout launches.
-      </TemplateNote>
+      
     </LegalLayout>
   )
 }
