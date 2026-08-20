@@ -1,9 +1,9 @@
-# Elegantsip — The Journey of Tea
+# Elegantsip  The Journey of Tea
 
 A scroll-driven, 100% 2D-vector brand homepage: React 19 + TypeScript + Vite,
 inline SVG line art, GSAP ScrollTrigger + DrawSVGPlugin for the scrubbed
 narrative, and Tailwind CSS v4 for layout. No WebGL, no 3D, no external
-graphic assets — every visual is an inline SVG path.
+graphic assets  every visual is an inline SVG path.
 
 Theme: white background, dark ink strokes (#2a3630), brand amber (#d48806).
 Typography: **Google Sans Flex** (variable), loaded from Google Fonts in
@@ -39,15 +39,15 @@ timeline (see [src/scrollConfig.ts](src/scrollConfig.ts)).
   [src/components/TeaVectorHomepage.tsx](src/components/TeaVectorHomepage.tsx),
   scrubbed via `ScrollTrigger`. Ambient motion (steam morph, intro draw) runs
   as mount-time tweens so it flows independent of scroll velocity.
-- **Initial states via `gsap.set()`**, not `fromTo` — everything is authored
+- **Initial states via `gsap.set()`**, not `fromTo`  everything is authored
   in its final position and wound back at mount, which sidesteps every
   `immediateRender` surprise. The one deliberate `fromTo` (ripples) carries an
   `immediateRender: false` with a comment explaining why.
-- **DrawSVGPlugin is free** since GSAP 3.13 — imported from `gsap/DrawSVGPlugin`.
+- **DrawSVGPlugin is free** since GSAP 3.13  imported from `gsap/DrawSVGPlugin`.
 - **Steam morphs without MorphSVG**: base and alt `d` strings share identical
   command structures, so GSAP interpolates the raw attribute.
 - **Gotcha, encoded in comments**: GSAP absorbs an element's authored SVG
-  `transform="translate(x y)"` into its `x`/`y` — so positional tweens on the
+  `transform="translate(x y)"` into its `x`/`y`  so positional tweens on the
   hero leaf use *absolute stage coordinates*, not offsets.
 - Viewport: `viewBox="0 0 1920 1080"` + `preserveAspectRatio="xMidYMid slice"`
   → full-bleed scaling on any aspect ratio.

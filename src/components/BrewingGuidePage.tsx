@@ -5,22 +5,22 @@ import { useScrollReveal } from '../lib/useScrollReveal'
 const GOLDEN_RULES = [
   {
     title: 'Temperature is everything',
-    text: 'Ninety percent of disappointing tea is a temperature problem. Greener teas need cooler water — boiling scorches their aromatics into bitterness. Darker, more oxidized leaves need the heat to open up.',
+    text: 'Ninety percent of disappointing tea is a temperature problem. Greener teas need cooler water  boiling scorches their aromatics into bitterness. Darker, more oxidized leaves need the heat to open up.',
   },
   {
     title: 'Time with intention',
-    text: 'An extra minute is not "stronger" — it is astringent. Measure the leaf, time the steep, and adjust from the card, not from habit.',
+    text: 'An extra minute is not "stronger"  it is astringent. Measure the leaf, time the steep, and adjust from the card, not from habit.',
   },
   {
     title: 'The re-steep is the point',
-    text: 'Whole leaf is designed to be steeped again. The first steep is the introduction; the third is often the masterpiece. Resteeping is not thrift — it is the intended experience.',
+    text: 'Whole leaf is designed to be steeped again. The first steep is the introduction; the third is often the masterpiece. Resteeping is not thrift  it is the intended experience.',
   },
 ]
 
 export default function BrewingGuidePage() {
   useDocumentMeta(
-    'Brewing Guide — Elegant Sip',
-    'Temperature, time, leaf amount, and steep counts for every Elegant Sip tea — the brewing card behind every pack.',
+    'Brewing Guide  Elegant Sip',
+    'Temperature, time, leaf amount, and steep counts for every Elegant Sip tea  the brewing card behind every pack.',
   )
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.12 })
 
@@ -36,7 +36,7 @@ export default function BrewingGuidePage() {
             From Leaf to <span className="text-[#8bb56e]">Golden Cup</span>
           </h1>
           <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
-            The same brewing card that ships with every pack — temperature, time, leaf amount, and
+            The same brewing card that ships with every pack  temperature, time, leaf amount, and
             steep counts, tuned to each tea. Follow it once, then adjust to your palate.
           </p>
         </div>

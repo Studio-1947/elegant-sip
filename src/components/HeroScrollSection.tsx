@@ -25,7 +25,7 @@ export default function HeroScrollSection() {
       {/* ── Primary: window-pinned expand with content reveal ── */}
       <ScrollExpand
         src="/hero.webp"
-        alt="Elegant Sip — hand-picked single-origin tea"
+        alt="Elegant Sip  hand-picked single-origin tea"
         title="Brew Elegance | Sip Luxury"
         scrollHint="Scroll"
         useWindowScroll

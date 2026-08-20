@@ -24,7 +24,7 @@ export default function ConsentBanner() {
       className="fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-sm z-50 bg-white border border-[#1b261b]/15 rounded-2xl p-5 shadow-[0_12px_40px_rgba(27,38,27,0.15)]"
     >
       <p className="text-xs text-[#4a584a] leading-relaxed mb-4">
-        We'd like to measure anonymous usage to improve the store — no personal details, ever.
+        We'd like to measure anonymous usage to improve the store  no personal details, ever.
         See our <Link to="/privacy" className="text-[#8bb56e] font-semibold hover:underline">Privacy Policy</Link>.
       </p>
       <div className="flex gap-3">

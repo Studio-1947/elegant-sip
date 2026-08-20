@@ -16,7 +16,7 @@ export default function CartPage() {
     localStorage.setItem('elegant_sip_order_notes', orderNotes)
   }, [orderNotes])
 
-  useDocumentMeta('Your Cart — Elegant Sip', 'Review your Elegant Sip order.')
+  useDocumentMeta('Your Cart  Elegant Sip', 'Review your Elegant Sip order.')
 
   const { shippingFee, estimatedTax, finalTotal, amountToFreeShipping } = getOrderPricing(cartTotal, discount)
 

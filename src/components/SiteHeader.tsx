@@ -17,7 +17,7 @@ interface SiteHeaderProps {
   /** Whether the compact white navbar state is engaged (vs. the transparent hero state). */
   isNavbar: boolean
   routeName: string
-  /** Current route string — the mobile menu closes whenever it changes. */
+  /** Current route string  the mobile menu closes whenever it changes. */
   route: string
 }
 
@@ -61,35 +61,32 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-40 px-8 py-6 transition-all duration-700 ease-in-out ${
-          isNavbar
+        className={`fixed top-0 left-0 right-0 z-40 px-8 py-6 transition-all duration-700 ease-in-out ${isNavbar
             ? // Backdrop blur is desktop-only: re-blurring the scrubbing video
-              // behind the header every frame is expensive on phones.
-              'bg-white/90 lg:bg-white/70 lg:backdrop-blur-md border-b border-[#1b261b]/10 h-20'
+            // behind the header every frame is expensive on phones.
+            'bg-white/90 lg:bg-white/70 lg:backdrop-blur-md border-b border-[#1b261b]/10 h-20'
             : 'bg-transparent h-32 pointer-events-none'
-        }`}
+          }`}
       >
         {/* Brand Container */}
         <div
           style={brandStyle}
-          className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto cursor-pointer ${
-            isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
-          }`}
+          className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto cursor-pointer ${isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
+            }`}
         >
           <Link to="/" aria-label="Elegant Sip home">
             <span
-              className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${
-                isNavbar
+              className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${isNavbar
                   ? 'text-lg sm:text-xl tracking-tight text-[#1b261b]'
                   : 'text-5xl md:text-6xl tracking-tight text-white'
-              }`}
+                }`}
             >
               Elegant Sip
             </span>
           </Link>
         </div>
 
-        {/* Menu toggle — left side on phones (mockup layout) */}
+        {/* Menu toggle  left side on phones (mockup layout) */}
         <button
           onClick={() => setMenuOpen((open) => !open)}
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -110,9 +107,8 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
         <nav
           aria-label="Primary"
           inert={!isNavbar}
-          className={`absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-8 transition-all duration-700 ease-in-out ${
-            isNavbar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
+          className={`absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-8 transition-all duration-700 ease-in-out ${isNavbar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
         >
           {NAV_LINKS.map((link) => {
             const active = routeName === link.to.slice(1)
@@ -120,11 +116,10 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
               <Link
                 key={link.to}
                 to={link.to}
-                className={`text-[11px] font-mono tracking-widest uppercase transition-colors ${
-                  active
+                className={`text-[11px] font-mono tracking-widest uppercase transition-colors ${active
                     ? 'text-[#8bb56e] font-bold'
                     : 'text-[#1b261b] hover:text-[#8bb56e]'
-                }`}
+                  }`}
               >
                 {link.label}
               </Link>
@@ -135,9 +130,8 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
         {/* Right Action Container */}
         <div
           inert={!isNavbar}
-          className={`absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-3 md:gap-5 transition-all duration-700 ease-in-out ${
-            isNavbar ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
-          }`}
+          className={`absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-3 md:gap-5 transition-all duration-700 ease-in-out ${isNavbar ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'
+            }`}
         >
           {/* Wishlist (in the mobile menu on phones) */}
           <Link
@@ -150,7 +144,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
             </svg>
           </Link>
 
-          {/* Cart — opens the drawer on phones, the full page on larger screens */}
+          {/* Cart  opens the drawer on phones, the full page on larger screens */}
           <Link
             to="/cart"
             aria-label="Cart"
@@ -160,13 +154,12 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
                 openCart()
               }
             }}
-            className={`transition-colors relative p-2 ${
-              routeName === 'cart'
+            className={`transition-colors relative p-2 ${routeName === 'cart'
                 ? 'text-[#8bb56e]'
                 : isNavbar
-                ? 'text-[#1b261b] hover:text-[#8bb56e]'
-                : 'text-white hover:text-[#8bb56e]'
-            }`}
+                  ? 'text-[#1b261b] hover:text-[#8bb56e]'
+                  : 'text-white hover:text-[#8bb56e]'
+              }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -180,15 +173,14 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
             )}
           </Link>
 
-          {/* Menu toggle (tablet — phones use the left-side toggle) */}
+          {/* Menu toggle (tablet  phones use the left-side toggle) */}
           <button
             onClick={() => setMenuOpen((open) => !open)}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
-            className={`hidden md:block lg:hidden p-2 transition-colors cursor-pointer ${
-              isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'
-            }`}
+            className={`hidden md:block lg:hidden p-2 transition-colors cursor-pointer ${isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'
+              }`}
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               {menuOpen ? (
@@ -218,11 +210,10 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
           ) : (
             <button
               onClick={openLogin}
-              className={`hidden md:block px-3.5 py-1.5 sm:px-5 sm:py-2 border rounded-full text-[11px] sm:text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${
-                isNavbar
+              className={`hidden md:block px-3.5 py-1.5 sm:px-5 sm:py-2 border rounded-full text-[11px] sm:text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer ${isNavbar
                   ? 'border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]'
                   : 'border-white/20 text-white hover:bg-[#8bb56e] hover:text-black hover:border-[#8bb56e]'
-              }`}
+                }`}
             >
               Login
             </button>
@@ -233,78 +224,75 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
       {/* Mobile navigation panel */}
       {menuOpen && (
         <>
-        {/* Scrim: blurs and dims everything behind the open menu */}
-        <div
-          className="lg:hidden fixed inset-0 z-30 bg-[#0c130c]/40 backdrop-blur-sm"
-          onClick={() => setMenuOpen(false)}
-          aria-hidden="true"
-        />
-        <div
-          id="mobile-menu"
-          className="lg:hidden fixed top-20 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#1b261b]/10 shadow-[0_12px_40px_rgba(27,38,27,0.08)]"
-        >
-          <nav aria-label="Primary mobile" className="px-8 py-6 flex flex-col">
-            {NAV_LINKS.map((link) => {
-              const active = routeName === link.to.slice(1)
-              return (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 last:border-0 transition-colors ${
-                    active ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              )
-            })}
-            <Link
-              to="/wishlist"
-              className={`md:hidden py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${
-                routeName === 'wishlist' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
-              }`}
-            >
-              Wishlist
-            </Link>
-            {!user && (
-              <button
-                onClick={() => {
-                  setMenuOpen(false)
-                  openLogin()
-                }}
-                className="md:hidden py-3.5 text-left text-xs font-mono tracking-widest uppercase text-[#1b261b] hover:text-[#8bb56e] transition-colors cursor-pointer"
-              >
-                Login
-              </button>
-            )}
-            {user && (
+          {/* Scrim: blurs and dims everything behind the open menu */}
+          <div
+            className="lg:hidden fixed inset-0 z-30 bg-[#0c130c]/40 backdrop-blur-sm"
+            onClick={() => setMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            id="mobile-menu"
+            className="lg:hidden fixed top-20 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#1b261b]/10 shadow-[0_12px_40px_rgba(27,38,27,0.08)]"
+          >
+            <nav aria-label="Primary mobile" className="px-8 py-6 flex flex-col">
+              {NAV_LINKS.map((link) => {
+                const active = routeName === link.to.slice(1)
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 last:border-0 transition-colors ${active ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                      }`}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              })}
               <Link
-                to="/account"
-                className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${
-                  routeName === 'account' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
-                }`}
+                to="/wishlist"
+                className={`md:hidden py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'wishlist' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                  }`}
               >
-                My Account
+                Wishlist
               </Link>
-            )}
-            {user && (
-              <div className="flex items-center justify-between pt-4 mt-2 border-t border-[#1b261b]/10 md:hidden">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#4a584a] max-w-[160px] truncate">
-                  {user.name.split(' ')[0]}
-                </span>
+              {!user && (
                 <button
                   onClick={() => {
-                    logout()
                     setMenuOpen(false)
+                    openLogin()
                   }}
-                  className="px-4 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]"
+                  className="md:hidden py-3.5 text-left text-xs font-mono tracking-widest uppercase text-[#1b261b] hover:text-[#8bb56e] transition-colors cursor-pointer"
                 >
-                  Logout
+                  Login
                 </button>
-              </div>
-            )}
-          </nav>
-        </div>
+              )}
+              {user && (
+                <Link
+                  to="/account"
+                  className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'account' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                    }`}
+                >
+                  My Account
+                </Link>
+              )}
+              {user && (
+                <div className="flex items-center justify-between pt-4 mt-2 border-t border-[#1b261b]/10 md:hidden">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#4a584a] max-w-[160px] truncate">
+                    {user.name.split(' ')[0]}
+                  </span>
+                  <button
+                    onClick={() => {
+                      logout()
+                      setMenuOpen(false)
+                    }}
+                    className="px-4 py-2 border rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer border-[#1b261b]/20 text-[#1b261b] hover:bg-[#8bb56e] hover:text-white hover:border-[#8bb56e]"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </nav>
+          </div>
         </>
       )}
     </>

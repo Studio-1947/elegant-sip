@@ -11,7 +11,7 @@ export default function AccountPage() {
   const { wishlist } = useCart()
   const orders = getOrders()
 
-  useDocumentMeta('My Account — Elegant Sip', 'Your Elegant Sip orders and saved teas.')
+  useDocumentMeta('My Account  Elegant Sip', 'Your Elegant Sip orders and saved teas.')
 
   if (!user) {
     return (
@@ -93,7 +93,7 @@ export default function AccountPage() {
           </div>
         )}
         <p className="text-[10px] font-mono text-[#4a584a]/60 mt-6">
-          Demo store — orders are stored in this browser only.
+          Demo store  orders are stored in this browser only.
         </p>
       </div>
     </div>

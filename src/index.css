@@ -9,7 +9,7 @@
 }
 
 html {
-  /* Lenis handles smooth scroll — keep native scroll-behavior off to avoid conflicts. */
+  /* Lenis handles smooth scroll  keep native scroll-behavior off to avoid conflicts. */
   scroll-behavior: auto;
   background-color: #ffffff;
 }
@@ -21,12 +21,19 @@ body {
 
 /* Mobile marquee ticker */
 @keyframes ticker {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
 }
+
 .ticker-track {
   animation: ticker 20s linear infinite;
 }
+
 @media (prefers-reduced-motion: reduce) {
   .ticker-track {
     animation: none;
@@ -35,49 +42,123 @@ body {
 
 /* Taste Matcher quiz micro-animations */
 @keyframes qz-rise {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes qz-pop {
-  0% { opacity: 0; transform: scale(0.92); }
-  60% { opacity: 1; transform: scale(1.02); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
 @keyframes qz-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
+
 @keyframes qz-grow {
-  from { transform: scaleX(0); }
+  from {
+    transform: scaleX(0);
+  }
 }
+
 @keyframes qz-ring {
-  0% { transform: scale(0.75); opacity: 0.55; }
-  100% { transform: scale(1.15); opacity: 0; }
+  0% {
+    transform: scale(0.75);
+    opacity: 0.55;
+  }
+
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
 }
+
 @keyframes qz-steam {
-  0% { opacity: 0; transform: translateY(5px) scaleY(0.85); }
-  35% { opacity: 0.85; }
-  100% { opacity: 0; transform: translateY(-14px) scaleY(1.1); }
+  0% {
+    opacity: 0;
+    transform: translateY(5px) scaleY(0.85);
+  }
+
+  35% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-14px) scaleY(1.1);
+  }
 }
-.qz-rise { animation: qz-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.qz-pop { animation: qz-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.qz-fade { animation: qz-fade 0.35s ease-out both; }
-.qz-grow { animation: qz-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: left; }
+
+.qz-rise {
+  animation: qz-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.qz-pop {
+  animation: qz-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.qz-fade {
+  animation: qz-fade 0.35s ease-out both;
+}
+
+.qz-grow {
+  animation: qz-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: left;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .qz-rise, .qz-pop, .qz-fade, .qz-grow { animation: none; }
+
+  .qz-rise,
+  .qz-pop,
+  .qz-fade,
+  .qz-grow {
+    animation: none;
+  }
 }
 
 /* Skeleton loading shimmer */
 @keyframes shimmer {
-  from { background-position: 200% 0; }
-  to { background-position: -200% 0; }
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
 }
+
 .skeleton {
   background-color: #e9ede7;
   background-image: linear-gradient(90deg, transparent 25%, rgba(255, 255, 255, 0.65) 50%, transparent 75%);
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
 }
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;
@@ -88,9 +169,12 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Accessible, on-brand focus indicator for keyboard users */
@@ -105,17 +189,20 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .animate-fade-in {
   animation: fade-in 0.6s ease-out both;
 }
 
 /* Respect reduced-motion for decorative animation */
 @media (prefers-reduced-motion: reduce) {
+
   .animate-fade-in,
   .animate-pulse,
   .animate-ping {

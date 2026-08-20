@@ -3,7 +3,7 @@
   <channel>
     <title>The Elegant Sip Journal</title>
     <link>https://elegantsip.com/#/journal</link>
-    <description>Craft, sourcing, and the ritual of brewing — notes from the gardens behind Elegant Sip's single-origin teas.</description>
+    <description>Craft, sourcing, and the ritual of brewing  notes from the gardens behind Elegant Sip's single-origin teas.</description>
     <language>en-us</language>
     <atom:link href="https://elegantsip.com/rss.xml" rel="self" type="application/rss+xml" />
     <item>
@@ -11,7 +11,7 @@
       <link>https://elegantsip.com/#/journal/art-of-first-flush</link>
       <guid isPermaLink="false">art-of-first-flush</guid>
       <pubDate>Thu, 12 Mar 2026 08:00:00 GMT</pubDate>
-      <description>The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices — and the most patience.</description>
+      <description>The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices  and the most patience.</description>
       <category>Craft</category>
     </item>
     <item>

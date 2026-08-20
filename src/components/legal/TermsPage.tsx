@@ -2,7 +2,7 @@ import { useDocumentMeta } from '../../lib/router'
 import { CONTACT_EMAIL, ContactList, INSTAGRAM, LegalLayout, listClass, OnceLaunched, Section, StatusCallout, WHATSAPP } from './shared'
 
 export default function TermsPage() {
-  useDocumentMeta('Terms & Conditions — Elegant Sip', 'The terms that govern your use of elegantsip.com.')
+  useDocumentMeta('Terms & Conditions  Elegant Sip', 'The terms that govern your use of elegantsip.com.')
   return (
     <LegalLayout label="Legal" title="Terms & Conditions" updated="August 19, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
@@ -12,7 +12,7 @@ export default function TermsPage() {
       </p>
 
       <StatusCallout>
-        The Site currently operates <strong className="text-[#1b261b]">without a real backend</strong> —
+        The Site currently operates <strong className="text-[#1b261b]">without a real backend</strong>
         checkout, accounts, and orders are simulated in your browser and no real payment is taken
         on-site. <strong className="text-[#1b261b]">Real checkout and payment processing are planned</strong> for
         a future release. Sections marked <OnceLaunched /> will take effect once that launches;
@@ -29,7 +29,7 @@ export default function TermsPage() {
           <li>
             Adding items to cart, applying coupons, "placing an order," creating an "account," and
             submitting reviews are all <strong className="text-[#1b261b]">simulated</strong> on this
-            Site — handled entirely in your browser's local storage.
+            Site  handled entirely in your browser's local storage.
           </li>
           <li>
             <strong className="text-[#1b261b]">No real payment is processed</strong> when you
@@ -37,8 +37,8 @@ export default function TermsPage() {
             result of using the on-site checkout flow.
           </li>
           <li>
-            The Site clearly labels this ("Demo checkout — no real payment is processed"). If you
-            see anything on the Site that appears to contradict this, it's a bug — please tell us.
+            The Site clearly labels this ("Demo checkout  no real payment is processed"). If you
+            see anything on the Site that appears to contradict this, it's a bug  please tell us.
           </li>
           <li>
             Demo order numbers, order history, and account data exist only in your browser and can
@@ -105,8 +105,8 @@ export default function TermsPage() {
           </li>
         </ul>
         <p>
-          We will replace this section with finalized, binding terms — including payment processor
-          details, order-confirmation process, and cutoff times — before real checkout goes live.
+          We will replace this section with finalized, binding terms  including payment processor
+          details, order-confirmation process, and cutoff times  before real checkout goes live.
         </p>
       </Section>
 
@@ -193,7 +193,7 @@ export default function TermsPage() {
 
       <Section title="10. Intellectual property">
         <p>
-          All Site content — text, images, logos, design, and the Elegant Sip name and branding —
+          All Site content  text, images, logos, design, and the Elegant Sip name and branding
           belongs to us or our licensors. You may not copy, reproduce, or use it commercially
           without our written permission.
         </p>
@@ -236,7 +236,7 @@ export default function TermsPage() {
 
       <Section title="14. Changes to these terms">
         <p>
-          We may update these terms as the Site evolves — most notably when real checkout,
+          We may update these terms as the Site evolves  most notably when real checkout,
           payments, and accounts launch. We'll update the "Last updated" date above, and remove the
           "Once launched" markers once the corresponding features are live. Continued use of the
           Site after changes means you accept the updated terms.
@@ -248,7 +248,7 @@ export default function TermsPage() {
         <ContactList />
       </Section>
 
-      
+
     </LegalLayout>
   )
 }

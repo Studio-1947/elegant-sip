@@ -5,7 +5,7 @@ import { Link, useDocumentMeta } from '../lib/router'
 
 export default function OrderPage({ id }: { id?: string }) {
   const order = getOrder(id)
-  useDocumentMeta(order ? `Order ${order.number} — Elegant Sip` : 'Order not found — Elegant Sip')
+  useDocumentMeta(order ? `Order ${order.number}  Elegant Sip` : 'Order not found  Elegant Sip')
 
   if (!order) {
     return (
@@ -13,7 +13,7 @@ export default function OrderPage({ id }: { id?: string }) {
         <h1 className="text-3xl font-bold mb-4">Order not found</h1>
         <p className="text-sm text-[#4a584a] mb-8 max-w-md mx-auto">
           We couldn't find that order on this device. Orders are stored in the browser they were
-          placed in — if you placed it here, it may have been cleared with your browsing data.
+          placed in  if you placed it here, it may have been cleared with your browsing data.
         </p>
         <Link to="/account" className="inline-block bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3 px-8 rounded-lg transition-colors">
           Go to My Account
@@ -72,7 +72,7 @@ export default function OrderPage({ id }: { id?: string }) {
               <div className="flex justify-between text-[#8bb56e]"><span>Discount{order.coupon ? ` (${order.coupon})` : ''}</span><span className="font-mono">−{formatINR(order.discount)}</span></div>
             )}
             <div className="flex justify-between text-[#4a584a]">
-              <span>Shipping{method ? ` — ${method.label}` : ''}</span>
+              <span>Shipping{method ? `  ${method.label}` : ''}</span>
               <span className="font-mono">{order.shippingFee === 0 ? 'Free' : formatINR(order.shippingFee)}</span>
             </div>
             <div className="flex justify-between text-[#4a584a]"><span>GST</span><span className="font-mono">{formatINR(order.tax)}</span></div>
@@ -92,7 +92,7 @@ export default function OrderPage({ id }: { id?: string }) {
             {order.notes && <p><span className="font-bold text-[#1b261b]">Notes:</span> {order.notes}</p>}
           </div>
           <p className="text-[10px] font-mono text-[#8bb56e] italic mt-5">
-            Demo store — this order is a record on this device only; nothing was charged or shipped.
+            Demo store  this order is a record on this device only; nothing was charged or shipped.
           </p>
         </div>
       </div>

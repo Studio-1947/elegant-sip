@@ -68,7 +68,7 @@ export default function CanisterShowcaseSection() {
           <Heading className="text-[#1b261b] text-5xl xl:text-6xl font-bold uppercase tracking-tight leading-[1.1] mb-6" />
           <p className="text-[#4a584a] text-sm leading-relaxed font-light max-w-sm">{PARAGRAPH}</p>
         </div>
-        {/* Solid-then-fade gradient with a subtle blur — swallows the photo's hard-cut arm */}
+        {/* Solid-then-fade gradient with a subtle blur  swallows the photo's hard-cut arm */}
         <div className="absolute -bottom-px left-0 right-0 h-64 bg-gradient-to-t from-[#f9faf7] via-[#f9faf7] via-45% to-transparent pointer-events-none backdrop-blur-[1px]" />
       </div>
     </div>

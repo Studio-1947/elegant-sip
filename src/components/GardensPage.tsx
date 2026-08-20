@@ -5,7 +5,7 @@ import { useScrollReveal } from '../lib/useScrollReveal'
 
 export default function GardensPage() {
   useDocumentMeta(
-    'The Gardens — Elegant Sip',
+    'The Gardens  Elegant Sip',
     'The three named estates behind every Elegant Sip pack: Wuyi Rock Garden, Cloud Mist Gardens, and White Tea Valley.',
   )
   const listRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.15 })
@@ -21,7 +21,7 @@ export default function GardensPage() {
           </h1>
           <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
             We don't buy from auction houses, and we don't blend away a garden's character. Every
-            pack names its estate — these are the three we work with, and why.
+            pack names its estate  these are the three we work with, and why.
           </p>
         </div>
 
@@ -34,9 +34,8 @@ export default function GardensPage() {
             return (
               <article
                 key={garden.id}
-                className={`bg-white border border-[#1b261b]/10 rounded-3xl overflow-hidden md:flex ${
-                  i % 2 === 1 ? 'md:flex-row-reverse' : ''
-                }`}
+                className={`bg-white border border-[#1b261b]/10 rounded-3xl overflow-hidden md:flex ${i % 2 === 1 ? 'md:flex-row-reverse' : ''
+                  }`}
               >
                 <div className="md:w-2/5 flex-shrink-0">
                   <img

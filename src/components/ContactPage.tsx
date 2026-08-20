@@ -12,7 +12,7 @@ const CONTACT_ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT as string | undef
 const CONTACT_EMAIL = 'elegantsipdarjeeling@gmail.com'
 
 export default function ContactPage() {
-  useDocumentMeta('Contact — Elegant Sip', 'Get in touch with the Elegant Sip team about orders, sourcing, or wholesale.')
+  useDocumentMeta('Contact  Elegant Sip', 'Get in touch with the Elegant Sip team about orders, sourcing, or wholesale.')
 
   const [sent, setSent] = useState<'endpoint' | 'mailto' | null>(null)
   const [sending, setSending] = useState(false)
@@ -66,7 +66,7 @@ export default function ContactPage() {
               <>
                 Your email app has opened with your message addressed to{' '}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold hover:text-[#8bb56e] transition-colors">{CONTACT_EMAIL}</a>
-                {' '}— hit send there and we'll reply within one business day.
+                {' '} hit send there and we'll reply within one business day.
               </>
             )}
           </p>
@@ -89,7 +89,7 @@ export default function ContactPage() {
           <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight mb-6">Write to Us</h1>
           <p className="text-sm text-[#4a584a] leading-relaxed mb-10">
             Questions about an order, a sourcing curiosity, a wholesale inquiry, or a tea recommendation
-            for a special occasion — we read everything.
+            for a special occasion  we read everything.
           </p>
 
           <div className="space-y-6">
@@ -117,7 +117,7 @@ export default function ContactPage() {
               </svg>
               <div>
                 <p className="text-xs font-mono uppercase tracking-widest text-[#4a584a] mb-1">Wholesale & gifting</p>
-                <p className="text-sm">Corporate gifting and wholesale inquiries welcome — mention it in your message.</p>
+                <p className="text-sm">Corporate gifting and wholesale inquiries welcome  mention it in your message.</p>
               </div>
             </div>
           </div>

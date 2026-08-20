@@ -18,7 +18,7 @@ interface ScrollRevealOptions {
  * staggered) in as it actually enters the viewport, using GSAP for the tween.
  *
  * Visibility is measured with IntersectionObserver rather than ScrollTrigger so
- * the reveals work correctly inside the homepage's pinned ScrollExpand — during
+ * the reveals work correctly inside the homepage's pinned ScrollExpand  during
  * the pin, document scroll advances while the content is fixed in place (and
  * still at opacity 0), which makes scroll-position triggers fire too early.
  * Observers are armed only after the content reveal signal so nothing animates

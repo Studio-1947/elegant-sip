@@ -1,7 +1,7 @@
 /**
  * Signal fired once the ScrollExpand children content is actually visible on
  * screen. Scroll-reveal animations inside the pinned section must wait for this
- * — during the pin, the content sits at opacity 0 while document scroll
+ *  during the pin, the content sits at opacity 0 while document scroll
  * advances, so scroll-position triggers fire while everything is invisible.
  */
 
@@ -14,7 +14,7 @@ const listeners = new Set<Listener>()
 export function onContentRevealed(callback: Listener): () => void {
   if (revealed) {
     callback()
-    return () => {}
+    return () => { }
   }
   listeners.add(callback)
   return () => listeners.delete(callback)

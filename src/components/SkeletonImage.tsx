@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ImgHTMLAttributes } from 'react'
 
 interface SkeletonImageProps extends ImgHTMLAttributes<HTMLImageElement> {
-  /** Classes for the wrapper hosting the shimmer — use for sizing/positioning. */
+  /** Classes for the wrapper hosting the shimmer  use for sizing/positioning. */
   wrapperClassName?: string
 }
 
@@ -12,7 +12,7 @@ interface SkeletonImageProps extends ImgHTMLAttributes<HTMLImageElement> {
  * `wrapperClassName` / an aspect-ratio parent.
  *
  * NOTE: never pass position utilities (`absolute`, `fixed`) in
- * `wrapperClassName` — the wrapper is `relative` for its shimmer overlay and
+ * `wrapperClassName`  the wrapper is `relative` for its shimmer overlay and
  * Tailwind's stylesheet order (not class order) would decide the conflict.
  * To fill a positioned area, wrap this in a positioned div and pass
  * `wrapperClassName="w-full h-full"`.

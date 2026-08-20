@@ -16,23 +16,23 @@ const CHECKOUT_DATA_ROWS: [string, string][] = [
   ['Name, email, phone', 'Order confirmation and delivery coordination'],
   ['Shipping address', 'Fulfillment and courier handoff'],
   ['Order contents and amount', 'Order processing, invoicing, GST compliance'],
-  ['Payment details', 'Processed directly by our payment gateway (e.g., Razorpay/Stripe) — we do not store full card numbers on our own servers'],
+  ['Payment details', 'Processed directly by our payment gateway (e.g., Razorpay/Stripe)  we do not store full card numbers on our own servers'],
   ['Account credentials (if you create a real account)', 'Login and order history'],
 ]
 
 export default function PrivacyPage() {
-  useDocumentMeta('Privacy Policy — Elegant Sip', 'What data elegantsip.com collects, how it is stored, and how to reach us.')
+  useDocumentMeta('Privacy Policy  Elegant Sip', 'What data elegantsip.com collects, how it is stored, and how to reach us.')
   return (
     <LegalLayout label="Legal" title="Privacy Policy" updated="August 19, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
         <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our").
         Elegant Sip (elegantsip.com) is a Darjeeling tea storefront. This policy explains what
         data the site collects, how it's stored, and how to reach us. It's written to match
-        exactly what the site does — nothing more.
+        exactly what the site does  nothing more.
       </p>
 
       <StatusCallout>
-        As of this version, the site runs without a backend — checkout, accounts, and orders are
+        As of this version, the site runs without a backend  checkout, accounts, and orders are
         simulated locally in your browser and no real payment is processed on-site.{' '}
         <strong className="text-[#1b261b]">Real checkout, accounts, and payment processing are planned</strong>{' '}
         for a future release. Parts marked <OnceLaunched /> describe what will change once that
@@ -45,13 +45,13 @@ export default function PrivacyPage() {
           <li>
             <strong className="text-[#1b261b]">Today</strong>, this is a{' '}
             <strong className="text-[#1b261b]">demo storefront</strong>. Checkout, accounts,
-            orders, and reviews run entirely in your browser's local storage — nothing is
+            orders, and reviews run entirely in your browser's local storage  nothing is
             transmitted to us or to a payment processor when you "check out." No real payment is
             processed through the site.
           </li>
           <li>
             To place an <strong className="text-[#1b261b]">actual order today</strong>, you contact
-            us directly via WhatsApp, Instagram, or email — see Section 6.
+            us directly via WhatsApp, Instagram, or email  see Section 6.
           </li>
           <li>
             <OnceLaunched /> Once real checkout launches, placing an order will involve sending
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
         <DataTable rows={LOCAL_DATA_ROWS} />
         <p>
           This data stays in your browser. We cannot see it, access it, or retrieve it. Clearing
-          your browser storage or cache deletes it permanently — we have no copy and cannot
+          your browser storage or cache deletes it permanently  we have no copy and cannot
           restore it.
         </p>
       </Section>
@@ -135,15 +135,15 @@ export default function PrivacyPage() {
             since no real payment occurs on-site.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Contact form provider</strong> (e.g., Formspree) —
+            <strong className="text-[#1b261b]">Contact form provider</strong> (e.g., Formspree)
             only if one is configured, and only for messages you submit.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Newsletter provider</strong> — only if one is
+            <strong className="text-[#1b261b]">Newsletter provider</strong>  only if one is
             configured, and only for the email you submit.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Analytics provider</strong> (Plausible or GA4) —
+            <strong className="text-[#1b261b]">Analytics provider</strong> (Plausible or GA4)
             only if enabled, and only after consent.
           </li>
           <li>
@@ -152,7 +152,7 @@ export default function PrivacyPage() {
             delivery details necessary to fulfill your purchase. We'll name them here once selected.
           </li>
           <li>
-            We do not share, sell, or rent data to advertisers or data brokers — now or after the
+            We do not share, sell, or rent data to advertisers or data brokers  now or after the
             backend launches.
           </li>
         </ul>
@@ -210,7 +210,7 @@ export default function PrivacyPage() {
 
       <Section title="10. Changes to this policy">
         <p>
-          We may update this policy as the site evolves — for example, if we add a real backend,
+          We may update this policy as the site evolves  for example, if we add a real backend,
           payment processing, or additional third-party services. The "Last updated" date at the
           top will reflect the latest revision. Material changes (e.g., adding real payment
           processing) will be reflected here before they take effect.
@@ -226,7 +226,7 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-    
+
     </LegalLayout>
   )
 }

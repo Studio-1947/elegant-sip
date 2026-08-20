@@ -88,11 +88,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 setMode(m)
                 setError(null)
               }}
-              className={`flex-1 py-2.5 rounded-lg text-xs font-mono tracking-widest uppercase transition-all cursor-pointer ${
-                mode === m
+              className={`flex-1 py-2.5 rounded-lg text-xs font-mono tracking-widest uppercase transition-all cursor-pointer ${mode === m
                   ? 'bg-[#1b261b] text-white'
                   : 'text-[#4a584a] hover:text-[#1b261b]'
-              }`}
+                }`}
             >
               {m === 'signin' ? 'Sign In' : 'Create Account'}
             </button>
@@ -153,7 +152,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </form>
 
         <p className="text-[10px] text-[#4a584a]/60 mt-6 leading-relaxed">
-          This is a demo experience — no real account is created. Account features will connect
+          This is a demo experience  no real account is created. Account features will connect
           to the backend when it ships.
         </p>
       </div>

@@ -107,7 +107,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search teas — whole leaf, fannings, muscatel…"
+              placeholder="Search teas  whole leaf, fannings, muscatel…"
               className="w-full bg-white border border-[#1b261b]/10 rounded-full pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/30"
             />
           </div>
@@ -116,10 +116,10 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
 
       {showFilters && (
         /* relative z-30: the scroll-reveal leaves an inline transform on this bar
-           and on the grid below, making both stacking contexts — without a higher
+           and on the grid below, making both stacking contexts  without a higher
            z-index here, the grid (later in DOM order) paints over the open dropdown. */
         <div className="relative z-30 max-w-6xl mx-auto mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-          {/* Category chips — one swipeable row on phones, wrapping row from sm up */}
+          {/* Category chips  one swipeable row on phones, wrapping row from sm up */}
           <div className="flex overflow-x-auto no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
             {CATEGORIES.map((c) => (
               <button
@@ -127,8 +127,8 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
                 onClick={() => setCategory(c)}
                 aria-pressed={category === c}
                 className={`flex-shrink-0 whitespace-nowrap text-xs font-bold tracking-wide py-2.5 px-5 sm:px-6 rounded-full border transition-colors cursor-pointer ${category === c
-                    ? 'bg-[#1b261b] border-[#1b261b] text-white'
-                    : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#8bb56e]'
+                  ? 'bg-[#1b261b] border-[#1b261b] text-white'
+                  : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#8bb56e]'
                   }`}
               >
                 {c}
@@ -147,7 +147,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
 
       {visibleProducts.length === 0 ? (
         <p className="max-w-6xl mx-auto text-center text-sm text-[#4a584a] bg-white border border-[#1b261b]/10 rounded-2xl py-14 px-6">
-          No teas match your search. Try a different word — or take the Taste Matcher above.
+          No teas match your search. Try a different word  or take the Taste Matcher above.
         </p>
       ) : (
         <div

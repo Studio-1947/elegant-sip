@@ -1,7 +1,7 @@
 import { Link, useDocumentMeta } from '../lib/router'
 
 export default function NotFoundPage() {
-  useDocumentMeta('Page Not Found — Elegant Sip', 'The page you were looking for could not be found.')
+  useDocumentMeta('Page Not Found  Elegant Sip', 'The page you were looking for could not be found.')
 
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6 flex items-start justify-center">
@@ -11,7 +11,7 @@ export default function NotFoundPage() {
           This leaf has <span className="text-[#8bb56e]">drifted away</span>
         </h1>
         <p className="text-sm text-[#4a584a] leading-relaxed mb-10">
-          The page you're looking for doesn't exist — perhaps it was steeped too long, or the
+          The page you're looking for doesn't exist  perhaps it was steeped too long, or the
           address has a typo. Let's get you back to something warm.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

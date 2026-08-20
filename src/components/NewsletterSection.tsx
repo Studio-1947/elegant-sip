@@ -4,7 +4,7 @@ import { track } from '../lib/analytics'
 /**
  * Set VITE_NEWSLETTER_ENDPOINT to an ESP subscribe URL (Mailchimp, Brevo, or a
  * Formspree form) that accepts POST { email } as JSON. Without it, signups are
- * stored locally so nothing breaks — either way the welcome discount code is
+ * stored locally so nothing breaks  either way the welcome discount code is
  * shown on-screen rather than promised by email.
  */
 const NEWSLETTER_ENDPOINT = import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined
@@ -32,7 +32,7 @@ export default function NewsletterSection() {
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
       } catch {
-        setErrorMsg('Something went wrong — please try again in a moment.')
+        setErrorMsg('Something went wrong  please try again in a moment.')
         setStatus('error')
         return
       }
@@ -66,7 +66,7 @@ export default function NewsletterSection() {
             </div>
             <h3 className="text-white text-2xl md:text-3xl font-bold uppercase tracking-tight mb-3">Welcome to the Circle</h3>
             <p className="text-white/70 text-sm leading-relaxed mb-6">
-              You're in. Enjoy 10% off your first order with the code below — just enter it at checkout.
+              You're in. Enjoy 10% off your first order with the code below  just enter it at checkout.
             </p>
             <p className="inline-block bg-[#8bb56e]/15 border border-[#8bb56e]/40 rounded-lg px-6 py-3 text-[#8bb56e] font-mono font-bold tracking-[0.2em] text-lg select-all">
               WELCOME10

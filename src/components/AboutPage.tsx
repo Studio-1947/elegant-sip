@@ -9,13 +9,13 @@ const TIMELINE = [
 
 export default function AboutPage() {
   useDocumentMeta(
-    'Our Story — Elegant Sip',
-    'Elegant Sip sources the rarest single-origin leaves directly from estate gardens — no auction houses, no middlemen, no anonymity.',
+    'Our Story  Elegant Sip',
+    'Elegant Sip sources the rarest single-origin leaves directly from estate gardens  no auction houses, no middlemen, no anonymity.',
   )
 
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans">
-      {/* Hero — offset below the fixed navbar so the full image is visible */}
+      {/* Hero  offset below the fixed navbar so the full image is visible */}
       <div className="relative overflow-hidden pt-20">
         <SkeletonImage src="/gopal.jpg" alt="Terraced tea garden at Gopal Dhara estate" width={1280} height={828} fetchPriority="high" wrapperClassName="w-full h-[70vh]" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end">
@@ -31,7 +31,7 @@ export default function AboutPage() {
       <div className="max-w-3xl mx-auto px-6 md:px-12 py-24">
         <p className="text-lg md:text-xl font-light leading-relaxed mb-10 text-[#2b3a2b]">
           Most tea is sold as a number in an auction lot. We think that's backwards. Elegant Sip exists
-          to put a name — a garden, a grower, a harvest morning — on every cup.
+          to put a name  a garden, a grower, a harvest morning  on every cup.
         </p>
         <div className="space-y-6 text-sm text-[#4a584a] leading-relaxed">
           <p>
@@ -42,7 +42,7 @@ export default function AboutPage() {
           </p>
           <p>
             So we built the system we wanted to buy from. Our buyers spend the harvest seasons on the
-            ground in Wuyi, Guangxi, and Fuding — tasting from the withering racks, walking the terraces,
+            ground in Wuyi, Guangxi, and Fuding  tasting from the withering racks, walking the terraces,
             and buying whole lots directly from the estates. We pay growers a premium for the right to
             name them on the pack.
           </p>
@@ -78,9 +78,9 @@ export default function AboutPage() {
       {/* Values */}
       <div className="max-w-5xl mx-auto px-6 md:px-12 py-24 grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
-          { title: 'Origin', text: 'Every tea names its garden, its elevation, its harvest date, and its cultivar — on the pack.' },
+          { title: 'Origin', text: 'Every tea names its garden, its elevation, its harvest date, and its cultivar  on the pack.' },
           { title: 'Craft', text: 'Hand-rolled, shade-dried, slow-oxidized under the guidance of tea masters. No shortcuts.' },
-          { title: 'Experience', text: 'Brewing cards with every order — temperature curves, steep counts, tasting notes.' },
+          { title: 'Experience', text: 'Brewing cards with every order  temperature curves, steep counts, tasting notes.' },
         ].map((v) => (
           <div key={v.title} className="bg-white border border-[#1b261b]/10 rounded-2xl p-8">
             <h3 className="text-lg font-bold uppercase tracking-wide mb-3 text-[#8bb56e]">{v.title}</h3>

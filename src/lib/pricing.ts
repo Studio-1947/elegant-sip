@@ -1,5 +1,5 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Order pricing — single source of truth shared by the cart and checkout so
+ * Order pricing  single source of truth shared by the cart and checkout so
  * thresholds and rates can never drift between the two.
  * ──────────────────────────────────────────────────────────────────────────── */
 
@@ -41,7 +41,7 @@ export function getOrderPricing(
   const subtotalAfterDiscount = Math.max(0, cartTotal - discount)
   const shippingFee =
     method.freeOver !== null && subtotalAfterDiscount >= method.freeOver ? 0 : method.fee
-  // Whole-rupee amounts — INR retail carries no paise.
+  // Whole-rupee amounts  INR retail carries no paise.
   const estimatedTax = Math.round(subtotalAfterDiscount * TAX_RATE)
   const finalTotal = subtotalAfterDiscount + shippingFee + estimatedTax
   const amountToFreeShipping =

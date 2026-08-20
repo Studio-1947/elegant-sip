@@ -43,7 +43,7 @@ function TickerStrip() {
 }
 
 /**
- * MobileScrubHero — the portrait scroll animation. A sticky full-screen video
+ * MobileScrubHero  the portrait scroll animation. A sticky full-screen video
  * whose playhead is scrubbed by scroll (all-intra encode, so every frame seeks
  * instantly), with the hero copy fading out as the journey begins. Falls back
  * to a static poster hero for prefers-reduced-motion.
@@ -57,7 +57,7 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
   useGSAP(
     () => {
       if (reduced) {
-        // No scrub journey to finish — unlock dependent UI right away.
+        // No scrub journey to finish  unlock dependent UI right away.
         onJourneyDone(true)
         return
       }
@@ -79,7 +79,7 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
 
       // Scrub through a proxy and clamp every seek to the buffered range.
       // Seeking into unbuffered video aborts the in-flight range request and
-      // starts a new one — on slow networks that becomes a storm of canceled
+      // starts a new one  on slow networks that becomes a storm of canceled
       // requests and a frozen, janky animation. Clamped, the playhead simply
       // trails the download and catches up as data arrives.
       const proxy = { t: 0 }
@@ -87,7 +87,7 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
         if (video.buffered.length === 0) return
         const bufferedEnd = video.buffered.end(video.buffered.length - 1) - 0.05
         const t = Math.min(proxy.t, Math.max(0, bufferedEnd))
-        // The source is ~24fps (one frame ≈ 0.042s) — seeking finer than a
+        // The source is ~24fps (one frame ≈ 0.042s)  seeking finer than a
         // frame is pure wasted decode, which shows up as jank on phones.
         if (Math.abs(video.currentTime - t) > 0.035) video.currentTime = t
       }
@@ -106,10 +106,10 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
       const onVideoError = () => markVideoFailed()
       video.addEventListener('loadedmetadata', addScrub)
       if (video.readyState >= 1) addScrub()
-      // iOS Safari ignores preload="auto" until playback begins — prime the
+      // iOS Safari ignores preload="auto" until playback begins  prime the
       // buffer with a muted play/pause (allowed without a user gesture) so
       // the download starts immediately.
-      video.play()?.then(() => video.pause()).catch(() => {})
+      video.play()?.then(() => video.pause()).catch(() => { })
       // As more data buffers in, let the frame catch up to the scrub target.
       video.addEventListener('progress', applySeek)
       video.addEventListener('progress', reportBuffer)
@@ -206,7 +206,7 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
 }
 
 /**
- * MobileHome — the phone-first homepage: scroll-scrubbed portrait video hero
+ * MobileHome  the phone-first homepage: scroll-scrubbed portrait video hero
  * followed by a linear flow of the shared content sections.
  */
 export default function MobileHome() {
@@ -262,20 +262,20 @@ export default function MobileHome() {
 
       {/* ── Floating Taste Matcher pill (appears after the scroll animation) ── */}
       {journeyDone && (
-      <button
-        onClick={openQuiz}
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-white/95 backdrop-blur-md border border-[#1b261b]/10 rounded-full pl-2 pr-5 py-2 shadow-[0_8px_30px_rgba(27,38,27,0.15)] cursor-pointer animate-fade-in"
-      >
-        <span className="w-9 h-9 rounded-full bg-[#8bb56e]/15 flex items-center justify-center text-[#8bb56e]">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l1.9 5.6L19.5 9l-5.6 1.9L12 16.5l-1.9-5.6L4.5 9l5.6-1.4L12 2zm7 12l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" />
-          </svg>
-        </span>
-        <span className="text-left">
-          <span className="block text-[11px] font-mono font-bold tracking-wider uppercase text-[#1b261b]">Taste Matcher</span>
-          <span className="block text-[11px] text-[#4a584a]">Find your perfect cup in 10s</span>
-        </span>
-      </button>
+        <button
+          onClick={openQuiz}
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-white/95 backdrop-blur-md border border-[#1b261b]/10 rounded-full pl-2 pr-5 py-2 shadow-[0_8px_30px_rgba(27,38,27,0.15)] cursor-pointer animate-fade-in"
+        >
+          <span className="w-9 h-9 rounded-full bg-[#8bb56e]/15 flex items-center justify-center text-[#8bb56e]">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l1.9 5.6L19.5 9l-5.6 1.9L12 16.5l-1.9-5.6L4.5 9l5.6-1.4L12 2zm7 12l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" />
+            </svg>
+          </span>
+          <span className="text-left">
+            <span className="block text-[11px] font-mono font-bold tracking-wider uppercase text-[#1b261b]">Taste Matcher</span>
+            <span className="block text-[11px] text-[#4a584a]">Find your perfect cup in 10s</span>
+          </span>
+        </button>
       )}
     </div>
   )

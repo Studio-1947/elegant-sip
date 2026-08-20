@@ -50,7 +50,7 @@ export function saveOrder(order: PlacedOrder) {
   localStorage.setItem(ORDERS_KEY, JSON.stringify([order, ...getOrders()]))
 }
 
-/** True if any order on this device contains the product — used to gate "Verified purchase" on reviews. */
+/** True if any order on this device contains the product  used to gate "Verified purchase" on reviews. */
 export function hasPurchased(productId: string): boolean {
   return getOrders().some((o) => o.items.some((i) => i.id === productId))
 }

@@ -6,7 +6,7 @@ export default function FaqPage() {
   // Accordion: exactly one question open at a time (clicking it again closes it).
   const [openQuestion, setOpenQuestion] = useState<string | null>(FAQS[0]?.question ?? null)
   useDocumentMeta(
-    'FAQ — Elegant Sip',
+    'FAQ  Elegant Sip',
     'Answers about shipping, returns, the Elegant Sip Promise, and how to brew single-origin tea.',
   )
   useJsonLd({

@@ -1,6 +1,6 @@
 import { Link } from '../../lib/router'
 
-/** Post-purchase confirmation screen — the order is saved to this device only. */
+/** Post-purchase confirmation screen  the order is saved to this device only. */
 export function OrderConfirmedScreen({ orderNumber }: { orderNumber: string }) {
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6">
@@ -14,7 +14,7 @@ export function OrderConfirmedScreen({ orderNumber }: { orderNumber: string }) {
         <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">Thank you!</h1>
         <p className="text-sm text-[#4a584a] leading-relaxed mb-6">
           Your order <span className="font-mono font-bold text-[#1b261b]">{orderNumber}</span> has been placed
-          and saved to this device — you can review it anytime from your account.
+          and saved to this device  you can review it anytime from your account.
         </p>
         <p className="text-xs text-[#4a584a]/70 italic mb-8">"Every cup is a snapshot of a place and a moment."</p>
         <div className="flex flex-col gap-3">

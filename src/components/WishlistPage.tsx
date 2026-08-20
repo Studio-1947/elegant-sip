@@ -6,7 +6,7 @@ import { formatINR } from '../lib/currency'
 
 export default function WishlistPage() {
   const { wishlist, toggleWishlist, addToCart } = useCart()
-  useDocumentMeta('Your Wishlist — Elegant Sip', 'Your saved Elegant Sip teas.')
+  useDocumentMeta('Your Wishlist  Elegant Sip', 'Your saved Elegant Sip teas.')
 
   const items = wishlist
     .map((id) => getProduct(id))
@@ -21,7 +21,7 @@ export default function WishlistPage() {
         <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight mb-3">Your Wishlist</h1>
         <p className="text-xs text-[#4a584a] mb-12">
           {items.length === 0
-            ? 'Saved teas will appear here — tap the heart on any product.'
+            ? 'Saved teas will appear here  tap the heart on any product.'
             : `${items.length} ${items.length === 1 ? 'tea' : 'teas'} saved for later.`}
         </p>
 

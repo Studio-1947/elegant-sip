@@ -44,7 +44,7 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  useDocumentMeta('Checkout — Elegant Sip', 'Secure checkout for your Elegant Sip order.')
+  useDocumentMeta('Checkout  Elegant Sip', 'Secure checkout for your Elegant Sip order.')
 
   const subtotal = cartTotal
   const { shippingFee, estimatedTax, finalTotal } = getOrderPricing(cartTotal, discount, shippingMethod)
@@ -126,8 +126,7 @@ export default function CheckoutPage() {
   }
 
   const inputClass = (field: keyof FormState) =>
-    `w-full bg-white border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25 ${
-      errors[field] ? 'border-red-400' : 'border-[#1b261b]/15'
+    `w-full bg-white border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25 ${errors[field] ? 'border-red-400' : 'border-[#1b261b]/15'
     }`
 
   return (
@@ -145,9 +144,8 @@ export default function CheckoutPage() {
             {([1, 2, 3] as Step[]).map((s) => (
               <li key={s} className="flex items-center gap-2">
                 <span
-                  className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${
-                    step >= s ? 'bg-[#8bb56e] border-[#8bb56e] text-white' : 'border-[#1b261b]/20 text-[#4a584a]'
-                  }`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${step >= s ? 'bg-[#8bb56e] border-[#8bb56e] text-white' : 'border-[#1b261b]/20 text-[#4a584a]'
+                    }`}
                 >
                   {s}
                 </span>
@@ -181,7 +179,7 @@ export default function CheckoutPage() {
               <div>
                 <h2 className="text-lg font-bold uppercase tracking-wide mb-6">Payment</h2>
                 <p className="text-[10px] text-[#4a584a]/70 mb-6">
-                  Demo checkout — no payment is processed. Use any card format, e.g. 4242 4242 4242 4242.
+                  Demo checkout  no payment is processed. Use any card format, e.g. 4242 4242 4242 4242.
                 </p>
                 <div className="space-y-4">
                   <div>

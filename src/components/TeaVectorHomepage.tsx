@@ -50,7 +50,7 @@ export default function TeaVectorHomepage() {
 
   // Loader: holds until the hero video is actually buffered enough to scrub,
   // showing REAL download progress. Escape hatches so nobody is ever trapped:
-  // buffering stall (browser chose partial preload — the clamped scrub handles
+  // buffering stall (browser chose partial preload  the clamped scrub handles
   // the rest), video error, or a 25s hard cap. Only the homepage has a video;
   // every other route paints immediately. Reduced-motion skips it entirely.
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function TeaVectorHomepage() {
       setLoadingPercentage(Math.round(Math.min(fraction, 0.99) * 100))
       const elapsed = Date.now() - start
       // Stall covers the never-started case too: iOS Safari may not buffer at
-      // all until playback is primed — without this, iPhones sat on the loader
+      // all until playback is primed  without this, iPhones sat on the loader
       // until the hard cap. The buffered-clamped scrub handles whatever's left.
       const stalled = Date.now() - lastChange > (lastValue > 0 ? 5000 : 4000)
       if ((fraction >= 0.99 && elapsed > 1600) || stalled || elapsed > 25000) finish()
@@ -101,7 +101,7 @@ export default function TeaVectorHomepage() {
       lerp: 0.08,
       smoothWheel: true,
       // Touch stays native: syncTouch re-drives touch scrolling through JS
-      // every frame, which reads as lag on mid-range phones — especially
+      // every frame, which reads as lag on mid-range phones  especially
       // while the hero video is being scrubbed.
       syncTouch: false,
     })
@@ -128,13 +128,13 @@ export default function TeaVectorHomepage() {
   const isCompact = useIsCompact()
 
   // Header chrome derived from scrub progress or non-home routes.
-  // Below lg the navbar is always engaged — the compact home has no video intro
+  // Below lg the navbar is always engaged  the compact home has no video intro
   // that the header needs to stay out of the way for.
   const isNavbar = !isHome || scrub.past95 || isCompact
 
   const handleProgress = (progress: number) => {
     const past95 = progress > 0.95
-    // Bail out unless the threshold was actually crossed — this runs every scroll frame.
+    // Bail out unless the threshold was actually crossed  this runs every scroll frame.
     setScrub((s) => (s.past95 === past95 ? s : { past95 }))
   }
 

@@ -1,5 +1,5 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Currency formatting — the store prices everything in Indian Rupees.
+ * Currency formatting  the store prices everything in Indian Rupees.
  * All amounts are whole rupees (no paise), formatted with Indian digit
  * grouping, e.g. 2350 → "₹2,350" and 125000 → "₹1,25,000".
  * ──────────────────────────────────────────────────────────────────────────── */

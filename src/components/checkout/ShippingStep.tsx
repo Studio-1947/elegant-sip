@@ -37,7 +37,7 @@ export default function ShippingStep({
       {user ? (
         prefilled && (
           <div className="bg-[#8bb56e]/5 border border-[#8bb56e]/20 rounded-xl p-4 mb-6 text-xs text-[#4a584a]">
-            Welcome back, {user.name.split(' ')[0]} — we've prefilled your details from your last order.
+            Welcome back, {user.name.split(' ')[0]}  we've prefilled your details from your last order.
           </div>
         )
       ) : (
@@ -107,9 +107,8 @@ export default function ShippingStep({
               return (
                 <label
                   key={m.id}
-                  className={`flex items-center justify-between gap-4 border rounded-xl px-4 py-3.5 cursor-pointer transition-all ${
-                    selected ? 'border-[#8bb56e] bg-[#8bb56e]/5' : 'border-[#1b261b]/15 hover:border-[#1b261b]/40'
-                  }`}
+                  className={`flex items-center justify-between gap-4 border rounded-xl px-4 py-3.5 cursor-pointer transition-all ${selected ? 'border-[#8bb56e] bg-[#8bb56e]/5' : 'border-[#1b261b]/15 hover:border-[#1b261b]/40'
+                    }`}
                 >
                   <span className="flex items-center gap-3">
                     <input

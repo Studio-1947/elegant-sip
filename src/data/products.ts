@@ -1,5 +1,5 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Elegant Sip — product catalogue: types, products, and catalogue helpers.
+ * Elegant Sip  product catalogue: types, products, and catalogue helpers.
  * Site content (reviews, gardens, testimonials, FAQs, journal, quiz) lives in
  * content.ts and is re-exported below so consumers import from one place.
  * ──────────────────────────────────────────────────────────────────────────── */
@@ -48,7 +48,7 @@ export interface ProductVariant {
 export interface Product {
   id: string
   name: string
-  /** Base "from" price — the lowest variant price. */
+  /** Base "from" price  the lowest variant price. */
   price: number
   /** Catalogue drafts render as "Coming Soon" and cannot be purchased. Defaults to active. */
   status?: 'active' | 'coming-soon'
@@ -56,12 +56,12 @@ export interface Product {
   description: string
   longDescription?: string
   imageSrc: string
-  /** Additional gallery images — the card shows switcher dots when present. */
+  /** Additional gallery images  the card shows switcher dots when present. */
   images?: string[]
   category: string
   /** Short flavor chips shown on the card, e.g. ["Floral", "Muscatel"]. */
   tastingNotes?: string[]
-  /** Cup body on a 1 (light) to 5 (full) scale — drives the card's meter. */
+  /** Cup body on a 1 (light) to 5 (full) scale  drives the card's meter. */
   bodyLevel?: number
   /** Harvest badge on the card, e.g. "Spring 2026 Harvest". */
   harvestLabel?: string
@@ -80,9 +80,9 @@ export const PRODUCTS: Product[] = [
     name: "First Flush Whole Leaf",
     price: 600,
     description:
-      "The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling's first flush is famous for. Available in three quality tiers.",
+      "The first pluck of spring, whole leaf  bright, floral, and carrying the muscatel character Darjeeling's first flush is famous for. Available in three quality tiers.",
     longDescription:
-      "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the plant has stored a season's worth of aromatics. Choose your tier — Basic, Classic, or Premium — each whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
+      "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the plant has stored a season's worth of aromatics. Choose your tier  Basic, Classic, or Premium  each whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
     imageSrc: "/morningdew.webp",
     category: "First Flush",
     tastingNotes: ["Floral", "Muscatel", "Bright finish"],
@@ -98,7 +98,7 @@ export const PRODUCTS: Product[] = [
       time: "3–4 minutes",
       steeps: "2–3",
       leafAmount: "1 tsp per 8 oz",
-      notes: "Skip the milk — first flush is prized for its bright muscatel aromatics, and a slightly cooler pour keeps them intact.",
+      notes: "Skip the milk  first flush is prized for its bright muscatel aromatics, and a slightly cooler pour keeps them intact.",
     },
   },
   {
@@ -106,7 +106,7 @@ export const PRODUCTS: Product[] = [
     name: "First Flush Broken Leaf",
     price: 500,
     description:
-      "Broken-leaf first flush — the same spring character with a quicker, stronger brew.",
+      "Broken-leaf first flush  the same spring character with a quicker, stronger brew.",
     imageSrc: "/origin.webp",
     category: "First Flush",
     tastingNotes: ["Muscatel", "Brisk", "Strong cup"],
@@ -122,7 +122,7 @@ export const PRODUCTS: Product[] = [
       time: "2–3 minutes",
       steeps: "2",
       leafAmount: "1 tsp per 8 oz",
-      notes: "Broken leaf brews faster and stronger than whole leaf — shorten the steep rather than the leaf.",
+      notes: "Broken leaf brews faster and stronger than whole leaf  shorten the steep rather than the leaf.",
     },
   },
   {
@@ -130,7 +130,7 @@ export const PRODUCTS: Product[] = [
     name: "First Flush Broken Mixed",
     price: 150,
     description:
-      "A robust mixed broken grade from the spring harvest — strong, brisk, and happy to take milk.",
+      "A robust mixed broken grade from the spring harvest  strong, brisk, and happy to take milk.",
     imageSrc: "/origin.webp",
     category: "First Flush",
     tastingNotes: ["Malty", "Strong", "Milk-friendly"],
@@ -145,7 +145,7 @@ export const PRODUCTS: Product[] = [
       time: "3–4 minutes",
       steeps: "2",
       leafAmount: "1 tsp per 8 oz",
-      notes: "A full boil and a longer steep bring out the malty depth — this grade takes milk happily.",
+      notes: "A full boil and a longer steep bring out the malty depth  this grade takes milk happily.",
     },
   },
   {
@@ -153,7 +153,7 @@ export const PRODUCTS: Product[] = [
     name: "First Flush Fannings",
     price: 100,
     description:
-      "Fine first flush fannings — fast-brewing and full-strength. The working tea of the Darjeeling hills.",
+      "Fine first flush fannings  fast-brewing and full-strength. The working tea of the Darjeeling hills.",
     imageSrc: "/origin.webp",
     category: "First Flush",
     tastingNotes: ["Bold", "Fast-brewing", "Chai-ready"],
@@ -168,18 +168,18 @@ export const PRODUCTS: Product[] = [
       time: "2–3 minutes",
       steeps: "1–2",
       leafAmount: "1 tsp per 8 oz",
-      notes: "Fannings brew fast and strong — watch the clock, or lean in and make masala chai.",
+      notes: "Fannings brew fast and strong  watch the clock, or lean in and make masala chai.",
     },
   },
 
-  /* ── Second Flush (Black Tea) — arriving after the summer pluck ── */
+  /* ── Second Flush (Black Tea)  arriving after the summer pluck ── */
   {
     id: "second-flush",
     name: "Second Flush",
     price: 0,
     status: "coming-soon",
     description:
-      "The summer pluck brings the deeper, fruitier side of Darjeeling. The lots are still with the garden — arriving after the summer harvest.",
+      "The summer pluck brings the deeper, fruitier side of Darjeeling. The lots are still with the garden  arriving after the summer harvest.",
     imageSrc: "/summerbreeze.webp",
     category: "Second Flush",
     tastingNotes: ["Fruity", "Muscatel", "Deep"],
@@ -188,7 +188,7 @@ export const PRODUCTS: Product[] = [
     variants: [{ size: "100 g", price: 0, stock: 0 }],
   },
 
-  /* ── Autumn (Third) Flush — arriving after the autumn pluck ── */
+  /* ── Autumn (Third) Flush  arriving after the autumn pluck ── */
   {
     id: "autumn-flush",
     name: "Third Flush",

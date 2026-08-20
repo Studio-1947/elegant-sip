@@ -14,7 +14,7 @@ export default function HeroIntroSection() {
         <span className="text-[#8bb56e]">Tells a Story</span>
       </h2>
       <p className="text-[#4a584a] text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-light">
-        Elegant Sip is more than a tea brand — it's a sensory journey from the
+        Elegant Sip is more than a tea brand  it's a sensory journey from the
         mist-covered highlands to your cup. We source the rarest single-origin
         leaves and craft each blend with the precision of a master sommelier.
       </p>

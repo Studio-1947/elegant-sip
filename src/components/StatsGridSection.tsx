@@ -9,7 +9,7 @@ const PROMISES = [
   {
     title: 'Single-Origin',
     eyebrow: 'Darjeeling Sourced',
-    text: "Every batch comes from identified gardens in the Darjeeling hills — not blended, not anonymous. You'll know exactly where your tea is from.",
+    text: "Every batch comes from identified gardens in the Darjeeling hills  not blended, not anonymous. You'll know exactly where your tea is from.",
   },
   {
     title: 'Freshly Packed',

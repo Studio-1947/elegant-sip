@@ -9,12 +9,12 @@ const PILLARS = [
   {
     title: 'Craft',
     imageSrc: '/craft.webp',
-    text: 'Every batch is hand-rolled, shade-dried, and slow-oxidized under the guidance of our tea masters. No shortcuts, no mechanized blending — just centuries-old technique.',
+    text: 'Every batch is hand-rolled, shade-dried, and slow-oxidized under the guidance of our tea masters. No shortcuts, no mechanized blending  just centuries-old technique.',
   },
   {
     title: 'Experience',
     imageSrc: '/experience.webp',
-    text: 'Brewing is ritual. We include steeping guides, temperature curves, and tasting notes with every order — so each cup unfolds exactly as the leaves intended.',
+    text: 'Brewing is ritual. We include steeping guides, temperature curves, and tasting notes with every order  so each cup unfolds exactly as the leaves intended.',
   },
 ]
 

@@ -14,7 +14,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger)
 interface HomeExperienceProps {
   /** Called with scrub progress 0..1 so the app shell can style the header. */
   onProgress: (progress: number) => void
-  /** False while the loading overlay is up — gates the parallax tween. */
+  /** False while the loading overlay is up  gates the parallax tween. */
   ready: boolean
 }
 
@@ -47,7 +47,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
             onProgress(self.progress)
             const content = self.progress > 0.95
             setIsContent((c) => (c === content ? c : content))
-            // Progress bar is driven directly — no React render per frame.
+            // Progress bar is driven directly  no React render per frame.
             if (progressBarRef.current) {
               progressBarRef.current.style.width = `${Math.round(self.progress * 100)}%`
             }
@@ -56,7 +56,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
       })
 
       // Scrub video currentTime from 0 → duration based on scroll progress.
-      // Seeks go through a proxy and are clamped to the buffered range — an
+      // Seeks go through a proxy and are clamped to the buffered range  an
       // unbuffered seek aborts the in-flight range request, and on slow
       // networks that becomes a storm of canceled requests and a frozen frame.
       const proxy = { t: 0 }
@@ -64,7 +64,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         if (video.buffered.length === 0) return
         const bufferedEnd = video.buffered.end(video.buffered.length - 1) - 0.05
         const t = Math.min(proxy.t, Math.max(0, bufferedEnd))
-        // The source is ~24fps (one frame ≈ 0.042s) — seeking finer than a
+        // The source is ~24fps (one frame ≈ 0.042s)  seeking finer than a
         // frame is pure wasted decode.
         if (Math.abs(video.currentTime - t) > 0.035) video.currentTime = t
       }
@@ -91,10 +91,10 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         addScrubAnimation()
       }
 
-      // iOS Safari ignores preload="auto" until playback begins — prime the
+      // iOS Safari ignores preload="auto" until playback begins  prime the
       // buffer with a muted play/pause (allowed without a user gesture) so
       // the download starts immediately.
-      video.play()?.then(() => video.pause()).catch(() => {})
+      video.play()?.then(() => video.pause()).catch(() => { })
 
       // As more data buffers in, let the frame catch up to the scrub target.
       video.addEventListener('progress', applySeek)
@@ -146,7 +146,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
   }
 
   // Phones and portrait tablets get the compact homepage (portrait video hero,
-  // linear flow) — the landscape scrub + pinned runway is a desktop experience.
+  // linear flow)  the landscape scrub + pinned runway is a desktop experience.
   if (isCompact) {
     return <MobileHome />
   }
@@ -173,7 +173,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
       {!isContent && (
         <button
           onClick={handleSkipIntro}
-          className="fixed bottom-8 left-8 z-40 px-4 py-2 rounded-full border border-white/20 text-white/70 hover:text-white hover:border-white/50 backdrop-blur-sm text-[10px] font-mono tracking-widest uppercase transition-all cursor-pointer"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 rounded-full bg-[#0c130c]/60 border border-white/40 text-white hover:bg-[#0c130c]/80 hover:border-white/70 backdrop-blur-sm text-[10px] font-mono font-bold tracking-widest uppercase shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all cursor-pointer"
         >
           Skip Intro →
         </button>

@@ -7,7 +7,7 @@ export interface CartItem {
   /** Variant size label, e.g. "Classic · 100 g" */
   size: string
   name: string
-  /** Unit price for this variant — always re-validated against the catalog. */
+  /** Unit price for this variant  always re-validated against the catalog. */
   price: number
   imageSrc: string
   quantity: number
@@ -161,7 +161,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0)
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
-  // Whole-rupee discount — INR retail carries no paise.
+  // Whole-rupee discount  INR retail carries no paise.
   const discount = coupon && COUPONS[coupon] ? Math.round(cartTotal * COUPONS[coupon]) : 0
 
   return (

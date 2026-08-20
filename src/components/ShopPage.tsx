@@ -6,7 +6,7 @@ import { useDocumentMeta, useHashRoute, parseRoute } from '../lib/router'
 
 export default function ShopPage() {
   useDocumentMeta(
-    'Shop the Collection — Elegant Sip',
+    'Shop the Collection  Elegant Sip',
     'Single-origin whole-leaf teas sourced directly from estate gardens. Oolong, green, and white teas, plus curated collections.',
   )
 
@@ -17,7 +17,7 @@ export default function ShopPage() {
 
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans">
-      {/* Banner — terraced garden backdrop */}
+      {/* Banner  terraced garden backdrop */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
           <SkeletonImage
@@ -48,7 +48,7 @@ export default function ShopPage() {
           </h1>
           <p className="text-white/80 text-sm md:text-base leading-relaxed">
             Every pack names its garden, its harvest, and its cultivar. No blending, no auction houses,
-            no anonymity — just single-origin leaves at their seasonal peak.
+            no anonymity  just single-origin leaves at their seasonal peak.
           </p>
         </div>
       </div>

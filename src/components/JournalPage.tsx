@@ -6,22 +6,22 @@ export function JournalArticlePage({ id }: { id?: string }) {
   const article = getArticle(id)
 
   useDocumentMeta(
-    article ? `${article.title} — The Elegant Sip Journal` : 'Journal — Elegant Sip',
+    article ? `${article.title}  The Elegant Sip Journal` : 'Journal  Elegant Sip',
     article ? article.excerpt : undefined,
   )
   useJsonLd(
     article
       ? {
-          '@context': 'https://schema.org',
-          '@type': 'Article',
-          headline: article.title,
-          description: article.excerpt,
-          image: article.imageSrc,
-          datePublished: article.date,
-          author: { '@type': 'Organization', name: article.author },
-          publisher: { '@type': 'Organization', name: 'Elegant Sip' },
-          articleSection: article.category,
-        }
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: article.title,
+        description: article.excerpt,
+        image: article.imageSrc,
+        datePublished: article.date,
+        author: { '@type': 'Organization', name: article.author },
+        publisher: { '@type': 'Organization', name: 'Elegant Sip' },
+        articleSection: article.category,
+      }
       : null,
   )
 
@@ -87,7 +87,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
 
 export default function JournalPage() {
   useDocumentMeta(
-    'The Journal — Elegant Sip',
+    'The Journal  Elegant Sip',
     'Stories from the gardens, brewing guides, and the craft behind single-origin tea.',
   )
 
@@ -103,7 +103,7 @@ export default function JournalPage() {
           Notes from <span className="text-[#8bb56e]">the Garden</span>
         </h1>
         <p className="text-[#4a584a] text-sm md:text-base max-w-2xl leading-relaxed mb-10">
-          Craft, sourcing, and the ritual of brewing — written by the people who buy, taste, and pack every lot.
+          Craft, sourcing, and the ritual of brewing  written by the people who buy, taste, and pack every lot.
         </p>
 
         {/* Category filter */}
@@ -113,11 +113,10 @@ export default function JournalPage() {
               key={c}
               onClick={() => setCategory(c)}
               aria-pressed={category === c}
-              className={`text-xs font-bold tracking-wide py-2 px-5 rounded-full border transition-colors cursor-pointer ${
-                category === c
+              className={`text-xs font-bold tracking-wide py-2 px-5 rounded-full border transition-colors cursor-pointer ${category === c
                   ? 'bg-[#1b261b] border-[#1b261b] text-white'
                   : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#8bb56e]'
-              }`}
+                }`}
             >
               {c}
             </button>
