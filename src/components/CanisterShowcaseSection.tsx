@@ -19,27 +19,13 @@ export default function CanisterShowcaseSection() {
 
   return (
     <div className="w-full overflow-hidden">
-      {/* ── Phone: text stacked above the full image ── */}
-      <div className="md:hidden">
-        <div className="px-6 pt-4 pb-10 bg-[#f9faf7]">
-          <span className="text-[#8bb56e] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
-            {EYEBROW}
-          </span>
-          <Heading className="text-[#1b261b] text-4xl font-bold uppercase tracking-tight leading-[1.1] mb-4" />
-          <p className="text-[#4a584a] text-sm leading-relaxed">{PARAGRAPH}</p>
-        </div>
-        <div className="relative">
-          <SkeletonImage
-            src="/tea1_1.webp"
-            alt="Ember Charm Tea Canister"
-            loading="lazy"
-            width={2560}
-            height={1440}
-            className="w-full h-auto block object-cover"
-          />
-          {/* Solid-then-fade gradient — swallows the photo's hard-cut arm at the bottom edge */}
-          <div className="absolute -bottom-px left-0 right-0 h-28 bg-gradient-to-t from-[#f9faf7] via-[#f9faf7] via-45% to-transparent pointer-events-none" />
-        </div>
+      {/* ── Phone: text only (the canister photo is desktop/tablet-only) ── */}
+      <div className="md:hidden px-6 pt-4 pb-12 bg-[#f9faf7]">
+        <span className="text-[#8bb56e] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
+          {EYEBROW}
+        </span>
+        <Heading className="text-[#1b261b] text-4xl font-bold uppercase tracking-tight leading-[1.1] mb-4" />
+        <p className="text-[#4a584a] text-sm leading-relaxed">{PARAGRAPH}</p>
       </div>
 
       {/* ── Tablet: side-by-side, text left / jar right ── */}

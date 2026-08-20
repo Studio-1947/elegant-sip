@@ -16,6 +16,7 @@ const shortLeaf = (leafAmount: string) => leafAmount.split(' per ')[0]
 
 export default function ProductCard({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1)
+  const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [imageIndex, setImageIndex] = useState(0)
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
@@ -33,7 +34,9 @@ export default function ProductCard({ product }: { product: Product }) {
       : { average: 5, count: 0 }
 
   const wishlisted = isWishlisted(product.id)
-  const defaultVariant = getDefaultVariant(product)
+  // Selected quality tier drives the price, quantity cap, and add-to-cart.
+  const activeVariant = product.variants.find((v) => v.size === selectedSize) ?? getDefaultVariant(product)
+  const variantInStock = activeVariant.stock > 0
   const inStock = isInStock(product)
   const hasMultipleSizes = product.variants.length > 1
   const comingSoon = product.status === 'coming-soon'
@@ -42,10 +45,10 @@ export default function ProductCard({ product }: { product: Product }) {
   const brew = product.brewingGuide
 
   const handleAddToCart = () => {
-    if (!inStock || comingSoon) return
+    if (!variantInStock || comingSoon) return
     setIsAdding(true)
     addToCart(
-      { id: product.id, name: product.name, price: defaultVariant.price, imageSrc: product.imageSrc, size: defaultVariant.size },
+      { id: product.id, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
     track('add_to_cart', { product: product.id, quantity, source: 'product_card' })
@@ -152,8 +155,7 @@ export default function ProductCard({ product }: { product: Product }) {
               </span>
             ) : (
               <span className="text-[#1b261b] text-base lg:text-lg font-bold whitespace-nowrap">
-                {hasMultipleSizes && <span className="text-xs font-normal text-[#4a584a]">from </span>}
-                {formatINR(product.price)}
+                {formatINR(activeVariant.price)}
               </span>
             )}
           </span>
@@ -221,6 +223,40 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
+        {/* Quality tier picker */}
+        {!comingSoon && hasMultipleSizes && (
+          <div className="mb-4">
+            <span className="block text-[8px] font-mono tracking-[0.2em] uppercase text-[#4a584a]/60 mb-1.5">Size</span>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Size">
+              {product.variants.map((v) => {
+                const selected = v.size === activeVariant.size
+                const soldOut = v.stock <= 0
+                return (
+                  <button
+                    key={v.size}
+                    role="radio"
+                    aria-checked={selected}
+                    disabled={soldOut}
+                    onClick={() => {
+                      setSelectedSize(v.size)
+                      setQuantity(1)
+                    }}
+                    className={`text-[10px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer whitespace-nowrap ${
+                      soldOut
+                        ? 'border-[#1b261b]/10 text-[#4a584a]/40 line-through cursor-not-allowed bg-[#f9faf7]'
+                        : selected
+                        ? 'border-[#1b261b] bg-[#1b261b] text-white'
+                        : 'border-[#1b261b]/15 bg-white text-[#1b261b] hover:border-[#8bb56e]'
+                    }`}
+                  >
+                    {v.size.split(' · ')[0]} · {formatINR(v.price)}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Quantity & CTA row */}
         <div className="flex flex-row gap-3 items-stretch mt-auto">
           {!comingSoon && (
@@ -234,7 +270,7 @@ export default function ProductCard({ product }: { product: Product }) {
               </button>
               <span className="text-[#1b261b] font-mono text-sm font-semibold select-none">{quantity}</span>
               <button
-                onClick={() => setQuantity((q) => Math.min(q + 1, defaultVariant.stock))}
+                onClick={() => setQuantity((q) => Math.min(q + 1, activeVariant.stock))}
                 className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-lg leading-none transition-colors px-1 cursor-pointer"
                 aria-label="Increase quantity"
               >
@@ -244,9 +280,9 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
           <button
             onClick={handleAddToCart}
-            disabled={isAdding || isAdded || !inStock || comingSoon}
+            disabled={isAdding || isAdded || !variantInStock || comingSoon}
             className={`flex-grow text-[10px] sm:text-xs font-bold tracking-widest uppercase py-3 px-3 sm:px-6 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
-              !inStock || comingSoon
+              !variantInStock || comingSoon
                 ? 'bg-[#1b261b]/10 text-[#4a584a]/60 cursor-not-allowed'
                 : isAdded
                 ? 'bg-[#8bb56e] text-white'
@@ -255,7 +291,17 @@ export default function ProductCard({ product }: { product: Product }) {
                 : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
             }`}
           >
-            {comingSoon ? 'Coming Soon' : !inStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : 'Add to Cart'}
+            {comingSoon
+              ? 'Coming Soon'
+              : !inStock
+              ? 'Sold Out'
+              : !variantInStock
+              ? 'Sold Out'
+              : isAdding
+              ? 'Adding...'
+              : isAdded
+              ? 'Added ✓'
+              : `Add to Cart • ${formatINR(activeVariant.price * quantity)}`}
           </button>
         </div>
 
