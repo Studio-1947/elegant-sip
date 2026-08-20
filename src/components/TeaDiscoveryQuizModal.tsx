@@ -1,21 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
-import { useCart } from './CartContext'
-import { QUIZ_OPTIONS, getProduct, getDefaultVariant, type Product } from '../data/products'
-import { formatINR } from '../lib/currency'
-import { Link } from '../lib/router'
+import { QUIZ_OPTIONS, getProduct, type Product } from '../data/products'
 import { track } from '../lib/analytics'
+import QuizResult from './QuizResult'
 
 interface TeaDiscoveryQuizModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
+type Phase = 'question' | 'brewing' | 'result'
+
 export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQuizModalProps) {
+  const [phase, setPhase] = useState<Phase>('question')
+  const [selected, setSelected] = useState<string | null>(null)
   const [match, setMatch] = useState<Product | null>(null)
-  const [isAdding, setIsAdding] = useState(false)
-  const [isAdded, setIsAdded] = useState(false)
   const closeRef = useRef<HTMLButtonElement>(null)
-  const { addToCart } = useCart()
+  const timers = useRef<number[]>([])
+
+  // Fresh quiz every time it opens; clear pending phase timers on close/unmount.
+  useEffect(() => {
+    if (isOpen) {
+      setPhase('question')
+      setSelected(null)
+      setMatch(null)
+    }
+    return () => {
+      timers.current.forEach((t) => window.clearTimeout(t))
+      timers.current = []
+    }
+  }, [isOpen])
 
   // ESC to close + initial focus (a11y)
   useEffect(() => {
@@ -31,196 +44,126 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
   if (!isOpen) return null
 
   const handleOptionSelect = (option: string) => {
+    if (selected) return
     const product = getProduct(QUIZ_OPTIONS[option])
     if (!product) return
-    setMatch(product)
+    setSelected(option)
     track('quiz_completed', { option, match: product.id })
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setMatch(product)
+      setPhase('result')
+      return
+    }
+    // Let the chosen option flash green, steep for a moment, then reveal.
+    timers.current.push(
+      window.setTimeout(() => {
+        setMatch(product)
+        setPhase('brewing')
+      }, 380),
+      window.setTimeout(() => setPhase('result'), 1800),
+    )
   }
 
   const handleReset = () => {
+    setSelected(null)
     setMatch(null)
-    setIsAdded(false)
-  }
-
-  const handleAddToCart = () => {
-    if (!match) return
-    const variant = getDefaultVariant(match)
-    setIsAdding(true)
-    addToCart({ id: match.id, name: match.name, price: variant.price, imageSrc: match.imageSrc, size: variant.size }, 1)
-    track('add_to_cart', { product: match.id, source: 'quiz' })
-    setTimeout(() => {
-      setIsAdding(false)
-      setIsAdded(true)
-      setTimeout(() => {
-        setIsAdded(false)
-      }, 2000)
-    }, 800)
-  }
-
-  const renderDots = (value: number) => {
-    return (
-      <div className="flex gap-1 items-center">
-        {[...Array(5)].map((_, i) => (
-          <span
-            key={i}
-            className={`text-xs leading-none ${i < value ? 'text-[#8bb56e]' : 'text-[#1b261b]/10'}`}
-          >
-            ●
-          </span>
-        ))}
-      </div>
-    )
+    setPhase('question')
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-[#060b08]/85 backdrop-blur-sm cursor-pointer"
-        onClick={onClose}
-      />
+      <div className="qz-fade absolute inset-0 bg-[#060b08]/85 backdrop-blur-sm cursor-pointer" onClick={onClose} />
 
       {/* Modal Container */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Tea discovery quiz"
-        className="relative bg-[#f9faf7] text-[#1b261b] rounded-3xl border border-[#1b261b]/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto overflow-x-hidden no-scrollbar shadow-2xl p-6 md:p-10 flex flex-col z-10 transition-transform duration-500 scale-100"
+        className="qz-pop relative bg-[#f9faf7] text-[#1b261b] rounded-3xl border border-[#1b261b]/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto overflow-x-hidden no-scrollbar shadow-2xl p-6 md:p-10 flex flex-col z-10"
       >
         {/* Close Button */}
         <button
           ref={closeRef}
           onClick={onClose}
-          className="absolute top-6 right-6 text-[#1b261b]/50 hover:text-[#1b261b] transition-colors cursor-pointer text-xl font-bold z-20"
+          className="absolute top-6 right-6 p-1 text-[#1b261b]/50 hover:text-[#1b261b] transition-colors cursor-pointer z-20"
           aria-label="Close modal"
         >
-          ✕
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
 
-        {!match ? (
+        {phase === 'question' && (
           <div className="flex flex-col flex-grow justify-center py-6 text-center">
-            <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Tea Discovery Quiz</span>
-            <h2 className="text-3xl font-bold tracking-tight mb-8 font-sans text-[#1b261b]">How do you like your tea?</h2>
+            <span className="qz-rise text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Tea Discovery Quiz</span>
+            <h2 className="qz-rise text-3xl font-bold tracking-tight mb-8 font-sans text-[#1b261b]" style={{ animationDelay: '0.06s' }}>
+              How do you like your tea?
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto w-full">
-              {Object.keys(QUIZ_OPTIONS).map((option) => (
+              {Object.keys(QUIZ_OPTIONS).map((option, i) => (
                 <button
                   key={option}
                   onClick={() => handleOptionSelect(option)}
-                  className="w-full text-left px-6 py-4 rounded-xl border border-[#1b261b]/10 bg-white hover:border-[#8bb56e] hover:-translate-y-0.5 shadow-[0_4px_12px_rgba(27,38,27,0.02)] transition-all duration-300 font-sans tracking-wide cursor-pointer flex justify-between items-center group text-[#1b261b]"
+                  style={{ animationDelay: `${0.12 + i * 0.06}s` }}
+                  className={`qz-rise w-full text-left px-6 py-4 rounded-xl border shadow-[0_4px_12px_rgba(27,38,27,0.02)] transition-all duration-300 font-sans tracking-wide cursor-pointer flex justify-between items-center group ${
+                    selected === option
+                      ? 'border-[#8bb56e] bg-[#8bb56e] text-white scale-[1.03]'
+                      : selected
+                      ? 'border-[#1b261b]/10 bg-white text-[#1b261b] opacity-30 pointer-events-none'
+                      : 'border-[#1b261b]/10 bg-white text-[#1b261b] hover:border-[#8bb56e] hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(27,38,27,0.08)]'
+                  }`}
                 >
                   <span className="font-semibold text-sm">{option}</span>
-                  <span className="text-xs text-[#1b261b]/40 group-hover:text-[#8bb56e] transition-colors">→</span>
+                  <span
+                    className={`text-xs transition-all duration-300 ${
+                      selected === option ? 'text-white' : 'text-[#1b261b]/40 group-hover:text-[#8bb56e] group-hover:translate-x-1'
+                    }`}
+                  >
+                    →
+                  </span>
                 </button>
               ))}
             </div>
           </div>
-        ) : (
-          <div className="flex flex-col py-2">
-            {/* Header: Title Block */}
-            <div className="mb-6">
-              <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-1">Your Tea Match</span>
-              <h2 className="text-3xl md:text-4xl font-bold font-sans tracking-tight text-[#1b261b]">{match.name}</h2>
-            </div>
+        )}
 
-            {/* Split Grid */}
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              {/* Left: Product Image Card & Description */}
-              <div className="w-full md:w-1/2 flex flex-col">
-                <div className="relative aspect-[4/5] w-full bg-white rounded-2xl overflow-hidden border border-[#1b261b]/10 shadow-[0_4px_12px_rgba(27,38,27,0.02)] mb-4">
-                  <img
-                    src={match.imageSrc}
-                    alt={match.name}
-                    className="w-full h-full object-cover"
+        {phase === 'brewing' && (
+          <div className="qz-fade flex flex-col flex-grow items-center justify-center py-16 text-center" aria-live="polite">
+            {/* Steaming cup */}
+            <div className="relative mb-6">
+              {/* Steam wisps */}
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex gap-2" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="block w-[3px] h-5 rounded-full bg-gradient-to-t from-transparent via-[#8bb56e]/60 to-transparent"
+                    style={{ animation: `qz-steam 1.5s ease-in-out ${i * 0.35}s infinite` }}
                   />
-                </div>
-                <p className="text-xs text-[#4a584a] leading-relaxed">{match.description}</p>
-                <Link
-                  to={`/product/${match.id}`}
-                  onClick={onClose}
-                  className="text-xs font-mono tracking-widest uppercase text-[#8bb56e] hover:text-[#1b261b] transition-colors mt-4"
-                >
-                  View full details →
-                </Link>
+                ))}
               </div>
-
-              {/* Right: Tea Origin, Flavor Profile & CTA */}
-              <div className="w-full md:w-1/2 flex flex-col justify-between self-stretch gap-4">
-                {/* Origin Section */}
-                {match.origin && (
-                  <div className="space-y-2.5 bg-white border border-[#1b261b]/10 p-4 rounded-2xl shadow-[0_4px_12px_rgba(27,38,27,0.02)] flex-grow">
-                    <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-1">Tea Origin</span>
-                    <div className="grid grid-cols-2 gap-y-1 text-xs">
-                      <span className="text-[#4a584a]">Origin:</span>
-                      <span className="text-right font-medium text-[#1b261b]">{match.origin.origin}</span>
-                      <span className="text-[#4a584a]">Estate:</span>
-                      <span className="text-right font-medium text-[#1b261b]">{match.origin.estate}</span>
-                      <span className="text-[#4a584a]">Elevation:</span>
-                      <span className="text-right font-medium text-[#1b261b]">{match.origin.elevation}</span>
-                      <span className="text-[#4a584a]">Harvest:</span>
-                      <span className="text-right font-medium text-[#1b261b]">{match.origin.harvest}</span>
-                      <span className="text-[#4a584a]">Cultivar:</span>
-                      <span className="text-right font-medium text-[#1b261b]">{match.origin.cultivar}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Flavor Profile Section */}
-                {match.flavorProfile && (
-                  <div className="space-y-2.5 bg-white border border-[#1b261b]/10 p-4 rounded-2xl shadow-[0_4px_12px_rgba(27,38,27,0.02)] flex-grow">
-                    <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-1">Flavor Profile</span>
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#4a584a]">Strength:</span>
-                        {renderDots(match.flavorProfile.strength)}
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#4a584a]">Astringency:</span>
-                        {renderDots(match.flavorProfile.astringency)}
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#4a584a]">Sweetness:</span>
-                        {renderDots(match.flavorProfile.sweetness)}
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#4a584a]">Floral:</span>
-                        {renderDots(match.flavorProfile.floral)}
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#4a584a]">Caffeine:</span>
-                        {renderDots(match.flavorProfile.caffeine)}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex flex-col gap-2.5 pt-1">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={isAdding || isAdded}
-                    className={`w-full text-xs font-bold tracking-widest uppercase py-3 px-6 rounded-xl transition-all duration-300 active:scale-[0.98] cursor-pointer ${
-                      isAdded
-                        ? 'bg-[#8bb56e] text-white'
-                        : isAdding
-                        ? 'bg-[#1b261b]/50 text-white/50 cursor-wait'
-                        : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white shadow-md'
-                    }`}
-                  >
-                    {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add Match to Cart • ${formatINR(match.price)}`}
-                  </button>
-
-                  <button
-                    onClick={handleReset}
-                    className="w-full border border-[#1b261b]/20 hover:border-[#1b261b] hover:bg-[#1b261b]/5 text-[#1b261b] text-xs font-bold tracking-widest uppercase py-2.5 px-6 rounded-xl transition-all duration-300 cursor-pointer"
-                  >
-                    Start Over
-                  </button>
-                </div>
-              </div>
+              <svg className="w-16 h-16 text-[#1b261b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 9h13v5.5A5.5 5.5 0 0111.5 20h-2A5.5 5.5 0 014 14.5V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 10.5h1a2.75 2.75 0 010 5.5h-1.3" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 20h6" />
+              </svg>
+            </div>
+            <p className="text-sm font-bold uppercase tracking-widest text-[#1b261b]">Steeping your match</p>
+            <div className="flex gap-1.5 mt-3" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-[#8bb56e] animate-pulse"
+                  style={{ animationDelay: `${i * 0.25}s` }}
+                />
+              ))}
             </div>
           </div>
         )}
+
+        {phase === 'result' && match && <QuizResult match={match} onClose={onClose} onReset={handleReset} />}
       </div>
     </div>
   )

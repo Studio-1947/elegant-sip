@@ -33,6 +33,40 @@ body {
   }
 }
 
+/* Taste Matcher quiz micro-animations */
+@keyframes qz-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes qz-pop {
+  0% { opacity: 0; transform: scale(0.92); }
+  60% { opacity: 1; transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes qz-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes qz-grow {
+  from { transform: scaleX(0); }
+}
+@keyframes qz-ring {
+  0% { transform: scale(0.75); opacity: 0.55; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+@keyframes qz-steam {
+  0% { opacity: 0; transform: translateY(5px) scaleY(0.85); }
+  35% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateY(-14px) scaleY(1.1); }
+}
+.qz-rise { animation: qz-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.qz-pop { animation: qz-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.qz-fade { animation: qz-fade 0.35s ease-out both; }
+.qz-grow { animation: qz-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: left; }
+@media (prefers-reduced-motion: reduce) {
+  .qz-rise, .qz-pop, .qz-fade, .qz-grow { animation: none; }
+}
+
 /* Skeleton loading shimmer */
 @keyframes shimmer {
   from { background-position: 200% 0; }
