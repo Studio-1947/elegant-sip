@@ -3,6 +3,7 @@ import ProductCard from './ProductCard'
 import { PRODUCTS, getRating } from '../data/products'
 import { useUi } from './UiContext'
 import SelectDropdown from './SelectDropdown'
+import BlurText from './BlurText'
 import { useScrollReveal } from '../lib/useScrollReveal'
 
 // Catalogue order, not alphabetical: First Flush → Second Flush → Third Flush →
@@ -56,7 +57,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
       {showHeading && (
         <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
           <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Signature Blends</span>
-          <h2 className="text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-6">Our Collections</h2>
+          <BlurText as="h2" text="Our Collections" delay={120} className="justify-center text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-6" />
           <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
             Hand-selected whole leaf teas sourced directly from estate gardens
             <span className="hidden md:inline"> and packaged to preserve complex terroir and freshness</span>.

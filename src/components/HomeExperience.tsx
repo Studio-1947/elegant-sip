@@ -141,7 +141,10 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
   const handleSkipIntro = () => {
     const track = document.getElementById('video-scroll-track')
     if (!track) return
-    const targetY = track.getBoundingClientRect().bottom + window.scrollY - window.innerHeight
+    // Land on the framed "Brew Elegance" hero: the ScrollExpand section starts
+    // right where the video runway ends, so align the runway's bottom edge
+    // with the top of the viewport (its pin starts at 'top top', progress 0).
+    const targetY = track.getBoundingClientRect().bottom + window.scrollY
     scrollToY(targetY)
   }
 

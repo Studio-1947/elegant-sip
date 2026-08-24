@@ -1,4 +1,5 @@
 import { useScrollReveal } from '../lib/useScrollReveal'
+import BlurText from './BlurText'
 
 const PROMISES = [
   {
@@ -29,7 +30,7 @@ export default function StatsGridSection() {
           <div key={item.title} className="flex gap-6 py-7 border-b border-[#1b261b]/10 last:border-b-0">
             <span className="text-[#8bb56e] font-mono font-bold text-sm pt-0.5">0{i + 1}</span>
             <div>
-              <h4 className="text-[#1b261b] text-lg font-bold tracking-tight mb-1">{item.title}</h4>
+              <BlurText as="h4" text={item.title} delay={80} className="text-[#1b261b] text-lg font-bold tracking-tight mb-1" />
               <p className="text-[#8bb56e] text-[10px] font-mono font-bold tracking-[0.2em] uppercase mb-3">{item.eyebrow}</p>
               <p className="text-sm text-[#4a584a] leading-relaxed">{item.text}</p>
             </div>
@@ -44,7 +45,7 @@ export default function StatsGridSection() {
             key={item.title}
             className={`p-8 text-left row-span-3 grid grid-rows-subgrid ${i < PROMISES.length - 1 ? 'border-r border-[#1b261b]/10' : ''}`}
           >
-            <span className="text-[#1b261b] text-3xl lg:text-4xl font-bold tracking-tight block">{item.title}</span>
+            <BlurText as="span" text={item.title} delay={80} className="text-[#1b261b] text-3xl lg:text-4xl font-bold tracking-tight" />
             <h4 className="text-base font-bold text-[#1b261b]">{item.eyebrow}</h4>
             <p className="text-xs text-[#4a584a] leading-relaxed">{item.text}</p>
           </div>

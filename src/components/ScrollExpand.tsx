@@ -203,6 +203,7 @@ export default function ScrollExpand({
       {children && (
         <div
           ref={childrenRef}
+          data-reveal-gate
           className="relative z-10 opacity-0"
           style={{ marginTop: isFixed ? 0 : '-100vh' }}
         >

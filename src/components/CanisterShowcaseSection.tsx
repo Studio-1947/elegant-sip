@@ -1,5 +1,6 @@
 import { useScrollReveal } from '../lib/useScrollReveal'
 import SkeletonImage from './SkeletonImage'
+import BlurText from './BlurText'
 
 const EYEBROW = 'Single Origin'
 const PARAGRAPH =
@@ -8,8 +9,8 @@ const PARAGRAPH =
 function Heading({ className }: { className: string }) {
   return (
     <h2 className={className}>
-      Darjeeling's<br />
-      <span className="text-[#8bb56e]">Finest</span>
+      <BlurText as="span" text="Darjeeling's" delay={120} />
+      <BlurText as="span" text="Finest" delay={120} className="text-[#8bb56e]" />
     </h2>
   )
 }

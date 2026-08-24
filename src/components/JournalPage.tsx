@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getArticle, JOURNAL } from '../data/products'
 import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
+import BlurText from './BlurText'
 
 export function JournalArticlePage({ id }: { id?: string }) {
   const article = getArticle(id)
@@ -100,7 +101,8 @@ export default function JournalPage() {
       <div className="max-w-5xl mx-auto">
         <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">The Journal</span>
         <h1 className="text-4xl md:text-6xl font-bold uppercase tracking-tight leading-[1.05] mb-6">
-          Notes from <span className="text-[#8bb56e]">the Garden</span>
+          <BlurText as="span" inline text="Notes from " delay={120} />
+          <BlurText as="span" inline text="the Garden" delay={120} className="text-[#8bb56e]" />
         </h1>
         <p className="text-[#4a584a] text-sm md:text-base max-w-2xl leading-relaxed mb-10">
           Craft, sourcing, and the ritual of brewing  written by the people who buy, taste, and pack every lot.
