@@ -38,26 +38,42 @@ export default function FaqPage() {
                 {category}
               </h2>
               <div className="space-y-3">
-                {FAQS.filter((f) => f.category === category).map((faq) => (
-                  <details
-                    key={faq.question}
-                    className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-shadow hover:shadow-[0_8px_24px_rgba(27,38,27,0.04)]"
-                    open={openQuestion === faq.question}
-                  >
-                    <summary
-                      onClick={(e) => {
-                        // Controlled accordion: block the native toggle and let state decide.
-                        e.preventDefault()
-                        setOpenQuestion((current) => (current === faq.question ? null : faq.question))
-                      }}
-                      className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none text-sm font-bold"
+                {FAQS.filter((f) => f.category === category).map((faq, i) => {
+                  const isOpen = openQuestion === faq.question
+                  const panelId = `faq-${category}-${i}`.replace(/\s+/g, '-').toLowerCase()
+                  return (
+                    <div
+                      key={faq.question}
+                      className="bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-shadow hover:shadow-[0_8px_24px_rgba(27,38,27,0.04)]"
                     >
-                      {faq.question}
-                      <span className="text-[#8bb56e] transition-transform duration-300 group-open:rotate-45 text-lg leading-none flex-shrink-0">+</span>
-                    </summary>
-                    <p className="px-6 pb-6 text-xs text-[#4a584a] leading-relaxed">{faq.answer}</p>
-                  </details>
-                ))}
+                      <button
+                        type="button"
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
+                        onClick={() => setOpenQuestion((current) => (current === faq.question ? null : faq.question))}
+                        className="w-full flex items-center justify-between gap-4 px-6 py-5 cursor-pointer text-left text-sm font-bold"
+                      >
+                        {faq.question}
+                        <span
+                          className={`text-[#8bb56e] text-lg leading-none flex-shrink-0 transition-transform duration-300 ease-out ${isOpen ? 'rotate-45' : ''}`}
+                          aria-hidden="true"
+                        >
+                          +
+                        </span>
+                      </button>
+                      {/* Height animates via grid-template-rows (0fr → 1fr)  no JS measuring needed. */}
+                      <div
+                        id={panelId}
+                        className="grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none"
+                        style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', opacity: isOpen ? 1 : 0 }}
+                      >
+                        <div className="min-h-0 overflow-hidden">
+                          <p className="px-6 pb-6 text-xs text-[#4a584a] leading-relaxed">{faq.answer}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           ))}
