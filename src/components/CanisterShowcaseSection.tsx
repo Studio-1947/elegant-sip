@@ -43,6 +43,8 @@ export default function CanisterShowcaseSection() {
             src="/tea1_1.webp"
             alt="Elegant Sip first flush Darjeeling tea canister"
             loading="lazy"
+            width={2560}
+            height={1440}
             className="w-full h-[26rem] object-cover object-[62%_35%]"
           />
           <div className="absolute -bottom-px left-0 right-0 h-36 bg-gradient-to-t from-[#f9faf7] via-[#f9faf7] via-45% to-transparent pointer-events-none" />

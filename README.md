@@ -26,7 +26,8 @@ be purchasable. Keep this principle when adding features.
 - **Tailwind CSS v4** via `@tailwindcss/vite` — utility classes inline, no CSS modules
 - **GSAP + ScrollTrigger + @gsap/react** for scroll animation, **Lenis** for smooth scrolling
 - **No router library** — a custom history router in `src/lib/router.tsx`
-- No test framework yet. Verification = `npm run build`.
+- **Vitest** for unit tests, **ESLint** for linting, plus a crawl-based SEO audit
+  (`npm run seo:check`). Full verification = `npm run build && npm test && npm run lint`.
 
 ### Commands
 
@@ -34,7 +35,38 @@ be purchasable. Keep this principle when adding features.
 |---|---|
 | `npm run dev` | Vite dev server |
 | `npm run build` | Typecheck, bundle, then prerender route shells + generate `sitemap.xml` / `robots.txt` |
-| `npm run preview` | Serve the production build |
+| `npm run preview` | Serve the production build (Vite's own server — see the caveat below) |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest — money math and currency formatting |
+| `npm run serve:dist` | Serve `dist/` the way the shipped `.htaccess` does: directory index first, then SPA fallback |
+| `npm run seo:check` | Crawl the built site and audit it (start `serve:dist` first) |
+
+> **Use `serve:dist`, not `preview`, to check SEO output.** `vite preview`
+> applies its own SPA fallback without first looking for a directory index, so
+> it serves the root shell for every route — which would hide whether the
+> prerendered per-route HTML is correct.
+
+### Running the SEO audit
+
+```bash
+npm run build
+npm run serve:dist &      # http://localhost:4500
+npm run seo:check
+```
+
+`scripts/seo-check.mjs` crawls every URL in the generated sitemap and checks it
+twice: the **raw** HTML a crawler gets before executing JavaScript, and the
+**hydrated** DOM for JSON-LD and heading structure. It validates titles and
+descriptions (presence, length, uniqueness), canonicals, the Open Graph block,
+one-`h1`-per-page and no skipped heading levels, structured-data required
+fields, image alt coverage and intrinsic dimensions, internal linking (orphan
+detection), and the sitemap/robots files themselves. It exits non-zero on any
+failure, so it can gate a deploy.
+
+One deliberate subtlety: `Product` schema without `offers` is a **failure** for
+a purchasable product but **expected** for a coming-soon one, and the checker
+reads `data/products.ts` to tell them apart. Emitting a ₹0 offer to satisfy
+Google's rich-result guidance would be a false price.
 
 ## Routing and SEO
 

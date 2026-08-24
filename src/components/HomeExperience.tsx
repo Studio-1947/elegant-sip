@@ -210,7 +210,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
                 </svg>
               </div>
               <div>
-                <h4 className="text-xs font-mono font-bold tracking-wide uppercase text-[#8bb56e]">Taste Matcher</h4>
+                <h3 className="text-xs font-mono font-bold tracking-wide uppercase text-[#8bb56e]">Taste Matcher</h3>
                 <p className="text-[11px] text-[#4a584a] mt-0.5 leading-normal">Find the ideal tea flavor profile for your palate.</p>
               </div>
             </div>

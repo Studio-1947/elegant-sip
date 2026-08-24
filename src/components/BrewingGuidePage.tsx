@@ -115,7 +115,7 @@ export default function BrewingGuidePage() {
           {teas.map((tea) => (
             <div key={tea.id} className="bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden md:flex">
               <Link to={`/product/${tea.id}`} className="md:w-56 flex-shrink-0 block">
-                <img src={tea.imageSrc} alt={tea.name} loading="lazy" className="w-full h-48 md:h-full object-cover" />
+                <img src={tea.imageSrc} alt={`${tea.name} Darjeeling tea leaves`} loading="lazy" width={1200} height={1500} className="w-full h-48 md:h-full object-cover" />
               </Link>
               <div className="p-6 md:p-8 flex-grow">
                 <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">

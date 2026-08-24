@@ -14,7 +14,7 @@ export const BRAND = 'Elegant Sip'
 /** Title separator. Every document title is `Page | Elegant Sip`. */
 export const TITLE_SEP = '|'
 
-export const DEFAULT_TITLE = `${BRAND} | Single-Origin Darjeeling Tea, Direct from the Garden`
+export const DEFAULT_TITLE = 'Single-Origin Darjeeling Tea | Elegant Sip'
 
 export const DEFAULT_DESCRIPTION =
   'Buy single-origin Darjeeling first flush tea online in India. Whole leaf, broken leaf and fannings, packed close to harvest and shipped direct from the garden.'

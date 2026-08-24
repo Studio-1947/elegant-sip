@@ -106,6 +106,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     <img
                       src={item.imageSrc}
                       alt={item.name}
+                      loading="lazy"
+                      width={64}
+                      height={80}
                       className="w-16 h-20 object-cover rounded-lg border border-[#1b261b]/5 bg-[#fdfdfd]"
                     />
                   </Link>

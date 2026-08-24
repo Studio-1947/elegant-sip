@@ -7,6 +7,7 @@ import { getLocalReviews } from '../lib/localReviews'
 import { formatINR } from '../lib/currency'
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from '../lib/pricing'
 import { BRAND, absoluteUrl } from '../lib/site'
+import { productRouteMeta } from '../lib/seoRoutes'
 import ProductCard from './ProductCard'
 import ProductInfoCards from './ProductInfoCards'
 import ProductReviews from './ProductReviews'
@@ -46,7 +47,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       }
 
   useDocumentMeta(
-    product ? `${product.name} — Darjeeling ${product.category} | Elegant Sip` : 'Product not found | Elegant Sip',
+    product ? productRouteMeta(product.id)!.title : 'Product not found | Elegant Sip',
     product ? product.description : undefined,
     product
       ? { canonical: `/product/${product.id}`, image: product.imageSrc }

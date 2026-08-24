@@ -78,7 +78,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
             </svg>
           </div>
           <div>
-            <h4 className="text-xs font-mono font-bold tracking-wide uppercase text-[#1b261b]">Not sure where to begin?</h4>
+            <h3 className="text-xs font-mono font-bold tracking-wide uppercase text-[#1b261b]">Not sure where to begin?</h3>
             <p className="text-[11px] text-[#4a584a] mt-0.5">
               Take the 10-second Taste Matcher<span className="hidden md:inline"> and we'll find your perfect cup</span>.
             </p>

@@ -30,7 +30,7 @@ export default function StatsGridSection() {
           <div key={item.title} className="flex gap-6 py-7 border-b border-[#1b261b]/10 last:border-b-0">
             <span className="text-[#4a7333] font-mono font-bold text-sm pt-0.5">0{i + 1}</span>
             <div>
-              <BlurText as="h4" text={item.title} delay={80} className="text-[#1b261b] text-lg font-bold tracking-tight mb-1" />
+              <BlurText as="h3" text={item.title} delay={80} className="text-[#1b261b] text-lg font-bold tracking-tight mb-1" />
               <p className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.2em] uppercase mb-3">{item.eyebrow}</p>
               <p className="text-sm text-[#4a584a] leading-relaxed">{item.text}</p>
             </div>
@@ -46,7 +46,7 @@ export default function StatsGridSection() {
             className={`p-8 text-left row-span-3 grid grid-rows-subgrid ${i < PROMISES.length - 1 ? 'border-r border-[#1b261b]/10' : ''}`}
           >
             <BlurText as="span" text={item.title} delay={80} className="text-[#1b261b] text-3xl lg:text-4xl font-bold tracking-tight" />
-            <h4 className="text-base font-bold text-[#1b261b]">{item.eyebrow}</h4>
+            <h3 className="text-base font-bold text-[#1b261b]">{item.eyebrow}</h3>
             <p className="text-xs text-[#4a584a] leading-relaxed">{item.text}</p>
           </div>
         ))}

@@ -52,7 +52,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
               style={{ animation: 'qz-ring 1s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both' }}
             />
             <div className="qz-pop relative aspect-[4/5] w-full bg-white rounded-2xl overflow-hidden border border-[#1b261b]/10 shadow-[0_4px_12px_rgba(27,38,27,0.02)]" style={delay(0.12)}>
-              <img src={match.imageSrc} alt={match.name} className="w-full h-full object-cover" />
+              <img src={match.imageSrc} alt={match.name} width={800} height={1000} className="w-full h-full object-cover" />
             </div>
           </div>
           <p className="qz-rise text-xs text-[#4a584a] leading-relaxed" style={delay(0.3)}>{match.description}</p>

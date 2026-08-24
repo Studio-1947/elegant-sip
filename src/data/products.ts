@@ -80,7 +80,7 @@ export const PRODUCTS: Product[] = [
     name: "First Flush Whole Leaf",
     price: 600,
     description:
-      "The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for. Available in three quality tiers.",
+      "The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for. In three quality tiers.",
     longDescription:
       "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in the Rungbong Valley, withered long and fired light, this is the grade that brews pale gold rather than red. Choose your tier — Basic, Classic, or Premium — each whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
     imageSrc: "/morningdew.webp",

@@ -44,6 +44,8 @@ export default function GardensPage() {
                     src={garden.imageSrc}
                     alt={`${garden.name}, ${garden.region}`}
                     loading="lazy"
+                    width={1200}
+                    height={900}
                     className="w-full h-56 md:h-full object-cover"
                   />
                 </div>

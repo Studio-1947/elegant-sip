@@ -55,7 +55,7 @@ export default function OrderPage({ id }: { id?: string }) {
             {order.items.map((item) => (
               <div key={`${item.id}__${item.size}`} className="flex items-center gap-4">
                 <Link to={`/product/${item.id}`} className="flex-shrink-0">
-                  <img src={item.imageSrc} alt={item.name} className="w-14 h-16 object-cover rounded-lg border border-[#1b261b]/5" />
+                  <img src={item.imageSrc} alt={item.name} loading="lazy" width={56} height={64} className="w-14 h-16 object-cover rounded-lg border border-[#1b261b]/5" />
                 </Link>
                 <div className="flex-grow">
                   <Link to={`/product/${item.id}`} className="text-sm font-bold hover:text-[#4a7333] transition-colors">{item.name}</Link>

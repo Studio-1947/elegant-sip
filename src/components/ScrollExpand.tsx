@@ -160,6 +160,8 @@ export default function ScrollExpand({
             ref={imgRef}
             src={src}
             alt={alt}
+            width={1920}
+            height={1080}
             className="absolute inset-0 w-full h-full object-cover"
             style={{ scale: mediaZoom, transformOrigin: 'center center' }}
             loading="eager"

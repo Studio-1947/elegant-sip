@@ -22,7 +22,7 @@ export default function Footer() {
 
           {/* Shop */}
           <nav aria-label="Shop links">
-            <h3 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Shop</h3>
+            <h2 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Shop</h2>
             <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
               <li><Link to="/shop" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">The Collection</Link></li>
               <li><Link to="/wishlist" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Wishlist</Link></li>
@@ -36,7 +36,7 @@ export default function Footer() {
 
           {/* Learn */}
           <nav aria-label="Learn links">
-            <h3 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Learn</h3>
+            <h2 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Learn</h2>
             <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
               <li><Link to="/about" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Our Story</Link></li>
               <li><Link to="/gardens" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">The Gardens</Link></li>
@@ -48,7 +48,7 @@ export default function Footer() {
 
           {/* Support */}
           <nav aria-label="Support links" className="col-span-2 md:col-span-1">
-            <h3 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Support</h3>
+            <h2 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Support</h2>
             <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
               <li><Link to="/contact" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Contact Us</Link></li>
               <li><Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping & Returns</Link></li>

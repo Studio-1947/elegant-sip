@@ -47,7 +47,7 @@ export default function WishlistPage() {
               >
                 <Link to={`/product/${item.id}`} className="flex-shrink-0">
                   <div className="w-20 h-24 rounded-xl overflow-hidden bg-[#fdfdfd] border border-[#1b261b]/5">
-                    <img src={item.imageSrc} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.imageSrc} alt={item.name} loading="lazy" width={200} height={250} className="w-full h-full object-cover" />
                   </div>
                 </Link>
                 <div className="flex-grow">

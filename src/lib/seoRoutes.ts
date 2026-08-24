@@ -34,7 +34,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/shop': {
     title: pageTitle('Buy Darjeeling Tea Online'),
     description:
-      'Shop single-origin Darjeeling first flush tea: whole leaf, broken leaf, broken mixed and fannings. Whole-rupee pricing, free shipping over ₹4,000, packed close to harvest.',
+      'Shop single-origin Darjeeling first flush tea: whole leaf, broken leaf, broken mixed and fannings. Free shipping over ₹4,000, packed close to harvest.',
     priority: 0.9,
     changefreq: 'weekly',
     image: '/shopimg.webp',
@@ -111,7 +111,7 @@ export function productRouteMeta(id: string): RouteMeta | undefined {
   const product = PRODUCTS.find((p) => p.id === id)
   if (!product) return undefined
   return {
-    title: pageTitle(`${product.name} — Darjeeling ${product.category}`),
+    title: pageTitle(`${product.name} Darjeeling Tea`),
     description: product.description,
     priority: 0.8,
     changefreq: 'monthly',

@@ -101,8 +101,12 @@ export default function ProductCard({ product }: { product: Product }) {
         <Link to={`/product/${product.id}`} aria-label={`View ${product.name}`}>
           <SkeletonImage
             src={gallery[imageIndex]}
-            alt={product.name}
+            alt={`${product.name} — loose-leaf Darjeeling tea`}
             loading="lazy"
+            // Intrinsic 4:5 matching the card's aspect box, so the browser
+            // reserves the space before the file lands.
+            width={800}
+            height={1000}
             wrapperClassName="w-full h-full"
             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />

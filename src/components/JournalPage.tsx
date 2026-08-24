@@ -82,7 +82,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
           <span>{article.readTime}</span>
         </div>
 
-        <img src={article.imageSrc} alt={article.imageAlt} className="w-full h-auto object-cover rounded-2xl border border-[#1b261b]/10 mb-10" />
+        <img src={article.imageSrc} alt={article.imageAlt} width={1600} height={900} fetchPriority="high" className="w-full h-auto object-cover rounded-2xl border border-[#1b261b]/10 mb-10" />
 
         <div className="space-y-6 text-sm md:text-base text-[#4a584a] leading-relaxed">
           {article.body.map((paragraph, i) => (
@@ -96,7 +96,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {others.map((a) => (
                 <Link key={a.id} to={`/journal/${a.id}`} className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-all hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
-                  <img src={a.imageSrc} alt={a.imageAlt} loading="lazy" className="w-full aspect-[16/9] object-cover" />
+                  <img src={a.imageSrc} alt={a.imageAlt} loading="lazy" width={1600} height={900} className="w-full aspect-[16/9] object-cover" />
                   <div className="p-5">
                     <span className="text-[11px] font-mono tracking-widest uppercase text-[#4a7333]">{a.category}</span>
                     <h3 className="font-bold text-sm mt-2 group-hover:text-[#4a7333] transition-colors">{a.title}</h3>
@@ -179,7 +179,7 @@ export default function JournalPage() {
           {articles.map((article) => (
             <Link key={article.id} to={`/journal/${article.id}`} className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-all hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1 flex flex-col">
               <div className="overflow-hidden">
-                <img src={article.imageSrc} alt={article.imageAlt} loading="lazy" className="w-full aspect-[16/9] object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img src={article.imageSrc} alt={article.imageAlt} loading="lazy" width={1600} height={900} className="w-full aspect-[16/9] object-cover transition-transform duration-700 group-hover:scale-105" />
               </div>
               <div className="p-6 flex flex-col flex-grow">
                 <div className="flex items-center gap-3 text-[11px] font-mono text-[#4a584a] uppercase tracking-wider mb-3">
