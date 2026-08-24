@@ -31,9 +31,20 @@ createServer((req, res) => {
   const candidates = [join(ROOT, pathname, 'index.html'), join(ROOT, pathname), join(ROOT, 'index.html')]
   for (const file of candidates) {
     if (!isFile(file)) continue
+    const ext = extname(file)
+    // Mirror the Cache-Control the shipped .htaccess sets. Without this a
+    // Lighthouse run reports several MB of "inefficient cache lifetimes" that
+    // production would not have, which makes the score misleading.
+    const cache =
+      ext === '.html'
+        ? 'public, max-age=0, must-revalidate'
+        : 'public, max-age=31536000, immutable'
     // A SPA-fallback hit is a real 404 for anything that isn't an app route,
     // but the shell still renders the in-app NotFound page.
-    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' })
+    res.writeHead(200, {
+      'Content-Type': TYPES[ext] ?? 'application/octet-stream',
+      'Cache-Control': cache,
+    })
     res.end(readFileSync(file))
     return
   }

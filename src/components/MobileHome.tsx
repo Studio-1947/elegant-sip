@@ -32,7 +32,7 @@ function TickerStrip() {
       <div className="ticker-track flex w-max items-center">
         {items.map((item, i) => (
           <span key={`${item}-${i}`} className="flex items-center">
-            <span className="text-[#8bb56e] text-[11px] font-mono font-bold tracking-[0.25em] uppercase whitespace-nowrap px-6">
+            <span className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.25em] uppercase whitespace-nowrap px-6">
               {item}
             </span>
             <span className="w-px h-3.5 bg-[#1b261b]/15" />

@@ -78,7 +78,7 @@ export default function ShopPage() {
 
         {/* Scroll hint (same treatment as the homepage's expanding hero) */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none">
-          <span className="text-white/40 text-[11px] font-mono tracking-[0.3em] uppercase">Scroll</span>
+          <span className="text-white/70 text-[11px] font-mono tracking-[0.3em] uppercase">Scroll</span>
           <div className="w-[1px] h-8 bg-gradient-to-b from-white/40 to-transparent animate-pulse" />
         </div>
 

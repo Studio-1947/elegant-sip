@@ -106,7 +106,7 @@ export default function NewsletterSection() {
             {status === 'error' && (
               <p className="text-xs text-[#e0b35c] mt-3" role="alert">{errorMsg}</p>
             )}
-            <p className="text-white/40 text-[11px] font-mono mt-4">No spam, ever. Unsubscribe anytime.</p>
+            <p className="text-white/70 text-[11px] font-mono mt-4">No spam, ever. Unsubscribe anytime.</p>
           </div>
         )}
       </div>

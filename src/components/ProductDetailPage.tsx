@@ -242,7 +242,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
             {/* Rating */}
             {rating.count > 0 && (
               <div className="flex items-center gap-3 mb-6">
-                <div className="flex gap-0.5 text-[#4a7333] text-sm" aria-label={`Rated ${rating.average} out of 5 stars`}>
+                <div role="img" className="flex gap-0.5 text-[#4a7333] text-sm" aria-label={`Rated ${rating.average} out of 5 stars from ${rating.count} ${rating.count === 1 ? 'review' : 'reviews'}`}>
                   {[...Array(5)].map((_, i) => (
                     <svg key={i} className="w-4 h-4" viewBox="0 0 20 20" fill={i < Math.round(rating.average) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />

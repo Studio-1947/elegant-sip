@@ -1,4 +1,5 @@
 import { useScrollReveal } from '../lib/useScrollReveal'
+import { buildSrcSet } from '../lib/responsiveImages'
 
 const PILLARS = [
   {
@@ -28,7 +29,9 @@ export default function ThreePillarsSection() {
     <section className="bg-[#1b261b] lg:bg-transparent px-6 md:px-12 lg:px-16 py-14 md:py-16 lg:py-0 lg:pb-32 max-w-[1360px] mx-auto mb-14 lg:mb-0">
       {/* Phone & tablet: dark section heading */}
       <div className="lg:hidden mb-8">
-        <span className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
+        {/* This block is dark below lg and light above, so the accent has to
+            flip with it: #4a7333 is only 2.82:1 on the dark green. */}
+        <span className="text-[#a8cf8a] lg:text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
           From Garden to Cup
         </span>
         <h2 className="text-white text-3xl md:text-4xl font-bold tracking-tight">Grown. Crafted. Experienced.</h2>
@@ -41,7 +44,7 @@ export default function ThreePillarsSection() {
             key={pillar.title}
             className="min-w-[80vw] sm:min-w-[52vw] md:min-w-[40vw] max-w-[340px] md:max-w-[380px] snap-center rounded-2xl overflow-hidden bg-[#2b3a2b] flex flex-col"
           >
-            <img src={pillar.imageSrc} alt={pillar.imageAlt} loading="lazy" width={1200} height={800} className="w-full h-48 md:h-56 object-cover" />
+            <img src={pillar.imageSrc} srcSet={buildSrcSet(pillar.imageSrc)} sizes="(max-width: 768px) 100vw, 33vw" alt={pillar.imageAlt} loading="lazy" width={1200} height={800} className="w-full h-48 md:h-56 object-cover" />
             <div className="p-6">
               <h3 className="text-white text-base font-bold uppercase tracking-wide mb-3">{pillar.title}</h3>
               <p className="text-white/80 text-sm leading-relaxed">{pillar.text}</p>
@@ -59,6 +62,8 @@ export default function ThreePillarsSection() {
           >
             <img
               src={pillar.imageSrc}
+              srcSet={buildSrcSet(pillar.imageSrc)}
+              sizes="33vw"
               alt={pillar.imageAlt}
               loading="lazy"
               width={1200}

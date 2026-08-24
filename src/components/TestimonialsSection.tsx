@@ -92,7 +92,7 @@ export default function TestimonialsSection() {
             className="min-w-[82vw] sm:min-w-[46vw] md:min-w-0 snap-center bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8 flex flex-col justify-between min-h-[220px] transition-shadow hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)]"
           >
             <div>
-              <div className="flex gap-1 text-[#4a7333] text-sm mb-4" aria-label={`Rated ${t.rating} out of 5`}>
+              <div role="img" className="flex gap-1 text-[#4a7333] text-sm mb-4" aria-label={`Rated ${t.rating} out of 5 stars`}>
                 {[...Array(5)].map((_, i) => (
                   <svg key={i} className="w-4 h-4" viewBox="0 0 20 20" fill={i < t.rating ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
@@ -117,8 +117,10 @@ export default function TestimonialsSection() {
         ))}
       </div>
 
-      {/* Slideshow dots (phones only) */}
-      <div className="md:hidden flex justify-center gap-2 mt-7">
+      {/* Slideshow dots (phones only). The visible dot stays 6px, but each
+          button carries a 24px hit area — a 6×6px target fails WCAG 2.5.8 and
+          is genuinely hard to hit with a thumb. */}
+      <div className="md:hidden flex justify-center mt-4">
         {TESTIMONIALS.map((t, i) => (
           <button
             key={t.name}
@@ -128,10 +130,15 @@ export default function TestimonialsSection() {
             }}
             aria-label={`Go to review ${i + 1}`}
             aria-current={i === active}
-            className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-              i === active ? 'w-6 bg-[#8bb56e]' : 'w-1.5 bg-[#1b261b]/15'
-            }`}
-          />
+            className="w-8 h-11 flex items-center justify-center cursor-pointer"
+          >
+            <span
+              aria-hidden="true"
+              className={`h-1.5 rounded-full block transition-all duration-300 ${
+                i === active ? 'w-6 bg-[#4a7333]' : 'w-1.5 bg-[#1b261b]/25'
+              }`}
+            />
+          </button>
         ))}
       </div>
     </section>

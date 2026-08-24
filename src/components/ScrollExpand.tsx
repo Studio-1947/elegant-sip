@@ -196,7 +196,7 @@ export default function ScrollExpand({
             ref={hintRef}
             className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           >
-            <span className="text-white/30 text-[11px] font-mono tracking-[0.3em] uppercase">
+            <span className="text-white/70 text-[11px] font-mono tracking-[0.3em] uppercase">
               Scroll
             </span>
             <div className="w-[1px] h-8 bg-gradient-to-b from-white/30 to-transparent animate-pulse" />

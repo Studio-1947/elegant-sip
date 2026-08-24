@@ -86,12 +86,19 @@ export default function SelectDropdown({ value, options, onChange, ariaLabel, cl
         onKeyDown={onKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={ariaLabel}
+        // WCAG 2.5.3: the accessible name must contain the visible label, so a
+        // speech-input user saying what they see actually activates the
+        // control. A bare aria-label="Sort products" replaced the visible
+        // "Sort: Featured" instead of extending it.
+        aria-describedby={`${listId}-purpose`}
         aria-controls={open ? listId : undefined}
         aria-activedescendant={open && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
         className="w-full flex items-center justify-between gap-3 text-xs font-bold text-[#1b261b] bg-white border border-[#1b261b]/10 rounded-full sm:rounded-lg py-3 sm:py-2.5 px-5 sm:px-4 cursor-pointer focus:border-[#8bb56e] transition-colors"
       >
         <span className="whitespace-nowrap">{options[selectedIndex]?.label ?? ariaLabel}</span>
+        {/* Carries the control's purpose without overriding the visible label,
+            which is what the accessible name must be built from. */}
+        <span id={`${listId}-purpose`} className="sr-only">{ariaLabel}</span>
         <svg
           className={`w-3.5 h-3.5 text-[#4a584a] flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           fill="none"

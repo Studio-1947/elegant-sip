@@ -183,6 +183,18 @@ body {
   outline-offset: 2px;
 }
 
+/* WCAG 1.4.1 — a link inside a block of prose must be distinguishable by more
+   than colour. The accent green sits at only 1.36:1 against body text, so an
+   underline is the distinguishing cue. Links that are visually obvious on
+   their own (nav items, buttons, cards) opt out with `.no-underline`. */
+p > a:not([class*="no-underline"]),
+li > a:not([class*="no-underline"]),
+dd > a:not([class*="no-underline"]) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
 /* Fade-in used by the floating quiz card */
 @keyframes fade-in {
   from {

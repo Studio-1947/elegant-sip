@@ -1,8 +1,4 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import Lenis from 'lenis'
-import HomeExperience from './HomeExperience'
 import ConsentBanner from './ConsentBanner'
 import SiteHeader from './SiteHeader'
 import LoadingOverlay from './LoadingOverlay'
@@ -15,6 +11,7 @@ import { setLenis } from '../lib/scroll'
 
 // Non-home routes are code-split: each loads on demand with a skeleton page
 // as the Suspense fallback. The home experience stays in the main bundle.
+const HomeExperience = lazy(() => import('./HomeExperience'))
 const ShopPage = lazy(() => import('./ShopPage'))
 const ProductDetailPage = lazy(() => import('./ProductDetailPage'))
 const CartPage = lazy(() => import('./CartPage'))
@@ -33,8 +30,6 @@ const PrivacyPage = lazy(() => import('./legal/PrivacyPage'))
 const TermsPage = lazy(() => import('./legal/TermsPage'))
 const ShippingReturnsPage = lazy(() => import('./legal/ShippingReturnsPage'))
 const NotFoundPage = lazy(() => import('./NotFoundPage'))
-
-gsap.registerPlugin(ScrollTrigger)
 
 export default function TeaVectorHomepage() {
   const route = useRoute()
@@ -97,33 +92,61 @@ export default function TeaVectorHomepage() {
     }
   }, [])
 
-  // Initialize Lenis smooth scroll synced to GSAP ticker (skipped for reduced motion)
+  /*
+   * Smooth scroll, loaded AFTER first paint.
+   *
+   * GSAP + Lenis are ~138 KB. Imported statically at the top of the app shell
+   * they sat in the critical path of every route — a text-only page like /faq
+   * spent 430 ms of CPU parsing an animation library it never uses. Loading
+   * them dynamically here takes them off the first-paint path entirely; smooth
+   * scroll simply engages a moment later, which is imperceptible because the
+   * page cannot be scrolled before it has painted.
+   */
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const lenis = new Lenis({
-      lerp: 0.08,
-      smoothWheel: true,
-      // Touch stays native: syncTouch re-drives touch scrolling through JS
-      // every frame, which reads as lag on mid-range phones — especially
-      // while the hero video is being scrubbed.
-      syncTouch: false,
-    })
-    setLenis(lenis)
+    let cancelled = false
+    let teardown: (() => void) | undefined
 
-    lenis.on('scroll', ScrollTrigger.update)
-    // Named so cleanup can remove it. An anonymous callback here leaks: under
-    // StrictMode it keeps firing 60×/s against a destroyed Lenis instance.
-    const tick = (time: number) => lenis.raf(time * 1000)
-    gsap.ticker.add(tick)
-    gsap.ticker.lagSmoothing(0)
+    void (async () => {
+      const [{ default: gsap }, { ScrollTrigger }, { default: Lenis }] = await Promise.all([
+        import('gsap'),
+        import('gsap/ScrollTrigger'),
+        import('lenis'),
+      ])
+      // The component may have unmounted while the chunk was in flight.
+      if (cancelled) return
+      gsap.registerPlugin(ScrollTrigger)
+
+      const lenis = new Lenis({
+        lerp: 0.08,
+        smoothWheel: true,
+        // Touch stays native: syncTouch re-drives touch scrolling through JS
+        // every frame, which reads as lag on mid-range phones — especially
+        // while the hero video is being scrubbed.
+        syncTouch: false,
+      })
+      setLenis(lenis)
+
+      lenis.on('scroll', ScrollTrigger.update)
+      // Named so cleanup can remove it. An anonymous callback here leaks: under
+      // StrictMode it keeps firing 60×/s against a destroyed Lenis instance.
+      const tick = (time: number) => lenis.raf(time * 1000)
+      gsap.ticker.add(tick)
+      gsap.ticker.lagSmoothing(0)
+
+      teardown = () => {
+        gsap.ticker.remove(tick)
+        // Restore GSAP's default lag smoothing — it is a global mutation.
+        gsap.ticker.lagSmoothing(500, 33)
+        lenis.destroy()
+        setLenis(null)
+      }
+    })()
 
     return () => {
-      gsap.ticker.remove(tick)
-      // Restore GSAP's default lag smoothing — it is a global mutation.
-      gsap.ticker.lagSmoothing(500, 33)
-      lenis.destroy()
-      setLenis(null)
+      cancelled = true
+      teardown?.()
     }
   }, [])
 
@@ -242,7 +265,21 @@ export default function TeaVectorHomepage() {
 
       {/* Main content */}
       <main id="main-content" tabIndex={-1} className="relative z-20 outline-none">
-        <Suspense fallback={<PageSkeleton />}>{page}</Suspense>
+        {/* The home fallback must reserve the hero's full viewport height in
+            the brand's dark green. A generic PageSkeleton here is a different
+            height, and the swap to the real hero registered as layout shift
+            (CLS 0.16) — which costs more than the lazy chunk saves. */}
+        <Suspense
+          fallback={
+            isHome ? (
+              <div className="min-h-screen bg-[#1b261b]" aria-busy="true" aria-label="Loading" />
+            ) : (
+              <PageSkeleton />
+            )
+          }
+        >
+          {page}
+        </Suspense>
       </main>
 
       {/* App-level footer for non-home pages */}

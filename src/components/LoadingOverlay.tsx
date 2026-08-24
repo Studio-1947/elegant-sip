@@ -31,7 +31,7 @@ export default function LoadingOverlay({ percentage, fading }: { percentage: num
           <p className="text-white/60 text-xs font-light italic">
             {getLoadingMessage(percentage)}
           </p>
-          <p className="text-white/30 text-[11px] font-mono tracking-wider">
+          <p className="text-white/70 text-[11px] font-mono tracking-wider">
             Loading Experience... {percentage}%
           </p>
         </div>

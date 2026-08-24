@@ -1,6 +1,7 @@
 import { PRODUCTS } from '../data/products'
 import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
 import { absoluteUrl } from '../lib/site'
+import { buildSrcSet } from '../lib/responsiveImages'
 import { ROUTE_META } from '../lib/seoRoutes'
 import { useScrollReveal } from '../lib/useScrollReveal'
 
@@ -115,7 +116,7 @@ export default function BrewingGuidePage() {
           {teas.map((tea) => (
             <div key={tea.id} className="bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden md:flex">
               <Link to={`/product/${tea.id}`} className="md:w-56 flex-shrink-0 block">
-                <img src={tea.imageSrc} alt={`${tea.name} Darjeeling tea leaves`} loading="lazy" width={1200} height={1500} className="w-full h-48 md:h-full object-cover" />
+                <img src={tea.imageSrc} srcSet={buildSrcSet(tea.imageSrc)} sizes="(max-width: 768px) 100vw, 224px" alt={`${tea.name} Darjeeling tea leaves`} loading="lazy" width={1200} height={1500} className="w-full h-48 md:h-full object-cover" />
               </Link>
               <div className="p-6 md:p-8 flex-grow">
                 <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ImgHTMLAttributes } from 'react'
+import { buildSrcSet } from '../lib/responsiveImages'
 
 interface SkeletonImageProps extends ImgHTMLAttributes<HTMLImageElement> {
   /** Classes for the wrapper hosting the shimmer — use for sizing/positioning. */
@@ -17,7 +18,21 @@ interface SkeletonImageProps extends ImgHTMLAttributes<HTMLImageElement> {
  * To fill a positioned area, wrap this in a positioned div and pass
  * `wrapperClassName="w-full h-full"`.
  */
-export default function SkeletonImage({ wrapperClassName = '', className = '', onLoad, onError, ...img }: SkeletonImageProps) {
+export default function SkeletonImage({
+  wrapperClassName = '',
+  className = '',
+  onLoad,
+  onError,
+  srcSet,
+  sizes,
+  ...img
+}: SkeletonImageProps) {
+  // Derive the srcset from the generated variants unless the caller supplied
+  // one. Without this, every consumer has to remember to pass it and phones
+  // end up downloading 2560px files.
+  const resolvedSrcSet = srcSet ?? buildSrcSet(typeof img.src === 'string' ? img.src : undefined, Number(img.width) || undefined)
+  const resolvedSizes = sizes ?? (resolvedSrcSet ? '100vw' : undefined)
+
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
   const ref = useRef<HTMLImageElement>(null)
@@ -44,6 +59,8 @@ export default function SkeletonImage({ wrapperClassName = '', className = '', o
       <img
         ref={ref}
         {...img}
+        srcSet={resolvedSrcSet}
+        sizes={resolvedSizes}
         className={`${className} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={(e) => {
           setLoaded(true)

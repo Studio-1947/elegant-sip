@@ -83,7 +83,7 @@ export default function Footer() {
         {/* Bottom row */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-t border-white/10 md:border-[#1b261b]/10 pt-8 pb-14 md:pb-0">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
-            <p className="text-white/40 md:text-[#4a584a] text-[11px] font-mono tracking-wider">
+            <p className="text-white/70 md:text-[#4a584a] text-[11px] font-mono tracking-wider">
               © {year} Elegant Sip. All rights reserved. Est. 2024.
             </p>
             <nav aria-label="Legal links" className="flex items-center gap-4 text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
