@@ -8,7 +8,7 @@ import SiteHeader from './SiteHeader'
 import LoadingOverlay from './LoadingOverlay'
 import PageSkeleton from './PageSkeleton'
 import Footer from './Footer'
-import { useHashRoute, parseRoute, getRoute } from '../lib/router'
+import { useRoute, parseRoute, getRoute } from '../lib/router'
 import { useIsCompact } from '../lib/useMediaQuery'
 import { getVideoProgress } from '../lib/videoLoading'
 import { setLenis } from '../lib/scroll'
@@ -37,7 +37,7 @@ const NotFoundPage = lazy(() => import('./NotFoundPage'))
 gsap.registerPlugin(ScrollTrigger)
 
 export default function TeaVectorHomepage() {
-  const route = useHashRoute()
+  const route = useRoute()
   const { name: routeName, id: routeId } = parseRoute(route)
   const isHome = routeName === 'home'
 
@@ -50,7 +50,7 @@ export default function TeaVectorHomepage() {
 
   // Loader: holds until the hero video is actually buffered enough to scrub,
   // showing REAL download progress. Escape hatches so nobody is ever trapped:
-  // buffering stall (browser chose partial preload  the clamped scrub handles
+  // buffering stall (browser chose partial preload — the clamped scrub handles
   // the rest), video error, or a 25s hard cap. Only the homepage has a video;
   // every other route paints immediately. Reduced-motion skips it entirely.
   useEffect(() => {
@@ -82,10 +82,14 @@ export default function TeaVectorHomepage() {
       setLoadingPercentage(Math.round(Math.min(fraction, 0.99) * 100))
       const elapsed = Date.now() - start
       // Stall covers the never-started case too: iOS Safari may not buffer at
-      // all until playback is primed  without this, iPhones sat on the loader
+      // all until playback is primed — without this, iPhones sat on the loader
       // until the hard cap. The buffered-clamped scrub handles whatever's left.
       const stalled = Date.now() - lastChange > (lastValue > 0 ? 5000 : 4000)
-      if ((fraction >= 0.99 && elapsed > 1600) || stalled || elapsed > 25000) finish()
+      // Release at 15% buffered rather than fully buffered: seeks are already
+      // clamped to the buffered range, so the playhead simply trails the
+      // download instead of the visitor staring at an opaque loader.
+      const enoughBuffered = fraction >= 0.15 && elapsed > 1200
+      if (enoughBuffered || stalled || elapsed > 10000) finish()
     }, 150)
     return () => {
       window.clearInterval(poll)
@@ -101,19 +105,23 @@ export default function TeaVectorHomepage() {
       lerp: 0.08,
       smoothWheel: true,
       // Touch stays native: syncTouch re-drives touch scrolling through JS
-      // every frame, which reads as lag on mid-range phones  especially
+      // every frame, which reads as lag on mid-range phones — especially
       // while the hero video is being scrubbed.
       syncTouch: false,
     })
     setLenis(lenis)
 
     lenis.on('scroll', ScrollTrigger.update)
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000)
-    })
+    // Named so cleanup can remove it. An anonymous callback here leaks: under
+    // StrictMode it keeps firing 60×/s against a destroyed Lenis instance.
+    const tick = (time: number) => lenis.raf(time * 1000)
+    gsap.ticker.add(tick)
     gsap.ticker.lagSmoothing(0)
 
     return () => {
+      gsap.ticker.remove(tick)
+      // Restore GSAP's default lag smoothing — it is a global mutation.
+      gsap.ticker.lagSmoothing(500, 33)
       lenis.destroy()
       setLenis(null)
     }
@@ -125,16 +133,26 @@ export default function TeaVectorHomepage() {
     setScrub({ past95: false })
   }, [route])
 
+  // Announce navigation to screen readers: a client-side route change is
+  // otherwise completely silent.
+  const [announcement, setAnnouncement] = useState('')
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setAnnouncement(document.title ? `${document.title} — page loaded` : 'Page loaded')
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [route])
+
   const isCompact = useIsCompact()
 
   // Header chrome derived from scrub progress or non-home routes.
-  // Below lg the navbar is always engaged  the compact home has no video intro
+  // Below lg the navbar is always engaged — the compact home has no video intro
   // that the header needs to stay out of the way for.
   const isNavbar = !isHome || scrub.past95 || isCompact
 
   const handleProgress = (progress: number) => {
     const past95 = progress > 0.95
-    // Bail out unless the threshold was actually crossed  this runs every scroll frame.
+    // Bail out unless the threshold was actually crossed — this runs every scroll frame.
     setScrub((s) => (s.past95 === past95 ? s : { past95 }))
   }
 
@@ -195,11 +213,22 @@ export default function TeaVectorHomepage() {
       page = <NotFoundPage />
   }
 
+  // The router owns the hash, so an `href="#main-content"` skip link would be
+  // parsed as a route and 404. Move focus directly instead.
+  const skipToContent = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    const main = document.getElementById('main-content')
+    if (!main) return
+    main.focus()
+    main.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <div className="relative bg-black min-h-screen">
       {/* Accessibility skip link */}
       <a
         href="#main-content"
+        onClick={skipToContent}
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-white focus:text-[#1b261b] focus:px-5 focus:py-3 focus:rounded-lg focus:text-xs focus:font-bold focus:shadow-lg"
       >
         Skip to content
@@ -207,10 +236,12 @@ export default function TeaVectorHomepage() {
 
       {loading && <LoadingOverlay percentage={loadingPercentage} fading={fadeLoader} />}
 
-      {!loading && <SiteHeader isNavbar={isNavbar} routeName={routeName} route={route} />}
+      {/* Rendered even while the loader is up (which overlays it), so the nav
+          links exist in the DOM at t=0 for crawlers and assistive tech. */}
+      <SiteHeader isNavbar={isNavbar} routeName={routeName} route={route} />
 
       {/* Main content */}
-      <main id="main-content" className="relative z-20">
+      <main id="main-content" tabIndex={-1} className="relative z-20 outline-none">
         <Suspense fallback={<PageSkeleton />}>{page}</Suspense>
       </main>
 
@@ -222,6 +253,11 @@ export default function TeaVectorHomepage() {
       )}
 
       <ConsentBanner />
+
+      {/* Route-change announcer — present from mount so updates are spoken. */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </div>
     </div>
   )
 }

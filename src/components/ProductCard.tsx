@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useCart } from './CartContext'
 import { getReviews, getDefaultVariant, isInStock, type Product } from '../data/products'
 import { getLocalReviews } from '../lib/localReviews'
@@ -22,16 +22,17 @@ export default function ProductCard({ product }: { product: Product }) {
   const [isAdded, setIsAdded] = useState(false)
   const { addToCart, toggleWishlist, isWishlisted } = useCart()
 
-  // Real average when reviews exist (seed + customer-submitted); a default
-  // 5-star display for teas that have none yet.
-  const reviews = [...getLocalReviews(product.id), ...getReviews(product.id)]
-  const rating =
-    reviews.length > 0
-      ? {
-          average: Math.round((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) * 10) / 10,
-          count: reviews.length,
-        }
-      : { average: 5, count: 0 }
+  // Real average only. A product with no reviews shows no stars at all —
+  // rendering five filled stars for an unreviewed tea asserts something untrue.
+  // Memoised on the id so the review store isn't re-parsed on every render.
+  const rating = useMemo(() => {
+    const reviews = [...getLocalReviews(product.id), ...getReviews(product.id)]
+    if (reviews.length === 0) return { average: 0, count: 0 }
+    return {
+      average: Math.round((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) * 10) / 10,
+      count: reviews.length,
+    }
+  }, [product.id])
 
   const wishlisted = isWishlisted(product.id)
   // Selected quality tier drives the price, quantity cap, and add-to-cart.
@@ -44,6 +45,18 @@ export default function ProductCard({ product }: { product: Product }) {
   const gallery = [product.imageSrc, ...(product.images ?? [])]
   const brew = product.brewingGuide
 
+  // Tracked so pending state flips are cancelled if the card unmounts mid-add
+  // (navigating away, filtering the grid) instead of setting state on a dead
+  // component.
+  const timers = useRef<number[]>([])
+  useEffect(
+    () => () => {
+      timers.current.forEach((t) => window.clearTimeout(t))
+      timers.current = []
+    },
+    [],
+  )
+
   const handleAddToCart = () => {
     if (!variantInStock || comingSoon) return
     setIsAdding(true)
@@ -52,12 +65,28 @@ export default function ProductCard({ product }: { product: Product }) {
       quantity,
     )
     track('add_to_cart', { product: product.id, quantity, source: 'product_card' })
-    setTimeout(() => {
-      setIsAdding(false)
-      setIsAdded(true)
-      setQuantity(1)
-      setTimeout(() => setIsAdded(false), 2000)
-    }, 800)
+    timers.current.push(
+      window.setTimeout(() => {
+        setIsAdding(false)
+        setIsAdded(true)
+        setQuantity(1)
+        timers.current.push(window.setTimeout(() => setIsAdded(false), 2000))
+      }, 800),
+    )
+  }
+
+  // Roving arrow-key navigation for the tier picker, as ARIA radiogroup requires.
+  const handleTierKeys = (e: KeyboardEvent<HTMLDivElement>) => {
+    const keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp']
+    if (!keys.includes(e.key)) return
+    e.preventDefault()
+    const selectable = product.variants.filter((v) => v.stock > 0)
+    if (selectable.length === 0) return
+    const current = selectable.findIndex((v) => v.size === activeVariant.size)
+    const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown'
+    const next = (current + (forward ? 1 : -1) + selectable.length) % selectable.length
+    setSelectedSize(selectable[next].size)
+    setQuantity(1)
   }
 
   const handleWishlist = () => {
@@ -82,19 +111,19 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Badges */}
         <div className="absolute top-3.5 left-3.5 z-20 flex flex-col items-start gap-2">
           {comingSoon ? (
-            <span className="bg-[#1b261b] text-white text-[9px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
+            <span className="bg-[#1b261b] text-white text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
               Coming Soon
             </span>
           ) : (
             <>
               {product.harvestLabel && (
-                <span className="bg-[#1b261b] text-white text-[9px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
+                <span className="bg-[#1b261b] text-white text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
                   {product.harvestLabel}
                 </span>
               )}
               {totalStock > 0 && (
-                <span className="bg-white/90 border border-[#b0782e]/40 text-[#b0782e] text-[9px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
-                  Limited · {totalStock} packs
+                <span className="bg-white/90 border border-[#b0782e]/40 text-[#b0782e] text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
+                  Limited lot
                 </span>
               )}
             </>
@@ -106,7 +135,7 @@ export default function ProductCard({ product }: { product: Product }) {
           onClick={handleWishlist}
           aria-label={wishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
           aria-pressed={wishlisted}
-          className={`absolute top-3.5 right-3.5 z-20 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300 cursor-pointer border ${
+          className={`absolute top-2 right-2 z-20 w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-300 cursor-pointer border ${
             wishlisted
               ? 'bg-[#8bb56e] text-white border-[#8bb56e]'
               : 'bg-white/85 text-[#1b261b] border-white/40 hover:bg-white'
@@ -138,19 +167,19 @@ export default function ProductCard({ product }: { product: Product }) {
       {/* ── Info block ── */}
       <div className="p-5 md:p-6 flex flex-col flex-grow">
         {/* Eyebrow */}
-        <span className="flex items-center gap-1.5 text-[9px] font-mono tracking-[0.2em] uppercase text-[#4a584a]/70 mb-2">
+        <span className="flex items-center gap-1.5 text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-2">
           <span className="text-[#b0782e] text-[7px]" aria-hidden="true">●</span>
           Darjeeling · Single Origin
         </span>
 
         {/* Name + price */}
         <div className="flex justify-between items-start gap-3 mb-1.5">
-          <Link to={`/product/${product.id}`} className="hover:text-[#8bb56e] transition-colors">
+          <Link to={`/product/${product.id}`} className="hover:text-[#4a7333] transition-colors">
             <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide leading-snug">{product.name}</h3>
           </Link>
           <span className="flex flex-col items-end pt-0.5">
             {comingSoon ? (
-              <span className="text-[9px] font-mono uppercase tracking-wider bg-[#8bb56e]/10 text-[#8bb56e] px-2.5 py-1 rounded-full whitespace-nowrap">
+              <span className="text-[11px] font-mono uppercase tracking-wider bg-[#8bb56e]/10 text-[#4a7333] px-2.5 py-1 rounded-full whitespace-nowrap">
                 Coming Soon
               </span>
             ) : (
@@ -161,22 +190,27 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {/* Star rating */}
-        <div className="flex items-center gap-2 mb-3.5">
-          <div
-            className="flex gap-0.5 text-[#8bb56e] text-xs"
-            aria-label={rating.count > 0 ? `Rated ${rating.average} out of 5 stars` : '5 stars'}
-          >
-            {[...Array(5)].map((_, i) => (
-              <svg key={i} className="w-3 h-3" viewBox="0 0 20 20" fill={i < Math.round(rating.average) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
-              </svg>
-            ))}
-          </div>
-          {rating.count > 0 && (
-            <span className="text-[10px] font-mono text-[#4a584a]/70">
-              {rating.average} · {rating.count} {rating.count === 1 ? 'review' : 'reviews'}
-            </span>
+        {/* Star rating — only when real reviews exist. */}
+        <div className="flex items-center gap-2 mb-3.5 min-h-[18px]">
+          {rating.count > 0 ? (
+            <>
+              <div
+                role="img"
+                className="flex gap-0.5 text-[#4a7333] text-xs"
+                aria-label={`Rated ${rating.average} out of 5 stars from ${rating.count} ${rating.count === 1 ? 'review' : 'reviews'}`}
+              >
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} aria-hidden="true" className="w-3 h-3" viewBox="0 0 20 20" fill={i < Math.round(rating.average) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+                  </svg>
+                ))}
+              </div>
+              <span className="text-[11px] font-mono text-[#4a584a]">
+                {rating.average} · {rating.count} {rating.count === 1 ? 'review' : 'reviews'}
+              </span>
+            </>
+          ) : (
+            <span className="text-[11px] font-mono text-[#4a584a]">Not yet reviewed</span>
           )}
         </div>
 
@@ -184,7 +218,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {product.tastingNotes && product.tastingNotes.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {product.tastingNotes.map((note) => (
-              <span key={note} className="border border-[#1b261b]/15 rounded-full px-3 py-1 text-[10px] text-[#4a584a]">
+              <span key={note} className="border border-[#1b261b]/15 rounded-full px-3 py-1 text-[11px] text-[#4a584a]">
                 {note}
               </span>
             ))}
@@ -194,7 +228,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Body meter */}
         {product.bodyLevel !== undefined && (
           <div className="mb-4">
-            <div className="flex justify-between text-[8px] font-mono tracking-[0.2em] uppercase text-[#4a584a]/60 mb-1.5">
+            <div className="flex justify-between text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-1.5">
               <span>Light</span>
               <span>Body</span>
               <span>Full</span>
@@ -217,7 +251,7 @@ export default function ProductCard({ product }: { product: Product }) {
             ).map(([value, label]) => (
               <div key={label} className="text-center py-2.5 px-1">
                 <p className="text-xs font-bold text-[#1b261b] whitespace-nowrap">{value}</p>
-                <p className="text-[8px] font-mono tracking-[0.2em] uppercase text-[#4a584a]/60 mt-0.5">{label}</p>
+                <p className="text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mt-0.5">{label}</p>
               </div>
             ))}
           </div>
@@ -226,8 +260,8 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Quality tier picker */}
         {!comingSoon && hasMultipleSizes && (
           <div className="mb-4">
-            <span className="block text-[8px] font-mono tracking-[0.2em] uppercase text-[#4a584a]/60 mb-1.5">Size</span>
-            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Size">
+            <span className="block text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-1.5">Size</span>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Quality tier" onKeyDown={handleTierKeys}>
               {product.variants.map((v) => {
                 const selected = v.size === activeVariant.size
                 const soldOut = v.stock <= 0
@@ -236,14 +270,16 @@ export default function ProductCard({ product }: { product: Product }) {
                     key={v.size}
                     role="radio"
                     aria-checked={selected}
+                    // Roving tabindex: the group is one tab stop, arrows move within it.
+                    tabIndex={selected ? 0 : -1}
                     disabled={soldOut}
                     onClick={() => {
                       setSelectedSize(v.size)
                       setQuantity(1)
                     }}
-                    className={`text-[10px] font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer whitespace-nowrap ${
+                    className={`text-[11px] font-semibold px-3 py-2 rounded-full border transition-all cursor-pointer whitespace-nowrap ${
                       soldOut
-                        ? 'border-[#1b261b]/10 text-[#4a584a]/40 line-through cursor-not-allowed bg-[#f9faf7]'
+                        ? 'border-[#1b261b]/10 text-[#4a584a] line-through cursor-not-allowed bg-[#f9faf7]'
                         : selected
                         ? 'border-[#1b261b] bg-[#1b261b] text-white'
                         : 'border-[#1b261b]/15 bg-white text-[#1b261b] hover:border-[#8bb56e]'
@@ -263,7 +299,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-4 py-2 w-24 sm:w-28 bg-white flex-shrink-0">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-lg leading-none transition-colors px-1 cursor-pointer"
+                className="text-[#1b261b] hover:text-[#4a7333] font-bold text-lg leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center -my-2 cursor-pointer"
                 aria-label="Decrease quantity"
               >
                 −
@@ -271,7 +307,7 @@ export default function ProductCard({ product }: { product: Product }) {
               <span className="text-[#1b261b] font-mono text-sm font-semibold select-none">{quantity}</span>
               <button
                 onClick={() => setQuantity((q) => Math.min(q + 1, activeVariant.stock))}
-                className="text-[#1b261b] hover:text-[#8bb56e] font-bold text-lg leading-none transition-colors px-1 cursor-pointer"
+                className="text-[#1b261b] hover:text-[#4a7333] font-bold text-lg leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center -my-2 cursor-pointer"
                 aria-label="Increase quantity"
               >
                 +
@@ -281,9 +317,9 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             onClick={handleAddToCart}
             disabled={isAdding || isAdded || !variantInStock || comingSoon}
-            className={`flex-grow text-[10px] sm:text-xs font-bold tracking-widest uppercase py-3 px-3 sm:px-6 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
+            className={`flex-grow text-[11px] sm:text-xs font-bold tracking-widest uppercase py-3 px-3 sm:px-6 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
               !variantInStock || comingSoon
-                ? 'bg-[#1b261b]/10 text-[#4a584a]/60 cursor-not-allowed'
+                ? 'bg-[#1b261b]/10 text-[#4a584a] cursor-not-allowed'
                 : isAdded
                 ? 'bg-[#8bb56e] text-white'
                 : isAdding
@@ -305,10 +341,16 @@ export default function ProductCard({ product }: { product: Product }) {
           </button>
         </div>
 
-        {/* Footer microcopy */}
+        {/* Status for assistive tech — the visual button label changes, but a
+          screen reader gets no announcement without a live region. */}
+      <span aria-live="polite" className="sr-only">
+        {isAdded ? `${product.name} added to your cart` : ''}
+      </span>
+
+      {/* Footer microcopy */}
         {!comingSoon && (
-          <p className="text-[10px] text-[#4a584a]/70 text-center mt-3">
-            Free shipping over {formatINR(FREE_SHIPPING_THRESHOLD)} · ships in 24 h
+          <p className="text-[11px] text-[#4a584a] text-center mt-3">
+            Free shipping over {formatINR(FREE_SHIPPING_THRESHOLD)} · packed to order
           </p>
         )}
       </div>

@@ -4,17 +4,20 @@ const PILLARS = [
   {
     title: 'Origin',
     imageSrc: '/origin.webp',
-    text: 'From the highland terraces of Darjeeling to the ancient gardens of Uji, we partner directly with generational growers who share our obsession with terroir and seasonal harvests.',
+    imageAlt: 'Darjeeling tea terraces on a highland slope in morning mist',
+    text: 'From the highland terraces of the Rungbong Valley to the warmer slopes below Kurseong, we buy directly from the Darjeeling growers who share our obsession with terroir and seasonal harvests.',
   },
   {
     title: 'Craft',
     imageSrc: '/craft.webp',
-    text: 'Every batch is hand-rolled, shade-dried, and slow-oxidized under the guidance of our tea masters. No shortcuts, no mechanized blending  just centuries-old technique.',
+    imageAlt: 'Freshly plucked Darjeeling tea leaves being withered by hand',
+    text: 'First flush is withered long and fired light, so the leaf keeps the aromatics that make it worth buying. No blending across estates, no anonymity — just the grade the garden actually produced.',
   },
   {
     title: 'Experience',
     imageSrc: '/experience.webp',
-    text: 'Brewing is ritual. We include steeping guides, temperature curves, and tasting notes with every order  so each cup unfolds exactly as the leaves intended.',
+    imageAlt: 'A brewed cup of first flush Darjeeling beside loose leaves',
+    text: 'Brewing is ritual. Every product page carries the exact card for that grade — temperature, steep time, leaf amount and steep count — so each cup unfolds exactly as the leaves intended.',
   },
 ]
 
@@ -25,7 +28,7 @@ export default function ThreePillarsSection() {
     <section className="bg-[#1b261b] lg:bg-transparent px-6 md:px-12 lg:px-16 py-14 md:py-16 lg:py-0 lg:pb-32 max-w-[1360px] mx-auto mb-14 lg:mb-0">
       {/* Phone & tablet: dark section heading */}
       <div className="lg:hidden mb-8">
-        <span className="text-[#8bb56e] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
+        <span className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
           From Garden to Cup
         </span>
         <h2 className="text-white text-3xl md:text-4xl font-bold tracking-tight">Grown. Crafted. Experienced.</h2>
@@ -38,7 +41,7 @@ export default function ThreePillarsSection() {
             key={pillar.title}
             className="min-w-[80vw] sm:min-w-[52vw] md:min-w-[40vw] max-w-[340px] md:max-w-[380px] snap-center rounded-2xl overflow-hidden bg-[#2b3a2b] flex flex-col"
           >
-            <img src={pillar.imageSrc} alt="" loading="lazy" className="w-full h-48 md:h-56 object-cover" />
+            <img src={pillar.imageSrc} alt={pillar.imageAlt} loading="lazy" width={1200} height={800} className="w-full h-48 md:h-56 object-cover" />
             <div className="p-6">
               <h3 className="text-white text-base font-bold uppercase tracking-wide mb-3">{pillar.title}</h3>
               <p className="text-white/80 text-sm leading-relaxed">{pillar.text}</p>
@@ -56,7 +59,10 @@ export default function ThreePillarsSection() {
           >
             <img
               src={pillar.imageSrc}
-              alt=""
+              alt={pillar.imageAlt}
+              loading="lazy"
+              width={1200}
+              height={800}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />

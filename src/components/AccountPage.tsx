@@ -11,13 +11,13 @@ export default function AccountPage() {
   const { wishlist } = useCart()
   const orders = getOrders()
 
-  useDocumentMeta('My Account  Elegant Sip', 'Your Elegant Sip orders and saved teas.')
+  useDocumentMeta('My Account | Elegant Sip', 'Your Elegant Sip orders and saved teas.', { noindex: true })
 
   if (!user) {
     return (
       <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6">
         <div className="max-w-md mx-auto text-center bg-white border border-[#1b261b]/10 rounded-3xl p-10 md:p-14 shadow-[0_12px_40px_rgba(27,38,27,0.04)]">
-          <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">My Account</span>
+          <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">My Account</span>
           <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">Welcome back</h1>
           <p className="text-sm text-[#4a584a] leading-relaxed mb-8">
             Sign in to see your order history, wishlist, and saved checkout details.
@@ -38,7 +38,7 @@ export default function AccountPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
           <div>
-            <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-2">My Account</span>
+            <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-2">My Account</span>
             <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight">Hello, {user.name.split(' ')[0]}</h1>
             <p className="text-xs font-mono text-[#4a584a] mt-3">{user.email}</p>
           </div>
@@ -53,17 +53,24 @@ export default function AccountPage() {
         {/* Quick links */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
           <Link to="/wishlist" className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 hover:border-[#8bb56e] transition-colors group">
-            <h2 className="text-sm font-bold uppercase tracking-wide mb-1 group-hover:text-[#8bb56e] transition-colors">Wishlist</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide mb-1 group-hover:text-[#4a7333] transition-colors">Wishlist</h2>
             <p className="text-xs text-[#4a584a]">{wishlist.length} {wishlist.length === 1 ? 'tea' : 'teas'} saved for later</p>
           </Link>
           <Link to="/shop" className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 hover:border-[#8bb56e] transition-colors group">
-            <h2 className="text-sm font-bold uppercase tracking-wide mb-1 group-hover:text-[#8bb56e] transition-colors">The Collection</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide mb-1 group-hover:text-[#4a7333] transition-colors">The Collection</h2>
             <p className="text-xs text-[#4a584a]">Browse teas from named gardens</p>
           </Link>
         </div>
 
         {/* Order history */}
-        <h2 className="text-lg font-bold uppercase tracking-wide mb-6">Order History</h2>
+        <h2 className="text-lg font-bold uppercase tracking-wide mb-2">Order History</h2>
+        {/* These records live in this browser, not in an account — signing in
+            does not fetch anything. Saying so prevents a shared machine from
+            looking like someone else's order history "belongs" to this login. */}
+        <p className="text-xs text-[#4a584a] mb-6 max-w-2xl leading-relaxed">
+          Demo orders are stored in this browser, not in an account. Anyone using this browser
+          profile can see them, and they will not appear if you sign in on another device.
+        </p>
         {orders.length === 0 ? (
           <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-8 text-center">
             <p className="text-sm text-[#4a584a] mb-6">No orders on this device yet. Your first cup awaits.</p>
@@ -80,7 +87,7 @@ export default function AccountPage() {
                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#1b261b]/10 rounded-2xl p-6 hover:border-[#8bb56e] transition-colors group"
               >
                 <div>
-                  <p className="text-sm font-bold font-mono group-hover:text-[#8bb56e] transition-colors">{order.number}</p>
+                  <p className="text-sm font-bold font-mono group-hover:text-[#4a7333] transition-colors">{order.number}</p>
                   <p className="text-[11px] text-[#4a584a] mt-1">
                     {new Date(order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     {' · '}
@@ -92,8 +99,8 @@ export default function AccountPage() {
             ))}
           </div>
         )}
-        <p className="text-[10px] font-mono text-[#4a584a]/60 mt-6">
-          Demo store  orders are stored in this browser only.
+        <p className="text-[11px] font-mono text-[#4a584a] mt-6">
+          Demo store — orders are stored in this browser only.
         </p>
       </div>
     </div>

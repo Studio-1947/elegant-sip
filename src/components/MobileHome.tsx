@@ -5,6 +5,7 @@ import { useGSAP } from '@gsap/react'
 import { Link } from '../lib/router'
 import { useUi } from './UiContext'
 import { reportVideoProgress, markVideoFailed } from '../lib/videoLoading'
+import { shouldSkipHeavyMedia } from '../lib/network'
 import { scrollToTop } from '../lib/scroll'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
@@ -43,7 +44,7 @@ function TickerStrip() {
 }
 
 /**
- * MobileScrubHero  the portrait scroll animation. A sticky full-screen video
+ * MobileScrubHero — the portrait scroll animation. A sticky full-screen video
  * whose playhead is scrubbed by scroll (all-intra encode, so every frame seeks
  * instantly), with the hero copy fading out as the journey begins. Falls back
  * to a static poster hero for prefers-reduced-motion.
@@ -53,11 +54,13 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
   const videoRef = useRef<HTMLVideoElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  // Data Saver or a 2G/3G connection gets the poster instead of 3 MB of video.
+  const [lightMedia] = useState(shouldSkipHeavyMedia)
 
   useGSAP(
     () => {
-      if (reduced) {
-        // No scrub journey to finish  unlock dependent UI right away.
+      if (reduced || lightMedia) {
+        // No scrub journey to finish — unlock dependent UI right away.
         onJourneyDone(true)
         return
       }
@@ -79,7 +82,7 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
 
       // Scrub through a proxy and clamp every seek to the buffered range.
       // Seeking into unbuffered video aborts the in-flight range request and
-      // starts a new one  on slow networks that becomes a storm of canceled
+      // starts a new one — on slow networks that becomes a storm of canceled
       // requests and a frozen, janky animation. Clamped, the playhead simply
       // trails the download and catches up as data arrives.
       const proxy = { t: 0 }
@@ -87,7 +90,7 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
         if (video.buffered.length === 0) return
         const bufferedEnd = video.buffered.end(video.buffered.length - 1) - 0.05
         const t = Math.min(proxy.t, Math.max(0, bufferedEnd))
-        // The source is ~24fps (one frame ≈ 0.042s)  seeking finer than a
+        // The source is ~24fps (one frame ≈ 0.042s) — seeking finer than a
         // frame is pure wasted decode, which shows up as jank on phones.
         if (Math.abs(video.currentTime - t) > 0.035) video.currentTime = t
       }
@@ -106,7 +109,7 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
       const onVideoError = () => markVideoFailed()
       video.addEventListener('loadedmetadata', addScrub)
       if (video.readyState >= 1) addScrub()
-      // iOS Safari ignores preload="auto" until playback begins  prime the
+      // iOS Safari ignores preload="auto" until playback begins — prime the
       // buffer with a muted play/pause (allowed without a user gesture) so
       // the download starts immediately.
       video.play()?.then(() => video.pause()).catch(() => { })
@@ -143,13 +146,13 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
         video.removeEventListener('error', onVideoError)
       }
     },
-    { scope: sectionRef, dependencies: [reduced] },
+    { scope: sectionRef, dependencies: [reduced, lightMedia] },
   )
 
   return (
-    <section ref={sectionRef} className={`relative ${reduced ? 'h-[86svh] min-h-[540px]' : 'h-[320vh]'}`}>
-      <div className={`${reduced ? 'absolute inset-0' : 'sticky top-0 h-[100svh]'} w-full overflow-hidden bg-[#1b261b]`}>
-        {reduced ? (
+    <section ref={sectionRef} className={`relative ${reduced || lightMedia ? 'h-[86svh] min-h-[540px]' : 'h-[320vh]'}`}>
+      <div className={`${reduced || lightMedia ? 'absolute inset-0' : 'sticky top-0 h-[100svh]'} w-full overflow-hidden bg-[#1b261b]`}>
+        {reduced || lightMedia ? (
           <img
             src="/mobile-poster.webp"
             alt="Illustrated tea hills of Darjeeling at first light"
@@ -206,7 +209,7 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
 }
 
 /**
- * MobileHome  the phone-first homepage: scroll-scrubbed portrait video hero
+ * MobileHome — the phone-first homepage: scroll-scrubbed portrait video hero
  * followed by a linear flow of the shared content sections.
  */
 export default function MobileHome() {
@@ -226,7 +229,16 @@ export default function MobileHome() {
 
       {/* ── Brew elegance banner ── */}
       <section className="relative">
-        <img src="/hero.webp" alt="Tea plantation in the hills" loading="lazy" width={1920} height={1172} className="w-full h-72 md:h-[26rem] object-cover" />
+        <img
+          src="/hero-1024.webp"
+          srcSet="/hero-640.webp 640w, /hero-1024.webp 1024w, /hero-1920.webp 1920w"
+          sizes="100vw"
+          alt="Darjeeling tea plantation terraces in the hills at first light"
+          loading="lazy"
+          width={1920}
+          height={1172}
+          className="w-full h-72 md:h-[26rem] object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
         <h2 className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-12 text-white text-xl md:text-3xl font-bold uppercase tracking-wide">
           Brew Elegance | Sip Luxury

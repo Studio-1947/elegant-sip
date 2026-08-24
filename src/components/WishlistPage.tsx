@@ -6,7 +6,7 @@ import { formatINR } from '../lib/currency'
 
 export default function WishlistPage() {
   const { wishlist, toggleWishlist, addToCart } = useCart()
-  useDocumentMeta('Your Wishlist  Elegant Sip', 'Your saved Elegant Sip teas.')
+  useDocumentMeta('Wishlist | Elegant Sip', 'Teas you have saved for later.', { noindex: true })
 
   const items = wishlist
     .map((id) => getProduct(id))
@@ -15,19 +15,19 @@ export default function WishlistPage() {
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-32 pb-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-5xl mx-auto">
-        <Link to="/" className="text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#8bb56e] transition-colors mb-6 inline-block">
+        <Link to="/" className="text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mb-6 inline-block">
           ← Back to Experience
         </Link>
         <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight mb-3">Your Wishlist</h1>
         <p className="text-xs text-[#4a584a] mb-12">
           {items.length === 0
-            ? 'Saved teas will appear here  tap the heart on any product.'
+            ? 'Saved teas will appear here — tap the heart on any product.'
             : `${items.length} ${items.length === 1 ? 'tea' : 'teas'} saved for later.`}
         </p>
 
         {items.length === 0 ? (
           <div className="max-w-md mx-auto text-center py-20 px-6 bg-white border border-[#1b261b]/10 rounded-2xl shadow-[0_12px_40px_rgba(27,38,27,0.04)]">
-            <svg className="w-14 h-14 text-[#8bb56e]/40 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <svg className="w-14 h-14 text-[#4a7333]/40 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
             <h2 className="text-xl font-bold mb-3">Nothing saved yet</h2>
@@ -51,11 +51,17 @@ export default function WishlistPage() {
                   </div>
                 </Link>
                 <div className="flex-grow">
-                  <Link to={`/product/${item.id}`} className="hover:text-[#8bb56e] transition-colors">
+                  <Link to={`/product/${item.id}`} className="hover:text-[#4a7333] transition-colors">
                     <h3 className="text-base md:text-lg font-bold">{item.name}</h3>
                   </Link>
                   <p className="text-xs text-[#4a584a] mt-0.5">{item.category}</p>
-                  <p className="text-sm font-bold mt-1.5">{formatINR(item.price)}</p>
+                  {item.status === 'coming-soon' ? (
+                    <p className="text-[11px] font-mono uppercase tracking-wider text-[#4a7333] mt-1.5">
+                      Coming soon
+                    </p>
+                  ) : (
+                    <p className="text-sm font-bold mt-1.5">{formatINR(item.price)}</p>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   <button
@@ -64,14 +70,14 @@ export default function WishlistPage() {
                       addToCart({ id: item.id, name: item.name, price: variant.price, imageSrc: item.imageSrc, size: variant.size }, 1)
                       track('add_to_cart', { product: item.id, source: 'wishlist' })
                     }}
-                    disabled={!isInStock(item)}
-                    className="bg-[#1b261b] hover:bg-[#2b3a2b] disabled:bg-[#1b261b]/10 disabled:text-[#4a584a]/60 disabled:cursor-not-allowed text-white text-[10px] font-bold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-colors cursor-pointer"
+                    disabled={!isInStock(item) || item.status === 'coming-soon'}
+                    className="bg-[#1b261b] hover:bg-[#2b3a2b] disabled:bg-[#1b261b]/10 disabled:text-[#4a584a] disabled:cursor-not-allowed text-white text-[11px] font-bold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-colors cursor-pointer"
                   >
-                    {isInStock(item) ? 'Add to Cart' : 'Sold Out'}
+                    {item.status === 'coming-soon' ? 'Coming Soon' : isInStock(item) ? 'Add to Cart' : 'Sold Out'}
                   </button>
                   <button
                     onClick={() => toggleWishlist(item.id)}
-                    className="text-[10px] font-mono uppercase tracking-wider text-[#4a584a] hover:text-red-600 transition-colors cursor-pointer"
+                    className="text-[11px] font-mono uppercase tracking-wider text-[#4a584a] hover:text-red-600 transition-colors cursor-pointer"
                   >
                     Remove
                   </button>

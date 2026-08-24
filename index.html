@@ -5,22 +5,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-    content="Elegantsip  the journey of tea, from mountain mist to golden cup. Single-origin whole-leaf teas sourced directly from named estate gardens." />
+    content="Buy single-origin Darjeeling first flush tea online in India. Whole leaf, broken leaf and fannings, packed close to harvest and shipped direct from the garden." />
   <meta name="theme-color" content="#060b08" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://elegantsip.com/" />
 
   <!-- Open Graph / Twitter -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Elegant Sip" />
+  <meta property="og:locale" content="en_IN" />
   <meta property="og:url" content="https://elegantsip.com/" />
-  <meta property="og:title" content="Elegantsip  The Journey of Tea" />
+  <meta property="og:title" content="Elegant Sip | Single-Origin Darjeeling Tea, Direct from the Garden" />
   <meta property="og:description"
-    content="Single-origin whole-leaf teas sourced directly from named estate gardens. The journey of tea, from mountain mist to golden cup." />
-  <meta property="og:image" content="https://elegantsip.com/hero.webp" />
+    content="Buy single-origin Darjeeling first flush tea online in India. Whole leaf, broken leaf and fannings, packed close to harvest and shipped direct from the garden." />
+  <meta property="og:image" content="https://elegantsip.com/og-image.webp" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Darjeeling tea terraces in morning mist with an Elegant Sip pack" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Elegantsip  The Journey of Tea" />
+  <meta name="twitter:title" content="Elegant Sip | Single-Origin Darjeeling Tea, Direct from the Garden" />
   <meta name="twitter:description"
-    content="Single-origin whole-leaf teas sourced directly from named estate gardens." />
-  <meta name="twitter:image" content="https://elegantsip.com/hero.webp" />
+    content="Buy single-origin Darjeeling first flush tea online in India. Whole leaf, broken leaf and fannings, packed close to harvest." />
+  <meta name="twitter:image" content="https://elegantsip.com/og-image.webp" />
 
   <!-- Favicon (inline SVG tea leaf) -->
   <link rel="icon"
@@ -28,43 +34,74 @@
 
   <link rel="alternate" type="application/rss+xml" title="The Elegant Sip Journal" href="/rss.xml" />
 
+  <!-- LCP posters: discovered in the HTML instead of after the JS boots. -->
+  <link rel="preload" as="image" href="/poster.webp" media="(min-width: 1024px)" fetchpriority="high" />
+  <link rel="preload" as="image" href="/mobile-poster.webp" media="(max-width: 1023px)" fetchpriority="high" />
+
+  <!-- Fonts load without blocking the first paint. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,300..800&family=Inter:wght@400..700&display=swap" />
   <link
-    href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,100..1000&family=Inter:wght@100..900&display=swap"
-    rel="stylesheet" />
+    href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,300..800&family=Inter:wght@400..700&display=swap"
+    rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,300..800&family=Inter:wght@400..700&display=swap"
+      rel="stylesheet" />
+  </noscript>
 
   <!-- Structured data: Organization + WebSite -->
   <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Elegant Sip",
-        "url": "https://elegantsip.com/",
-        "description": "The journey of tea, from mountain mist to golden cup. Single-origin whole-leaf teas sourced directly from named estate gardens.",
-        "slogan": "The Journey of Tea",
-        "email": "elegantsipdarjeeling@gmail.com",
-        "sameAs": [
-          "https://www.instagram.com/elegantsip_darjeeling",
-          "https://www.facebook.com/profile.php?id=61586479127169"
-        ]
-      }
-    </script>
+    {
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      "@id": "https://elegantsip.com/#organization",
+      "name": "Elegant Sip",
+      "url": "https://elegantsip.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://elegantsip.com/og-image.webp",
+        "width": 1200,
+        "height": 630
+      },
+      "image": "https://elegantsip.com/og-image.webp",
+      "description": "Single-origin Darjeeling tea bought direct from the garden. Whole leaf, broken leaf and fannings, packed close to harvest.",
+      "slogan": "The Journey of Tea",
+      "email": "elegantsipdarjeeling@gmail.com",
+      "telephone": "+91-75839-95294",
+      "currenciesAccepted": "INR",
+      "areaServed": {
+        "@type": "Country",
+        "name": "India"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressRegion": "West Bengal",
+        "addressLocality": "Darjeeling",
+        "addressCountry": "IN"
+      },
+      "sameAs": [
+        "https://www.instagram.com/elegantsip_darjeeling",
+        "https://www.facebook.com/profile.php?id=61586479127169",
+        "https://wa.me/917583995294"
+      ]
+    }
+  </script>
   <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Elegant Sip",
-        "url": "https://elegantsip.com/",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://elegantsip.com/#/shop?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
-      }
-    </script>
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://elegantsip.com/#website",
+      "name": "Elegant Sip",
+      "url": "https://elegantsip.com/",
+      "inLanguage": "en-IN",
+      "publisher": { "@id": "https://elegantsip.com/#organization" }
+    }
+  </script>
 
-  <title>Elegantsip The Journey of Tea</title>
+  <title>Elegant Sip | Single-Origin Darjeeling Tea, Direct from the Garden</title>
 </head>
 
 <body>

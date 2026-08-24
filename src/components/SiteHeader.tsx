@@ -17,7 +17,7 @@ interface SiteHeaderProps {
   /** Whether the compact white navbar state is engaged (vs. the transparent hero state). */
   isNavbar: boolean
   routeName: string
-  /** Current route string  the mobile menu closes whenever it changes. */
+  /** Current route string — the mobile menu closes whenever it changes. */
   route: string
 }
 
@@ -86,13 +86,13 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
           </Link>
         </div>
 
-        {/* Menu toggle  left side on phones (mockup layout) */}
+        {/* Menu toggle — left side on phones (mockup layout) */}
         <button
           onClick={() => setMenuOpen((open) => !open)}
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={menuOpen}
           aria-controls="mobile-menu"
-          className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 p-2 text-[#1b261b] hover:text-[#8bb56e] transition-colors cursor-pointer pointer-events-auto"
+          className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 p-2 text-[#1b261b] hover:text-[#4a7333] transition-colors cursor-pointer pointer-events-auto"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
             {menuOpen ? (
@@ -117,8 +117,8 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
                 key={link.to}
                 to={link.to}
                 className={`text-[11px] font-mono tracking-widest uppercase transition-colors ${active
-                    ? 'text-[#8bb56e] font-bold'
-                    : 'text-[#1b261b] hover:text-[#8bb56e]'
+                    ? 'text-[#4a7333] font-bold'
+                    : 'text-[#1b261b] hover:text-[#4a7333]'
                   }`}
               >
                 {link.label}
@@ -137,14 +137,14 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
           <Link
             to="/wishlist"
             aria-label="Wishlist"
-            className={`hidden md:block transition-colors relative p-2 ${isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'}`}
+            className={`hidden md:block transition-colors relative p-2 ${isNavbar ? 'text-[#1b261b] hover:text-[#4a7333]' : 'text-white hover:text-[#a8cf8a]'}`}
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
           </Link>
 
-          {/* Cart  opens the drawer on phones, the full page on larger screens */}
+          {/* Cart — opens the drawer on phones, the full page on larger screens */}
           <Link
             to="/cart"
             aria-label="Cart"
@@ -155,31 +155,29 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
               }
             }}
             className={`transition-colors relative p-2 ${routeName === 'cart'
-                ? 'text-[#8bb56e]'
+                ? 'text-[#4a7333]'
                 : isNavbar
-                  ? 'text-[#1b261b] hover:text-[#8bb56e]'
-                  : 'text-white hover:text-[#8bb56e]'
+                  ? 'text-[#1b261b] hover:text-[#4a7333]'
+                  : 'text-white hover:text-[#a8cf8a]'
               }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
             {cartCount > 0 ? (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#8bb56e] text-white text-[9px] font-mono font-bold flex items-center justify-center rounded-full px-1 border border-white">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#8bb56e] text-white text-[11px] font-mono font-bold flex items-center justify-center rounded-full px-1 border border-white">
                 {cartCount}
               </span>
-            ) : (
-              <span className="absolute top-0 right-0 w-2 h-2 bg-[#8bb56e] rounded-full animate-ping" />
-            )}
+            ) : null}
           </Link>
 
-          {/* Menu toggle (tablet  phones use the left-side toggle) */}
+          {/* Menu toggle (tablet — phones use the left-side toggle) */}
           <button
             onClick={() => setMenuOpen((open) => !open)}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
-            className={`hidden md:block lg:hidden p-2 transition-colors cursor-pointer ${isNavbar ? 'text-[#1b261b] hover:text-[#8bb56e]' : 'text-white hover:text-[#8bb56e]'
+            className={`hidden md:block lg:hidden p-2 transition-colors cursor-pointer ${isNavbar ? 'text-[#1b261b] hover:text-[#4a7333]' : 'text-white hover:text-[#a8cf8a]'
               }`}
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -196,7 +194,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
             <div className="hidden md:flex items-center gap-3">
               <Link
                 to="/account"
-                className="text-xs font-mono uppercase tracking-wider text-[#4a584a] hover:text-[#8bb56e] transition-colors max-w-[120px] truncate"
+                className="text-xs font-mono uppercase tracking-wider text-[#4a584a] hover:text-[#4a7333] transition-colors max-w-[120px] truncate"
               >
                 {user.name.split(' ')[0]}
               </Link>
@@ -241,7 +239,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 last:border-0 transition-colors ${active ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                    className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 last:border-0 transition-colors ${active ? 'text-[#4a7333] font-bold' : 'text-[#1b261b] hover:text-[#4a7333]'
                       }`}
                   >
                     {link.label}
@@ -250,7 +248,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
               })}
               <Link
                 to="/wishlist"
-                className={`md:hidden py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'wishlist' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                className={`md:hidden py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'wishlist' ? 'text-[#4a7333] font-bold' : 'text-[#1b261b] hover:text-[#4a7333]'
                   }`}
               >
                 Wishlist
@@ -261,7 +259,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
                     setMenuOpen(false)
                     openLogin()
                   }}
-                  className="md:hidden py-3.5 text-left text-xs font-mono tracking-widest uppercase text-[#1b261b] hover:text-[#8bb56e] transition-colors cursor-pointer"
+                  className="md:hidden py-3.5 text-left text-xs font-mono tracking-widest uppercase text-[#1b261b] hover:text-[#4a7333] transition-colors cursor-pointer"
                 >
                   Login
                 </button>
@@ -269,7 +267,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
               {user && (
                 <Link
                   to="/account"
-                  className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'account' ? 'text-[#8bb56e] font-bold' : 'text-[#1b261b] hover:text-[#8bb56e]'
+                  className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'account' ? 'text-[#4a7333] font-bold' : 'text-[#1b261b] hover:text-[#4a7333]'
                     }`}
                 >
                   My Account

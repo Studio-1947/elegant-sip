@@ -10,7 +10,7 @@ const PROMISES = [
   {
     title: 'Single-Origin',
     eyebrow: 'Darjeeling Sourced',
-    text: "Every batch comes from identified gardens in the Darjeeling hills  not blended, not anonymous. You'll know exactly where your tea is from.",
+    text: "Every batch comes from identified gardens in the Darjeeling hills — not blended, not anonymous. You'll know exactly where your tea is from.",
   },
   {
     title: 'Freshly Packed',
@@ -28,10 +28,10 @@ export default function StatsGridSection() {
       <div className="lg:hidden max-w-2xl">
         {PROMISES.map((item, i) => (
           <div key={item.title} className="flex gap-6 py-7 border-b border-[#1b261b]/10 last:border-b-0">
-            <span className="text-[#8bb56e] font-mono font-bold text-sm pt-0.5">0{i + 1}</span>
+            <span className="text-[#4a7333] font-mono font-bold text-sm pt-0.5">0{i + 1}</span>
             <div>
               <BlurText as="h4" text={item.title} delay={80} className="text-[#1b261b] text-lg font-bold tracking-tight mb-1" />
-              <p className="text-[#8bb56e] text-[10px] font-mono font-bold tracking-[0.2em] uppercase mb-3">{item.eyebrow}</p>
+              <p className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.2em] uppercase mb-3">{item.eyebrow}</p>
               <p className="text-sm text-[#4a584a] leading-relaxed">{item.text}</p>
             </div>
           </div>

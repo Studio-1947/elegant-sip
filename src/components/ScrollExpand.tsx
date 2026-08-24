@@ -18,7 +18,7 @@ interface ScrollExpandProps {
   useWindowScroll?: boolean
   /** Additional zoom scale applied to the media on expand (default 1.0) */
   mediaZoom?: number
-  /** Fixed height override for the outer wrapper (e.g. "520px")  overrides full-screen mode */
+  /** Fixed height override for the outer wrapper (e.g. "520px") — overrides full-screen mode */
   height?: string
   /** Children rendered beneath the expanded image */
   children?: ReactNode
@@ -28,7 +28,7 @@ interface ScrollExpandProps {
  * ScrollExpand
  *
  * Starts as a rounded card. As the user scrolls through the section,
- * the card expands  border-radius collapses, scale grows  until
+ * the card expands — border-radius collapses, scale grows — until
  * the image fills the entire viewport. After full expansion, the
  * children content is revealed with a fade-up.
  */
@@ -70,7 +70,7 @@ export default function ScrollExpand({
           pin: !isFixed,
           anticipatePin: 1,
           // Let child section reveals know the content is actually on screen.
-          // Threshold on timeline progress  reading computed styles here would
+          // Threshold on timeline progress — reading computed styles here would
           // force a style recalc on every scroll frame. 0.75 matches the point
           // where the children tween passes ~50% opacity; markContentRevealed
           // latches after the first call.
@@ -178,9 +178,12 @@ export default function ScrollExpand({
               <p className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase mb-2">
                 Elegant Sip
               </p>
-              <h2 className="text-white text-4xl md:text-5xl font-bold uppercase tracking-tight leading-[1.05]">
+              {/* The desktop home's real <h1>. It scrolls away with the hero,
+                  but the document must still have exactly one top-level
+                  heading — the mobile home has always had one. */}
+              <h1 className="text-white text-4xl md:text-5xl font-bold uppercase tracking-tight leading-[1.05]">
                 {title}
-              </h2>
+              </h1>
             </div>
           )}
         </div>
@@ -191,7 +194,7 @@ export default function ScrollExpand({
             ref={hintRef}
             className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           >
-            <span className="text-white/30 text-[10px] font-mono tracking-[0.3em] uppercase">
+            <span className="text-white/30 text-[11px] font-mono tracking-[0.3em] uppercase">
               Scroll
             </span>
             <div className="w-[1px] h-8 bg-gradient-to-b from-white/30 to-transparent animate-pulse" />

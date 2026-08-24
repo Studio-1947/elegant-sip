@@ -9,10 +9,10 @@ export default function PhilosophyQuoteSection() {
         <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z" />
       </svg>
       <blockquote className="text-[#2b3a2b] text-xl md:text-2xl lg:text-3xl font-light italic leading-relaxed mb-8">
-        Tea is the elixir of life  a bridge between the hurried world
+        Tea is the elixir of life — a bridge between the hurried world
         and the stillness within.
       </blockquote>
-      <cite className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase not-italic">
+      <cite className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase not-italic">
         The Elegant Sip Manifesto
       </cite>
     </section>

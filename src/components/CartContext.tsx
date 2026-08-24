@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo, useRef, ReactNode } from 'react'
 import { getVariant, getProduct } from '../data/products'
 
 export interface CartItem {
@@ -7,7 +7,7 @@ export interface CartItem {
   /** Variant size label, e.g. "Classic · 100 g" */
   size: string
   name: string
-  /** Unit price for this variant  always re-validated against the catalog. */
+  /** Unit price for this variant — always re-validated against the catalog. */
   price: number
   imageSrc: string
   quantity: number
@@ -34,19 +34,38 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
-const COUPONS: Record<string, number> = {
+/* Null-prototype so inherited keys ("toString", "constructor") can never be
+   mistaken for a valid coupon. */
+const COUPONS: Record<string, number> = Object.assign(Object.create(null), {
   SIP10: 0.1,
   WELCOME10: 0.1,
-}
+})
 
-function safeParse<T>(raw: string | null, fallback: T): T {
+const couponRate = (code: string | null): number =>
+  code && Object.prototype.hasOwnProperty.call(COUPONS, code) ? COUPONS[code] : 0
+
+/**
+ * Parse a localStorage value, falling back whenever it is absent, malformed,
+ * or the wrong *shape*. `JSON.parse` succeeding is not enough — localStorage is
+ * user-editable, so `{"a":1}` where an array is expected must not reach React.
+ */
+function safeParse<T>(raw: string | null, fallback: T, isValid: (value: unknown) => boolean): T {
   if (!raw) return fallback
   try {
-    return JSON.parse(raw) as T
+    const parsed: unknown = JSON.parse(raw)
+    return isValid(parsed) ? (parsed as T) : fallback
   } catch {
     return fallback
   }
 }
+
+const isArrayOfStrings = (value: unknown): boolean =>
+  Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+
+const isObjectArray = (value: unknown): boolean =>
+  Array.isArray(value) && value.every((entry) => typeof entry === 'object' && entry !== null)
+
+const isCouponValue = (value: unknown): boolean => value === null || typeof value === 'string'
 
 /**
  * Re-validate a stored cart against the catalog: drop items whose product or
@@ -55,13 +74,19 @@ function safeParse<T>(raw: string | null, fallback: T): T {
  * items to the default variant, and clamp quantities to available stock.
  */
 function revalidateCart(stored: Partial<CartItem>[]): CartItem[] {
+  if (!Array.isArray(stored)) return []
   const seen = new Set<string>()
   const valid: CartItem[] = []
   for (const item of stored) {
-    if (!item.id) continue
+    if (!item || typeof item !== 'object' || !item.id) continue
     const product = getProduct(item.id)
     if (!product) continue
-    const variant = (item.size && getVariant(item.id, item.size)) || product.variants[0]
+    // Migrating a pre-variant line: prefer any tier that is actually in stock
+    // rather than variants[0], which may be the one sold-out tier.
+    const variant =
+      (item.size && getVariant(item.id, item.size)) ||
+      product.variants.find((v) => v.stock > 0) ||
+      product.variants[0]
     if (!variant || variant.stock <= 0) continue
     const key = `${item.id}__${variant.size}`
     if (seen.has(key)) continue
@@ -81,26 +106,29 @@ function revalidateCart(stored: Partial<CartItem>[]): CartItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>(() =>
-    revalidateCart(safeParse<Partial<CartItem>[]>(localStorage.getItem('elegant_sip_cart'), [])),
+    revalidateCart(
+      safeParse<Partial<CartItem>[]>(localStorage.getItem('elegant_sip_cart'), [], isObjectArray),
+    ),
   )
   const [wishlist, setWishlist] = useState<string[]>(() =>
-    safeParse<string[]>(localStorage.getItem('elegant_sip_wishlist'), []),
+    safeParse<string[]>(localStorage.getItem('elegant_sip_wishlist'), [], isArrayOfStrings),
   )
   const [coupon, setCoupon] = useState<string | null>(() =>
-    safeParse<string | null>(localStorage.getItem('elegant_sip_coupon'), null),
+    safeParse<string | null>(localStorage.getItem('elegant_sip_coupon'), null, isCouponValue),
   )
 
+  // Skip the write on mount: hydrating state and immediately persisting it back
+  // is three redundant localStorage writes on every page load.
+  const hydrated = useRef(false)
   useEffect(() => {
+    if (!hydrated.current) {
+      hydrated.current = true
+      return
+    }
     localStorage.setItem('elegant_sip_cart', JSON.stringify(cart))
-  }, [cart])
-
-  useEffect(() => {
     localStorage.setItem('elegant_sip_wishlist', JSON.stringify(wishlist))
-  }, [wishlist])
-
-  useEffect(() => {
     localStorage.setItem('elegant_sip_coupon', JSON.stringify(coupon))
-  }, [coupon])
+  }, [cart, wishlist, coupon])
 
   const stockFor = (id: string, size: string) => getVariant(id, size)?.stock ?? 0
 
@@ -121,15 +149,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const updateQuantity = (id: string, size: string, quantity: number) => {
-    if (quantity <= 0) {
+    const stock = stockFor(id, size)
+    // Clamp first, then decide: clamping after the ≤0 check could strand a line
+    // at quantity 0 when the variant has gone out of stock.
+    const next = Math.min(Math.floor(quantity), stock)
+    if (next <= 0) {
       removeFromCart(id, size)
       return
     }
-    const stock = stockFor(id, size)
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === id && item.size === size ? { ...item, quantity: Math.min(quantity, stock) } : item
-      )
+      prevCart.map((item) => (item.id === id && item.size === size ? { ...item, quantity: next } : item)),
     )
   }
 
@@ -150,7 +179,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const applyCoupon = (code: string): boolean => {
     const normalized = code.trim().toUpperCase()
-    if (COUPONS[normalized] !== undefined) {
+    if (couponRate(normalized) > 0) {
       setCoupon(normalized)
       return true
     }
@@ -161,31 +190,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0)
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
-  // Whole-rupee discount  INR retail carries no paise.
-  const discount = coupon && COUPONS[coupon] ? Math.round(cartTotal * COUPONS[coupon]) : 0
+  // Whole-rupee discount — INR retail carries no paise.
+  const discount = Math.round(cartTotal * couponRate(coupon))
 
-  return (
-    <CartContext.Provider
-      value={{
-        cart,
-        addToCart,
-        updateQuantity,
-        removeFromCart,
-        clearCart,
-        cartCount,
-        cartTotal,
-        wishlist,
-        toggleWishlist,
-        isWishlisted,
-        coupon,
-        applyCoupon,
-        removeCoupon,
-        discount,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+  // Memoised so consumers don't re-render on every provider render.
+  const value = useMemo(
+    () => ({
+      cart,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      clearCart,
+      cartCount,
+      cartTotal,
+      wishlist,
+      toggleWishlist,
+      isWishlisted,
+      coupon,
+      applyCoupon,
+      removeCoupon,
+      discount,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cart, cartCount, cartTotal, wishlist, coupon, discount],
   )
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }
 
 export function useCart() {

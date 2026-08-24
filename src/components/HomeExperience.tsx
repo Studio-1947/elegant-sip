@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
-import HeroScrollSection from './HeroScrollSection'
-import MobileHome from './MobileHome'
+// Split so a phone never downloads the desktop scroll experience and vice versa.
+const HeroScrollSection = lazy(() => import('./HeroScrollSection'))
+const MobileHome = lazy(() => import('./MobileHome'))
 import { useUi } from './UiContext'
 import { useIsCompact } from '../lib/useMediaQuery'
 import { reportVideoProgress, markVideoFailed } from '../lib/videoLoading'
@@ -14,7 +15,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger)
 interface HomeExperienceProps {
   /** Called with scrub progress 0..1 so the app shell can style the header. */
   onProgress: (progress: number) => void
-  /** False while the loading overlay is up  gates the parallax tween. */
+  /** False while the loading overlay is up — gates the parallax tween. */
   ready: boolean
 }
 
@@ -47,7 +48,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
             onProgress(self.progress)
             const content = self.progress > 0.95
             setIsContent((c) => (c === content ? c : content))
-            // Progress bar is driven directly  no React render per frame.
+            // Progress bar is driven directly — no React render per frame.
             if (progressBarRef.current) {
               progressBarRef.current.style.width = `${Math.round(self.progress * 100)}%`
             }
@@ -56,7 +57,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
       })
 
       // Scrub video currentTime from 0 → duration based on scroll progress.
-      // Seeks go through a proxy and are clamped to the buffered range  an
+      // Seeks go through a proxy and are clamped to the buffered range — an
       // unbuffered seek aborts the in-flight range request, and on slow
       // networks that becomes a storm of canceled requests and a frozen frame.
       const proxy = { t: 0 }
@@ -64,7 +65,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         if (video.buffered.length === 0) return
         const bufferedEnd = video.buffered.end(video.buffered.length - 1) - 0.05
         const t = Math.min(proxy.t, Math.max(0, bufferedEnd))
-        // The source is ~24fps (one frame ≈ 0.042s)  seeking finer than a
+        // The source is ~24fps (one frame ≈ 0.042s) — seeking finer than a
         // frame is pure wasted decode.
         if (Math.abs(video.currentTime - t) > 0.035) video.currentTime = t
       }
@@ -91,7 +92,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         addScrubAnimation()
       }
 
-      // iOS Safari ignores preload="auto" until playback begins  prime the
+      // iOS Safari ignores preload="auto" until playback begins — prime the
       // buffer with a muted play/pause (allowed without a user gesture) so
       // the download starts immediately.
       video.play()?.then(() => video.pause()).catch(() => { })
@@ -149,9 +150,13 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
   }
 
   // Phones and portrait tablets get the compact homepage (portrait video hero,
-  // linear flow)  the landscape scrub + pinned runway is a desktop experience.
+  // linear flow) — the landscape scrub + pinned runway is a desktop experience.
   if (isCompact) {
-    return <MobileHome />
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-[#1b261b]" />}>
+        <MobileHome />
+      </Suspense>
+    )
   }
 
   return (
@@ -176,7 +181,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
       {!isContent && (
         <button
           onClick={handleSkipIntro}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 rounded-full bg-[#0c130c]/60 border border-white/40 text-white hover:bg-[#0c130c]/80 hover:border-white/70 backdrop-blur-sm text-[10px] font-mono font-bold tracking-widest uppercase shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all cursor-pointer"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 rounded-full bg-[#0c130c]/60 border border-white/40 text-white hover:bg-[#0c130c]/80 hover:border-white/70 backdrop-blur-sm text-[11px] font-mono font-bold tracking-widest uppercase shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all cursor-pointer"
         >
           Skip Intro →
         </button>
@@ -189,7 +194,9 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
 
       {/* Content (revealed after the video runway) */}
       <div className="relative z-20">
-        <HeroScrollSection />
+        <Suspense fallback={null}>
+          <HeroScrollSection />
+        </Suspense>
       </div>
 
       {/* Floating Tea Quiz Card (visible once scrolled into content) */}
@@ -204,12 +211,12 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
               </div>
               <div>
                 <h4 className="text-xs font-mono font-bold tracking-wide uppercase text-[#8bb56e]">Taste Matcher</h4>
-                <p className="text-[10px] text-[#4a584a] mt-0.5 leading-normal">Find the ideal tea flavor profile for your palate.</p>
+                <p className="text-[11px] text-[#4a584a] mt-0.5 leading-normal">Find the ideal tea flavor profile for your palate.</p>
               </div>
             </div>
             <button
               onClick={openQuiz}
-              className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-[10px] font-mono tracking-wider font-bold py-2 rounded-lg transition-colors cursor-pointer text-center uppercase"
+              className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-[11px] font-mono tracking-wider font-bold py-2 rounded-lg transition-colors cursor-pointer text-center uppercase"
             >
               Start Discovery
             </button>

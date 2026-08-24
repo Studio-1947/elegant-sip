@@ -1,36 +1,62 @@
 import { useState } from 'react'
 import { getArticle, JOURNAL } from '../data/products'
 import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
+import { absoluteUrl } from '../lib/site'
+import { ROUTE_META, articleRouteMeta } from '../lib/seoRoutes'
 import BlurText from './BlurText'
 
 export function JournalArticlePage({ id }: { id?: string }) {
   const article = getArticle(id)
 
   useDocumentMeta(
-    article ? `${article.title}  The Elegant Sip Journal` : 'Journal  Elegant Sip',
+    article ? articleRouteMeta(article.id)!.title : 'Article not found | Elegant Sip',
     article ? article.excerpt : undefined,
+    article ? { canonical: `/journal/${article.id}`, image: article.imageSrc } : { noindex: true },
   )
   useJsonLd(
     article
       ? {
         '@context': 'https://schema.org',
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline: article.title,
         description: article.excerpt,
-        image: article.imageSrc,
-        datePublished: article.date,
-        author: { '@type': 'Organization', name: article.author },
-        publisher: { '@type': 'Organization', name: 'Elegant Sip' },
+        image: [absoluteUrl(article.imageSrc)],
+        // ISO 8601 — "March 12, 2026" is not a valid schema.org date.
+        datePublished: new Date(article.date).toISOString().slice(0, 10),
+        dateModified: new Date(article.date).toISOString().slice(0, 10),
+        wordCount: article.body.join(' ').split(/\s+/).length,
         articleSection: article.category,
+        inLanguage: 'en-IN',
+        author: { '@type': 'Organization', name: article.author, url: absoluteUrl('/about') },
+        publisher: { '@id': 'https://elegantsip.com/#organization' },
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': absoluteUrl(`/journal/${article.id}`),
+        },
       }
       : null,
+  )
+
+  useJsonLd(
+    article
+      ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+          { '@type': 'ListItem', position: 2, name: 'Journal', item: absoluteUrl('/journal') },
+          { '@type': 'ListItem', position: 3, name: article.title, item: absoluteUrl(`/journal/${article.id}`) },
+        ],
+      }
+      : null,
+    'breadcrumb-jsonld',
   )
 
   if (!article) {
     return (
       <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6 text-center">
         <h1 className="text-3xl font-bold mb-4">Article not found</h1>
-        <Link to="/journal" className="text-xs font-mono tracking-widest uppercase text-[#8bb56e] hover:text-[#1b261b] transition-colors">
+        <Link to="/journal" className="text-xs font-mono tracking-widest uppercase text-[#4a7333] hover:text-[#1b261b] transition-colors">
           ← Back to the Journal
         </Link>
       </div>
@@ -42,13 +68,13 @@ export function JournalArticlePage({ id }: { id?: string }) {
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-32 pb-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-3xl mx-auto">
-        <Link to="/journal" className="text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#8bb56e] transition-colors mb-8 inline-block">
+        <Link to="/journal" className="text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mb-8 inline-block">
           ← Back to the Journal
         </Link>
 
-        <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">{article.category}</span>
+        <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">{article.category}</span>
         <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-tight leading-[1.1] mb-6">{article.title}</h1>
-        <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-[#4a584a]/70 uppercase tracking-wider mb-10">
+        <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-[#4a584a] uppercase tracking-wider mb-10">
           <span>{article.author}</span>
           <span className="w-1 h-1 rounded-full bg-[#8bb56e]" />
           <span>{article.date}</span>
@@ -72,9 +98,9 @@ export function JournalArticlePage({ id }: { id?: string }) {
                 <Link key={a.id} to={`/journal/${a.id}`} className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-all hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
                   <img src={a.imageSrc} alt={a.imageAlt} loading="lazy" className="w-full aspect-[16/9] object-cover" />
                   <div className="p-5">
-                    <span className="text-[10px] font-mono tracking-widest uppercase text-[#8bb56e]">{a.category}</span>
-                    <h3 className="font-bold text-sm mt-2 group-hover:text-[#8bb56e] transition-colors">{a.title}</h3>
-                    <p className="text-[11px] text-[#4a584a]/70 mt-2">{a.readTime}</p>
+                    <span className="text-[11px] font-mono tracking-widest uppercase text-[#4a7333]">{a.category}</span>
+                    <h3 className="font-bold text-sm mt-2 group-hover:text-[#4a7333] transition-colors">{a.title}</h3>
+                    <p className="text-[11px] text-[#4a584a] mt-2">{a.readTime}</p>
                   </div>
                 </Link>
               ))}
@@ -88,8 +114,32 @@ export function JournalArticlePage({ id }: { id?: string }) {
 
 export default function JournalPage() {
   useDocumentMeta(
-    'The Journal  Elegant Sip',
-    'Stories from the gardens, brewing guides, and the craft behind single-origin tea.',
+    ROUTE_META['/journal'].title,
+    ROUTE_META['/journal'].description,
+    { canonical: '/journal' },
+  )
+
+  // Blog schema so the index is understood as a publication, not a stray list.
+  useJsonLd(
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Blog',
+      name: 'The Elegant Sip Journal',
+      description: ROUTE_META['/journal'].description,
+      url: absoluteUrl('/journal'),
+      inLanguage: 'en-IN',
+      publisher: { '@id': 'https://elegantsip.com/#organization' },
+      blogPost: JOURNAL.map((a) => ({
+        '@type': 'BlogPosting',
+        headline: a.title,
+        description: a.excerpt,
+        url: absoluteUrl(`/journal/${a.id}`),
+        image: absoluteUrl(a.imageSrc),
+        datePublished: new Date(a.date).toISOString().slice(0, 10),
+        author: { '@type': 'Organization', name: a.author },
+      })),
+    },
+    'blog-jsonld',
   )
 
   const categories = ['All', ...Array.from(new Set(JOURNAL.map((a) => a.category)))]
@@ -99,13 +149,13 @@ export default function JournalPage() {
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-32 pb-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-5xl mx-auto">
-        <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">The Journal</span>
+        <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">The Journal</span>
         <h1 className="text-4xl md:text-6xl font-bold uppercase tracking-tight leading-[1.05] mb-6">
           <BlurText as="span" inline text="Notes from " delay={120} />
-          <BlurText as="span" inline text="the Garden" delay={120} className="text-[#8bb56e]" />
+          <BlurText as="span" inline text="the Garden" delay={120} className="text-[#4a7333]" />
         </h1>
         <p className="text-[#4a584a] text-sm md:text-base max-w-2xl leading-relaxed mb-10">
-          Craft, sourcing, and the ritual of brewing  written by the people who buy, taste, and pack every lot.
+          Craft, sourcing, and the ritual of brewing — written by the people who buy, taste, and pack every lot.
         </p>
 
         {/* Category filter */}
@@ -117,7 +167,7 @@ export default function JournalPage() {
               aria-pressed={category === c}
               className={`text-xs font-bold tracking-wide py-2 px-5 rounded-full border transition-colors cursor-pointer ${category === c
                   ? 'bg-[#1b261b] border-[#1b261b] text-white'
-                  : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#8bb56e]'
+                  : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#4a7333]'
                 }`}
             >
               {c}
@@ -132,14 +182,14 @@ export default function JournalPage() {
                 <img src={article.imageSrc} alt={article.imageAlt} loading="lazy" className="w-full aspect-[16/9] object-cover transition-transform duration-700 group-hover:scale-105" />
               </div>
               <div className="p-6 flex flex-col flex-grow">
-                <div className="flex items-center gap-3 text-[10px] font-mono text-[#4a584a]/70 uppercase tracking-wider mb-3">
-                  <span className="text-[#8bb56e]">{article.category}</span>
+                <div className="flex items-center gap-3 text-[11px] font-mono text-[#4a584a] uppercase tracking-wider mb-3">
+                  <span className="text-[#4a7333]">{article.category}</span>
                   <span className="w-1 h-1 rounded-full bg-[#8bb56e]/40" />
                   <span>{article.readTime}</span>
                 </div>
-                <h2 className="font-bold text-lg tracking-tight leading-snug mb-3 group-hover:text-[#8bb56e] transition-colors">{article.title}</h2>
+                <h2 className="font-bold text-lg tracking-tight leading-snug mb-3 group-hover:text-[#4a7333] transition-colors">{article.title}</h2>
                 <p className="text-xs text-[#4a584a] leading-relaxed flex-grow">{article.excerpt}</p>
-                <span className="text-[10px] font-mono tracking-widest uppercase text-[#8bb56e] mt-5">Read →</span>
+                <span className="text-[11px] font-mono tracking-widest uppercase text-[#4a7333] mt-5">Read →</span>
               </div>
             </Link>
           ))}

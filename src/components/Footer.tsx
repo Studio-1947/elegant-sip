@@ -12,7 +12,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <span className="text-white md:text-[#1b261b] text-lg font-bold uppercase tracking-tight block mb-4">
-              Elegant <span className="text-[#8bb56e]">Sip</span>
+              Elegant <span className="text-[#a8cf8a] md:text-[#4a7333]">Sip</span>
             </span>
             <p className="text-xs text-white/60 md:text-[#4a584a] leading-relaxed">
               The journey of tea, from mountain mist to golden cup. Single-origin leaves,
@@ -22,12 +22,12 @@ export default function Footer() {
 
           {/* Shop */}
           <nav aria-label="Shop links">
-            <h3 className="text-[10px] font-mono tracking-[0.3em] uppercase text-[#8bb56e] mb-5">Shop</h3>
+            <h3 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Shop</h3>
             <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
-              <li><Link to="/shop" className="hover:text-[#8bb56e] transition-colors">The Collection</Link></li>
-              <li><Link to="/wishlist" className="hover:text-[#8bb56e] transition-colors">Wishlist</Link></li>
+              <li><Link to="/shop" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">The Collection</Link></li>
+              <li><Link to="/wishlist" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Wishlist</Link></li>
               <li>
-                <button onClick={openQuiz} className="hover:text-[#8bb56e] transition-colors cursor-pointer">
+                <button onClick={openQuiz} className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors cursor-pointer">
                   Taste Matcher Quiz
                 </button>
               </li>
@@ -36,24 +36,24 @@ export default function Footer() {
 
           {/* Learn */}
           <nav aria-label="Learn links">
-            <h3 className="text-[10px] font-mono tracking-[0.3em] uppercase text-[#8bb56e] mb-5">Learn</h3>
+            <h3 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Learn</h3>
             <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
-              <li><Link to="/about" className="hover:text-[#8bb56e] transition-colors">Our Story</Link></li>
-              <li><Link to="/gardens" className="hover:text-[#8bb56e] transition-colors">The Gardens</Link></li>
-              <li><Link to="/journal" className="hover:text-[#8bb56e] transition-colors">Journal</Link></li>
-              <li><Link to="/brewing" className="hover:text-[#8bb56e] transition-colors">Brewing Guide</Link></li>
-              <li><Link to="/faq" className="hover:text-[#8bb56e] transition-colors">FAQ</Link></li>
+              <li><Link to="/about" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Our Story</Link></li>
+              <li><Link to="/gardens" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">The Gardens</Link></li>
+              <li><Link to="/journal" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Journal</Link></li>
+              <li><Link to="/brewing" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Brewing Guide</Link></li>
+              <li><Link to="/faq" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">FAQ</Link></li>
             </ul>
           </nav>
 
           {/* Support */}
           <nav aria-label="Support links" className="col-span-2 md:col-span-1">
-            <h3 className="text-[10px] font-mono tracking-[0.3em] uppercase text-[#8bb56e] mb-5">Support</h3>
+            <h3 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Support</h3>
             <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
-              <li><Link to="/contact" className="hover:text-[#8bb56e] transition-colors">Contact Us</Link></li>
-              <li><Link to="/shipping" className="hover:text-[#8bb56e] transition-colors">Shipping & Returns</Link></li>
-              <li><Link to="/account" className="hover:text-[#8bb56e] transition-colors">My Account</Link></li>
-              <li><a href="mailto:elegantsipdarjeeling@gmail.com" className="hover:text-[#8bb56e] transition-colors">elegantsipdarjeeling@gmail.com</a></li>
+              <li><Link to="/contact" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Contact Us</Link></li>
+              <li><Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping & Returns</Link></li>
+              <li><Link to="/account" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">My Account</Link></li>
+              <li><a href="mailto:elegantsipdarjeeling@gmail.com" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">elegantsipdarjeeling@gmail.com</a></li>
             </ul>
           </nav>
         </div>
@@ -83,22 +83,27 @@ export default function Footer() {
         {/* Bottom row */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-t border-white/10 md:border-[#1b261b]/10 pt-8 pb-14 md:pb-0">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
-            <p className="text-white/40 md:text-[#4a584a]/50 text-[11px] font-mono tracking-wider">
+            <p className="text-white/40 md:text-[#4a584a] text-[11px] font-mono tracking-wider">
               © {year} Elegant Sip. All rights reserved. Est. 2024.
             </p>
-            <nav aria-label="Legal links" className="flex items-center gap-4 text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]/70">
-              <Link to="/privacy" className="hover:text-[#8bb56e] transition-colors">Privacy</Link>
-              <Link to="/terms" className="hover:text-[#8bb56e] transition-colors">Terms</Link>
-              <Link to="/shipping" className="hover:text-[#8bb56e] transition-colors">Shipping</Link>
+            <nav aria-label="Legal links" className="flex items-center gap-4 text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
+              <Link to="/privacy" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Terms</Link>
+              <Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping</Link>
             </nav>
           </div>
-          <div className="hidden md:flex items-center gap-2">
-            {['VISA', 'MC', 'AMEX', 'PayPal', 'Apple Pay'].map((m) => (
-              <span key={m} className="text-[9px] font-mono uppercase tracking-wider border border-[#1b261b]/10 rounded px-2 py-1 text-[#4a584a]/60 bg-white">
-                {m}
-              </span>
-            ))}
-          </div>
+          {/* No payment-network badges: checkout is a demo and processes no
+              card, so displaying VISA/PayPal marks would claim a capability
+              the site does not have. */}
+          <p className="text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
+            To place a real order, message us on{' '}
+            <a
+              href="https://wa.me/917583995294"
+              className="underline underline-offset-2 hover:text-[#a8cf8a] md:hover:text-[#5f8f42] transition-colors"
+            >
+              WhatsApp
+            </a>
+          </p>
         </div>
       </div>
     </footer>

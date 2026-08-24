@@ -89,7 +89,7 @@ export default function SelectDropdown({ value, options, onChange, ariaLabel, cl
         aria-label={ariaLabel}
         aria-controls={open ? listId : undefined}
         aria-activedescendant={open && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
-        className="w-full flex items-center justify-between gap-3 text-xs font-bold text-[#1b261b] bg-white border border-[#1b261b]/10 rounded-full sm:rounded-lg py-3 sm:py-2.5 px-5 sm:px-4 cursor-pointer focus:outline-none focus:border-[#8bb56e] transition-colors"
+        className="w-full flex items-center justify-between gap-3 text-xs font-bold text-[#1b261b] bg-white border border-[#1b261b]/10 rounded-full sm:rounded-lg py-3 sm:py-2.5 px-5 sm:px-4 cursor-pointer focus:border-[#8bb56e] transition-colors"
       >
         <span className="whitespace-nowrap">{options[selectedIndex]?.label ?? ariaLabel}</span>
         <svg
@@ -121,11 +121,14 @@ export default function SelectDropdown({ value, options, onChange, ariaLabel, cl
                 type="button"
                 role="option"
                 aria-selected={selected}
+                // Keyboard interaction is driven by the trigger via
+                // aria-activedescendant; these must not be tab stops.
+                tabIndex={-1}
                 onClick={() => choose(option.value)}
                 onPointerEnter={() => setActiveIndex(i)}
                 className={`w-full flex items-center justify-between gap-3 text-left text-xs px-5 sm:px-4 py-2.5 cursor-pointer transition-colors ${
                   active ? 'bg-[#8bb56e]/10' : ''
-                } ${selected ? 'font-bold text-[#8bb56e]' : 'font-medium text-[#1b261b]'}`}
+                } ${selected ? 'font-bold text-[#4a7333]' : 'font-medium text-[#1b261b]'}`}
               >
                 {option.label}
                 {selected && (

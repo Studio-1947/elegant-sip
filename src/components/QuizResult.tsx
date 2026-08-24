@@ -35,7 +35,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
     <div className="flex flex-col py-2">
       {/* Header */}
       <div className="mb-6">
-        <span className="qz-rise block text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase mb-1">Your Tea Match</span>
+        <span className="qz-rise block text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase mb-1">Your Tea Match</span>
         <h2 className="qz-rise text-3xl md:text-4xl font-bold font-sans tracking-tight text-[#1b261b]" style={delay(0.08)}>
           {match.name}
         </h2>
@@ -59,7 +59,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
           <Link
             to={`/product/${match.id}`}
             onClick={onClose}
-            className="qz-rise text-xs font-mono tracking-widest uppercase text-[#8bb56e] hover:text-[#1b261b] transition-colors mt-4"
+            className="qz-rise text-xs font-mono tracking-widest uppercase text-[#4a7333] hover:text-[#1b261b] transition-colors mt-4"
             style={delay(0.38)}
           >
             View full details →
@@ -70,10 +70,10 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
         <div className="w-full md:w-1/2 flex flex-col self-stretch gap-4">
           {match.tastingNotes && match.tastingNotes.length > 0 && (
             <div className="qz-rise bg-white border border-[#1b261b]/10 p-4 rounded-2xl" style={delay(0.2)}>
-              <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-1.5 mb-3">Tasting Notes</span>
+              <span className="text-[#4a7333] text-[11px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-1.5 mb-3">Tasting Notes</span>
               <div className="flex flex-wrap gap-1.5">
                 {match.tastingNotes.map((note, i) => (
-                  <span key={note} className="qz-pop border border-[#1b261b]/15 rounded-full px-3 py-1 text-[10px] text-[#4a584a]" style={delay(0.35 + i * 0.08)}>
+                  <span key={note} className="qz-pop border border-[#1b261b]/15 rounded-full px-3 py-1 text-[11px] text-[#4a584a]" style={delay(0.35 + i * 0.08)}>
                     {note}
                   </span>
                 ))}
@@ -83,8 +83,8 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
 
           {match.bodyLevel !== undefined && (
             <div className="qz-rise bg-white border border-[#1b261b]/10 p-4 rounded-2xl" style={delay(0.28)}>
-              <span className="text-[#8bb56e] text-[10px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-1.5 mb-3">Cup Body</span>
-              <div className="flex justify-between text-[8px] font-mono tracking-[0.2em] uppercase text-[#4a584a]/60 mb-1.5">
+              <span className="text-[#4a7333] text-[11px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-1.5 mb-3">Cup Body</span>
+              <div className="flex justify-between text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-1.5">
                 <span>Light</span>
                 <span>Body</span>
                 <span>Full</span>
@@ -109,7 +109,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
               ).map(([value, label]) => (
                 <div key={label} className="text-center py-3 px-1">
                   <p className="text-xs font-bold text-[#1b261b] whitespace-nowrap">{value}</p>
-                  <p className="text-[8px] font-mono tracking-[0.2em] uppercase text-[#4a584a]/60 mt-0.5">{label}</p>
+                  <p className="text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mt-0.5">{label}</p>
                 </div>
               ))}
             </div>

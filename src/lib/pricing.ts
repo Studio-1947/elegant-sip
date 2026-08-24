@@ -1,5 +1,5 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Order pricing  single source of truth shared by the cart and checkout so
+ * Order pricing — single source of truth shared by the cart and checkout so
  * thresholds and rates can never drift between the two.
  * ──────────────────────────────────────────────────────────────────────────── */
 
@@ -42,7 +42,9 @@ export function getOrderPricing(
   const shippingFee =
     method.freeOver !== null && subtotalAfterDiscount >= method.freeOver ? 0 : method.fee
   // Whole-rupee amounts  INR retail carries no paise.
-  const estimatedTax = Math.round(subtotalAfterDiscount * TAX_RATE)
+  // GST applies to the shipping fee too — the summary row is labelled
+  // "GST (5%)", so taxing only the goods understated the total.
+  const estimatedTax = Math.round((subtotalAfterDiscount + shippingFee) * TAX_RATE)
   const finalTotal = subtotalAfterDiscount + shippingFee + estimatedTax
   const amountToFreeShipping =
     method.freeOver !== null ? Math.max(0, method.freeOver - subtotalAfterDiscount) : 0

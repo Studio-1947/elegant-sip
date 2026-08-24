@@ -10,7 +10,7 @@ const BADGES = [
   },
   {
     title: 'Freshness Guarantee',
-    text: 'Packed within weeks of harvest  dated on every pack.',
+    text: 'Packed within weeks of harvest — dated on every pack.',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -19,7 +19,7 @@ const BADGES = [
   },
   {
     title: 'The Sip Promise',
-    text: '30-day satisfaction guarantee  replace or refund, no questions.',
+    text: '30-day satisfaction guarantee — replace or refund, no questions.',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
@@ -50,7 +50,7 @@ export default function TrustBadgesSection() {
             key={badge.title}
             className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 flex flex-col items-start gap-4 transition-shadow hover:shadow-[0_8px_24px_rgba(27,38,27,0.05)]"
           >
-            <div className="bg-[#8bb56e]/10 p-3 rounded-xl text-[#8bb56e]">{badge.icon}</div>
+            <div className="bg-[#8bb56e]/10 p-3 rounded-xl text-[#4a7333]">{badge.icon}</div>
             <div>
               <h3 className="font-bold text-sm uppercase tracking-wide mb-1.5">{badge.title}</h3>
               <p className="text-[11px] text-[#4a584a] leading-relaxed">{badge.text}</p>

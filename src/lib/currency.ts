@@ -1,5 +1,5 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Currency formatting  the store prices everything in Indian Rupees.
+ * Currency formatting — the store prices everything in Indian Rupees.
  * All amounts are whole rupees (no paise), formatted with Indian digit
  * grouping, e.g. 2350 → "₹2,350" and 125000 → "₹1,25,000".
  * ──────────────────────────────────────────────────────────────────────────── */
@@ -10,4 +10,6 @@ const formatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 0,
 })
 
-export const formatINR = (amount: number): string => formatter.format(amount)
+export const formatINR = (amount: number): string =>
+  // A NaN or Infinity reaching the UI as "₹NaN" is worse than showing zero.
+  formatter.format(Number.isFinite(amount) ? amount : 0)

@@ -17,8 +17,8 @@ export default function StatsBarSection() {
             key={stat.label}
             className={`py-8 md:py-0 px-2 border-[#1b261b]/10 md:border-0 ${i % 2 === 0 ? 'border-r' : ''} ${i < 2 ? 'border-b' : ''}`}
           >
-            <p className="text-[#8bb56e] text-3xl md:text-4xl font-bold tracking-tight">{stat.value}</p>
-            <p className="text-[#4a584a]/60 text-[11px] font-mono tracking-widest uppercase mt-2">{stat.label}</p>
+            <p className="text-[#4a7333] text-3xl md:text-4xl font-bold tracking-tight">{stat.value}</p>
+            <p className="text-[#4a584a] text-[11px] font-mono tracking-widest uppercase mt-2">{stat.label}</p>
           </div>
         ))}
       </div>

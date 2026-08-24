@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from './AuthContext'
 import { track } from '../lib/analytics'
+import { useDialog } from '../lib/useDialog'
 
 interface LoginModalProps {
   isOpen: boolean
@@ -13,19 +14,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const closeRef = useRef<HTMLButtonElement>(null)
   const { login } = useAuth()
 
-  // ESC to close + initial focus
-  useEffect(() => {
-    if (!isOpen) return
-    closeRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [isOpen, onClose])
+  // Focus trap, focus restoration, Escape and scroll lock.
+  const dialogRef = useDialog(isOpen, onClose)
 
   if (!isOpen) return null
 
@@ -45,21 +37,22 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
     setError(null)
     login(mode === 'signup' ? name.trim() : email.split('@')[0].replace(/[._-]/g, ' '), email.trim())
-    track(mode === 'signup' ? 'signup' : 'login', { email: email.trim() })
+    // Never pass the email to analytics: the privacy policy states we don't,
+    // and the consent banner promises "no personal details, ever".
+    track(mode === 'signup' ? 'signup' : 'login', { method: 'email' })
     onClose()
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div ref={dialogRef} className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#060b08]/85 backdrop-blur-sm cursor-pointer" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={mode === 'signin' ? 'Sign in' : 'Create account'}
+        aria-labelledby="login-modal-title"
         className="relative bg-[#f9faf7] text-[#1b261b] rounded-3xl border border-[#1b261b]/10 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-10 z-10"
       >
         <button
-          ref={closeRef}
           onClick={onClose}
           className="absolute top-6 right-6 text-[#1b261b]/50 hover:text-[#1b261b] transition-colors cursor-pointer text-xl font-bold z-20"
           aria-label="Close"
@@ -67,10 +60,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           ✕
         </button>
 
-        <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">
+        <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">
           {mode === 'signin' ? 'Welcome Back' : 'Join the Circle'}
         </span>
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
+        <h2 id="login-modal-title" className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
           {mode === 'signin' ? 'Sign in to Elegant Sip' : 'Create your account'}
         </h2>
         <p className="text-xs text-[#4a584a] leading-relaxed mb-8">
@@ -101,7 +94,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {mode === 'signup' && (
             <div>
-              <label htmlFor="auth-name" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">
+              <label htmlFor="auth-name" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">
                 Full Name
               </label>
               <input
@@ -110,12 +103,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Avery Chen"
-                className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25"
+                className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25"
               />
             </div>
           )}
           <div>
-            <label htmlFor="auth-email" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">
+            <label htmlFor="auth-email" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">
               Email
             </label>
             <input
@@ -124,11 +117,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25"
+              className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25"
             />
           </div>
           <div>
-            <label htmlFor="auth-password" className="block text-[10px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">
+            <label htmlFor="auth-password" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">
               Password
             </label>
             <input
@@ -137,7 +130,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25"
+              className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25"
             />
           </div>
 
@@ -151,8 +144,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           </button>
         </form>
 
-        <p className="text-[10px] text-[#4a584a]/60 mt-6 leading-relaxed">
-          This is a demo experience  no real account is created. Account features will connect
+        <p className="text-[11px] text-[#4a584a] mt-6 leading-relaxed">
+          This is a demo experience — no real account is created. Account features will connect
           to the backend when it ships.
         </p>
       </div>

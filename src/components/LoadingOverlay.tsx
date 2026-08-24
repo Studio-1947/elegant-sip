@@ -15,9 +15,9 @@ export default function LoadingOverlay({ percentage, fading }: { percentage: num
       }`}
     >
       <div className="text-center space-y-6">
-        <h1 className="text-white text-5xl md:text-6xl font-extrabold tracking-tight uppercase font-sans animate-pulse">
+        <p className="text-white text-5xl md:text-6xl font-extrabold tracking-tight uppercase font-sans animate-pulse">
           Elegant Sip
-        </h1>
+        </p>
         <p className="text-[#8bb56e] text-sm font-mono tracking-widest uppercase">
           The Journey of Tea
         </p>
@@ -31,7 +31,7 @@ export default function LoadingOverlay({ percentage, fading }: { percentage: num
           <p className="text-white/60 text-xs font-light italic">
             {getLoadingMessage(percentage)}
           </p>
-          <p className="text-white/30 text-[10px] font-mono tracking-wider">
+          <p className="text-white/30 text-[11px] font-mono tracking-wider">
             Loading Experience... {percentage}%
           </p>
         </div>

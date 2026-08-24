@@ -19,14 +19,14 @@ export default function PackageShowcaseSection() {
           <div className="md:hidden absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
           <div className="md:hidden absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
             <div>
-              <span className="text-[#8bb56e] text-[10px] font-mono font-bold tracking-[0.25em] uppercase block mb-1.5">
+              <span className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.25em] uppercase block mb-1.5">
                 The Gifting Edit
               </span>
               <p className="text-white text-lg font-bold leading-snug">Finest Darjeeling, boxed.</p>
             </div>
             <Link
               to="/shop"
-              className="bg-white text-[#1b261b] text-[10px] font-mono font-bold tracking-widest uppercase py-2.5 px-5 rounded-full flex-shrink-0"
+              className="bg-white text-[#1b261b] text-[11px] font-mono font-bold tracking-widest uppercase py-2.5 px-5 rounded-full flex-shrink-0"
             >
               Explore
             </Link>

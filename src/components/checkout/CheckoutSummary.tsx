@@ -20,7 +20,7 @@ export default function CheckoutSummary({ cart, subtotal, discount, coupon, ship
       <div className="space-y-3 text-xs mb-6">
         {cart.map((item) => (
           <div key={`${item.id}__${item.size}`} className="flex justify-between gap-3">
-            <span className="text-[#4a584a]">{item.name} <span className="text-[#4a584a]/60">({item.size}) × {item.quantity}</span></span>
+            <span className="text-[#4a584a]">{item.name} <span className="text-[#4a584a]">({item.size}) × {item.quantity}</span></span>
             <span className="font-mono font-semibold">{formatINR(item.price * item.quantity)}</span>
           </div>
         ))}
@@ -31,7 +31,7 @@ export default function CheckoutSummary({ cart, subtotal, discount, coupon, ship
           <span className="font-mono">{formatINR(subtotal)}</span>
         </div>
         {discount > 0 && (
-          <div className="flex justify-between text-[#8bb56e]">
+          <div className="flex justify-between text-[#4a7333]">
             <span>Discount ({coupon})</span>
             <span className="font-mono">−{formatINR(discount)}</span>
           </div>
@@ -49,11 +49,11 @@ export default function CheckoutSummary({ cart, subtotal, discount, coupon, ship
           <span className="font-mono">{formatINR(finalTotal)}</span>
         </div>
       </div>
-      <p className="text-[10px] font-mono text-[#8bb56e] italic mt-4 flex items-center gap-1.5">
+      <p className="text-[11px] font-mono text-[#4a7333] italic mt-4 flex items-center gap-1.5">
         <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
         </svg>
-        Demo checkout  no real payment is processed.
+        Demo checkout — no real payment is processed.
       </p>
     </div>
   )

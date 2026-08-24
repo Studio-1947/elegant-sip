@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo, useRef, ReactNode } from 'react'
 
 export interface User {
   name: string
@@ -27,16 +27,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     safeParse<User | null>(localStorage.getItem('elegant_sip_user'), null),
   )
 
+  // Skip the mount write: persisting — for every signed-out visitor left
+  // a literal "null" in localStorage on first paint.
+  const hydrated = useRef(false)
   useEffect(() => {
-    localStorage.setItem('elegant_sip_user', JSON.stringify(user))
+    if (!hydrated.current) {
+      hydrated.current = true
+      return
+    }
+    if (user) localStorage.setItem('elegant_sip_user', JSON.stringify(user))
+    else localStorage.removeItem('elegant_sip_user')
   }, [user])
 
   const login = (name: string, email: string) => setUser({ name, email })
   const logout = () => setUser(null)
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>
-  )
+  const value = useMemo(() => ({ user, login, logout }), [user])
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

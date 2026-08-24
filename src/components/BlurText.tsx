@@ -4,7 +4,7 @@ import gsap from 'gsap'
 import { onContentRevealed } from '../lib/contentReveal'
 
 /* ────────────────────────────────────────────────────────────────────────────
- * BlurText (adapted from reactbits.dev)  words/letters blur-fade into place
+ * BlurText (adapted from reactbits.dev) — words/letters blur-fade into place
  * as the element scrolls into view. Same props and keyframes as the original,
  * but tweened with GSAP (already in the bundle) instead of adding `motion`.
  * Site-specific additions:

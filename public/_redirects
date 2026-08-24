@@ -1,0 +1,3 @@
+# Netlify SPA fallback. Prerendered shells win because Netlify serves static
+# files before applying redirects; everything else boots the SPA.
+/*    /index.html   200

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
-import { PRODUCTS, getRating } from '../data/products'
+import { PRODUCTS } from '../data/products'
+import { getMergedRating } from '../lib/ratings'
 import { useUi } from './UiContext'
 import SelectDropdown from './SelectDropdown'
 import BlurText from './BlurText'
 import { useScrollReveal } from '../lib/useScrollReveal'
 
-// Catalogue order, not alphabetical: First Flush → Second Flush → Third Flush →
-// Green → White → Needle → Herbal & Floral → Signature Blend.
+// Catalogue order, not alphabetical: First Flush → Second Flush → Third Flush.
 const CATEGORIES = ['All', ...new Set(PRODUCTS.map((p) => p.category))]
 
 const SORT_OPTIONS = [
@@ -46,9 +46,13 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
         [p.name, p.description, p.category].some((text) => text.toLowerCase().includes(q)),
       )
     }
-    if (sort === 'price-asc') filtered.sort((a, b) => a.price - b.price)
+    // Coming-soon teas carry price 0; keep them last rather than cheapest.
+    const priceKey = (p: (typeof PRODUCTS)[number]) => (p.status === 'coming-soon' ? Infinity : p.price)
+    if (sort === 'price-asc') filtered.sort((a, b) => priceKey(a) - priceKey(b))
     if (sort === 'price-desc') filtered.sort((a, b) => b.price - a.price)
-    if (sort === 'rating') filtered.sort((a, b) => getRating(b.id).average - getRating(a.id).average)
+    // Sorts on the merged (seed + customer) rating the cards actually display;
+    // getRating() alone only saw the empty static REVIEWS, so this was a no-op.
+    if (sort === 'rating') filtered.sort((a, b) => getMergedRating(b.id).average - getMergedRating(a.id).average)
     return filtered
   }, [category, sort, search])
 
@@ -56,7 +60,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
     <section ref={sectionRef} className="px-6 md:px-12 lg:px-16 py-32 max-w-[1400px] mx-auto bg-[#f9faf7]">
       {showHeading && (
         <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
-          <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Signature Blends</span>
+          <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Single-Origin Darjeeling</span>
           <BlurText as="h2" text="Our Collections" delay={120} className="justify-center text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-6" />
           <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
             Hand-selected whole leaf teas sourced directly from estate gardens
@@ -68,7 +72,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
       {/* Taste Matcher teaser */}
       <div className="max-w-6xl mx-auto mb-10 flex flex-row items-center justify-between gap-4 bg-[#8bb56e]/10 md:bg-white border border-[#8bb56e]/20 md:border-[#1b261b]/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 shadow-[0_4px_20px_rgba(27,38,27,0.03)]">
         <div className="flex items-center gap-3">
-          <div className="bg-[#8bb56e]/20 md:bg-[#8bb56e]/10 p-2.5 rounded-full md:rounded-lg text-[#8bb56e] flex-shrink-0">
+          <div className="bg-[#8bb56e]/20 md:bg-[#8bb56e]/10 p-2.5 rounded-full md:rounded-lg text-[#4a7333] flex-shrink-0">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
             </svg>
@@ -82,7 +86,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
         </div>
         <button
           onClick={openQuiz}
-          className="bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-[10px] font-mono tracking-wider font-bold py-2.5 px-5 rounded-lg transition-colors cursor-pointer text-center uppercase flex-shrink-0"
+          className="bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-[11px] font-mono tracking-wider font-bold py-2.5 px-5 rounded-lg transition-colors cursor-pointer text-center uppercase flex-shrink-0"
         >
           <span className="md:hidden">Start</span>
           <span className="hidden md:inline">Start Discovery</span>
@@ -95,7 +99,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
           <div className="relative w-full sm:max-w-md sm:mx-auto">
             <label htmlFor="tea-search" className="sr-only">Search teas</label>
             <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a584a]/50 pointer-events-none"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a584a] pointer-events-none"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -108,8 +112,8 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search teas  whole leaf, fannings, muscatel…"
-              className="w-full bg-white border border-[#1b261b]/10 rounded-full pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/30"
+              placeholder="Search teas — whole leaf, fannings, muscatel…"
+              className="w-full bg-white border border-[#1b261b]/10 rounded-full pl-11 pr-4 py-3 text-sm focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/30"
             />
           </div>
         </div>
@@ -117,10 +121,10 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
 
       {showFilters && (
         /* relative z-30: the scroll-reveal leaves an inline transform on this bar
-           and on the grid below, making both stacking contexts  without a higher
+           and on the grid below, making both stacking contexts — without a higher
            z-index here, the grid (later in DOM order) paints over the open dropdown. */
         <div className="relative z-30 max-w-6xl mx-auto mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-          {/* Category chips  one swipeable row on phones, wrapping row from sm up */}
+          {/* Category chips — one swipeable row on phones, wrapping row from sm up */}
           <div className="flex overflow-x-auto no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
             {CATEGORIES.map((c) => (
               <button
@@ -129,7 +133,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
                 aria-pressed={category === c}
                 className={`flex-shrink-0 whitespace-nowrap text-xs font-bold tracking-wide py-2.5 px-5 sm:px-6 rounded-full border transition-colors cursor-pointer ${category === c
                   ? 'bg-[#1b261b] border-[#1b261b] text-white'
-                  : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#8bb56e]'
+                  : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#4a7333]'
                   }`}
               >
                 {c}
@@ -148,7 +152,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
 
       {visibleProducts.length === 0 ? (
         <p className="max-w-6xl mx-auto text-center text-sm text-[#4a584a] bg-white border border-[#1b261b]/10 rounded-2xl py-14 px-6">
-          No teas match your search. Try a different word  or take the Taste Matcher above.
+          No teas match your search. Try a different word — or take the Taste Matcher above.
         </p>
       ) : (
         <div

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useDialog } from '../lib/useDialog'
 import { QUIZ_OPTIONS, getProduct, type Product } from '../data/products'
 import { track } from '../lib/analytics'
 import QuizResult from './QuizResult'
@@ -30,16 +31,8 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
     }
   }, [isOpen])
 
-  // ESC to close + initial focus (a11y)
-  useEffect(() => {
-    if (!isOpen) return
-    closeRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [isOpen, onClose])
+  // Focus trap, focus restoration, Escape and scroll lock.
+  const dialogRef = useDialog(isOpen, onClose)
 
   if (!isOpen) return null
 
@@ -72,7 +65,13 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div ref={dialogRef} className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Persistent live region — a region inserted together with its text is
+          never announced, so the previous in-place aria-live did nothing. */}
+      <span aria-live="polite" className="sr-only">
+        {phase === 'brewing' ? 'Steeping your match…' : phase === 'result' && match ? `Your match: ${match.name}` : ''}
+      </span>
+
       {/* Backdrop */}
       <div className="qz-fade absolute inset-0 bg-[#060b08]/85 backdrop-blur-sm cursor-pointer" onClick={onClose} />
 
@@ -97,7 +96,7 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
 
         {phase === 'question' && (
           <div className="flex flex-col flex-grow justify-center py-6 text-center">
-            <span className="qz-rise text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Tea Discovery Quiz</span>
+            <span className="qz-rise text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Tea Discovery Quiz</span>
             <h2 className="qz-rise text-3xl font-bold tracking-tight mb-8 font-sans text-[#1b261b]" style={{ animationDelay: '0.06s' }}>
               How do you like your tea?
             </h2>
@@ -119,7 +118,7 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
                   <span className="font-semibold text-sm">{option}</span>
                   <span
                     className={`text-xs transition-all duration-300 ${
-                      selected === option ? 'text-white' : 'text-[#1b261b]/40 group-hover:text-[#8bb56e] group-hover:translate-x-1'
+                      selected === option ? 'text-white' : 'text-[#1b261b]/40 group-hover:text-[#4a7333] group-hover:translate-x-1'
                     }`}
                   >
                     →
@@ -131,7 +130,7 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
         )}
 
         {phase === 'brewing' && (
-          <div className="qz-fade flex flex-col flex-grow items-center justify-center py-16 text-center" aria-live="polite">
+          <div className="qz-fade flex flex-col flex-grow items-center justify-center py-16 text-center">
             {/* Steaming cup */}
             <div className="relative mb-6">
               {/* Steam wisps */}

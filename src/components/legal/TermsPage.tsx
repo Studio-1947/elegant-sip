@@ -2,7 +2,10 @@ import { useDocumentMeta } from '../../lib/router'
 import { CONTACT_EMAIL, ContactList, INSTAGRAM, LegalLayout, listClass, OnceLaunched, Section, StatusCallout, WHATSAPP } from './shared'
 
 export default function TermsPage() {
-  useDocumentMeta('Terms & Conditions  Elegant Sip', 'The terms that govern your use of elegantsip.com.')
+  useDocumentMeta(
+    'Terms & Conditions | Elegant Sip',
+    'The terms that govern use of the Elegant Sip site and any order placed through it.',
+  )
   return (
     <LegalLayout label="Legal" title="Terms & Conditions" updated="August 19, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
@@ -29,7 +32,7 @@ export default function TermsPage() {
           <li>
             Adding items to cart, applying coupons, "placing an order," creating an "account," and
             submitting reviews are all <strong className="text-[#1b261b]">simulated</strong> on this
-            Site  handled entirely in your browser's local storage.
+            Site — handled entirely in your browser's local storage.
           </li>
           <li>
             <strong className="text-[#1b261b]">No real payment is processed</strong> when you
@@ -37,8 +40,8 @@ export default function TermsPage() {
             result of using the on-site checkout flow.
           </li>
           <li>
-            The Site clearly labels this ("Demo checkout  no real payment is processed"). If you
-            see anything on the Site that appears to contradict this, it's a bug  please tell us.
+            The Site clearly labels this ("Demo checkout — no real payment is processed"). If you
+            see anything on the Site that appears to contradict this, it's a bug — please tell us.
           </li>
           <li>
             Demo order numbers, order history, and account data exist only in your browser and can
@@ -105,16 +108,28 @@ export default function TermsPage() {
           </li>
         </ul>
         <p>
-          We will replace this section with finalized, binding terms  including payment processor
-          details, order-confirmation process, and cutoff times  before real checkout goes live.
+          We will replace this section with finalized, binding terms — including payment processor
+          details, order-confirmation process, and cutoff times — before real checkout goes live.
         </p>
       </Section>
 
       <Section title="5. Shipping & delivery" badge="Once launched">
         <ul className={listClass}>
           <li>
-            We ship within India. Delivery estimates will be shown at checkout and are estimates,
-            not guarantees.
+            We currently ship <strong className="text-[#1b261b]">within India</strong>. Standard
+            delivery is ₹150 (free on orders of ₹4,000 or more) and express is ₹450; both are
+            estimates, not guarantees.
+          </li>
+          <li>
+            International shipping is <strong className="text-[#1b261b]">not yet offered at
+            checkout</strong>. We are still confirming which destinations we can serve reliably. If
+            you are outside India, contact us and we will quote shipping directly.
+          </li>
+          <li>
+            Where we do ship internationally by arrangement, any{' '}
+            <strong className="text-[#1b261b]">customs duties, import taxes or brokerage fees are
+            set by the destination country and are payable by you</strong> on arrival. They are not
+            calculated or collected at our checkout.
           </li>
           <li>Risk of loss passes to you on delivery to the shipping address you provided.</li>
           <li>
@@ -125,22 +140,31 @@ export default function TermsPage() {
       </Section>
 
       <Section title="6. Returns, refunds & cancellations" badge="Once launched">
+        <p>
+          <strong className="text-[#1b261b]">The Elegant Sip Promise.</strong> If a tea does not
+          live up to your expectations, tell us within{' '}
+          <strong className="text-[#1b261b]">30 days of delivery</strong> and we will replace it or
+          refund it. You do not need to return the tea, provide a reason, or complete a form. This
+          is a binding commitment, not marketing copy — it is stated here precisely because it is
+          promised elsewhere on this site.
+        </p>
         <ul className={listClass}>
           <li>
-            Because tea is a consumable, perishable food product, returns will generally be limited
-            to cases of <strong className="text-[#1b261b]">damaged, defective, or incorrect items</strong> received.
+            To claim, email us from the address on the order and tell us which tea and why. We may
+            ask for a photo where a pack arrived damaged, but never as a condition of the promise.
           </li>
           <li>
-            To request a refund or replacement, contact us within a stated window (to be specified
-            at launch) of delivery, with photos where relevant.
+            Refunds are issued to the original payment method. We aim to process them within 7
+            business days of approving the claim.
           </li>
           <li>
-            Refunds, once approved, will be issued to the original payment method within a stated
-            processing time.
+            Orders can be changed or cancelled free of charge any time before they are handed to
+            the carrier.
           </li>
           <li>
-            Full return, refund, and cancellation policy details will be published here and linked
-            at checkout before real payments are accepted.
+            This promise is offered per customer in good faith. We reserve the right to decline
+            repeated claims that indicate abuse rather than genuine dissatisfaction, and nothing
+            here limits your statutory rights under Indian consumer law.
           </li>
         </ul>
       </Section>
@@ -193,7 +217,7 @@ export default function TermsPage() {
 
       <Section title="10. Intellectual property">
         <p>
-          All Site content  text, images, logos, design, and the Elegant Sip name and branding
+          All Site content — text, images, logos, design, and the Elegant Sip name and branding
           belongs to us or our licensors. You may not copy, reproduce, or use it commercially
           without our written permission.
         </p>
@@ -236,7 +260,7 @@ export default function TermsPage() {
 
       <Section title="14. Changes to these terms">
         <p>
-          We may update these terms as the Site evolves  most notably when real checkout,
+          We may update these terms as the Site evolves — most notably when real checkout,
           payments, and accounts launch. We'll update the "Last updated" date above, and remove the
           "Once launched" markers once the corresponding features are live. Continued use of the
           Site after changes means you accept the updated terms.
