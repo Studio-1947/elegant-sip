@@ -301,7 +301,7 @@ export default function ProductCard({ product }: { product: Product }) {
               ? 'Adding...'
               : isAdded
               ? 'Added ✓'
-              : `Add to Cart • ${formatINR(activeVariant.price * quantity)}`}
+              : 'Add to Cart'}
           </button>
         </div>
 
