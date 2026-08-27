@@ -1,0 +1,39 @@
+# Elegant Sip — hot-reload overlay for the local stack.
+#
+#   npm run docker:dev      # start, rebuilding if needed
+#   npm run docker:logs     # watch the API restart as you save
+#
+# Layered on top of docker-compose.yml, replacing only the API service. The
+# databases, Mailpit, ports and environment all come from that file, so there
+# is exactly one description of the local stack and this cannot drift from it.
+#
+# The difference from `npm run docker:up` is the API alone: source is mounted
+# from the host and the server restarts on save, instead of running a compiled
+# image that would need rebuilding after every edit. Use docker:up to check the
+# real production image before deploying; use this while writing code.
+
+name: elegantsip
+
+services:
+  api:
+    # A name of its own. Both files describe a service called `api` in a project
+    # called `elegantsip`, so without this they compete for one image tag and
+    # whichever was built last silently wins — `docker:up` would happily run the
+    # hot-reload image while appearing to test the production one.
+    image: elegantsip-api-dev
+    build:
+      target: dev
+    environment:
+      NODE_ENV: development
+      # Docker Desktop on Windows and macOS does not forward filesystem events
+      # into containers, so the watcher has to poll to notice a save. Costs a
+      # little idle CPU; without it hot reload silently does nothing.
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '400'
+    volumes:
+      # Source only. node_modules stays as installed inside the image — mounting
+      # the host's would put Windows-built binaries into Alpine Linux.
+      - ./apps/api/src:/repo/apps/api/src:ro
+      - ./packages/shared/src:/repo/packages/shared/src:ro
+      # Migrations are read at runtime, so new ones apply without a rebuild.
+      - ./apps/api/drizzle:/repo/apps/api/drizzle:ro

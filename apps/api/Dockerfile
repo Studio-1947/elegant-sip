@@ -27,6 +27,20 @@ COPY packages/shared packages/shared
 COPY apps/api apps/api
 RUN npm run build --workspace @elegantsip/api
 
+# ── dev: the same image, reloading on save ───────────────────────────────────
+# Built from `deps`, so the Node version and every installed package match the
+# image that ships — the point of developing in a container at all. Only the
+# command differs: tsx watching source instead of node running compiled output.
+# Compose bind-mounts src over this, so edits on the host restart the server
+# without a rebuild.
+FROM deps AS dev
+ENV NODE_ENV=development
+COPY packages/shared packages/shared
+COPY apps/api apps/api
+WORKDIR /repo/apps/api
+EXPOSE 4000
+CMD ["npm", "run", "dev"]
+
 # ── prod-deps: runtime dependencies only ─────────────────────────────────────
 FROM node:22-alpine AS prod-deps
 WORKDIR /repo

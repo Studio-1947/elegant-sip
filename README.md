@@ -136,6 +136,40 @@ belong on Vercel. `.vercelignore` excludes it.
 Set `CORS_ORIGINS` on the API to the storefront's deployed origin, or the
 browser will block every request.
 
+**Everything on one server** is the cheaper and slightly safer option, and the
+one this repo is set up for: `docker-compose.prod.yml` runs Caddy serving the
+built storefront and proxying `/api` to the API, with Postgres, Redis and a
+nightly backup behind it. Only Caddy publishes ports.
+
+Because both halves are then one origin, sessions use `SameSite=Lax` instead of
+the `None` a split deployment forces, CORS is never consulted, and no API
+hostname is baked into the bundle — `VITE_API_URL` is the relative `/api`, so
+one build serves a bare IP and a domain alike. `SITE_ADDRESS` switches Caddy
+between plain HTTP on an IP and automatic HTTPS on a domain; certificates are
+obtained and renewed without configuration.
+
+### Docker: three compose files, one Dockerfile
+
+`apps/api/Dockerfile` has a `dev` stage and a `runtime` stage sharing one
+dependency install, so the container you develop in and the one that ships
+differ only in their command. The image `docker:up` builds locally and the one
+the server builds have identical filesystem layers.
+
+| Command | What it runs |
+| --- | --- |
+| `npm run docker:dev` | Daily work. Source bind-mounted, API restarts ~4s after a save, no rebuild. |
+| `npm run docker:up` | The real production image, locally. Use before deploying. |
+| `npm run docker:prod` | The full server stack, exactly as the VPS runs it. |
+
+The two local files tag their images separately (`elegantsip-api-dev` vs
+`elegantsip-api`) because they describe the same service in the same project —
+without distinct tags whichever built last wins, and `docker:up` would run the
+hot-reload image while appearing to test production.
+
+Postgres, Redis and Mailpit are containers in every mode; only the API's
+packaging changes. `npm run smoke` exercises a full customer and shopkeeper
+journey against whichever stack is up.
+
 ## Routing and SEO
 
 The site uses **real paths** (`/shop`, `/product/first-flush-whole-leaf`), not

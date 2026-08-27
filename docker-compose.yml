@@ -52,6 +52,9 @@ services:
       MP_MAX_MESSAGES: 500
 
   api:
+    # Tagged explicitly so the hot-reload overlay in docker-compose.dev.yml
+    # cannot overwrite the production image — see the note there.
+    image: elegantsip-api
     build:
       context: .
       dockerfile: apps/api/Dockerfile
