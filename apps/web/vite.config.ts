@@ -68,6 +68,40 @@ function shellForRoute(template: string, path: string): string {
   return html
 }
 
+/*
+ * VITE_API_URL is inlined at build time, so a deployment built without it ships
+ * a bundle pointing at http://localhost:4000 — every API call then tries to
+ * reach the visitor's own machine and silently fails. That is invisible until a
+ * customer cannot sign in, so the build says so loudly.
+ *
+ * A warning rather than an error: local builds legitimately have no API (the
+ * SEO audit runs against static output), and the catalogue snapshot means the
+ * site still renders. But a real deploy must set it.
+ */
+function apiUrlPlugin(): Plugin {
+  return {
+    name: 'elegantsip-api-url-check',
+    apply: 'build',
+    closeBundle() {
+      const url = process.env.VITE_API_URL
+      if (url && !url.includes('localhost')) {
+        this.info(`API base URL: ${url}`)
+        return
+      }
+      this.warn(
+        [
+          '',
+          '  VITE_API_URL is ' + (url ? `"${url}"` : 'not set') + '.',
+          '  This bundle will call http://localhost:4000 for auth, pricing and orders.',
+          '  Fine locally. On a deployed site nothing that touches the API will work.',
+          '  Set VITE_API_URL to the deployed API origin before shipping.',
+          '',
+        ].join('\n'),
+      )
+    },
+  }
+}
+
 function seoPlugin(): Plugin {
   return {
     name: 'elegantsip-seo',
@@ -127,7 +161,7 @@ function seoPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), seoPlugin()],
+  plugins: [react(), tailwindcss(), seoPlugin(), apiUrlPlugin()],
   test: {
     // Only this project's tests — the repo also holds unrelated local tooling.
     include: ['src/**/*.{test,spec}.{ts,tsx}'],

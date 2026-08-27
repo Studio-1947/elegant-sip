@@ -1,0 +1,14 @@
+# The API is a long-lived Fastify server needing Postgres and Redis — it does
+# not belong on Vercel and must not be built there. Deploy it from its own
+# Dockerfile to Railway / Render / Fly, and point the storefront at it with
+# VITE_API_URL.
+apps/api
+
+# Never upload local build output, reports or secrets.
+apps/web/dist
+apps/web/reports
+**/node_modules
+.env
+.env.*
+!.env.example
+docs

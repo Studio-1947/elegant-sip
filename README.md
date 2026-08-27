@@ -106,6 +106,36 @@ a purchasable product but **expected** for a coming-soon one, and the checker
 reads the catalogue snapshot to tell them apart. Emitting a ₹0 offer to satisfy
 Google's rich-result guidance would be a false price.
 
+## Deploying
+
+The two halves deploy separately, because they are different kinds of thing.
+
+**Storefront → Vercel** (`vercel.json` is committed and configures this):
+
+| Setting | Value | Why |
+|---|---|---|
+| Build command | `npm run build --workspace @elegantsip/web` | The root `build` also builds the API, which Vercel cannot run |
+| Output directory | `apps/web/dist` | This is a workspace; `dist` is not at the repo root |
+| `VITE_API_URL` | the deployed API origin | **Required.** Vite inlines it at build time |
+
+`vercel.json` also supplies the SPA fallback rewrite. `public/.htaccess` is
+Apache-only and `public/_redirects` is Netlify-only — Vercel reads neither, so
+without the rewrite every deep link 404s. Vercel checks the filesystem before
+applying rewrites, so the prerendered per-route shells still win.
+
+**Forgetting `VITE_API_URL` is the trap.** The build succeeds and the site looks
+fine — the catalogue comes from the committed snapshot — but the bundle points
+at `http://localhost:4000`, so sign-in, cart pricing and checkout all fail
+against the visitor's own machine. The build prints a warning when it is unset.
+
+**API → anywhere that runs a container.** Railway, Render and Fly all work from
+`apps/api/Dockerfile` unchanged, with managed Postgres and Redis alongside. It
+is a long-lived server holding database and Redis connections, so it does not
+belong on Vercel. `.vercelignore` excludes it.
+
+Set `CORS_ORIGINS` on the API to the storefront's deployed origin, or the
+browser will block every request.
+
 ## Routing and SEO
 
 The site uses **real paths** (`/shop`, `/product/first-flush-whole-leaf`), not
