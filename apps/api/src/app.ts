@@ -17,6 +17,7 @@ import { SESSION_COOKIE, readSession } from './lib/sessions.js'
 import { authRoutes } from './routes/auth.js'
 import { healthRoutes } from './routes/health.js'
 import { accountRoutes } from './routes/account.js'
+import { profileRoutes } from './routes/profile.js'
 import { adminRoutes } from './routes/admin.js'
 import { orderRoutes } from './routes/orders.js'
 import { webhookRoutes } from './routes/webhooks.js'
@@ -82,6 +83,15 @@ export async function buildApp(): Promise<FastifyInstance> {
     timeWindow: '1 minute',
     // Health checks are polled by the platform and must never be throttled.
     allowList: (req) => req.url === '/health' || req.url === '/ready',
+    /*
+     * Off under test. The suite drives dozens of sign-ins from one address in a
+     * few seconds, which is indistinguishable from an attack and would make
+     * unrelated tests fail with 429 depending on how many ran before them.
+     * Turning it off here keeps those tests testing what they claim to; the
+     * limiter itself is a production behaviour, exercised against a running
+     * server rather than in-process.
+     */
+    global: env.NODE_ENV !== 'test',
   })
 
   await app.register(swagger, {
@@ -135,6 +145,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(orderRoutes, { prefix: '/v1' })
   await app.register(webhookRoutes, { prefix: '/v1' })
   await app.register(accountRoutes, { prefix: '/v1' })
+  await app.register(profileRoutes, { prefix: '/v1' })
   await app.register(adminRoutes, { prefix: '/v1' })
 
   return app

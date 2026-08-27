@@ -1,11 +1,11 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { timingSafeEqual } from 'node:crypto'
 import { hash, verify } from '@node-rs/argon2'
-import { and, eq, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { problemSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
-import { authTokens, users } from '../db/schema-commerce.js'
+import { users } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import {
   SESSION_COOKIE,
@@ -16,6 +16,17 @@ import {
 } from '../lib/sessions.js'
 import { sendEmail } from '../lib/email.js'
 import { env } from '../env.js'
+import {
+  ARGON2,
+  consumeToken,
+  strictLimit,
+  emailSchema,
+  issueToken,
+  passwordSchema,
+  publicUserSchema,
+  sendVerificationEmail,
+  toPublicUser,
+} from './auth-shared.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Identity.
@@ -29,53 +40,7 @@ import { env } from '../env.js'
  *  · Changing a password destroys every existing session for that user.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-// OWASP-recommended baseline for interactive logins.
-const ARGON2 = { memoryCost: 19456, timeCost: 2, parallelism: 1 }
-
-const emailSchema = z.string().trim().toLowerCase().email().max(254)
-const passwordSchema = z
-  .string()
-  .min(10, 'Use at least 10 characters')
-  .max(200)
-  .describe('Minimum 10 characters. Length beats complexity rules.')
-
-const publicUserSchema = z.object({
-  id: z.string().uuid(),
-  email: z.string(),
-  name: z.string(),
-  role: z.enum(['customer', 'admin']),
-  emailVerified: z.boolean(),
-})
-
-const TOKEN_TTL_MS = { email_verification: 24 * 60 * 60 * 1000, password_reset: 60 * 60 * 1000 }
-
-/** Stores only a hash — a database dump must not yield working links. */
-async function issueToken(userId: string, purpose: 'email_verification' | 'password_reset') {
-  const token = randomBytes(32).toString('base64url')
-  await db.insert(authTokens).values({
-    userId,
-    tokenHash: createHash('sha256').update(token).digest('hex'),
-    purpose,
-    expiresAt: new Date(Date.now() + TOKEN_TTL_MS[purpose]),
-  })
-  return token
-}
-
-async function consumeToken(token: string, purpose: 'email_verification' | 'password_reset') {
-  const tokenHash = createHash('sha256').update(token).digest('hex')
-  const row = await db.query.authTokens.findFirst({
-    where: and(eq(authTokens.tokenHash, tokenHash), eq(authTokens.purpose, purpose), isNull(authTokens.consumedAt)),
-  })
-  if (!row || row.expiresAt.getTime() < Date.now()) return null
-  await db.update(authTokens).set({ consumedAt: new Date() }).where(eq(authTokens.id, row.id))
-  return row.userId
-}
-
 export const authRoutes: FastifyPluginAsyncZod = async (app) => {
-  /* Auth endpoints are the ones worth brute-forcing, so they carry a tighter
-     limit than the global one. */
-  const strictLimit = { rateLimit: { max: 10, timeWindow: '1 minute' } }
-
   app.post(
       '/auth/register',
       {
@@ -96,17 +61,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         if (!existing) {
           const passwordHash = await hash(password, ARGON2)
           const [user] = await db.insert(users).values({ name, email, passwordHash }).returning({ id: users.id })
-          const token = await issueToken(user.id, 'email_verification')
-          await sendEmail({
-            to: email,
-            subject: 'Confirm your Elegant Sip account',
-            heading: 'One tap to confirm',
-            body: [
-              `Welcome, ${name}.`,
-              'Confirm this address and your account is ready. The link is good for 24 hours.',
-            ],
-            action: { label: 'Confirm my email', url: `${env.SITE_URL}/verify-email?token=${token}` },
-          })
+          await sendVerificationEmail({ id: user.id, email, name })
         }
         // Same response either way.
         return { ok: true as const }
@@ -144,15 +99,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
         const token = await createSession({ userId: user.id, email: user.email, role: user.role })
         reply.setCookie(SESSION_COOKIE, token, sessionCookieOptions(request.hostname))
-        return {
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            emailVerified: user.emailVerifiedAt !== null,
-          },
-        }
+        return { user: toPublicUser(user) }
       },
     )
 
@@ -266,15 +213,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!request.session) return { user: null }
       const user = await db.query.users.findFirst({ where: eq(users.id, request.session.userId) })
       if (!user) return { user: null }
-      return {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          emailVerified: user.emailVerifiedAt !== null,
-        },
-      }
+      return { user: toPublicUser(user) }
     },
   )
 }
