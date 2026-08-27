@@ -68,7 +68,7 @@ services:
       LOG_LEVEL: info
       DATABASE_URL: postgres://elegantsip:elegantsip@postgres:5432/elegantsip
       REDIS_URL: redis://redis:6379
-      CORS_ORIGINS: http://localhost:5173,http://localhost:4173,http://localhost:4500
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:4173,http://localhost:4500,https://elegantsip.vercel.app}
       # Overridable from a root .env (gitignored) so real credentials never
       # land in this tracked file. Defaults keep development mail in Mailpit,
       # where it cannot reach an actual customer.
