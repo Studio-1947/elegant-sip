@@ -76,15 +76,70 @@ export async function destroyAllSessionsFor(userId: string): Promise<void> {
   }
 }
 
-export const sessionCookieOptions = {
-  httpOnly: true,
-  // Lax rather than Strict: the payment gateway redirects back to the site and
-  // Strict would drop the cookie on that navigation, silently logging the
-  // customer out at the worst possible moment.
-  sameSite: 'lax' as const,
-  secure: isProduction,
-  path: '/',
-  maxAge: SESSION_TTL_SECONDS,
+/*
+ * Hosting platforms that hand every project its own subdomain. Two projects
+ * under one of these share their last two labels but are *different sites* to
+ * the browser, so the registrable domain needs one label more than usual.
+ * A full public-suffix list is overkill; these are the hosts in play.
+ */
+const PROJECT_SUBDOMAIN_SUFFIXES = [
+  'up.railway.app',
+  'vercel.app',
+  'onrender.com',
+  'netlify.app',
+  'fly.dev',
+  'pages.dev',
+  'workers.dev',
+  'herokuapp.com',
+  'github.io',
+]
+
+/** The part of a hostname that decides same-site, e.g. `a.b.example.com` → `example.com`. */
+function registrableDomain(hostname: string): string {
+  const host = hostname.toLowerCase().replace(/\.$/, '').split(':')[0] ?? ''
+  for (const suffix of PROJECT_SUBDOMAIN_SUFFIXES) {
+    if (host === suffix) return host
+    if (host.endsWith(`.${suffix}`)) {
+      const project = host.slice(0, -(suffix.length + 1)).split('.').pop() ?? ''
+      return `${project}.${suffix}`
+    }
+  }
+  return host.split('.').slice(-2).join('.')
+}
+
+const siteDomain = (() => {
+  try {
+    return registrableDomain(new URL(env.SITE_URL).hostname)
+  } catch {
+    return null
+  }
+})()
+
+/*
+ * Cookie policy, derived per request rather than fixed.
+ *
+ * When the storefront and the API share a site (elegantsip.com and
+ * api.elegantsip.com) `Lax` is right: it is sent on the payment gateway's
+ * redirect back to the site, where `Strict` would drop the cookie and log the
+ * customer out at the worst possible moment.
+ *
+ * When they are on different sites — a Vercel storefront calling a Railway API
+ * — `Lax` is not merely stricter, it is *broken*: the browser withholds the
+ * cookie from every cross-site fetch, so the customer signs in successfully and
+ * is anonymous again on the next request. That case needs `None`, which the
+ * spec only honours alongside `Secure`. CSRF is held off instead by the CORS
+ * allowlist plus the preflight that every JSON request here triggers.
+ */
+export function sessionCookieOptions(hostname: string) {
+  const crossSite = siteDomain !== null && registrableDomain(hostname) !== siteDomain
+  return {
+    httpOnly: true,
+    sameSite: crossSite ? ('none' as const) : ('lax' as const),
+    // `SameSite=None` without `Secure` is rejected outright by every browser.
+    secure: isProduction || crossSite,
+    path: '/',
+    maxAge: SESSION_TTL_SECONDS,
+  }
 }
 
 export async function pingRedis(): Promise<boolean> {

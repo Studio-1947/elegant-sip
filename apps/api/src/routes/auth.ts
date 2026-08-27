@@ -143,7 +143,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         }
 
         const token = await createSession({ userId: user.id, email: user.email, role: user.role })
-        reply.setCookie(SESSION_COOKIE, token, sessionCookieOptions)
+        reply.setCookie(SESSION_COOKIE, token, sessionCookieOptions(request.hostname))
         return {
           user: {
             id: user.id,
@@ -242,7 +242,13 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request, reply) => {
       await destroySession(request.cookies[SESSION_COOKIE])
-      reply.clearCookie(SESSION_COOKIE, { path: '/' })
+      /*
+       * Cleared with the same attributes it was set with — a cross-site cookie
+       * cleared with default (Lax) attributes is ignored by the browser, so the
+       * stale cookie would survive sign-out.
+       */
+      const { maxAge: _discard, ...clearOptions } = sessionCookieOptions(request.hostname)
+      reply.clearCookie(SESSION_COOKIE, clearOptions)
       return { ok: true as const }
     },
   )

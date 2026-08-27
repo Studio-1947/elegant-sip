@@ -6,7 +6,7 @@ import { defineConfig } from 'tsup'
  * the runtime stage needs no symlinks and no monorepo layout at all.
  */
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/db/migrate.ts', 'src/db/seed.ts'],
   outDir: 'dist',
   format: ['esm'],
   target: 'node22',

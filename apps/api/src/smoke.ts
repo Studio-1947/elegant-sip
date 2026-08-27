@@ -66,10 +66,20 @@ const login = await app.inject({
 })
 const cookie = login.cookies.find((c) => c.name === 'es_session')
 login.statusCode === 200 && cookie ? ok('sign in', 'httpOnly session cookie set') : fail('sign in', String(login.statusCode))
-if (cookie && (cookie.httpOnly !== true || cookie.sameSite?.toLowerCase() !== 'lax')) {
-  fail('cookie flags', JSON.stringify({ httpOnly: cookie.httpOnly, sameSite: cookie.sameSite }))
+/*
+ * SameSite is derived from whether the storefront and the API sit on the same
+ * site, so the assertion is on the rule, not on one deployment's answer:
+ * `None` must always carry `Secure` (browsers reject it otherwise), and the
+ * cookie must never be readable by JavaScript.
+ */
+const sameSite = cookie?.sameSite?.toLowerCase()
+const cookieValid =
+  cookie?.httpOnly === true &&
+  (sameSite === 'lax' || (sameSite === 'none' && cookie.secure === true))
+if (!cookieValid) {
+  fail('cookie flags', JSON.stringify({ httpOnly: cookie?.httpOnly, sameSite, secure: cookie?.secure }))
 } else {
-  ok('cookie is httpOnly + SameSite=Lax')
+  ok('cookie flags', `httpOnly + SameSite=${cookie.sameSite}${cookie.secure ? ' + Secure' : ''}`)
 }
 const auth = { cookie: `es_session=${cookie?.value ?? ''}` }
 
