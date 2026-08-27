@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Elegant Sip — the only thing on the server exposed to the internet.
+#
+# The storefront's static files and the API are served from one origin, which
+# is why sign-in works with the safer `SameSite=Lax` cookie and why no CORS
+# configuration is involved at all: to the browser this is a single site.
+#
+# SITE_ADDRESS decides HTTP or HTTPS, and nothing else changes between them:
+#
+#   unset            → http://<the server's IP>, no certificate  (start here)
+#   elegantsip.com   → HTTPS, certificate obtained and renewed automatically
+#
+# Set it in .env once a domain points at this server, then restart. Caddy talks
+# to Let's Encrypt on its own; there is no certificate to install or renew.
+# ─────────────────────────────────────────────────────────────────────────────
+
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# The API. `handle_path` strips the /api prefix, so a browser request to
+	# /api/v1/products arrives at the API as /v1/products — its routes are
+	# unchanged and know nothing about the prefix.
+	handle_path /api/* {
+		reverse_proxy api:4000
+	}
+
+	# Everything else is the storefront.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+
+		# Fingerprinted assets can be cached forever — their names change when
+		# their contents do.
+		@immutable path /assets/* *.webp *.mp4 *.woff2
+		header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+		# Prerendered HTML must be revalidated, or a deploy goes unnoticed.
+		@html path *.html /
+		header @html Cache-Control "public, max-age=0, must-revalidate"
+
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+			X-Frame-Options SAMEORIGIN
+			# Advertises HTTPS-only for a year. Emitted whatever the scheme;
+			# browsers ignore it over plain HTTP, so it costs nothing before a
+			# domain exists and is already correct the moment one does.
+			Strict-Transport-Security "max-age=31536000; includeSubDomains"
+			-Server
+		}
+	}
+}

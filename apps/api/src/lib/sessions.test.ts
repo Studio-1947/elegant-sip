@@ -53,6 +53,20 @@ describe('session cookie policy', () => {
     expect(options('localhost:4000').sameSite).toBe('lax')
   })
 
+  it('drops Secure when the site itself is served over plain HTTP', async () => {
+    // A VPS reached by IP while a domain is still being arranged: marking the
+    // cookie Secure there would make signing in impossible.
+    const options = await load('http://203.0.113.10')
+    const cookie = options('203.0.113.10')
+    expect(cookie.secure).toBe(false)
+    expect(cookie.sameSite).toBe('lax')
+  })
+
+  it('turns Secure back on once that same site has HTTPS', async () => {
+    const options = await load('https://elegantsip.com')
+    expect(options('elegantsip.com').secure).toBe(true)
+  })
+
   it('always keeps the cookie unreadable to JavaScript', async () => {
     const options = await load('https://elegantsip.vercel.app')
     expect(options('api.up.railway.app').httpOnly).toBe(true)

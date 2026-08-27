@@ -1,0 +1,141 @@
+# Elegant Sip — production stack for a single server (Hostinger VPS or similar).
+#
+#   cp .env.prod.example .env && nano .env      # fill in the passwords
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Everything reaches the outside world through Caddy on ports 80 and 443. The
+# API, Postgres and Redis publish no ports at all: they are reachable only from
+# the other containers, which is why Postgres is not exposed to the internet
+# even though it lives on an internet-facing machine.
+#
+# Differences from the development stack, deliberately:
+#   · no Mailpit — mail is either really sent or honestly reported as not sent
+#   · no published database ports
+#   · secrets come from .env, never from this tracked file
+#   · a nightly database dump, kept for a fortnight
+
+name: elegantsip-prod
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-elegantsip}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Sessions only. Losing Redis signs everyone out; it never loses an order,
+    # so there is nothing here worth the cost of persisting to disk.
+    command: ['redis-server', '--save', '', '--appendonly', 'no', '--maxmemory', '256mb', '--maxmemory-policy', 'allkeys-lru']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-elegantsip}
+      REDIS_URL: redis://redis:6379
+      # One server runs one copy of the API, so migrating during boot cannot
+      # race a second instance — and it means a deploy never starts against a
+      # database that has not caught up.
+      MIGRATE_ON_START: 'true'
+      # Same origin as the storefront, so the browser sends no cross-site
+      # requests and this list is never consulted. Kept accurate regardless.
+      CORS_ORIGINS: ${SITE_URL:?set SITE_URL in .env}
+      SITE_URL: ${SITE_URL}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.com>}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-fake}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      SELLER_GSTIN: ${SELLER_GSTIN:-}
+      SELLER_STATE: ${SELLER_STATE:-West Bengal}
+    expose:
+      - '4000'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # Empty → plain HTTP on the server's IP. Set to a domain in .env and
+      # Caddy obtains and renews an HTTPS certificate by itself.
+      SITE_ADDRESS: ${SITE_ADDRESS:-}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      # Certificates live here. Losing this volume means asking Let's Encrypt
+      # for fresh certificates on every restart, which they rate-limit.
+      - caddy-data:/data
+      - caddy-config:/config
+
+  # Nightly dump at 02:30, fourteen kept. Small, unglamorous, and the only
+  # reason a broken server is an inconvenience rather than a lost business.
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-elegantsip}
+      PGHOST: postgres
+    volumes:
+      - ./backups:/backups
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        echo "backups: nightly at 02:30, 14 kept in ./backups"
+        while true; do
+          now=$$(date +%s)
+          next=$$(date -d 'tomorrow 02:30' +%s 2>/dev/null || echo $$((now + 86400)))
+          sleep $$((next - now))
+          stamp=$$(date +%Y-%m-%d)
+          if pg_dump --no-owner --format=custom --file="/backups/elegantsip-$$stamp.dump" 2>/backups/last-error.log; then
+            echo "backup ok: elegantsip-$$stamp.dump"
+            rm -f /backups/last-error.log
+          else
+            echo "BACKUP FAILED — see backups/last-error.log"
+          fi
+          ls -1t /backups/*.dump 2>/dev/null | tail -n +15 | xargs -r rm -f
+        done
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

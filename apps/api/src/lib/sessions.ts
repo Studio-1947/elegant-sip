@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import Redis from 'ioredis'
-import { env, isProduction } from '../env.js'
+import { env } from '../env.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Sessions.
@@ -107,11 +107,12 @@ function registrableDomain(hostname: string): string {
   return host.split('.').slice(-2).join('.')
 }
 
-const siteDomain = (() => {
+const site = (() => {
   try {
-    return registrableDomain(new URL(env.SITE_URL).hostname)
+    const url = new URL(env.SITE_URL)
+    return { domain: registrableDomain(url.hostname), https: url.protocol === 'https:' }
   } catch {
-    return null
+    return { domain: null, https: true }
   }
 })()
 
@@ -131,12 +132,19 @@ const siteDomain = (() => {
  * allowlist plus the preflight that every JSON request here triggers.
  */
 export function sessionCookieOptions(hostname: string) {
-  const crossSite = siteDomain !== null && registrableDomain(hostname) !== siteDomain
+  const crossSite = site.domain !== null && registrableDomain(hostname) !== site.domain
   return {
     httpOnly: true,
     sameSite: crossSite ? ('none' as const) : ('lax' as const),
-    // `SameSite=None` without `Secure` is rejected outright by every browser.
-    secure: isProduction || crossSite,
+    /*
+     * Follows the storefront's own scheme rather than NODE_ENV. `Secure` over
+     * plain HTTP is not merely redundant — the browser discards the cookie
+     * outright, so a production server not yet behind HTTPS (a VPS reached by
+     * IP while a domain is still being arranged) could never sign anyone in.
+     * Serving that same site over HTTPS turns the flag back on by itself.
+     * Cross-site always forces it, since `SameSite=None` requires it.
+     */
+    secure: site.https || crossSite,
     path: '/',
     maxAge: SESSION_TTL_SECONDS,
   }
