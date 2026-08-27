@@ -5,7 +5,7 @@
     "dockerfilePath": "apps/api/Dockerfile"
   },
   "deploy": {
-    "preDeployCommand": "node dist/db/migrate.js",
+    "preDeployCommand": "sh -c 'node dist/db/migrate.js && node dist/db/seed.js'",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
