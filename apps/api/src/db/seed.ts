@@ -1,3 +1,5 @@
+import { argv } from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { rupees } from '@elegantsip/shared'
 import { db, sql } from './client.js'
 import { coupons, gardenProducts, gardens, journalPosts, productVariants, products } from './schema.js'
@@ -257,7 +259,7 @@ const JOURNAL = [
   },
 ]
 
-async function seed() {
+export async function seed() {
   console.log('seeding…')
 
   const gardenIds = new Map<string, string>()
@@ -335,5 +337,8 @@ async function seed() {
   console.log('done')
 }
 
-await seed()
-await sql.end()
+/* Only when executed directly, so importing this does not end the shared pool. */
+if (import.meta.url === pathToFileURL(argv[1] ?? '').href) {
+  await seed()
+  await sql.end()
+}

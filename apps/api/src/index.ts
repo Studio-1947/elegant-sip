@@ -4,6 +4,22 @@ import { sql } from './db/client.js'
 
 const app = await buildApp()
 
+/*
+ * Hosts without a pre-deploy step do this here instead. Seeding is safe to
+ * repeat: every insert upserts, and the variant upsert leaves `stock` out of
+ * its update set, so real inventory is never overwritten by the seed values.
+ */
+if (env.MIGRATE_ON_START) {
+  app.log.info('MIGRATE_ON_START set — applying migrations before listening')
+  const [{ runMigrations }, { seed }] = await Promise.all([
+    import('./db/migrate.js'),
+    import('./db/seed.js'),
+  ])
+  await runMigrations()
+  await seed()
+  app.log.info('database ready')
+}
+
 /* Drain in-flight requests before exiting so a deploy never severs a payment. */
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {

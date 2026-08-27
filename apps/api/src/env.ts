@@ -40,6 +40,21 @@ const envSchema = z.object({
   /** Public base URL of the storefront, used in emails and absolute links. */
   SITE_URL: z.string().url().default('https://elegantsip.com'),
 
+  /*
+   * Apply migrations and load the catalogue during boot rather than as a
+   * separate step before it.
+   *
+   * Off by default and it should stay off wherever the host can run a
+   * pre-deploy command: with more than one instance, several servers would
+   * start together and race each other through the migration table. Turn it on
+   * only on single-instance hosts whose free tier offers no pre-deploy step —
+   * without it, the very first deploy there comes up against an empty database.
+   */
+  MIGRATE_ON_START: z
+    .string()
+    .default('false')
+    .transform((value) => ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase())),
+
   /* Phase 03+. Optional now so phases 00–02 run without payment credentials,
      but see assertPaymentsConfigured() — the code that needs them refuses to
      operate rather than half-working. */
