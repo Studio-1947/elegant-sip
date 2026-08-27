@@ -1,0 +1,82 @@
+# Elegant Sip — local development stack.
+#
+#   docker compose up -d
+#   npm run db:migrate && npm run db:seed
+#
+# Then: API http://localhost:4000 · Swagger http://localhost:4000/docs
+#       Mail http://localhost:8025 · Postgres localhost:5432
+
+name: elegantsip
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: elegantsip
+      POSTGRES_PASSWORD: elegantsip
+      POSTGRES_DB: elegantsip
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # `-d` matters: without it pg_isready reports ready before the app
+      # database exists, and the API races it on first boot.
+      test: ['CMD-SHELL', 'pg_isready -U elegantsip -d elegantsip']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Catches every outgoing email locally. Development must never be able to
+  # send a real customer a real message — the honesty rule cuts both ways.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '8025:8025' # web UI
+      - '1025:1025' # SMTP
+    environment:
+      MP_MAX_MESSAGES: 500
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://elegantsip:elegantsip@postgres:5432/elegantsip
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: http://localhost:5173,http://localhost:4173,http://localhost:4500
+      # Overridable from a root .env (gitignored) so real credentials never
+      # land in this tracked file. Defaults keep development mail in Mailpit,
+      # where it cannot reach an actual customer.
+      SITE_URL: ${SITE_URL:-http://localhost:5173}
+      SMTP_URL: ${SMTP_URL:-smtp://mailpit:1025}
+      MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.com>}
+    ports:
+      - '4000:4000'
+
+volumes:
+  postgres-data:

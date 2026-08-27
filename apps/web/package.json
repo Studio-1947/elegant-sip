@@ -1,5 +1,5 @@
 {
-  "name": "elegantsip-tea-experience",
+  "name": "@elegantsip/web",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,19 +8,22 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "serve:dist": "node scripts/serve-dist.mjs",
     "seo:check": "node scripts/seo-check.mjs",
     "lighthouse": "node scripts/lighthouse-run.mjs",
-    "images:variants": "node scripts/build-image-variants.mjs"
+    "images:variants": "node scripts/build-image-variants.mjs",
+    "catalogue:sync": "node scripts/sync-catalogue.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "gsap": "^3.13.0",
     "lenis": "^1.3.26",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "@elegantsip/shared": "*"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

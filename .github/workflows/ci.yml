@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # Typecheck, lint and the pure unit tests. No services needed, so this gives
+  # fast feedback on the majority of mistakes.
+  static:
+    name: Typecheck · lint · unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint --workspace @elegantsip/web
+      - name: Money rules
+        run: npm test --workspace @elegantsip/shared
+
+  # The API against real Postgres and Redis. Containers rather than mocks,
+  # because the things worth testing here — transactions, row locks, unique
+  # constraints doing idempotency — do not exist in a mock.
+  api:
+    name: API integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: elegantsip
+          POSTGRES_PASSWORD: elegantsip
+          POSTGRES_DB: elegantsip
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U elegantsip -d elegantsip"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgres://elegantsip:elegantsip@localhost:5432/elegantsip
+      REDIS_URL: redis://localhost:6379
+      LOG_LEVEL: silent
+      PAYMENT_PROVIDER: fake
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run db:seed
+      - run: npm test --workspace @elegantsip/api
+
+  # The OpenAPI document is generated from the same Zod schemas that validate
+  # requests. This job regenerates it and fails if the committed copy differs,
+  # so an API change without a docs change is a red build — the docs cannot
+  # silently go stale.
+  openapi:
+    name: OpenAPI spec is current
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: elegantsip
+          POSTGRES_PASSWORD: elegantsip
+          POSTGRES_DB: elegantsip
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U elegantsip -d elegantsip"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgres://elegantsip:elegantsip@localhost:5432/elegantsip
+      LOG_LEVEL: silent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run openapi:emit --workspace @elegantsip/api
+      - name: Fail if the spec drifted
+        run: |
+          if ! git diff --quiet -- apps/api/openapi.json; then
+            echo "::error::openapi.json is out of date. Run 'npm run openapi:emit --workspace @elegantsip/api' and commit the result."
+            git diff -- apps/api/openapi.json
+            exit 1
+          fi
+          echo "OpenAPI spec matches the code."
+
+  # Builds the storefront and audits the built output the way a crawler sees
+  # it — the checks are worthless against the dev server.
+  web:
+    name: Storefront build · SEO audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build --workspace @elegantsip/web
+      - run: npm test --workspace @elegantsip/web
+      - name: SEO audit
+        run: |
+          npm run serve:dist --workspace @elegantsip/web &
+          npx wait-on http://localhost:4500 --timeout 30000
+          npm run seo:check --workspace @elegantsip/web
+
+  docker:
+    name: API image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

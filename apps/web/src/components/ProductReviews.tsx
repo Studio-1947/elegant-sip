@@ -1,40 +1,62 @@
 import { useEffect, useState } from 'react'
-import { type Review } from '../data/products'
-import { addLocalReview } from '../lib/localReviews'
-import { hasPurchased } from '../lib/orders'
+import { api, ApiClientError, type ReviewView } from '../lib/api'
+import { formatDate } from '../lib/dates'
+import { useAuth } from './AuthContext'
+import { useUi } from './UiContext'
 
 interface ProductReviewsProps {
-  productId: string
-  /** Combined list (customer-submitted + seed), newest first. */
-  reviews: Review[]
+  productSlug: string
+  /** Published reviews, newest first. */
+  reviews: ReviewView[]
   rating: { average: number; count: number }
-  /** Called with the stored entry after a successful submission. */
-  onAdded: (entry: Review) => void
+  /** Called with the submitted review once the server has stored it. */
+  onAdded: (entry: ReviewView) => void
 }
 
 /** Customer reviews section: headline, write-a-review form, and the review grid. */
-export default function ProductReviews({ productId, reviews, rating, onAdded }: ProductReviewsProps) {
+export default function ProductReviews({ productSlug, reviews, rating, onAdded }: ProductReviewsProps) {
+  const { user } = useAuth()
+  const { openLogin } = useUi()
   const [reviewOpen, setReviewOpen] = useState(false)
   const [form, setForm] = useState({ author: '', rating: 5, text: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [submitted, setSubmitted] = useState(false)
 
-  // Reset the form when navigating between products (same component instance)
+  // Reset when navigating between products (same component instance).
   useEffect(() => {
     setReviewOpen(false)
     setForm({ author: '', rating: 5, text: '' })
-  }, [productId])
+    setError(null)
+    setSubmitted(false)
+  }, [productSlug])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  /*
+   * The author name and the "verified purchase" flag both come from the
+   * account server-side — neither is sent from here, because neither can be
+   * trusted from a browser.
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.author.trim() || !form.text.trim()) return
-    const entry = addLocalReview(productId, {
-      author: form.author.trim(),
-      rating: form.rating,
-      text: form.text.trim(),
-      verified: hasPurchased(productId),
-    })
-    setForm({ author: '', rating: 5, text: '' })
-    setReviewOpen(false)
-    onAdded(entry)
+    if (!form.text.trim() || submitting) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const { review } = await api.reviews.create(productSlug, {
+        rating: form.rating,
+        text: form.text.trim(),
+      })
+      setForm({ author: '', rating: 5, text: '' })
+      setReviewOpen(false)
+      setSubmitted(true)
+      onAdded(review)
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError ? err.message : 'We could not save that just now. Please try again.',
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -47,14 +69,26 @@ export default function ProductReviews({ productId, reviews, rating, onAdded }: 
           </h2>
         </div>
         <button
-          onClick={() => setReviewOpen((o) => !o)}
+          onClick={() => (user ? setReviewOpen((o) => !o) : openLogin())}
           className="self-start md:self-auto border border-[#1b261b]/20 hover:border-[#1b261b] hover:bg-white text-[#1b261b] text-[11px] font-bold tracking-widest uppercase py-3 px-6 rounded-lg transition-all cursor-pointer"
         >
-          {reviewOpen ? 'Cancel' : 'Write a Review'}
+          {!user ? 'Sign in to Review' : reviewOpen ? 'Cancel' : 'Write a Review'}
         </button>
       </div>
 
-      {reviewOpen && (
+      {error && (
+        <p role="alert" className="text-xs text-red-700 mb-4">
+          {error}
+        </p>
+      )}
+
+      {submitted && (
+        <div className="bg-[#4a7333]/8 border border-[#4a7333]/25 rounded-xl p-4 mb-6 text-xs text-[#45523f]">
+          Thank you — your review has been received and will appear once we have read it.
+        </div>
+      )}
+
+      {reviewOpen && user && (
         <form onSubmit={handleSubmit} className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8 mb-8 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -131,7 +165,7 @@ export default function ProductReviews({ productId, reviews, rating, onAdded }: 
                     </svg>
                   ))}
                 </div>
-                <span className="text-[11px] font-mono text-[#4a584a]">{review.date}</span>
+                <span className="text-[11px] font-mono text-[#4a584a]">{review.publishedAt ? formatDate(review.publishedAt) : ""}</span>
               </div>
               <p className="text-xs text-[#4a584a] leading-relaxed mb-4">{review.text}</p>
               <div className="flex items-center gap-2">

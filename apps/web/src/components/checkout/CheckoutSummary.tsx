@@ -19,7 +19,7 @@ export default function CheckoutSummary({ cart, subtotal, discount, coupon, ship
       <h2 className="text-lg font-bold uppercase tracking-wide border-b border-[#1b261b]/10 pb-4 mb-6">Order Summary</h2>
       <div className="space-y-3 text-xs mb-6">
         {cart.map((item) => (
-          <div key={`${item.id}__${item.size}`} className="flex justify-between gap-3">
+          <div key={`${item.productSlug}__${item.size}`} className="flex justify-between gap-3">
             <span className="text-[#4a584a]">{item.name} <span className="text-[#4a584a]">({item.size}) × {item.quantity}</span></span>
             <span className="font-mono font-semibold">{formatINR(item.price * item.quantity)}</span>
           </div>
@@ -53,7 +53,7 @@ export default function CheckoutSummary({ cart, subtotal, discount, coupon, ship
         <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
         </svg>
-        Demo checkout — no real payment is processed.
+        No payment is taken on this page.
       </p>
     </div>
   )

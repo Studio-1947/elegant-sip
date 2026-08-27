@@ -1,15 +1,13 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Currency formatting — the store prices everything in Indian Rupees.
- * All amounts are whole rupees (no paise), formatted with Indian digit
- * grouping, e.g. 2350 → "₹2,350" and 125000 → "₹1,25,000".
+ * Currency.
+ *
+ * The whole storefront now works in PAISE, matching the API and the database,
+ * so there is exactly one unit in the system and no conversion to get wrong.
+ *
+ * `formatINR` keeps its name and every existing call site — it just takes paise
+ * now. Formatting and the whole-rupee rounding rule live in @elegantsip/shared,
+ * shared with the server, so the amount displayed here and the amount charged
+ * there cannot drift apart.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-const formatter = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-})
-
-export const formatINR = (amount: number): string =>
-  // A NaN or Infinity reaching the UI as "₹NaN" is worse than showing zero.
-  formatter.format(Number.isFinite(amount) ? amount : 0)
+export { formatPaise as formatINR, rupees, RUPEE } from '@elegantsip/shared'

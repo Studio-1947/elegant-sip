@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getArticle, JOURNAL } from '../data/products'
 import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
 import { absoluteUrl } from '../lib/site'
+import { formatDate } from '../lib/dates'
 import { buildSrcSet } from '../lib/responsiveImages'
 import { ROUTE_META, articleRouteMeta } from '../lib/seoRoutes'
 import BlurText from './BlurText'
@@ -10,9 +11,9 @@ export function JournalArticlePage({ id }: { id?: string }) {
   const article = getArticle(id)
 
   useDocumentMeta(
-    article ? articleRouteMeta(article.id)!.title : 'Article not found | Elegant Sip',
+    article ? articleRouteMeta(article.slug)!.title : 'Article not found | Elegant Sip',
     article ? article.excerpt : undefined,
-    article ? { canonical: `/journal/${article.id}`, image: article.imageSrc } : { noindex: true },
+    article ? { canonical: `/journal/${article.slug}`, image: article.imageSrc } : { noindex: true },
   )
   useJsonLd(
     article
@@ -23,8 +24,8 @@ export function JournalArticlePage({ id }: { id?: string }) {
         description: article.excerpt,
         image: [absoluteUrl(article.imageSrc)],
         // ISO 8601 — "March 12, 2026" is not a valid schema.org date.
-        datePublished: new Date(article.date).toISOString().slice(0, 10),
-        dateModified: new Date(article.date).toISOString().slice(0, 10),
+        datePublished: article.publishedAt,
+        dateModified: article.publishedAt,
         wordCount: article.body.join(' ').split(/\s+/).length,
         articleSection: article.category,
         inLanguage: 'en-IN',
@@ -32,7 +33,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
         publisher: { '@id': 'https://elegantsip.com/#organization' },
         mainEntityOfPage: {
           '@type': 'WebPage',
-          '@id': absoluteUrl(`/journal/${article.id}`),
+          '@id': absoluteUrl(`/journal/${article.slug}`),
         },
       }
       : null,
@@ -46,7 +47,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
           { '@type': 'ListItem', position: 2, name: 'Journal', item: absoluteUrl('/journal') },
-          { '@type': 'ListItem', position: 3, name: article.title, item: absoluteUrl(`/journal/${article.id}`) },
+          { '@type': 'ListItem', position: 3, name: article.title, item: absoluteUrl(`/journal/${article.slug}`) },
         ],
       }
       : null,
@@ -78,7 +79,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
         <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-[#4a584a] uppercase tracking-wider mb-10">
           <span>{article.author}</span>
           <span className="w-1 h-1 rounded-full bg-[#8bb56e]" />
-          <span>{article.date}</span>
+          <span>{formatDate(article.publishedAt)}</span>
           <span className="w-1 h-1 rounded-full bg-[#8bb56e]" />
           <span>{article.readTime}</span>
         </div>
@@ -96,7 +97,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
             <h2 className="text-lg font-bold uppercase tracking-wide mb-8">Keep Reading</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {others.map((a) => (
-                <Link key={a.id} to={`/journal/${a.id}`} className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-all hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
+                <Link key={a.id} to={`/journal/${a.slug}`} className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-all hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
                   <img src={a.imageSrc} srcSet={buildSrcSet(a.imageSrc)} sizes="(max-width: 768px) 100vw, 50vw" alt={a.imageAlt} loading="lazy" width={1600} height={900} className="w-full aspect-[16/9] object-cover" />
                   <div className="p-5">
                     <span className="text-[11px] font-mono tracking-widest uppercase text-[#4a7333]">{a.category}</span>
@@ -134,9 +135,9 @@ export default function JournalPage() {
         '@type': 'BlogPosting',
         headline: a.title,
         description: a.excerpt,
-        url: absoluteUrl(`/journal/${a.id}`),
+        url: absoluteUrl(`/journal/${a.slug}`),
         image: absoluteUrl(a.imageSrc),
-        datePublished: new Date(a.date).toISOString().slice(0, 10),
+        datePublished: a.publishedAt,
         author: { '@type': 'Organization', name: a.author },
       })),
     },
@@ -178,7 +179,7 @@ export default function JournalPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {articles.map((article) => (
-            <Link key={article.id} to={`/journal/${article.id}`} className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-all hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1 flex flex-col">
+            <Link key={article.id} to={`/journal/${article.slug}`} className="group bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden transition-all hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1 flex flex-col">
               <div className="overflow-hidden">
                 <img src={article.imageSrc} srcSet={buildSrcSet(article.imageSrc)} sizes="(max-width: 768px) 100vw, 50vw" alt={article.imageAlt} loading="lazy" width={1600} height={900} className="w-full aspect-[16/9] object-cover transition-transform duration-700 group-hover:scale-105" />
               </div>

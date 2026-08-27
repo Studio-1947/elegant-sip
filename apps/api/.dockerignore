@@ -1,0 +1,6 @@
+node_modules
+dist
+drizzle/meta
+*.log
+.env
+.env.*

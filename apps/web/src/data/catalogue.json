@@ -1,0 +1,401 @@
+{
+  "syncedAt": "2026-08-26T10:43:55.500Z",
+  "source": "http://localhost:4000",
+  "products": [
+    {
+      "id": "696a229e-560c-44ba-9bc5-257111c84ceb",
+      "slug": "first-flush-whole-leaf",
+      "name": "First Flush Whole Leaf",
+      "status": "active",
+      "fromPrice": 60000,
+      "description": "The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for. In three quality tiers.",
+      "longDescription": "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in the Rungbong Valley, withered long and fired light, this is the grade that brews pale gold rather than red. Choose your tier — Basic, Classic, or Premium — each whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
+      "imageSrc": "/morningdew.webp",
+      "category": "First Flush",
+      "tastingNotes": [
+        "Floral",
+        "Muscatel",
+        "Bright finish"
+      ],
+      "bodyLevel": 2,
+      "harvestLabel": "Spring 2026 Harvest",
+      "variants": [
+        {
+          "id": "0c97097f-364e-4048-98f3-44c0219fc009",
+          "size": "Basic · 100 g",
+          "price": 60000,
+          "stock": 20,
+          "sku": "first-flush-whole-leaf--basic"
+        },
+        {
+          "id": "e027d924-abb7-455b-a01e-f753759d46d6",
+          "size": "Classic · 100 g",
+          "price": 60000,
+          "stock": 20,
+          "sku": "first-flush-whole-leaf--classic"
+        },
+        {
+          "id": "42829b51-9ed0-41f4-b81b-13f186fb2fae",
+          "size": "Premium · 100 g",
+          "price": 100000,
+          "stock": 20,
+          "sku": "first-flush-whole-leaf--premium"
+        }
+      ],
+      "origin": {
+        "origin": "Darjeeling, West Bengal, India",
+        "estate": "Gopaldhara",
+        "elevation": "3,500–7,000 ft",
+        "harvest": "First flush, spring 2026",
+        "cultivar": "China bush (Camellia sinensis var. sinensis)"
+      },
+      "flavorProfile": {
+        "strength": 2,
+        "astringency": 2,
+        "sweetness": 4,
+        "floral": 5,
+        "caffeine": 3
+      },
+      "brewingGuide": {
+        "temperature": "194°F / 90°C",
+        "time": "3–4 minutes",
+        "steeps": "2–3",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "Skip the milk — first flush is prized for its bright muscatel aromatics, and a slightly cooler pour keeps them intact."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "a7ee9253-7b35-4b16-add4-f0939fb8085f",
+      "slug": "first-flush-broken-leaf",
+      "name": "First Flush Broken Leaf",
+      "status": "active",
+      "fromPrice": 50000,
+      "description": "Broken-leaf Darjeeling first flush — the same spring character with a quicker, stronger brew.",
+      "longDescription": "Same garden, same pluck, smaller cut. Breaking the leaf exposes more surface to the water, so a broken-leaf first flush gives up its colour and briskness in half the time a whole leaf takes. You keep the muscatel note and trade a little of the floral top end for body — the everyday Darjeeling for people who find whole leaf too delicate for a morning cup.",
+      "imageSrc": "/origin.webp",
+      "category": "First Flush",
+      "tastingNotes": [
+        "Muscatel",
+        "Brisk",
+        "Strong cup"
+      ],
+      "bodyLevel": 3,
+      "harvestLabel": "Spring 2026 Harvest",
+      "variants": [
+        {
+          "id": "b68bd455-88a5-4cdb-8e53-a374c9a80040",
+          "size": "Basic · 100 g",
+          "price": 50000,
+          "stock": 20,
+          "sku": "first-flush-broken-leaf--basic"
+        },
+        {
+          "id": "f2f250fc-d154-4cbe-9cf3-bffd419c067b",
+          "size": "Classic · 100 g",
+          "price": 60000,
+          "stock": 56,
+          "sku": "first-flush-broken-leaf--classic"
+        },
+        {
+          "id": "21f6e8ae-fd93-49dd-a1b0-11852f714586",
+          "size": "Premium · 100 g",
+          "price": 70000,
+          "stock": 20,
+          "sku": "first-flush-broken-leaf--premium"
+        }
+      ],
+      "origin": {
+        "origin": "Darjeeling, West Bengal, India",
+        "estate": "Gopaldhara",
+        "elevation": "3,500–7,000 ft",
+        "harvest": "First flush, spring 2026",
+        "cultivar": "China bush (Camellia sinensis var. sinensis)"
+      },
+      "flavorProfile": {
+        "strength": 3,
+        "astringency": 3,
+        "sweetness": 3,
+        "floral": 3,
+        "caffeine": 4
+      },
+      "brewingGuide": {
+        "temperature": "203°F / 95°C",
+        "time": "2–3 minutes",
+        "steeps": "2",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "Broken leaf brews faster and stronger than whole leaf — shorten the steep rather than the leaf."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "16af64b5-3fdc-467a-9614-2eb03276d813",
+      "slug": "first-flush-broken-mixed",
+      "name": "First Flush Broken Mixed",
+      "status": "active",
+      "fromPrice": 15000,
+      "description": "A robust mixed broken grade from the Darjeeling spring harvest — strong, brisk, and happy to take milk.",
+      "longDescription": "From the warmer, lower slopes below Kurseong, where the bush wakes earlier and grows faster. That makes a bolder, maltier cup with more colour and less of the ethereal floral note you get at altitude — which is exactly what you want in a tea that has to stand up to milk and sugar. The most versatile grade we sell, and the best value per cup.",
+      "imageSrc": "/origin.webp",
+      "category": "First Flush",
+      "tastingNotes": [
+        "Malty",
+        "Strong",
+        "Milk-friendly"
+      ],
+      "bodyLevel": 4,
+      "harvestLabel": "Spring 2026 Harvest",
+      "variants": [
+        {
+          "id": "7d6c6552-65b2-465c-aed0-1f3d82bd84d1",
+          "size": "Basic · 100 g",
+          "price": 15000,
+          "stock": 20,
+          "sku": "first-flush-broken-mixed--basic"
+        },
+        {
+          "id": "4be351a4-7e12-40f0-8008-e72572f7e4a8",
+          "size": "Premium · 100 g",
+          "price": 30000,
+          "stock": 20,
+          "sku": "first-flush-broken-mixed--premium"
+        }
+      ],
+      "origin": {
+        "origin": "Darjeeling, West Bengal, India",
+        "estate": "Rohini",
+        "elevation": "1,500–4,500 ft",
+        "harvest": "First flush, spring 2026",
+        "cultivar": "Clonal (Camellia sinensis var. sinensis)"
+      },
+      "flavorProfile": {
+        "strength": 4,
+        "astringency": 3,
+        "sweetness": 3,
+        "floral": 2,
+        "caffeine": 4
+      },
+      "brewingGuide": {
+        "temperature": "212°F / 100°C",
+        "time": "3–4 minutes",
+        "steeps": "2",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "A full boil and a longer steep bring out the malty depth — this grade takes milk happily."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "e859dbcb-51df-4e7a-8389-645f8afe9602",
+      "slug": "first-flush-fannings",
+      "name": "First Flush Fannings",
+      "status": "active",
+      "fromPrice": 10000,
+      "description": "Fine Darjeeling first flush fannings — fast-brewing and full-strength. The working tea of the Darjeeling hills.",
+      "longDescription": "Fannings are the finest cut: the smallest particles sifted from the same first flush pluck. More surface area means near-instant extraction, a deep coppery colour, and a cup with real backbone. This is not a contemplative tea and does not pretend to be — it is the grade the hills actually drink every morning, and it makes the best masala chai in the catalogue.",
+      "imageSrc": "/origin.webp",
+      "category": "First Flush",
+      "tastingNotes": [
+        "Bold",
+        "Fast-brewing",
+        "Chai-ready"
+      ],
+      "bodyLevel": 5,
+      "harvestLabel": "Spring 2026 Harvest",
+      "variants": [
+        {
+          "id": "aa434c81-fa63-4da5-b517-b8e50041a588",
+          "size": "Basic · 100 g",
+          "price": 10000,
+          "stock": 20,
+          "sku": "first-flush-fannings--basic"
+        },
+        {
+          "id": "7efda3a6-f93e-424e-93b5-193f98bee969",
+          "size": "Premium · 100 g",
+          "price": 20000,
+          "stock": 20,
+          "sku": "first-flush-fannings--premium"
+        }
+      ],
+      "origin": {
+        "origin": "Darjeeling, West Bengal, India",
+        "estate": "Rohini",
+        "elevation": "1,500–4,500 ft",
+        "harvest": "First flush, spring 2026",
+        "cultivar": "Clonal (Camellia sinensis var. sinensis)"
+      },
+      "flavorProfile": {
+        "strength": 5,
+        "astringency": 4,
+        "sweetness": 2,
+        "floral": 1,
+        "caffeine": 5
+      },
+      "brewingGuide": {
+        "temperature": "212°F / 100°C",
+        "time": "2–3 minutes",
+        "steeps": "1–2",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "Fannings brew fast and strong — watch the clock, or lean in and make masala chai."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "b955d5d3-3bd1-49cf-876d-6b5c3abed7b8",
+      "slug": "second-flush",
+      "name": "Second Flush",
+      "status": "coming-soon",
+      "fromPrice": null,
+      "description": "The summer pluck brings the deeper, fruitier side of Darjeeling. The lots are still with the garden — arriving after the summer harvest.",
+      "longDescription": null,
+      "imageSrc": "/summerbreeze.webp",
+      "category": "Second Flush",
+      "tastingNotes": [
+        "Fruity",
+        "Muscatel",
+        "Deep"
+      ],
+      "bodyLevel": 4,
+      "harvestLabel": "Summer 2026 Harvest",
+      "variants": [
+        {
+          "id": "ae62464b-3409-443c-95ed-21bcae540a56",
+          "size": "100 g",
+          "price": 0,
+          "stock": 0,
+          "sku": "second-flush--100-g"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": null,
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "8471d2b2-d254-477d-809d-4319558630f7",
+      "slug": "autumn-flush",
+      "name": "Third Flush",
+      "status": "coming-soon",
+      "fromPrice": null,
+      "description": "The third pluck of the year rounds things out with a mellow, coppery cup. Arriving after the autumn harvest.",
+      "longDescription": null,
+      "imageSrc": "/origin.webp",
+      "category": "Third Flush",
+      "tastingNotes": [
+        "Mellow",
+        "Coppery",
+        "Smooth"
+      ],
+      "bodyLevel": 3,
+      "harvestLabel": "Autumn 2026 Harvest",
+      "variants": [
+        {
+          "id": "a796c61f-364a-4472-b78e-306fc3b9d0b6",
+          "size": "100 g",
+          "price": 0,
+          "stock": 0,
+          "sku": "autumn-flush--100-g"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": null,
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    }
+  ],
+  "gardens": [
+    {
+      "id": "7c905367-e718-439b-b933-76d62a6f83e0",
+      "slug": "gopaldhara",
+      "name": "Gopaldhara",
+      "region": "Rungbong Valley, Mirik · Darjeeling",
+      "elevation": "3,500–7,000 ft",
+      "imageSrc": "/gopal-1024.webp",
+      "story": [
+        "Gopaldhara sits in the Rungbong Valley above Mirik, and its upper sections are among the highest planted land in Darjeeling — rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.",
+        "The first flush is a narrow window. After winter dormancy the bushes push a small quantity of tender two-leaves-and-a-bud, and the pluck runs for a few weeks in late February through April. That leaf is withered long and fired light, which is why a first flush brews pale gold rather than red, and why it should never meet milk.",
+        "Our whole leaf and broken leaf grades come from this valley. The same day's pluck is sorted into grades rather than blended across gardens, so a broken leaf here is not a lesser tea — it is the same leaf, cut for a faster, stronger cup."
+      ],
+      "productSlugs": [
+        "first-flush-whole-leaf",
+        "first-flush-broken-leaf"
+      ]
+    },
+    {
+      "id": "b4715469-1c75-4980-b3b9-d760c6f1989b",
+      "slug": "rohini",
+      "name": "Rohini",
+      "region": "Kurseong Valley · Darjeeling",
+      "elevation": "1,500–4,500 ft",
+      "imageSrc": "/harvest.webp",
+      "story": [
+        "Rohini lies lower down the hill, on the slopes below Kurseong where the Darjeeling foothills warm earlier in the season. Lower elevation means the bushes wake sooner, so Rohini is often among the first gardens in the district to send out a first flush at all.",
+        "A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet. That suits the broken mixed and fannings grades, which are built for strength: a fast brew, a full colour, and enough backbone to take milk or become masala chai.",
+        "Nothing here is blended with leaf from outside the district. The grade changes; the garden and the harvest do not."
+      ],
+      "productSlugs": [
+        "first-flush-broken-mixed",
+        "first-flush-fannings"
+      ]
+    }
+  ],
+  "journal": [
+    {
+      "id": "4d632d7f-9585-4dd0-8a3f-bfc1171e6464",
+      "slug": "art-of-first-flush",
+      "title": "The Art of the First Flush",
+      "excerpt": "The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices — and the most patience.",
+      "category": "Craft",
+      "author": "The Elegant Sip Tasting Team",
+      "publishedAt": "2026-03-12",
+      "readTime": "4 min read",
+      "imageSrc": "/origin.webp",
+      "imageAlt": "Highland tea terraces at first light",
+      "body": []
+    },
+    {
+      "id": "ba4d6ce0-c08a-4fe9-b5e5-9303afe8d6a9",
+      "slug": "field-guide-to-steeping",
+      "title": "A Field Guide to Steeping",
+      "excerpt": "Temperature, time, leaf amount, and the often-misunderstood art of the re-steep. Everything you need to stop guessing and start tasting.",
+      "category": "Brewing",
+      "author": "The Elegant Sip Tasting Team",
+      "publishedAt": "2026-01-28",
+      "readTime": "5 min read",
+      "imageSrc": "/craft.webp",
+      "imageAlt": "Tea leaves being hand-processed",
+      "body": []
+    },
+    {
+      "id": "bde2f1ee-724d-4073-9c36-e738c3f38f78",
+      "slug": "from-mist-to-cup",
+      "title": "From Mist to Cup: Our Sourcing Journey",
+      "excerpt": "No auction houses, no middlemen, no anonymity. How we built direct relationships with the gardens that grow the leaves we sell.",
+      "category": "Sourcing",
+      "author": "The Elegant Sip Tasting Team",
+      "publishedAt": "2025-11-05",
+      "readTime": "6 min read",
+      "imageSrc": "/harvest.webp",
+      "imageAlt": "Tea plantation at harvest",
+      "body": []
+    }
+  ]
+}

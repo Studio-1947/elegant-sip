@@ -1,7 +1,8 @@
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { useCart } from './CartContext'
-import { getOrders } from '../lib/orders'
+import { useEffect, useState } from 'react'
+import { api, type OrderView } from '../lib/api'
 import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
 
@@ -9,7 +10,24 @@ export default function AccountPage() {
   const { user, logout } = useAuth()
   const { openLogin } = useUi()
   const { wishlist } = useCart()
-  const orders = getOrders()
+  const [orders, setOrders] = useState<OrderView[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(true)
+
+  useEffect(() => {
+    if (!user) {
+      setLoadingOrders(false)
+      return
+    }
+    let cancelled = false
+    void api.orders
+      .list()
+      .then((r) => !cancelled && setOrders(r.orders))
+      .catch(() => {})
+      .finally(() => !cancelled && setLoadingOrders(false))
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   useDocumentMeta('My Account | Elegant Sip', 'Your Elegant Sip orders and saved teas.', { noindex: true })
 
@@ -64,16 +82,14 @@ export default function AccountPage() {
 
         {/* Order history */}
         <h2 className="text-lg font-bold uppercase tracking-wide mb-2">Order History</h2>
-        {/* These records live in this browser, not in an account — signing in
-            does not fetch anything. Saying so prevents a shared machine from
-            looking like someone else's order history "belongs" to this login. */}
-        <p className="text-xs text-[#4a584a] mb-6 max-w-2xl leading-relaxed">
-          Demo orders are stored in this browser, not in an account. Anyone using this browser
-          profile can see them, and they will not appear if you sign in on another device.
+                <p className="text-xs text-[#4a584a] mb-6 max-w-2xl leading-relaxed">
+          Every order placed with this account, on any device.
         </p>
-        {orders.length === 0 ? (
+        {loadingOrders ? (
+          <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-8 text-center text-sm text-[#4a584a]">Loading your orders…</div>
+        ) : orders.length === 0 ? (
           <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-8 text-center">
-            <p className="text-sm text-[#4a584a] mb-6">No orders on this device yet. Your first cup awaits.</p>
+            <p className="text-sm text-[#4a584a] mb-6">No orders yet. Your first cup awaits.</p>
             <Link to="/shop" className="inline-block bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3 px-8 rounded-lg transition-colors">
               Explore the Collection
             </Link>
@@ -89,7 +105,7 @@ export default function AccountPage() {
                 <div>
                   <p className="text-sm font-bold font-mono group-hover:text-[#4a7333] transition-colors">{order.number}</p>
                   <p className="text-[11px] text-[#4a584a] mt-1">
-                    {new Date(order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {new Date(order.placedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     {' · '}
                     {order.items.reduce((acc, i) => acc + i.quantity, 0)} items
                   </p>

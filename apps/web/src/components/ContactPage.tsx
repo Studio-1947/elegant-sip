@@ -1,14 +1,8 @@
 import { useState } from 'react'
 import { useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
+import { api, ApiClientError } from '../lib/api'
 
-/**
- * Set VITE_CONTACT_ENDPOINT to a JSON form backend (e.g. a Formspree form URL
- * like https://formspree.io/f/xxxxxxx) to submit messages directly. Without it,
- * the form falls back to opening the visitor's email app with the message
- * prefilled, so no message is ever silently dropped.
- */
-const CONTACT_ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT as string | undefined
 const CONTACT_EMAIL = 'elegantsipdarjeeling@gmail.com'
 
 export default function ContactPage() {
@@ -17,38 +11,30 @@ export default function ContactPage() {
     'Questions about an order, a grade, or wholesale? Reach the Elegant Sip team by email or WhatsApp.',
   )
 
-  const [sent, setSent] = useState<'endpoint' | 'mailto' | null>(null)
+  const [sent, setSent] = useState<'endpoint' | 'undelivered' | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', email: '', subject: 'Order question', message: '' })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (CONTACT_ENDPOINT) {
-      setSending(true)
-      setError(null)
-      try {
-        const res = await fetch(CONTACT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify(form),
-        })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        setSent('endpoint')
-        track('contact_submitted', { subject: form.subject, method: 'endpoint' })
-      } catch {
-        setError(`Something went wrong sending your message. Please email us directly at ${CONTACT_EMAIL}.`)
-      } finally {
-        setSending(false)
-      }
-    } else {
-      const body = `Name: ${form.name}\nEmail: ${form.email}\n\n${form.message}`
-      const subject = `[${form.subject}] Message from ${form.name}`
-      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-      setSent('mailto')
-      // Opening a mail client is not a submission — we cannot know whether the
-      // message was ever sent, so record the intent rather than claiming success.
-      track('contact_submitted', { subject: form.subject, method: 'mailto_opened' })
+    setSending(true)
+    setError(null)
+    try {
+      const { delivered } = await api.contact.send(form)
+      /* The API tells us whether the message actually went out. If it did not,
+         we say so and offer the direct address rather than claiming it was
+         sent. */
+      setSent(delivered ? 'endpoint' : 'undelivered')
+      track('contact_submitted', { subject: form.subject, method: delivered ? 'api' : 'not_delivered' })
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : `Something went wrong sending your message. Please email us directly at ${CONTACT_EMAIL}.`,
+      )
+    } finally {
+      setSending(false)
     }
   }
 
@@ -62,16 +48,19 @@ export default function ContactPage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">
-            {sent === 'endpoint' ? 'Message sent' : 'Almost there'}
+            {sent === 'endpoint' ? 'Message sent' : 'Not sent yet'}
           </h1>
           <p className="text-sm text-[#4a584a] leading-relaxed mb-8">
             {sent === 'endpoint' ? (
               <>Thank you, {form.name.split(' ')[0] || 'friend'}. We reply to every message within one business day.</>
             ) : (
               <>
-                Your email app has opened with your message addressed to{' '}
-                <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold hover:text-[#4a7333] transition-colors">{CONTACT_EMAIL}</a>
-                {' '} hit send there and we'll reply within one business day.
+                We took your message but could not deliver it just now — our mail service is not
+                reachable. Nothing is lost on your side: please email us directly at{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold text-[#4a7333] underline underline-offset-2">
+                  {CONTACT_EMAIL}
+                </a>{' '}
+                and we will reply within one business day.
               </>
             )}
           </p>

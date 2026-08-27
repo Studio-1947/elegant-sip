@@ -29,6 +29,8 @@ const GardensPage = lazy(() => import('./GardensPage'))
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'))
 const TermsPage = lazy(() => import('./legal/TermsPage'))
 const ShippingReturnsPage = lazy(() => import('./legal/ShippingReturnsPage'))
+const VerifyEmailPage = lazy(() => import('./auth/VerifyEmailPage'))
+const ResetPasswordPage = lazy(() => import('./auth/ResetPasswordPage'))
 const NotFoundPage = lazy(() => import('./NotFoundPage'))
 
 export default function TeaVectorHomepage() {
@@ -228,6 +230,14 @@ export default function TeaVectorHomepage() {
       break
     case 'shipping':
       page = <ShippingReturnsPage />
+      break
+    /* Destinations for the links in the confirmation and reset emails.
+       Without these the emails led to the 404 page. */
+    case 'verify-email':
+      page = <VerifyEmailPage />
+      break
+    case 'reset-password':
+      page = <ResetPasswordPage />
       break
     case 'home':
       page = <HomeExperience ready={!loading} onProgress={handleProgress} />

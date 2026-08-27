@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { getProduct, getReviews, getDefaultVariant, getGardenByEstate, PRODUCTS, type Review } from '../data/products'
+import { getProduct, getDefaultVariant, getGardenForProduct, PRODUCTS } from '../data/products'
+import { api, type ReviewView } from '../lib/api'
 import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
 import { useCart } from './CartContext'
 import { track } from '../lib/analytics'
-import { getLocalReviews } from '../lib/localReviews'
 import { formatINR } from '../lib/currency'
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from '../lib/pricing'
 import { BRAND, absoluteUrl } from '../lib/site'
@@ -18,7 +18,8 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
-  const [localReviews, setLocalReviews] = useState<Review[]>([])
+  const [reviews, setReviews] = useState<ReviewView[]>([])
+  const [rating, setRating] = useState({ average: 0, count: 0 })
   const { addToCart } = useCart()
 
   // Reset per-product state when navigating between products (same component instance)
@@ -27,7 +28,24 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     setSelectedSize(null)
     setIsAdding(false)
     setIsAdded(false)
-    setLocalReviews(id ? getLocalReviews(id) : [])
+    setReviews([])
+    setRating(product?.rating ?? { average: 0, count: 0 })
+    if (!id) return
+    // Published reviews are fetched live; the snapshot's rating is the
+    // build-time figure and is replaced as soon as the API answers.
+    let cancelled = false
+    void api.reviews
+      .list(id)
+      .then((r) => {
+        if (cancelled) return
+        setReviews(r.reviews)
+        setRating({ average: r.average, count: r.count })
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const variant = product
@@ -36,21 +54,11 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const variantInStock = (variant?.stock ?? 0) > 0
   const comingSoon = product?.status === 'coming-soon'
 
-  const productReviews = product ? [...localReviews, ...getReviews(product.id)] : []
-  const productRating =
-    productReviews.length === 0
-      ? { average: 0, count: 0 }
-      : {
-        average:
-          Math.round((productReviews.reduce((acc, r) => acc + r.rating, 0) / productReviews.length) * 10) / 10,
-        count: productReviews.length,
-      }
-
   useDocumentMeta(
-    product ? productRouteMeta(product.id)!.title : 'Product not found | Elegant Sip',
+    product ? productRouteMeta(product.slug)!.title : 'Product not found | Elegant Sip',
     product ? product.description : undefined,
     product
-      ? { canonical: `/product/${product.id}`, image: product.imageSrc }
+      ? { canonical: `/product/${product.slug}`, image: product.imageSrc }
       : { noindex: true },
   )
 
@@ -59,12 +67,12 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       ? {
         '@context': 'https://schema.org',
         '@type': 'Product',
-        '@id': `${absoluteUrl(`/product/${product.id}`)}#product`,
+        '@id': `${absoluteUrl(`/product/${product.slug}`)}#product`,
         name: product.name,
         description: product.longDescription ?? product.description,
         image: [absoluteUrl(product.imageSrc)],
-        url: absoluteUrl(`/product/${product.id}`),
-        sku: product.id,
+        url: absoluteUrl(`/product/${product.slug}`),
+        sku: product.slug,
         category: `Darjeeling ${product.category}`,
         itemCondition: 'https://schema.org/NewCondition',
         brand: { '@type': 'Brand', name: BRAND },
@@ -85,8 +93,8 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 priceCurrency: 'INR',
                 price: v.price,
                 name: v.size,
-                sku: `${product.id}--${v.size.split(' · ')[0].toLowerCase()}`,
-                url: absoluteUrl(`/product/${product.id}`),
+                sku: `${product.slug}--${v.size.split(' · ')[0].toLowerCase()}`,
+                url: absoluteUrl(`/product/${product.slug}`),
                 itemCondition: 'https://schema.org/NewCondition',
                 availability: v.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
                 seller: { '@id': 'https://elegantsip.com/#organization' },
@@ -112,17 +120,17 @@ export default function ProductDetailPage({ id }: { id?: string }) {
           }
           : {}),
         // Only declared when real customer reviews exist — never a default.
-        ...(productRating.count > 0
+        ...(rating.count > 0
           ? {
             aggregateRating: {
               '@type': 'AggregateRating',
-              ratingValue: productRating.average,
-              reviewCount: productRating.count,
+              ratingValue: rating.average,
+              reviewCount: rating.count,
             },
-            review: productReviews.slice(0, 5).map((r) => ({
+            review: reviews.slice(0, 5).map((r) => ({
               '@type': 'Review',
               author: { '@type': 'Person', name: r.author },
-              datePublished: r.date,
+              datePublished: r.publishedAt,
               reviewBody: r.text,
               reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
             })),
@@ -144,7 +152,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
             '@type': 'ListItem',
             position: 3,
             name: product.name,
-            item: absoluteUrl(`/product/${product.id}`),
+            item: absoluteUrl(`/product/${product.slug}`),
           },
         ],
       }
@@ -164,26 +172,25 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     )
   }
 
-  const reviews = productReviews
-  const rating = productRating
   // Prefer same-category teas, fill from the rest of the catalogue. Coming-soon
   // teas are excluded — a "you may also love" rail should be shoppable.
-  const buyable = PRODUCTS.filter((p) => p.id !== product.id && p.status !== 'coming-soon')
+  const buyable = PRODUCTS.filter((p) => p.slug !== product.slug && p.status !== 'coming-soon')
   const related = [
     ...buyable.filter((p) => p.category === product.category),
     ...buyable.filter((p) => p.category !== product.category),
   ].slice(0, 3)
   const activeVariant = variant!
-  const garden = product.origin ? getGardenByEstate(product.origin.estate) : undefined
+  // Resolved through the API's explicit product↔garden link, not a name match.
+  const garden = getGardenForProduct(product.slug)
 
   const handleAddToCart = () => {
     if (!variantInStock) return
     setIsAdding(true)
     addToCart(
-      { id: product.id, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
+      { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
-    track('add_to_cart', { product: product.id, quantity, source: 'product_detail' })
+    track('add_to_cart', { product: product.slug, quantity, source: 'product_detail' })
     setTimeout(() => {
       setIsAdding(false)
       setIsAdded(true)
@@ -225,11 +232,6 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               fetchPriority="high"
               className="w-full h-auto object-cover"
             />
-            {product.compareAtPrice && (
-              <span className="absolute top-5 left-5 bg-[#8bb56e] text-white text-[11px] font-mono tracking-widest uppercase font-bold px-3 py-1.5 rounded-full">
-                Save {formatINR(product.compareAtPrice - product.price)}
-              </span>
-            )}
           </div>
 
           {/* Info */}
@@ -259,10 +261,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               </p>
             ) : (
               <div className="flex items-baseline gap-3 mb-6">
-                {product.compareAtPrice && (
-                  <span className="text-[#4a584a] text-lg line-through">{formatINR(product.compareAtPrice)}</span>
-                )}
-                <span className="text-3xl font-bold">{formatINR(activeVariant.price)}</span>
+                                <span className="text-3xl font-bold">{formatINR(activeVariant.price)}</span>
                 <span className="text-xs font-mono text-[#4a584a]">/ {activeVariant.size}</span>
               </div>
             )}
@@ -366,10 +365,14 @@ export default function ProductDetailPage({ id }: { id?: string }) {
 
         {/* Reviews */}
         <ProductReviews
-          productId={product.id}
+          productSlug={product.slug}
           reviews={reviews}
           rating={rating}
-          onAdded={(entry) => setLocalReviews((prev) => [entry, ...prev])}
+          onAdded={(entry) => {
+            /* Held for moderation, so it does not join the published list —
+               ProductReviews tells the customer that itself. */
+            void entry
+          }}
         />
 
         {/* Related */}

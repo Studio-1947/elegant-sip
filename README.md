@@ -9,16 +9,52 @@ WhatsApp [+91 75839 95294](https://wa.me/917583995294)
 
 ## What this is
 
-A polished frontend with **no backend**. Checkout, accounts, orders and reviews
-are client-side simulations persisted to `localStorage`, and the UI says so
-wherever a visitor could be misled ("Demo checkout — no real payment is
-processed"). To place a real order today, customers contact the brand directly.
+A monorepo: the storefront (`apps/web`), the API (`apps/api`), and the contract
+they share (`packages/shared`).
+
+Accounts, orders, stock, pricing and reviews are all real and server-side now.
+Payment is the one thing still stubbed: the gateway adapter is complete and
+tested, but runs against a fake gateway until Razorpay credentials are set, so
+an order is placed and held rather than paid. The UI says exactly that.
 
 **Honesty is a design rule here.** The UI must never claim something that did
 not happen: no "confirmation email sent" when none was, no fake discounts, no
 star ratings on products nobody has reviewed, no duty calculation the code
 cannot perform. Coming-soon products render as such rather than pretending to
-be purchasable. Keep this principle when adding features.
+be purchasable.
+
+The backend enforces this rather than merely respecting it. `sendEmail` returns
+`delivered: false` instead of throwing, so a caller can never report "sent"
+when nothing was. An invoice without a GSTIN is labelled provisional. An order
+awaiting payment says "Order placed", never "Confirmed".
+
+## Layout
+
+| | |
+|---|---|
+| `apps/web` | The storefront. Vite · React 19 · Tailwind v4 · GSAP |
+| `apps/api` | Fastify · PostgreSQL · Drizzle · Zod → OpenAPI. See its own README |
+| `packages/shared` | Zod schemas and **the money rules**, imported by both |
+
+The shared package is the important one. `calculatePricing()` runs on the server
+to decide what a customer is charged and in the browser to decide what they are
+shown, so the two cannot disagree. There is a test asserting every total across
+₹0–20,000 lands on a whole rupee.
+
+## Where the catalogue comes from
+
+Products, gardens and journal posts live in the database, but the storefront
+reads them from a **build-time snapshot** (`apps/web/src/data/catalogue.json`,
+refreshed by `npm run catalogue:sync`).
+
+That is deliberate. Six products change a few times a year, so a snapshot means
+the shop paints instantly with no spinner, crawlers get real product data in the
+prerendered HTML, and the sitemap can be generated at build time without the API
+being reachable. Prices and stock can be slightly stale, which is safe because
+nothing monetary is decided from the snapshot — the server re-prices every cart
+and returns `adjustments` when a line has moved.
+
+Everything transactional — auth, pricing, orders, reviews, wishlist — is live API.
 
 ## Stack
 
@@ -37,7 +73,9 @@ be purchasable. Keep this principle when adding features.
 | `npm run build` | Typecheck, bundle, then prerender route shells + generate `sitemap.xml` / `robots.txt` |
 | `npm run preview` | Serve the production build (Vite's own server — see the caveat below) |
 | `npm run lint` | ESLint |
-| `npm test` | Vitest — money math and currency formatting |
+| `npm test` | Vitest across all workspaces |
+| `npm run catalogue:sync` | Refresh the catalogue snapshot from the API |
+| `npm run smoke` | Drive the full customer + shopkeeper journey against the API |
 | `npm run serve:dist` | Serve `dist/` the way the shipped `.htaccess` does: directory index first, then SPA fallback |
 | `npm run seo:check` | Crawl the built site and audit it (start `serve:dist` first) |
 
@@ -65,7 +103,7 @@ failure, so it can gate a deploy.
 
 One deliberate subtlety: `Product` schema without `offers` is a **failure** for
 a purchasable product but **expected** for a coming-soon one, and the checker
-reads `data/products.ts` to tell them apart. Emitting a ₹0 offer to satisfy
+reads the catalogue snapshot to tell them apart. Emitting a ₹0 offer to satisfy
 Google's rich-result guidance would be a false price.
 
 ## Routing and SEO
@@ -96,19 +134,23 @@ Legacy `/#/shop` links are migrated to `/shop` on boot (`migrateLegacyHashUrl`).
 
 ## Architecture
 
-Entry: `src/main.tsx` → `ErrorBoundary > CartProvider > AuthProvider > UiProvider`
+Entry: `src/main.tsx` → `ErrorBoundary > AuthProvider > CartProvider > UiProvider`
+(Auth wraps Cart because the cart syncs the wishlist to the signed-in account.)
 → **`TeaVectorHomepage`** (app shell: loading overlay, fixed header, the route
 `switch`, footer, consent banner, route-change announcer).
 
-### Data layer — `src/data/products.ts` is the source of truth
+### Data layer
 
-Products (with variants, stock, status, origin, flavour profile), testimonials,
-FAQs, journal articles, garden profiles and the Taste Matcher mapping all live
-here. Seed `REVIEWS` is intentionally empty — reviews come from customers via
-the product page form (`src/lib/localReviews.ts`).
+`src/data/products.ts` reads the build-time snapshot and exposes the same
+helpers the components always used. Testimonials, FAQs and the Taste Matcher
+mapping remain in `src/data/content.ts` — they have no backend home yet.
 
-**Catalogue (6 cards, all 100 g packs, INR).** `Product.price` is the *lowest*
-variant price (the card's "from" price):
+**Money is paise everywhere in the storefront**, matching the API. `formatINR`
+takes paise. `Product.fromPrice` is the lowest variant price (the card's "from"
+figure) and is `null` for a coming-soon product, because a ₹0 price would read
+as free.
+
+**Catalogue (6 cards, all 100 g packs, INR):**
 
 | Product | Tiers | Notes |
 |---|---|---|

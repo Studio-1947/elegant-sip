@@ -1,6 +1,8 @@
 /* Checkout form model: field shape, defaults, and per-country postal validation. */
 
-export type Step = 1 | 2 | 3
+/* Shipping → Review. There is no card step: the customer never types a card
+   into this page, which is what keeps the site out of PCI scope. */
+export type Step = 1 | 2
 
 /* Only India is offered at checkout: it is the region Terms commits to, and
    the one we can quote a real rate for. Everywhere else is arranged by hand —
@@ -24,22 +26,6 @@ export const GENERIC_POSTAL = { pattern: /^[A-Za-z\d][A-Za-z\d\s-]{1,9}$/, hint:
 /** Shared with the newsletter form — one email rule for the whole site. */
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
-/** Luhn checksum — catches transposed and mistyped card digits. */
-export function luhn(pan: string): boolean {
-  let sum = 0
-  let double = false
-  for (let i = pan.length - 1; i >= 0; i--) {
-    let digit = pan.charCodeAt(i) - 48
-    if (double) {
-      digit *= 2
-      if (digit > 9) digit -= 9
-    }
-    sum += digit
-    double = !double
-  }
-  return sum % 10 === 0
-}
-
 /** DOM ids for each field, so validation can move focus to the first error. */
 export const FIELD_IDS: Record<string, string> = {
   email: 'co-email',
@@ -47,12 +33,9 @@ export const FIELD_IDS: Record<string, string> = {
   lastName: 'co-last',
   address: 'co-address',
   city: 'co-city',
+  state: 'co-state',
   zip: 'co-zip',
   country: 'co-country',
-  cardNumber: 'co-card',
-  cardName: 'co-cardname',
-  expiry: 'co-expiry',
-  cvc: 'co-cvc',
 }
 
 export interface FormState {
@@ -61,12 +44,10 @@ export interface FormState {
   lastName: string
   address: string
   city: string
+  /** Indian state — decides the CGST/SGST vs IGST split on the invoice. */
+  state: string
   zip: string
   country: string
-  cardNumber: string
-  cardName: string
-  expiry: string
-  cvc: string
 }
 
 export const EMPTY_FORM: FormState = {
@@ -75,10 +56,7 @@ export const EMPTY_FORM: FormState = {
   lastName: '',
   address: '',
   city: '',
+  state: '',
   zip: '',
   country: 'India',
-  cardNumber: '',
-  cardName: '',
-  expiry: '',
-  cvc: '',
 }

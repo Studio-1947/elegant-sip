@@ -101,8 +101,8 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             {/* Items */}
             <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 space-y-4">
               {cart.map((item) => (
-                <div key={`${item.id}__${item.size}`} className="flex gap-3.5 bg-white border border-[#1b261b]/10 rounded-xl p-3">
-                  <Link to={`/product/${item.id}`} onClick={onClose} className="flex-shrink-0">
+                <div key={`${item.productSlug}__${item.size}`} className="flex gap-3.5 bg-white border border-[#1b261b]/10 rounded-xl p-3">
+                  <Link to={`/product/${item.productSlug}`} onClick={onClose} className="flex-shrink-0">
                     <img
                       src={item.imageSrc}
                       alt={item.name}
@@ -114,7 +114,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   </Link>
                   <div className="flex-grow min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <Link to={`/product/${item.id}`} onClick={onClose} className="text-sm font-bold leading-snug hover:text-[#4a7333] transition-colors">
+                      <Link to={`/product/${item.productSlug}`} onClick={onClose} className="text-sm font-bold leading-snug hover:text-[#4a7333] transition-colors">
                         {item.name}
                       </Link>
                       <span className="text-sm font-bold whitespace-nowrap">{formatINR(item.price * item.quantity)}</span>
@@ -123,7 +123,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     <div className="flex items-center justify-between mt-2.5">
                       <div className="flex items-center gap-3 border border-[#1b261b]/20 rounded-lg px-2.5 py-1 bg-[#f9faf7]">
                         <button
-                          onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.productSlug, item.size, item.quantity - 1)}
                           className="text-[#1b261b] hover:text-[#4a7333] font-bold text-base leading-none min-w-[44px] min-h-[44px] flex items-center justify-center -my-2 cursor-pointer"
                           aria-label={`Decrease quantity of ${item.name}`}
                         >
@@ -131,7 +131,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                         </button>
                         <span className="font-mono text-xs font-semibold select-none">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.productSlug, item.size, item.quantity + 1)}
                           className="text-[#1b261b] hover:text-[#4a7333] font-bold text-base leading-none min-w-[44px] min-h-[44px] flex items-center justify-center -my-2 cursor-pointer"
                           aria-label={`Increase quantity of ${item.name}`}
                         >
@@ -139,7 +139,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                         </button>
                       </div>
                       <button
-                        onClick={() => handleRemove(item.id, item.size)}
+                        onClick={() => handleRemove(item.productSlug, item.size)}
                         className="text-[11px] font-mono tracking-wider uppercase text-red-700 hover:text-red-800 transition-colors min-h-[44px] px-2 -mx-2 cursor-pointer"
                       >
                         Remove

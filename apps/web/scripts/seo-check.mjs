@@ -171,13 +171,14 @@ const REQUIRED = {
   WebSite: ['name', 'url'],
 }
 
-/* Which product pages legitimately have no price — read from the catalogue so
-   the checker can never disagree with the data. */
-const productsSrc = readFileSync('src/data/products.ts', 'utf8')
+/* Which product pages legitimately have no price — read from the catalogue
+   snapshot the build itself used, so the checker cannot disagree with the data
+   that shipped. */
+const catalogue = JSON.parse(readFileSync('src/data/catalogue.json', 'utf8'))
 const comingSoonPaths = new Set(
-  [...productsSrc.matchAll(/id:\s*"([^"]+)"[\s\S]{0,400}?status:\s*"coming-soon"/g)].map(
-    (m) => `/product/${m[1]}`,
-  ),
+  catalogue.products
+    .filter((p) => p.status === 'coming-soon')
+    .map((p) => `/product/${p.slug}`),
 )
 
 const typesSeen = new Set()

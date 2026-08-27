@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
 import { PRODUCTS } from '../data/products'
-import { getMergedRating } from '../lib/ratings'
 import { useUi } from './UiContext'
 import SelectDropdown from './SelectDropdown'
 import BlurText from './BlurText'
@@ -47,12 +46,12 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
       )
     }
     // Coming-soon teas carry price 0; keep them last rather than cheapest.
-    const priceKey = (p: (typeof PRODUCTS)[number]) => (p.status === 'coming-soon' ? Infinity : p.price)
+    const priceKey = (p: (typeof PRODUCTS)[number]) => p.fromPrice ?? Infinity
     if (sort === 'price-asc') filtered.sort((a, b) => priceKey(a) - priceKey(b))
-    if (sort === 'price-desc') filtered.sort((a, b) => b.price - a.price)
+    if (sort === 'price-desc') filtered.sort((a, b) => (b.fromPrice ?? 0) - (a.fromPrice ?? 0))
     // Sorts on the merged (seed + customer) rating the cards actually display;
     // getRating() alone only saw the empty static REVIEWS, so this was a no-op.
-    if (sort === 'rating') filtered.sort((a, b) => getMergedRating(b.id).average - getMergedRating(a.id).average)
+    if (sort === 'rating') filtered.sort((a, b) => b.rating.average - a.rating.average)
     return filtered
   }, [category, sort, search])
 

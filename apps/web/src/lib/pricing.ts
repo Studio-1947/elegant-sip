@@ -1,52 +1,53 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Order pricing — single source of truth shared by the cart and checkout so
- * thresholds and rates can never drift between the two.
+ * Pricing — display only.
+ *
+ * This module used to be the authority on what a customer paid. It is not any
+ * more: the server prices every cart at /v1/pricing/quote and again when the
+ * order is placed, and the storefront shows what it is told.
+ *
+ * These re-exports exist so the UI can render an optimistic figure before the
+ * quote returns, and so shipping labels and thresholds have one definition.
+ * They come from @elegantsip/shared — the same code the server runs — so an
+ * optimistic figure and the authoritative one agree.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-/* All amounts in whole Indian Rupees. */
-export const FREE_SHIPPING_THRESHOLD = 4000
-/** GST rate applied to tea in India. */
-export const TAX_RATE = 0.05
+export {
+  FREE_SHIPPING_THRESHOLD,
+  SHIPPING_METHODS,
+  TAX_RATE,
+  calculatePricing,
+  getShippingMethod,
+  toWholeRupees,
+  type Pricing,
+  type ShippingMethod,
+  type ShippingMethodId,
+} from '@elegantsip/shared'
 
-export type ShippingMethodId = 'standard' | 'express'
-
-export interface ShippingMethod {
-  id: ShippingMethodId
-  label: string
-  detail: string
-  fee: number
-  /** Order value (after discount) at which this method becomes free; null = never free. */
-  freeOver: number | null
-}
-
-export const SHIPPING_METHODS: ShippingMethod[] = [
-  { id: 'standard', label: 'Standard', detail: '2–4 business days', fee: 150, freeOver: FREE_SHIPPING_THRESHOLD },
-  { id: 'express', label: 'Express', detail: '1–2 business days', fee: 450, freeOver: null },
-]
+import { calculatePricing, type ShippingMethodId } from '@elegantsip/shared'
 
 export interface OrderPricing {
   shippingFee: number
   estimatedTax: number
   finalTotal: number
-  /** How much more the customer must spend for free standard shipping (0 if reached or not offered). */
   amountToFreeShipping: number
 }
 
+/**
+ * Legacy shape, kept so the cart and drawer render without a round-trip.
+ *
+ * @deprecated Prefer the server quote. This is an estimate for immediate
+ * feedback; the checkout total always comes from the API.
+ */
 export function getOrderPricing(
   cartTotal: number,
   discount: number,
   methodId: ShippingMethodId = 'standard',
 ): OrderPricing {
-  const method = SHIPPING_METHODS.find((m) => m.id === methodId) ?? SHIPPING_METHODS[0]
-  const subtotalAfterDiscount = Math.max(0, cartTotal - discount)
-  const shippingFee =
-    method.freeOver !== null && subtotalAfterDiscount >= method.freeOver ? 0 : method.fee
-  // Whole-rupee amounts  INR retail carries no paise.
-  // GST applies to the shipping fee too — the summary row is labelled
-  // "GST (5%)", so taxing only the goods understated the total.
-  const estimatedTax = Math.round((subtotalAfterDiscount + shippingFee) * TAX_RATE)
-  const finalTotal = subtotalAfterDiscount + shippingFee + estimatedTax
-  const amountToFreeShipping =
-    method.freeOver !== null ? Math.max(0, method.freeOver - subtotalAfterDiscount) : 0
-  return { shippingFee, estimatedTax, finalTotal, amountToFreeShipping }
+  const p = calculatePricing({ subtotal: cartTotal, discount, shippingMethod: methodId })
+  return {
+    shippingFee: p.shippingFee,
+    estimatedTax: p.tax,
+    finalTotal: p.total,
+    amountToFreeShipping: p.amountToFreeShipping,
+  }
 }

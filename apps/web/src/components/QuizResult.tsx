@@ -20,8 +20,8 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
   const handleAddToCart = () => {
     const variant = getDefaultVariant(match)
     setIsAdding(true)
-    addToCart({ id: match.id, name: match.name, price: variant.price, imageSrc: match.imageSrc, size: variant.size }, 1)
-    track('add_to_cart', { product: match.id, source: 'quiz' })
+    addToCart({ productSlug: match.slug, name: match.name, price: variant.price, imageSrc: match.imageSrc, size: variant.size }, 1)
+    track('add_to_cart', { product: match.slug, source: 'quiz' })
     setTimeout(() => {
       setIsAdding(false)
       setIsAdded(true)
@@ -57,7 +57,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
           </div>
           <p className="qz-rise text-xs text-[#4a584a] leading-relaxed" style={delay(0.3)}>{match.description}</p>
           <Link
-            to={`/product/${match.id}`}
+            to={`/product/${match.slug}`}
             onClick={onClose}
             className="qz-rise text-xs font-mono tracking-widest uppercase text-[#4a7333] hover:text-[#1b261b] transition-colors mt-4"
             style={delay(0.38)}
@@ -81,7 +81,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
             </div>
           )}
 
-          {match.bodyLevel !== undefined && (
+          {match.bodyLevel !== null && (
             <div className="qz-rise bg-white border border-[#1b261b]/10 p-4 rounded-2xl" style={delay(0.28)}>
               <span className="text-[#4a7333] text-[11px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-1.5 mb-3">Cup Body</span>
               <div className="flex justify-between text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-1.5">
@@ -128,7 +128,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
                   : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white shadow-md'
               }`}
             >
-              {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add Match to Cart • ${formatINR(match.price)}`}
+              {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add Match to Cart • ${formatINR(match.fromPrice ?? 0)}`}
             </button>
             <button
               onClick={onReset}

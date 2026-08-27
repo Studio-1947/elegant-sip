@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from './AuthContext'
+import { ApiClientError, api } from '../lib/api'
+import { EMAIL_PATTERN } from './checkout/checkoutData'
 import { track } from '../lib/analytics'
 import { useDialog } from '../lib/useDialog'
 
@@ -14,33 +16,55 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const { login } = useAuth()
+  const { login, register } = useAuth()
+  const [submitting, setSubmitting] = useState(false)
+  const [registered, setRegistered] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
   // Focus trap, focus restoration, Escape and scroll lock.
   const dialogRef = useDialog(isOpen, onClose)
 
   if (!isOpen) return null
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email.includes('@') || email.length < 3) {
+    if (submitting) return
+
+    if (!EMAIL_PATTERN.test(email.trim())) {
       setError('Please enter a valid email address.')
       return
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+    if (mode === 'signup' && password.length < 10) {
+      setError('Please use at least 10 characters. Length matters more than symbols.')
       return
     }
     if (mode === 'signup' && name.trim().length < 2) {
       setError('Please tell us your name.')
       return
     }
+
     setError(null)
-    login(mode === 'signup' ? name.trim() : email.split('@')[0].replace(/[._-]/g, ' '), email.trim())
-    // Never pass the email to analytics: the privacy policy states we don't,
-    // and the consent banner promises "no personal details, ever".
-    track(mode === 'signup' ? 'signup' : 'login', { method: 'email' })
-    onClose()
+    setSubmitting(true)
+    try {
+      if (mode === 'signup') {
+        await register(name.trim(), email.trim(), password)
+        /* Registration deliberately does not sign you in — the address is
+           unconfirmed, and the endpoint answers identically whether or not
+           the account already existed. "Check your inbox" is the only thing
+           we can honestly say. */
+        setRegistered(true)
+      } else {
+        await login(email.trim(), password)
+        onClose()
+      }
+      // Never send the email to analytics: the privacy policy says we don't,
+      // and the consent banner promises "no personal details, ever".
+      track(mode === 'signup' ? 'signup' : 'login', { method: 'email' })
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -91,7 +115,16 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {registered ? (
+          <div className="bg-[#4a7333]/8 border border-[#4a7333]/25 rounded-xl p-5 text-sm text-[#45523f] leading-relaxed">
+            <p className="font-bold text-[#1b261b] mb-2">Check your inbox</p>
+            <p>
+              If that address is not already registered, we have sent a confirmation link to{' '}
+              <span className="font-mono">{email.trim()}</span>. Confirm it and you can sign in.
+            </p>
+          </div>
+        ) : (
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
           {mode === 'signup' && (
             <div>
               <label htmlFor="auth-name" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">
@@ -134,19 +167,53 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             />
           </div>
 
-          {error && <p className="text-xs text-red-600" role="alert">{error}</p>}
+          {error && <p className="text-xs text-red-700" role="alert">{error}</p>}
+
+          {mode === 'signin' && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!EMAIL_PATTERN.test(email.trim())) {
+                  setError('Enter your email address above, then tap this again.')
+                  return
+                }
+                setError(null)
+                try {
+                  await api.auth.forgotPassword(email.trim())
+                } catch {
+                  /* The endpoint answers identically whether or not the account
+                     exists, so there is nothing useful to report on failure —
+                     and reporting one would leak which addresses are registered. */
+                }
+                setResetSent(true)
+              }}
+              className="text-[11px] font-mono tracking-wider uppercase text-[#4a7333] hover:text-[#1b261b] transition-colors cursor-pointer"
+            >
+              Forgot your password?
+            </button>
+          )}
+
+          {resetSent && (
+            <p className="text-xs text-[#45523f] bg-[#4a7333]/8 border border-[#4a7333]/25 rounded-lg px-4 py-3 leading-relaxed">
+              If that address has an account, a reset link is on its way. It works once and expires
+              in an hour.
+            </p>
+          )}
 
           <button
             type="submit"
-            className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+            disabled={submitting}
+            className="w-full disabled:opacity-60 disabled:cursor-wait bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
           >
-            {mode === 'signin' ? 'Sign In' : 'Create Account'}
+            {submitting ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
+        )}
 
         <p className="text-[11px] text-[#4a584a] mt-6 leading-relaxed">
-          This is a demo experience — no real account is created. Account features will connect
-          to the backend when it ships.
+          We store your name, email and order history. Nothing is shared with anyone, and we never
+          send your address to analytics. See our{' '}
+          <a href="/privacy" className="text-[#4a7333] font-semibold underline underline-offset-2">Privacy Policy</a>.
         </p>
       </div>
     </div>

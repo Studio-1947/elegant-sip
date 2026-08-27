@@ -60,15 +60,15 @@ export default function WishlistPage() {
                       Coming soon
                     </p>
                   ) : (
-                    <p className="text-sm font-bold mt-1.5">{formatINR(item.price)}</p>
+                    <p className="text-sm font-bold mt-1.5">{formatINR(item.fromPrice ?? 0)}</p>
                   )}
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   <button
                     onClick={() => {
                       const variant = getDefaultVariant(item)
-                      addToCart({ id: item.id, name: item.name, price: variant.price, imageSrc: item.imageSrc, size: variant.size }, 1)
-                      track('add_to_cart', { product: item.id, source: 'wishlist' })
+                      addToCart({ productSlug: item.slug, name: item.name, price: variant.price, imageSrc: item.imageSrc, size: variant.size }, 1)
+                      track('add_to_cart', { product: item.slug, source: 'wishlist' })
                     }}
                     disabled={!isInStock(item) || item.status === 'coming-soon'}
                     className="bg-[#1b261b] hover:bg-[#2b3a2b] disabled:bg-[#1b261b]/10 disabled:text-[#4a584a] disabled:cursor-not-allowed text-white text-[11px] font-bold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-colors cursor-pointer"
@@ -76,7 +76,7 @@ export default function WishlistPage() {
                     {item.status === 'coming-soon' ? 'Coming Soon' : isInStock(item) ? 'Add to Cart' : 'Sold Out'}
                   </button>
                   <button
-                    onClick={() => toggleWishlist(item.id)}
+                    onClick={() => toggleWishlist(item.slug)}
                     className="text-[11px] font-mono uppercase tracking-wider text-[#4a584a] hover:text-red-600 transition-colors cursor-pointer"
                   >
                     Remove

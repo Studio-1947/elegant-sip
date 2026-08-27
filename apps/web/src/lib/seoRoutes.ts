@@ -5,10 +5,15 @@
  * (`vite.config.ts`) to emit `sitemap.xml` and one prerendered HTML shell per
  * URL. Because both sides read this file, the sitemap can never drift from the
  * catalogue and a page's <title> can never disagree with its indexed entry.
+ *
+ * Both PRODUCTS and JOURNAL come from the build-time catalogue snapshot
+ * (data/catalogue.json, refreshed by `npm run catalogue:sync`), so the sitemap
+ * and the prerendered shells always describe the catalogue that shipped with
+ * the bundle — they cannot drift from it, and the build does not depend on the
+ * API being reachable.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-import { PRODUCTS } from '../data/products'
-import { JOURNAL } from '../data/content'
+import { JOURNAL, PRODUCTS } from '../data/products'
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, pageTitle } from './site'
 
 export interface RouteMeta {
@@ -104,11 +109,13 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/wishlist': { title: pageTitle('Wishlist'), description: 'Teas you have saved for later.', noindex: true },
   '/account': { title: pageTitle('My Account'), description: 'Your Elegant Sip orders and saved teas.', noindex: true },
   '/order': { title: pageTitle('Your Order'), description: 'Your Elegant Sip order details.', noindex: true },
+  '/verify-email': { title: pageTitle('Confirm your email'), description: 'Confirm your Elegant Sip account.', noindex: true },
+  '/reset-password': { title: pageTitle('Set a new password'), description: 'Choose a new password for your account.', noindex: true },
 }
 
 /** Meta for a product detail route, derived from the catalogue. */
 export function productRouteMeta(id: string): RouteMeta | undefined {
-  const product = PRODUCTS.find((p) => p.id === id)
+  const product = PRODUCTS.find((p) => p.slug === id)
   if (!product) return undefined
   return {
     title: pageTitle(`${product.name} Darjeeling Tea`),
@@ -121,7 +128,7 @@ export function productRouteMeta(id: string): RouteMeta | undefined {
 
 /** Meta for a journal article route. */
 export function articleRouteMeta(id: string): RouteMeta | undefined {
-  const article = JOURNAL.find((a) => a.id === id)
+  const article = JOURNAL.find((a) => a.slug === id)
   if (!article) return undefined
   return {
     title: pageTitle(article.title),
@@ -149,10 +156,10 @@ export function indexableRoutes(): SitemapEntry[] {
     entries.push({ path, priority: meta.priority, changefreq: meta.changefreq ?? 'monthly' })
   }
   for (const product of PRODUCTS) {
-    entries.push({ path: `/product/${product.id}`, priority: 0.8, changefreq: 'monthly' })
+    entries.push({ path: `/product/${product.slug}`, priority: 0.8, changefreq: 'monthly' })
   }
   for (const article of JOURNAL) {
-    entries.push({ path: `/journal/${article.id}`, priority: 0.5, changefreq: 'yearly' })
+    entries.push({ path: `/journal/${article.slug}`, priority: 0.5, changefreq: 'yearly' })
   }
   return entries
 }

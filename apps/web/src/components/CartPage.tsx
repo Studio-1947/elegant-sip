@@ -6,9 +6,10 @@ import { getOrderPricing, TAX_RATE } from '../lib/pricing'
 import { formatINR } from '../lib/currency'
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeFromCart, cartTotal, discount, coupon, applyCoupon, removeCoupon } = useCart()
+  const { cart, updateQuantity, removeFromCart, cartTotal, discount, coupon, applyCoupon, removeCoupon, quote, couponError: serverCouponError } = useCart()
   const [couponInput, setCouponInput] = useState('')
   const [couponError, setCouponError] = useState<string | null>(null)
+  const [checking, setChecking] = useState(false)
   // Notes are persisted so checkout can attach them to the placed order.
   const [orderNotes, setOrderNotes] = useState(() => localStorage.getItem('elegant_sip_order_notes') || '')
 
@@ -18,14 +19,25 @@ export default function CartPage() {
 
   useDocumentMeta('Your Cart | Elegant Sip', 'Review the teas in your cart.', { noindex: true })
 
-  const { shippingFee, estimatedTax, finalTotal, amountToFreeShipping } = getOrderPricing(cartTotal, discount)
+  /* The server's quote is authoritative. getOrderPricing() is the optimistic
+     fallback shown for the instant before the quote lands — same shared rules,
+     so the two agree. */
+  const fallback = getOrderPricing(cartTotal, discount)
+  const shippingFee = quote?.shippingFee ?? fallback.shippingFee
+  const estimatedTax = quote?.tax ?? fallback.estimatedTax
+  const finalTotal = quote?.total ?? fallback.finalTotal
+  const amountToFreeShipping = quote?.amountToFreeShipping ?? fallback.amountToFreeShipping
 
-  const handleApplyCoupon = () => {
-    if (applyCoupon(couponInput)) {
+  const handleApplyCoupon = async () => {
+    setChecking(true)
+    const applied = await applyCoupon(couponInput)
+    setChecking(false)
+    if (applied) {
       setCouponError(null)
       setCouponInput('')
     } else {
-      setCouponError('That code isn’t valid. Try SIP10 for 10% off.')
+      // The server said why; repeating it verbatim beats inventing a message.
+      setCouponError(serverCouponError ?? 'That code is not valid.')
     }
   }
 
@@ -68,10 +80,10 @@ export default function CartPage() {
           <div className="lg:col-span-2 space-y-6">
             {cart.map((item) => (
               <div
-                key={`${item.id}__${item.size}`}
+                key={`${item.productSlug}__${item.size}`}
                 className="flex items-center gap-6 p-4 md:p-6 bg-white border border-[#1b261b]/10 rounded-2xl shadow-[0_4px_20px_rgba(27,38,27,0.02)]"
               >
-                <Link to={`/product/${item.id}`} className="flex-shrink-0">
+                <Link to={`/product/${item.productSlug}`} className="flex-shrink-0">
                   <div className="w-20 h-24 md:w-24 md:h-30 rounded-xl overflow-hidden bg-[#fdfdfd] border border-[#1b261b]/5">
                     <img
                       src={item.imageSrc}
@@ -87,12 +99,12 @@ export default function CartPage() {
                 {/* Details */}
                 <div className="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <Link to={`/product/${item.id}`} className="hover:text-[#4a7333] transition-colors">
+                    <Link to={`/product/${item.productSlug}`} className="hover:text-[#4a7333] transition-colors">
                       <h3 className="text-base md:text-lg font-bold">{item.name}</h3>
                     </Link>
                     <p className="text-xs text-[#4a584a] mt-1">{item.size} · {formatINR(item.price)} each</p>
                     <button
-                      onClick={() => handleRemove(item.id, item.size)}
+                      onClick={() => handleRemove(item.productSlug, item.size)}
                       className="text-xs font-mono tracking-wider text-red-600 hover:text-red-700 transition-colors mt-3 block cursor-pointer"
                     >
                       Remove
@@ -103,7 +115,7 @@ export default function CartPage() {
                   <div className="flex items-center gap-6 justify-between md:justify-end">
                     <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-3 py-1.5 w-24 bg-[#f9faf7]">
                       <button
-                        onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.productSlug, item.size, item.quantity - 1)}
                         className="text-[#1b261b] hover:text-[#4a7333] font-bold text-sm leading-none transition-colors"
                         aria-label={`Decrease quantity of ${item.name}`}
                       >
@@ -111,7 +123,7 @@ export default function CartPage() {
                       </button>
                       <span className="text-[#1b261b] font-mono text-xs font-semibold select-none">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.productSlug, item.size, item.quantity + 1)}
                         className="text-[#1b261b] hover:text-[#4a7333] font-bold text-sm leading-none transition-colors"
                         aria-label={`Increase quantity of ${item.name}`}
                       >
@@ -171,8 +183,9 @@ export default function CartPage() {
                     className="flex-grow bg-[#f9faf7] border border-[#1b261b]/15 rounded-lg px-3 py-2.5 text-sm focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/25 uppercase"
                   />
                   <button
-                    onClick={handleApplyCoupon}
-                    className="border border-[#1b261b]/20 hover:border-[#1b261b] text-[#1b261b] text-[11px] font-bold tracking-widest uppercase px-4 rounded-lg transition-all cursor-pointer"
+                    onClick={() => void handleApplyCoupon()}
+                disabled={checking || !couponInput.trim()}
+                    className="border border-[#1b261b]/20 hover:border-[#1b261b] text-[#1b261b] text-[11px] font-bold tracking-widest uppercase px-4 rounded-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                   >
                     Apply
                   </button>

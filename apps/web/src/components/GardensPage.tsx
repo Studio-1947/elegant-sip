@@ -30,8 +30,8 @@ export default function GardensPage() {
         {/* Garden profiles */}
         <div ref={listRef} className="space-y-10">
           {GARDENS.map((garden, i) => {
-            const teas = garden.productIds
-              .map((pid) => getProduct(pid))
+            const teas = garden.productSlugs
+              .map((slug: string) => getProduct(slug))
               .filter((p): p is NonNullable<typeof p> => Boolean(p))
             return (
               <article
@@ -73,13 +73,13 @@ export default function GardensPage() {
                         {teas.map((tea) => (
                           <Link
                             key={tea.id}
-                            to={`/product/${tea.id}`}
+                            to={`/product/${tea.slug}`}
                             className="flex items-center gap-3 border border-[#1b261b]/15 hover:border-[#8bb56e] rounded-xl pl-1.5 pr-4 py-1.5 transition-colors group"
                           >
                             <img src={tea.imageSrc} alt={tea.name} loading="lazy" width={72} height={80} className="w-9 h-10 object-cover rounded-lg" />
                             <span>
                               <span className="block text-xs font-bold group-hover:text-[#4a7333] transition-colors">{tea.name}</span>
-                              <span className="block text-[11px] text-[#4a584a]">from {formatINR(tea.price)}</span>
+                              <span className="block text-[11px] text-[#4a584a]">from {formatINR(tea.fromPrice ?? 0)}</span>
                             </span>
                           </Link>
                         ))}

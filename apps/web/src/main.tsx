@@ -15,13 +15,13 @@ migrateLegacyHashUrl()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <CartProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <CartProvider>
           <UiProvider>
             <TeaVectorHomepage />
           </UiProvider>
-        </AuthProvider>
-      </CartProvider>
+        </CartProvider>
+      </AuthProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

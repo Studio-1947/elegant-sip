@@ -1,13 +1,7 @@
 import { useState } from 'react'
 import { track } from '../lib/analytics'
+import { api, ApiClientError } from '../lib/api'
 
-/**
- * Set VITE_NEWSLETTER_ENDPOINT to an ESP subscribe URL (Mailchimp, Brevo, or a
- * Formspree form) that accepts POST { email } as JSON. Without it, signups are
- * stored locally so nothing breaks — either way the welcome discount code is
- * shown on-screen rather than promised by email.
- */
-const NEWSLETTER_ENDPOINT = import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function NewsletterSection() {
@@ -22,29 +16,15 @@ export default function NewsletterSection() {
       setStatus('error')
       return
     }
-    if (NEWSLETTER_ENDPOINT) {
-      setStatus('sending')
-      try {
-        const res = await fetch(NEWSLETTER_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ email }),
-        })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      } catch {
-        setErrorMsg('Something went wrong — please try again in a moment.')
-        setStatus('error')
-        return
-      }
-    } else {
-      try {
-        const subscribers: string[] = JSON.parse(localStorage.getItem('elegant_sip_subscribers') || '[]')
-        if (!subscribers.includes(email)) {
-          localStorage.setItem('elegant_sip_subscribers', JSON.stringify([...subscribers, email]))
-        }
-      } catch {
-        localStorage.setItem('elegant_sip_subscribers', JSON.stringify([email]))
-      }
+    setStatus('sending')
+    try {
+      await api.newsletter.subscribe(email)
+    } catch (err) {
+      setErrorMsg(
+        err instanceof ApiClientError ? err.message : 'Something went wrong — please try again in a moment.',
+      )
+      setStatus('error')
+      return
     }
     setStatus('done')
     track('newsletter_signup')

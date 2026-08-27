@@ -221,3 +221,36 @@ dd > a:not([class*="no-underline"]) {
     animation: none;
   }
 }
+/* Shared button treatment for the auth landing pages (email confirmation,
+   password reset). Component-level utilities rather than repeated class
+   strings, because these three pages must look like one flow. */
+.es-btn-primary,
+.es-btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.es-btn-primary {
+  background: #1b261b;
+  color: #ffffff;
+  border: 1px solid #1b261b;
+}
+.es-btn-primary:hover { background: #2b3a2b; }
+.es-btn-primary:disabled { opacity: 0.6; cursor: wait; }
+
+.es-btn-secondary {
+  background: transparent;
+  color: #1b261b;
+  border: 1px solid rgba(27, 38, 27, 0.2);
+}
+.es-btn-secondary:hover { border-color: #1b261b; background: #f9faf7; }

@@ -1,0 +1,33 @@
+{
+  "name": "elegantsip",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @elegantsip/web",
+    "dev:api": "npm run dev --workspace @elegantsip/api",
+    "build": "npm run build --workspace @elegantsip/web && npm run build --workspace @elegantsip/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "preview": "npm run preview --workspace @elegantsip/web",
+    "seo:check": "npm run seo:check --workspace @elegantsip/web",
+    "lighthouse": "npm run lighthouse --workspace @elegantsip/web",
+    "serve:dist": "npm run serve:dist --workspace @elegantsip/web",
+    "images:variants": "npm run images:variants --workspace @elegantsip/web",
+    "db:generate": "npm run db:generate --workspace @elegantsip/api",
+    "db:migrate": "npm run db:migrate --workspace @elegantsip/api",
+    "db:seed": "npm run db:seed --workspace @elegantsip/api",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f api",
+    "smoke": "npm run smoke --workspace @elegantsip/api",
+    "catalogue:sync": "npm run catalogue:sync --workspace @elegantsip/web"
+  }
+}

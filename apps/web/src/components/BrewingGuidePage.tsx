@@ -115,18 +115,18 @@ export default function BrewingGuidePage() {
         <div ref={gridRef} className="space-y-8">
           {teas.map((tea) => (
             <div key={tea.id} className="bg-white border border-[#1b261b]/10 rounded-2xl overflow-hidden md:flex">
-              <Link to={`/product/${tea.id}`} className="md:w-56 flex-shrink-0 block">
+              <Link to={`/product/${tea.slug}`} className="md:w-56 flex-shrink-0 block">
                 <img src={tea.imageSrc} srcSet={buildSrcSet(tea.imageSrc)} sizes="(max-width: 768px) 100vw, 224px" alt={`${tea.name} Darjeeling tea leaves`} loading="lazy" width={1200} height={1500} className="w-full h-48 md:h-full object-cover" />
               </Link>
               <div className="p-6 md:p-8 flex-grow">
                 <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">
                   <div>
                     <span className="text-[#4a7333] text-[11px] font-mono tracking-[0.25em] uppercase block mb-1">{tea.category}</span>
-                    <Link to={`/product/${tea.id}`} className="text-xl font-bold uppercase tracking-tight hover:text-[#4a7333] transition-colors">
+                    <Link to={`/product/${tea.slug}`} className="text-xl font-bold uppercase tracking-tight hover:text-[#4a7333] transition-colors">
                       {tea.name}
                     </Link>
                   </div>
-                  <Link to={`/product/${tea.id}`} className="text-[11px] font-mono tracking-widest uppercase text-[#4a7333] hover:text-[#1b261b] transition-colors">
+                  <Link to={`/product/${tea.slug}`} className="text-[11px] font-mono tracking-widest uppercase text-[#4a7333] hover:text-[#1b261b] transition-colors">
                     Shop this tea →
                   </Link>
                 </div>

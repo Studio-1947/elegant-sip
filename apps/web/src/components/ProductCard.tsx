@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useCart } from './CartContext'
-import { getReviews, getDefaultVariant, isInStock, type Product } from '../data/products'
-import { getLocalReviews } from '../lib/localReviews'
+import { getDefaultVariant, isInStock, type Product } from '../data/products'
 import { Link } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
@@ -22,19 +21,11 @@ export default function ProductCard({ product }: { product: Product }) {
   const [isAdded, setIsAdded] = useState(false)
   const { addToCart, toggleWishlist, isWishlisted } = useCart()
 
-  // Real average only. A product with no reviews shows no stars at all —
-  // rendering five filled stars for an unreviewed tea asserts something untrue.
-  // Memoised on the id so the review store isn't re-parsed on every render.
-  const rating = useMemo(() => {
-    const reviews = [...getLocalReviews(product.id), ...getReviews(product.id)]
-    if (reviews.length === 0) return { average: 0, count: 0 }
-    return {
-      average: Math.round((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) * 10) / 10,
-      count: reviews.length,
-    }
-  }, [product.id])
+  // Derived server-side from published reviews and carried on the product, so
+  // there is no per-render localStorage read and no invented default.
+  const rating = product.rating
 
-  const wishlisted = isWishlisted(product.id)
+  const wishlisted = isWishlisted(product.slug)
   // Selected quality tier drives the price, quantity cap, and add-to-cart.
   const activeVariant = product.variants.find((v) => v.size === selectedSize) ?? getDefaultVariant(product)
   const variantInStock = activeVariant.stock > 0
@@ -42,7 +33,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const hasMultipleSizes = product.variants.length > 1
   const comingSoon = product.status === 'coming-soon'
   const totalStock = product.variants.reduce((acc, v) => acc + v.stock, 0)
-  const gallery = [product.imageSrc, ...(product.images ?? [])]
+  const gallery = [product.imageSrc]
   const brew = product.brewingGuide
 
   // Tracked so pending state flips are cancelled if the card unmounts mid-add
@@ -61,10 +52,10 @@ export default function ProductCard({ product }: { product: Product }) {
     if (!variantInStock || comingSoon) return
     setIsAdding(true)
     addToCart(
-      { id: product.id, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
+      { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
-    track('add_to_cart', { product: product.id, quantity, source: 'product_card' })
+    track('add_to_cart', { product: product.slug, quantity, source: 'product_card' })
     timers.current.push(
       window.setTimeout(() => {
         setIsAdding(false)
@@ -90,15 +81,15 @@ export default function ProductCard({ product }: { product: Product }) {
   }
 
   const handleWishlist = () => {
-    toggleWishlist(product.id)
-    track('wishlist_toggle', { product: product.id })
+    toggleWishlist(product.slug)
+    track('wishlist_toggle', { product: product.slug })
   }
 
   return (
     <div className="group w-full bg-white rounded-2xl border border-[#1b261b]/10 overflow-hidden flex flex-col transition-all duration-500 hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
       {/* ── Image area ── */}
       <div className="relative aspect-[4/5] bg-[#f5f0e6] overflow-hidden">
-        <Link to={`/product/${product.id}`} aria-label={`View ${product.name}`}>
+        <Link to={`/product/${product.slug}`} aria-label={`View ${product.name}`}>
           <SkeletonImage
             src={gallery[imageIndex]}
             alt={`${product.name} — loose-leaf Darjeeling tea`}
@@ -178,7 +169,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Name + price */}
         <div className="flex justify-between items-start gap-3 mb-1.5">
-          <Link to={`/product/${product.id}`} className="hover:text-[#4a7333] transition-colors">
+          <Link to={`/product/${product.slug}`} className="hover:text-[#4a7333] transition-colors">
             <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide leading-snug">{product.name}</h3>
           </Link>
           <span className="flex flex-col items-end pt-0.5">
@@ -230,7 +221,7 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
 
         {/* Body meter */}
-        {product.bodyLevel !== undefined && (
+        {product.bodyLevel !== null && (
           <div className="mb-4">
             <div className="flex justify-between text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-1.5">
               <span>Light</span>

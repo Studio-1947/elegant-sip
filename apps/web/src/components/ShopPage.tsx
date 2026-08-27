@@ -32,7 +32,7 @@ export default function ShopPage() {
           item: {
             '@type': 'Product',
             name: product.name,
-            url: absoluteUrl(`/product/${product.id}`),
+            url: absoluteUrl(`/product/${product.slug}`),
             image: absoluteUrl(product.imageSrc),
             category: product.category,
             ...(product.status !== 'coming-soon'
@@ -40,7 +40,7 @@ export default function ShopPage() {
                 offers: {
                   '@type': 'Offer',
                   priceCurrency: 'INR',
-                  price: product.price,
+                  price: product.fromPrice ?? 0,
                   availability: isInStock(product)
                     ? 'https://schema.org/InStock'
                     : 'https://schema.org/OutOfStock',
