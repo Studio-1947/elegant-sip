@@ -51,6 +51,26 @@ services:
     environment:
       MP_MAX_MESSAGES: 500
 
+  # Keep migration out of the API process: local development may run more than
+  # one API instance, but every fresh `docker compose up` must still have a
+  # schema and catalogue before the API begins serving requests. Both commands
+  # are idempotent, so this safely runs again when the stack is restarted.
+  init:
+    image: elegantsip-api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://elegantsip:elegantsip@postgres:5432/elegantsip
+      REDIS_URL: redis://redis:6379
+    command: ['sh', '-c', 'node dist/db/migrate.js && node dist/db/seed.js']
+
   api:
     # Tagged explicitly so the hot-reload overlay in docker-compose.dev.yml
     # cannot overwrite the production image — see the note there.
@@ -65,6 +85,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      init:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: 4000

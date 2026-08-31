@@ -1,3 +1,4 @@
+import '../dev-defaults.js'
 import { argv } from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { rupees } from '@elegantsip/shared'

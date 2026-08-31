@@ -123,7 +123,12 @@ services:
         echo "backups: nightly at 02:30, 14 kept in ./backups"
         while true; do
           now=$$(date +%s)
-          next=$$(date -d 'tomorrow 02:30' +%s 2>/dev/null || echo $$((now + 86400)))
+          hour=$$(date +%H | sed 's/^0//')
+          minute=$$(date +%M | sed 's/^0//')
+          second=$$(date +%S | sed 's/^0//')
+          seconds_until=$$((2 * 3600 + 30 * 60 - hour * 3600 - minute * 60 - second))
+          if [ $$seconds_until -le 0 ]; then seconds_until=$$((seconds_until + 86400)); fi
+          next=$$((now + seconds_until))
           sleep $$((next - now))
           stamp=$$(date +%Y-%m-%d)
           if pg_dump --no-owner --format=custom --file="/backups/elegantsip-$$stamp.dump" 2>/backups/last-error.log; then

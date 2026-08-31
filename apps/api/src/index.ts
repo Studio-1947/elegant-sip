@@ -1,3 +1,4 @@
+import './dev-defaults.js'
 import { buildApp } from './app.js'
 import { env } from './env.js'
 import { sql } from './db/client.js'
