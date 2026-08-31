@@ -175,6 +175,28 @@ Postgres, Redis or API port 4000. Check the deployment with
 change `BACKUP_TIMEZONE` in `.env` only if the business operating timezone
 changes.
 
+### Sharing the VPS with other projects
+
+When the server already runs a reverse proxy for other sites, that proxy keeps
+80 and 443 and this stack sits behind it. In `.env`:
+
+```
+SITE_ADDRESS=
+SITE_URL=https://elegantsip.in
+WEB_PUBLISH_HTTP=127.0.0.1:8080
+WEB_PUBLISH_HTTPS=127.0.0.1:8443
+```
+
+Caddy then serves plain HTTP on loopback only, and the existing proxy
+terminates TLS and forwards to `http://127.0.0.1:8080`. `SITE_ADDRESS` and
+`SITE_URL` disagree here on purpose: `SITE_URL` describes what the browser
+sees, so sign-in cookies are still marked `Secure`, while the empty
+`SITE_ADDRESS` stops Caddy asking for a certificate it cannot validate.
+
+Nothing else changes. The compose project is named `elegantsip-prod`, so its
+containers, network and volumes never collide with another project's, and
+Postgres, Redis and the API still publish no ports at all.
+
 ### Automatic GitHub Actions deployment
 
 `.github/workflows/deploy-production.yml` deploys each successful `main` CI

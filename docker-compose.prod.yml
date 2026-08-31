@@ -92,10 +92,15 @@ services:
       # Empty → plain HTTP on the server's IP. Set to a domain in .env and
       # Caddy obtains and renews an HTTPS certificate by itself.
       SITE_ADDRESS: ${SITE_ADDRESS:-}
+    # The defaults put Caddy straight onto the internet, which is right when
+    # this stack has the server to itself. When the machine already runs a
+    # reverse proxy for other projects, point these at loopback in .env
+    # (WEB_PUBLISH_HTTP=127.0.0.1:8080), leave SITE_ADDRESS empty so Caddy
+    # serves plain HTTP, and let that proxy hold 80/443 and terminate TLS.
     ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
+      - '${WEB_PUBLISH_HTTP:-80}:80'
+      - '${WEB_PUBLISH_HTTPS:-443}:443'
+      - '${WEB_PUBLISH_HTTPS:-443}:443/udp'
     volumes:
       # Certificates live here. Losing this volume means asking Let's Encrypt
       # for fresh certificates on every restart, which they rate-limit.
