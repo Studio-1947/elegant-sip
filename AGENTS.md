@@ -2,7 +2,7 @@
 
 - Production domain: `elegantsip.in`
 - Deployment model: single Hostinger VPS using `docker-compose.prod.yml`.
-- VPS SSH target: `root@187.127.185.82`
+- VPS SSH target: `deploy@187.127.185.82` (do not use root for deployment).
 - Public services: Caddy only, on ports 80 and 443. PostgreSQL, Redis, and the
   API port must remain private to the Docker network.
 - Production API and storefront share one origin; the API is available under

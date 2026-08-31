@@ -1,0 +1,55 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # A push deploys only after its CI workflow succeeds. Manual dispatch is
+    # retained for a deliberate rebuild of the currently selected revision.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+    steps:
+      - name: Load deployment key
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Trust the VPS host key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' '${{ secrets.VPS_SSH_KNOWN_HOSTS }}' > ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy tested revision
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" \
+            "DEPLOY_SHA='$DEPLOY_SHA' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd /var/www/elegant-sip
+          git fetch --prune origin main
+          git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
+          git checkout --detach "$DEPLOY_SHA"
+
+          docker compose -f docker-compose.prod.yml up -d --build
+          docker compose -f docker-compose.prod.yml ps
+          REMOTE

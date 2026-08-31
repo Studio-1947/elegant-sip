@@ -175,6 +175,25 @@ Postgres, Redis or API port 4000. Check the deployment with
 change `BACKUP_TIMEZONE` in `.env` only if the business operating timezone
 changes.
 
+### Automatic GitHub Actions deployment
+
+`.github/workflows/deploy-production.yml` deploys each successful `main` CI
+run to the VPS, using the exact commit that CI tested. In the GitHub repository
+settings, add these **Actions secrets** (never commit them):
+
+| Secret | Value |
+|---|---|
+| `VPS_HOST` | `187.127.185.82` |
+| `VPS_USER` | `deploy` |
+| `VPS_SSH_PRIVATE_KEY` | A dedicated private SSH key allowed for the `deploy` user |
+| `VPS_SSH_KNOWN_HOSTS` | The exact `ssh-keyscan -H 187.127.185.82` output, verified from a trusted connection |
+
+Create a dedicated keypair on your own computer, add its public key to
+`/home/deploy/.ssh/authorized_keys` on the VPS, and put only the private key in
+the GitHub secret. Keep the VPS `.env` untracked; deployments update source and
+rebuild containers but never overwrite it. The workflow can also be run
+manually from the GitHub Actions page.
+
 ### Docker: three compose files, one Dockerfile
 
 `apps/api/Dockerfile` has a `dev` stage and a `runtime` stage sharing one
