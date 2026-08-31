@@ -22,7 +22,7 @@ export default function ShopPage() {
       name: 'Darjeeling Tea Collection',
       description: ROUTE_META['/shop'].description,
       url: absoluteUrl('/shop'),
-      isPartOf: { '@id': 'https://elegantsip.com/#website' },
+      isPartOf: { '@id': 'https://elegantsip.in/#website' },
       mainEntity: {
         '@type': 'ItemList',
         numberOfItems: PRODUCTS.length,

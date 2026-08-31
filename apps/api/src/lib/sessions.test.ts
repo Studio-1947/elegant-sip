@@ -30,9 +30,9 @@ describe('session cookie policy', () => {
   })
 
   it('uses SameSite=Lax when the API is a subdomain of the storefront', async () => {
-    const options = await load('https://elegantsip.com')
-    expect(options('api.elegantsip.com').sameSite).toBe('lax')
-    expect(options('elegantsip.com').sameSite).toBe('lax')
+    const options = await load('https://elegantsip.in')
+    expect(options('api.elegantsip.in').sameSite).toBe('lax')
+    expect(options('elegantsip.in').sameSite).toBe('lax')
   })
 
   it('treats two projects on one platform as different sites', async () => {
@@ -63,8 +63,8 @@ describe('session cookie policy', () => {
   })
 
   it('turns Secure back on once that same site has HTTPS', async () => {
-    const options = await load('https://elegantsip.com')
-    expect(options('elegantsip.com').secure).toBe(true)
+    const options = await load('https://elegantsip.in')
+    expect(options('elegantsip.in').secure).toBe(true)
   })
 
   it('always keeps the cookie unreadable to JavaScript', async () => {

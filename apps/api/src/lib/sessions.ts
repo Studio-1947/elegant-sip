@@ -119,8 +119,8 @@ const site = (() => {
 /*
  * Cookie policy, derived per request rather than fixed.
  *
- * When the storefront and the API share a site (elegantsip.com and
- * api.elegantsip.com) `Lax` is right: it is sent on the payment gateway's
+ * When the storefront and the API share a site (elegantsip.in and
+ * api.elegantsip.in) `Lax` is right: it is sent on the payment gateway's
  * redirect back to the site, where `Strict` would drop the cookie and log the
  * customer out at the worst possible moment.
  *

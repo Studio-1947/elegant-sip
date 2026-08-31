@@ -30,7 +30,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
         articleSection: article.category,
         inLanguage: 'en-IN',
         author: { '@type': 'Organization', name: article.author, url: absoluteUrl('/about') },
-        publisher: { '@id': 'https://elegantsip.com/#organization' },
+        publisher: { '@id': 'https://elegantsip.in/#organization' },
         mainEntityOfPage: {
           '@type': 'WebPage',
           '@id': absoluteUrl(`/journal/${article.slug}`),
@@ -130,7 +130,7 @@ export default function JournalPage() {
       description: ROUTE_META['/journal'].description,
       url: absoluteUrl('/journal'),
       inLanguage: 'en-IN',
-      publisher: { '@id': 'https://elegantsip.com/#organization' },
+      publisher: { '@id': 'https://elegantsip.in/#organization' },
       blogPost: JOURNAL.map((a) => ({
         '@type': 'BlogPosting',
         headline: a.title,

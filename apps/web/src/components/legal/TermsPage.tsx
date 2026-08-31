@@ -10,7 +10,7 @@ export default function TermsPage() {
     <LegalLayout label="Legal" title="Terms & Conditions" updated="August 19, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
         <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our"). Please read
-        these terms before using elegantsip.com (the "Site"). By browsing or using the Site, you
+        these terms before using elegantsip.in (the "Site"). By browsing or using the Site, you
         agree to them.
       </p>
 

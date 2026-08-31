@@ -14,7 +14,7 @@ import { chromium } from 'playwright'
 import { readFileSync } from 'node:fs'
 
 const BASE = (process.argv[2] ?? 'http://localhost:4500').replace(/\/$/, '')
-const PROD_ORIGIN = 'https://elegantsip.com'
+const PROD_ORIGIN = 'https://elegantsip.in'
 
 const results = []
 const add = (level, area, message) => results.push({ level, area, message })

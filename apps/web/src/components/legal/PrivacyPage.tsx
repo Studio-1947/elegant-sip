@@ -32,7 +32,7 @@ export default function PrivacyPage() {
     <LegalLayout label="Legal" title="Privacy Policy" updated="August 19, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
         <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our").
-        Elegant Sip (elegantsip.com) is a Darjeeling tea storefront. This policy explains what
+        Elegant Sip (elegantsip.in) is a Darjeeling tea storefront. This policy explains what
         data the site collects, how it's stored, and how to reach us. It's written to match
         exactly what the site does — nothing more.
       </p>
@@ -181,7 +181,7 @@ export default function PrivacyPage() {
         <ul className={listClass}>
           <li>
             <strong className="text-[#1b261b]">Delete local data:</strong> clear your browser's
-            site data for elegantsip.com.
+            site data for elegantsip.in.
           </li>
           <li>
             <strong className="text-[#1b261b]">Opt out of analytics:</strong> decline or withdraw

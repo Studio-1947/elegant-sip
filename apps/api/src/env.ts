@@ -20,7 +20,7 @@ const envSchema = z.object({
   /* Email. Without SMTP_URL the transport logs instead of sending and reports
      delivered:false — so the UI can never claim a message was sent. */
   SMTP_URL: z.string().optional(),
-  MAIL_FROM: z.string().default('Elegant Sip <orders@elegantsip.com>'),
+  MAIL_FROM: z.string().default('Elegant Sip <orders@elegantsip.in>'),
   CONTACT_INBOX: z.string().default('elegantsipdarjeeling@gmail.com'),
 
   /* GST. Invoices are generated either way, but without a GSTIN the document
@@ -38,7 +38,7 @@ const envSchema = z.object({
     .transform((v) => v.split(',').map((s) => s.trim()).filter(Boolean)),
 
   /** Public base URL of the storefront, used in emails and absolute links. */
-  SITE_URL: z.string().url().default('https://elegantsip.com'),
+  SITE_URL: z.string().url().default('https://elegantsip.in'),
 
   /*
    * Apply migrations and load the catalogue during boot rather than as a

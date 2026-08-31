@@ -70,7 +70,7 @@ services:
       CORS_ORIGINS: ${SITE_URL:?set SITE_URL in .env}
       SITE_URL: ${SITE_URL}
       SMTP_URL: ${SMTP_URL:-}
-      MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.com>}
+      MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.in>}
       PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-fake}
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
@@ -115,12 +115,15 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: ${POSTGRES_DB:-elegantsip}
       PGHOST: postgres
+      # The business operates in India; make the advertised 02:30 schedule
+      # unambiguous even when the VPS itself runs in UTC.
+      TZ: ${BACKUP_TIMEZONE:-Asia/Kolkata}
     volumes:
       - ./backups:/backups
     entrypoint: ['/bin/sh', '-c']
     command:
       - |
-        echo "backups: nightly at 02:30, 14 kept in ./backups"
+        echo "backups: nightly at 02:30 ($$TZ), 14 kept in ./backups"
         while true; do
           now=$$(date +%s)
           hour=$$(date +%H | sed 's/^0//')

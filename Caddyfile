@@ -8,7 +8,7 @@
 # SITE_ADDRESS decides HTTP or HTTPS, and nothing else changes between them:
 #
 #   unset            → http://<the server's IP>, no certificate  (start here)
-#   elegantsip.com   → HTTPS, certificate obtained and renewed automatically
+#   elegantsip.in    → HTTPS, certificate obtained and renewed automatically
 #
 # Set it in .env once a domain points at this server, then restart. Caddy talks
 # to Let's Encrypt on its own; there is no certificate to install or renew.

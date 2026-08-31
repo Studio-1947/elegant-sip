@@ -97,7 +97,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 url: absoluteUrl(`/product/${product.slug}`),
                 itemCondition: 'https://schema.org/NewCondition',
                 availability: v.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-                seller: { '@id': 'https://elegantsip.com/#organization' },
+                seller: { '@id': 'https://elegantsip.in/#organization' },
                 shippingDetails: {
                   '@type': 'OfferShippingDetails',
                   shippingRate: {

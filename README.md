@@ -148,6 +148,33 @@ one build serves a bare IP and a domain alike. `SITE_ADDRESS` switches Caddy
 between plain HTTP on an IP and automatic HTTPS on a domain; certificates are
 obtained and renewed without configuration.
 
+### Hostinger VPS deployment
+
+On a fresh Ubuntu VPS, install Docker Engine and the Compose plugin, then clone
+this repository. From its root:
+
+```bash
+cp .env.prod.example .env
+nano .env
+docker compose -f docker-compose.prod.yml config
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml logs -f
+```
+
+Set `POSTGRES_PASSWORD` to a long URL-safe secret (for example,
+`openssl rand -hex 30`). While using the server IP, leave `SITE_ADDRESS` blank
+and set `SITE_URL=http://<server-ip>`. Once the `elegantsip.in` DNS A record
+points to the VPS, set `SITE_ADDRESS=elegantsip.in` and
+`SITE_URL=https://elegantsip.in`, then run the final command again. Caddy
+obtains and renews the certificate.
+
+Open VPS firewall ports **80** and **443** (and retain SSH access); do not open
+Postgres, Redis or API port 4000. Check the deployment with
+`curl -fsS http://127.0.0.1/api/health` (or the HTTPS domain), and use
+`/api/docs` for Swagger. The backup runs at 02:30 Asia/Kolkata by default;
+change `BACKUP_TIMEZONE` in `.env` only if the business operating timezone
+changes.
+
 ### Docker: three compose files, one Dockerfile
 
 `apps/api/Dockerfile` has a `dev` stage and a `runtime` stage sharing one

@@ -6,7 +6,7 @@
  * ──────────────────────────────────────────────────────────────────────────── */
 
 /** Production origin, no trailing slash. */
-export const SITE_URL = 'https://elegantsip.com'
+export const SITE_URL = 'https://elegantsip.in'
 
 /** Brand name — always two words. "Elegant Sip" is not a brand spelling. */
 export const BRAND = 'Elegant Sip'
@@ -32,6 +32,6 @@ export const FACEBOOK_URL = 'https://www.facebook.com/profile.php?id=61586479127
 export const pageTitle = (page?: string): string =>
   page ? `${page} ${TITLE_SEP} ${BRAND}` : DEFAULT_TITLE
 
-/** Absolute URL for a site-relative path (`/shop` → `https://elegantsip.com/shop`). */
+/** Absolute URL for a site-relative path (`/shop` → `https://elegantsip.in/shop`). */
 export const absoluteUrl = (path: string): string =>
   `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`

@@ -115,7 +115,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       },
       servers: [
         { url: 'http://localhost:4000', description: 'Local development' },
-        { url: 'https://api.elegantsip.com', description: 'Production' },
+        { url: 'https://elegantsip.in/api', description: 'Production' },
       ],
       tags: [
         { name: 'Health', description: 'Liveness and readiness probes' },

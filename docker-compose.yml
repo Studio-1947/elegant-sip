@@ -99,7 +99,7 @@ services:
       # where it cannot reach an actual customer.
       SITE_URL: ${SITE_URL:-http://localhost:5173}
       SMTP_URL: ${SMTP_URL:-smtp://mailpit:1025}
-      MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.com>}
+      MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.in>}
     ports:
       - '4000:4000'
 
