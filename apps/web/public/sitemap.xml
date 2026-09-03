@@ -1,76 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://elegantsip.com/</loc>
+    <loc>https://elegantsip.in/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/shop</loc>
+    <loc>https://elegantsip.in/#/shop</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-  <url><loc>https://elegantsip.com/#/product/first-flush-whole-leaf</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://elegantsip.com/#/product/first-flush-broken-leaf</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://elegantsip.com/#/product/first-flush-broken-mixed</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://elegantsip.com/#/product/first-flush-fannings</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://elegantsip.in/#/product/first-flush-whole-leaf</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://elegantsip.in/#/product/first-flush-broken-leaf</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://elegantsip.in/#/product/first-flush-broken-mixed</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://elegantsip.in/#/product/first-flush-fannings</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url>
-    <loc>https://elegantsip.com/#/about</loc>
+    <loc>https://elegantsip.in/#/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/gardens</loc>
+    <loc>https://elegantsip.in/#/gardens</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/brewing</loc>
+    <loc>https://elegantsip.in/#/brewing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/shipping</loc>
+    <loc>https://elegantsip.in/#/shipping</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/privacy</loc>
+    <loc>https://elegantsip.in/#/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/terms</loc>
+    <loc>https://elegantsip.in/#/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/journal</loc>
+    <loc>https://elegantsip.in/#/journal</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/journal/art-of-first-flush</loc>
+    <loc>https://elegantsip.in/#/journal/art-of-first-flush</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/journal/field-guide-to-steeping</loc>
+    <loc>https://elegantsip.in/#/journal/field-guide-to-steeping</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/journal/from-mist-to-cup</loc>
+    <loc>https://elegantsip.in/#/journal/from-mist-to-cup</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/faq</loc>
+    <loc>https://elegantsip.in/#/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://elegantsip.com/#/contact</loc>
+    <loc>https://elegantsip.in/#/contact</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
