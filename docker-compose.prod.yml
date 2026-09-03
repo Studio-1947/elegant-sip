@@ -91,7 +91,11 @@ services:
     environment:
       # Empty → plain HTTP on the server's IP. Set to a domain in .env and
       # Caddy obtains and renews an HTTPS certificate by itself.
-      SITE_ADDRESS: ${SITE_ADDRESS:-}
+      # Compose must pass a concrete plain-HTTP address when this stack sits
+      # behind another project's shared TLS proxy. Passing an empty variable
+      # overrides Caddyfile's default substitution and leaves it with no site
+      # address, so Caddy exits in a restart loop.
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
     # The defaults put Caddy straight onto the internet, which is right when
     # this stack has the server to itself. When the machine already runs a
     # reverse proxy for other projects, point these at loopback in .env
