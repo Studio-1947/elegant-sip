@@ -250,6 +250,39 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
     return inserted.length === 0 ? 'duplicate' : 'recorded'
   }
 
+  const aanganCallbackData = (payload: z.infer<typeof interaktEventSchema>): string | undefined => {
+    const data = payload.data
+    const message = data?.message
+    const candidates = [
+      payload.callbackData,
+      payload.callback_data,
+      data?.callbackData,
+      data?.callback_data,
+      message?.callbackData,
+      message?.callback_data,
+    ]
+    return candidates.find((value): value is string => typeof value === 'string' && value.startsWith('aangan:otp:'))
+  }
+
+  /**
+   * Aangan verifies the original Interakt HMAC itself. Keep the exact raw JSON and signature
+   * rather than reserialising the parsed object or inventing a second trust mechanism here.
+   */
+  const forwardAanganEvent = async (rawBody: string, signature: string): Promise<boolean> => {
+    if (!env.AANGAN_INTERAKT_WEBHOOK_URL) return false
+    try {
+      const response = await fetch(env.AANGAN_INTERAKT_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'interakt-signature': signature },
+        body: rawBody,
+        signal: AbortSignal.timeout(5_000),
+      })
+      return response.ok
+    } catch {
+      return false
+    }
+  }
+
   app.post(
     '/webhooks/interakt',
     {
@@ -259,7 +292,12 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
         summary: 'Interakt WhatsApp message status callback',
         description:
           'Verifies the Interakt-Signature HMAC on the raw JSON body, then records sent, delivered, read, and failed status events.',
-        response: { 200: interaktResponseSchema, 401: z.object({ error: z.string() }), 503: z.object({ error: z.string() }) },
+        response: {
+          200: interaktResponseSchema,
+          401: z.object({ error: z.string() }),
+          502: z.object({ error: z.string() }),
+          503: z.object({ error: z.string() }),
+        },
       },
     },
     async (request, reply) => {
@@ -269,13 +307,22 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
       }
       const rawBody = (request as unknown as { rawBody?: string }).rawBody ?? ''
       const signature = request.headers['interakt-signature'] as string | undefined
-      if (!verifyInteraktSignature(rawBody, signature)) {
+      if (!signature || !verifyInteraktSignature(rawBody, signature)) {
         request.log.warn({ signature: Boolean(signature) }, 'Interakt webhook signature rejected')
         return reply.status(401).send({ error: 'invalid signature' })
       }
 
       const parsed = interaktEventSchema.safeParse(request.body)
       if (!parsed.success) return reply.send({ received: true as const, status: 'ignored_unparseable' })
+      if (aanganCallbackData(parsed.data)) {
+        // Acknowledging before Aangan records this would permanently lose a delivery status.
+        // A 502 makes Interakt retry; Aangan's own unique constraint absorbs a retry after a
+        // successful forward but failed Elegant Sip database write.
+        if (!(await forwardAanganEvent(rawBody, signature))) {
+          request.log.error('Aangan Interakt webhook forwarding failed')
+          return reply.status(502).send({ error: 'Aangan webhook forwarding failed' })
+        }
+      }
       const status = await recordInteraktEvent(parsed.data)
       return reply.send({ received: true as const, status })
     },
