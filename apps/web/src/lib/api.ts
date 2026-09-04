@@ -262,6 +262,10 @@ export interface SavedAddress {
 /* ── The API surface the storefront uses ──────────────────────────────────── */
 
 export const api = {
+  storefront: {
+    status: () => request<{ paymentsAvailable: boolean }>('/storefront-status'),
+  },
+
   auth: {
     me: () => request<{ user: SessionUser | null }>('/v1/auth/me'),
     register: (payload: { name: string; email: string; password: string }) =>

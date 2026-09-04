@@ -1,10 +1,23 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
+import { z } from 'zod'
 import { healthResponseSchema, readyResponseSchema } from '@elegantsip/shared'
 import { pingDatabase } from '../db/client.js'
+import { paymentsEnabled } from '../env.js'
 
 const startedAt = Date.now()
 
 export const healthRoutes: FastifyPluginAsyncZod = async (app) => {
+  app.get(
+    '/storefront-status',
+    {
+      schema: {
+        tags: ['Health'],
+        summary: 'Public storefront capability status',
+        response: { 200: z.object({ paymentsAvailable: z.boolean() }) },
+      },
+    },
+    async () => ({ paymentsAvailable: paymentsEnabled }),
+  )
   /*
    * Liveness: is the process up? Deliberately checks NO dependencies — if the
    * database is down the container should keep running and serve errors, not

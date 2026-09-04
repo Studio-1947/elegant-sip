@@ -89,6 +89,13 @@ export default function CheckoutPage() {
   const [prefilled, setPrefilled] = useState(false)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
   const [saveAddress, setSaveAddress] = useState(false)
+  const [paymentsAvailable, setPaymentsAvailable] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void api.storefront.status().then((status) => !cancelled && setPaymentsAvailable(status.paymentsAvailable)).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   // Prefill only for a signed-in visitor. Orders are stored per-device, so
   // prefilling a signed-out visitor would disclose the previous customer's
@@ -280,6 +287,12 @@ export default function CheckoutPage() {
             <p className="text-sm text-[#45523f]">{orderError}</p>
           </div>
         )}
+        {paymentsAvailable === false && (
+          <div role="status" className="mb-8 border-l-4 border-amber-600 bg-amber-50 rounded-r-lg px-5 py-4">
+            <p className="text-xs font-mono font-bold tracking-widest uppercase text-amber-900 mb-1">Online checkout is coming soon</p>
+            <p className="text-sm text-[#45523f]">You can explore the full collection, but we are not accepting online orders yet.</p>
+          </div>
+        )}
         <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <Link to="/cart" className="text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors">
@@ -377,7 +390,7 @@ export default function CheckoutPage() {
               ) : (
                 <button
                   type="submit"
-                  disabled={placing}
+                  disabled={placing || paymentsAvailable === false}
                   className="flex-grow bg-[#8bb56e] hover:bg-[#9cc580] disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold tracking-widest uppercase py-3.5 px-8 rounded-lg transition-colors cursor-pointer"
                 >
                   {placing ? 'Placing Order…' : `Place Order • ${formatINR(finalTotal)}`}

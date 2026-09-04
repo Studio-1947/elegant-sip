@@ -71,12 +71,20 @@ services:
       SITE_URL: ${SITE_URL}
       SMTP_URL: ${SMTP_URL:-}
       MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.in>}
-      # Production is deliberately fail-closed: never substitute a fake
-      # gateway or blank credentials for a live store.
-      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:?set PAYMENT_PROVIDER=razorpay in .env}
-      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:?set RAZORPAY_KEY_ID in .env}
-      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:?set RAZORPAY_KEY_SECRET in .env}
-      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:?set RAZORPAY_WEBHOOK_SECRET in .env}
+      # `disabled` makes this a safe read-only catalogue until live Razorpay
+      # credentials are available; it never creates an order or reserves stock.
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-disabled}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      # WhatsApp stays separately disabled until its authentication flow and
+      # Interakt API key are ready. The webhook secret can be configured now.
+      AUTH_OTP_PROVIDER: ${AUTH_OTP_PROVIDER:-disabled}
+      INTERAKT_API_KEY: ${INTERAKT_API_KEY:-}
+      INTERAKT_API_BASE_URL: ${INTERAKT_API_BASE_URL:-https://api.interakt.ai/v1/public}
+      INTERAKT_OTP_TEMPLATE: ${INTERAKT_OTP_TEMPLATE:-elegant_sip_otp}
+      INTERAKT_OTP_TEMPLATE_LANGUAGE: ${INTERAKT_OTP_TEMPLATE_LANGUAGE:-en}
+      INTERAKT_WEBHOOK_SECRET: ${INTERAKT_WEBHOOK_SECRET:-}
       API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
       SELLER_GSTIN: ${SELLER_GSTIN:-}
       SELLER_STATE: ${SELLER_STATE:-West Bengal}

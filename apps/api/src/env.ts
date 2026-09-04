@@ -28,8 +28,8 @@ const envSchema = z.object({
   SELLER_GSTIN: z.string().optional(),
   SELLER_STATE: z.string().default('West Bengal'),
 
-  /** Which payment gateway to use. 'fake' is allowed only outside production. */
-  PAYMENT_PROVIDER: z.enum(['razorpay', 'fake']).default('fake'),
+  /** `disabled` is a deliberately read-only catalogue mode; it never creates orders. */
+  PAYMENT_PROVIDER: z.enum(['razorpay', 'fake', 'disabled']).default('fake'),
 
   /** Swagger is useful locally but should not disclose operations by default in production. */
   API_DOCS_ENABLED: z
@@ -104,20 +104,18 @@ function load(): Env {
     // Docker Compose passes this explicitly; retain the safe default for any
     // other production launch path as well.
     if (process.env.API_DOCS_ENABLED === undefined) value.API_DOCS_ENABLED = false
-    if (value.PAYMENT_PROVIDER !== 'razorpay') {
-      console.error('Invalid environment configuration:\n  PAYMENT_PROVIDER: production requires razorpay\n')
+    if (!['razorpay', 'disabled'].includes(value.PAYMENT_PROVIDER)) {
+      console.error('Invalid environment configuration:\n  PAYMENT_PROVIDER: production allows razorpay or disabled\n')
       process.exit(1)
     }
-    const missing = (['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'] as const).filter(
-      (key) => !value[key],
-    )
-    if (missing.length > 0) {
-      console.error(`Invalid environment configuration:\n  ${missing.join(', ')}: required for Razorpay in production\n`)
-      process.exit(1)
-    }
-    if (!value.SMTP_URL) {
-      console.error('Invalid environment configuration:\n  SMTP_URL: production requires transactional email\n')
-      process.exit(1)
+    if (value.PAYMENT_PROVIDER === 'razorpay') {
+      const missing = (['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'] as const).filter(
+        (key) => !value[key],
+      )
+      if (missing.length > 0) {
+        console.error(`Invalid environment configuration:\n  ${missing.join(', ')}: required for Razorpay in production\n`)
+        process.exit(1)
+      }
     }
   }
   return value
@@ -154,5 +152,6 @@ export function requirePaymentConfig(): PaymentConfig {
 
 /** Whether payment endpoints should be mounted at all. */
 export const paymentsEnabled = Boolean(
-  env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET && env.RAZORPAY_WEBHOOK_SECRET,
+  env.PAYMENT_PROVIDER === 'fake' ||
+    (env.PAYMENT_PROVIDER === 'razorpay' && env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET && env.RAZORPAY_WEBHOOK_SECRET),
 )

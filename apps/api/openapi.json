@@ -13,6 +13,35 @@
     "schemas": {}
   },
   "paths": {
+    "/storefront-status": {
+      "get": {
+        "summary": "Public storefront capability status",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "paymentsAvailable": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "paymentsAvailable"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Liveness probe",

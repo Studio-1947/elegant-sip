@@ -25,7 +25,7 @@ import {
 import { ApiError } from '../lib/problem.js'
 import { getGateway } from '../lib/gateway.js'
 import { sendEmail } from '../lib/email.js'
-import { env } from '../env.js'
+import { env, paymentsEnabled } from '../env.js'
 import { getInvoiceView } from '../lib/invoice.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -229,6 +229,9 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) => {
+      if (!paymentsEnabled) {
+        throw new ApiError(503, 'payments_unavailable', 'Checkout unavailable', 'Online checkout will be available soon. Please check back shortly.')
+      }
       const { items, email, shipping, shippingMethod, couponCode, notes } = request.body
       const userId = request.session?.userId ?? null
       const idempotencyKey = request.headers['idempotency-key']
