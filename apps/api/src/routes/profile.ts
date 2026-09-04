@@ -1,10 +1,10 @@
 import { hash, verify } from '@node-rs/argon2'
-import { eq, ne, and } from 'drizzle-orm'
+import { eq, ne, and, desc } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { problemSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
-import { users } from '../db/schema-commerce.js'
+import { savedAddresses, users } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import {
   SESSION_COOKIE,
@@ -74,6 +74,38 @@ async function assertPassword(digest: string, password: string) {
 }
 
 export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
+  const addressDto = z.object({
+    id: z.string().uuid(), label: z.string(), name: z.string(), line1: z.string(), city: z.string(), postalCode: z.string(), state: z.string().nullable(), country: z.string(), phone: z.string().nullable(), isDefault: z.boolean(),
+  })
+  const addressInput = z.object({
+    label: z.string().trim().min(2).max(50), name: z.string().trim().min(2).max(120), line1: z.string().trim().min(4).max(200), city: z.string().trim().min(2).max(80), postalCode: z.string().trim().regex(/^[1-9]\d{5}$/, 'Enter a valid 6-digit PIN code'), state: z.string().trim().max(80).optional(), country: z.literal('India').default('India'), phone: z.string().trim().max(20).optional(), isDefault: z.boolean().optional(),
+  })
+  const toAddressDto = (item: typeof savedAddresses.$inferSelect) => ({ id: item.id, label: item.label, name: item.name, line1: item.line1, city: item.city, postalCode: item.postalCode, state: item.state, country: item.country, phone: item.phone, isDefault: item.isDefault })
+
+  app.get('/account/addresses', { schema: { tags: ['Account'], summary: 'Your saved delivery addresses', response: { 200: z.object({ addresses: z.array(addressDto) }), 401: problemSchema } } }, async (request) => {
+    const session = requireSession(request.session)
+    const rows = await db.query.savedAddresses.findMany({ where: eq(savedAddresses.userId, session.userId), orderBy: [desc(savedAddresses.isDefault), desc(savedAddresses.updatedAt)] })
+    return { addresses: rows.map(toAddressDto) }
+  })
+
+  app.post('/account/addresses', { schema: { tags: ['Account'], summary: 'Save a delivery address', body: addressInput, response: { 201: z.object({ address: addressDto }), 401: problemSchema } } }, async (request, reply) => {
+    const session = requireSession(request.session)
+    const existing = await db.query.savedAddresses.findFirst({ where: eq(savedAddresses.userId, session.userId) })
+    const makeDefault = request.body.isDefault ?? !existing
+    const [created] = await db.transaction(async (tx) => {
+      if (makeDefault) await tx.update(savedAddresses).set({ isDefault: false }).where(eq(savedAddresses.userId, session.userId))
+      return tx.insert(savedAddresses).values({ ...request.body, state: request.body.state ?? null, phone: request.body.phone ?? null, userId: session.userId, isDefault: makeDefault }).returning()
+    })
+    return reply.status(201).send({ address: toAddressDto(created) })
+  })
+
+  app.delete('/account/addresses/:id', { schema: { tags: ['Account'], summary: 'Delete a saved delivery address', params: z.object({ id: z.string().uuid() }), response: { 200: z.object({ ok: z.literal(true) }), 401: problemSchema, 404: problemSchema } } }, async (request) => {
+    const session = requireSession(request.session)
+    const deleted = await db.delete(savedAddresses).where(and(eq(savedAddresses.id, request.params.id), eq(savedAddresses.userId, session.userId))).returning({ id: savedAddresses.id })
+    if (!deleted.length) throw ApiError.notFound('That saved address')
+    return { ok: true as const }
+  })
+
   app.patch(
     '/auth/me',
     {

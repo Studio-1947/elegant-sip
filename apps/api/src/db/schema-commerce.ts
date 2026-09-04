@@ -182,6 +182,27 @@ export const returnRequests = pgTable(
   (t) => [index('return_requests_status_idx').on(t.status), index('return_requests_order_idx').on(t.orderId)],
 )
 
+/** Reusable delivery addresses belong to an account, never to a browser. */
+export const savedAddresses = pgTable(
+  'saved_addresses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    label: text('label').notNull(),
+    name: text('name').notNull(),
+    line1: text('line1').notNull(),
+    city: text('city').notNull(),
+    postalCode: text('postal_code').notNull(),
+    state: text('state'),
+    country: text('country').notNull().default('India'),
+    phone: text('phone'),
+    isDefault: boolean('is_default').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('saved_addresses_user_idx').on(t.userId)],
+)
+
 export const payments = pgTable(
   'payments',
   {
@@ -317,6 +338,7 @@ export const newsletterSubscribers = pgTable('newsletter_subscribers', {
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   wishlist: many(wishlistItems),
+  savedAddresses: many(savedAddresses),
 }))
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -345,4 +367,8 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
 export const wishlistItemsRelations = relations(wishlistItems, ({ one }) => ({
   user: one(users, { fields: [wishlistItems.userId], references: [users.id] }),
   product: one(products, { fields: [wishlistItems.productId], references: [products.id] }),
+}))
+
+export const savedAddressesRelations = relations(savedAddresses, ({ one }) => ({
+  user: one(users, { fields: [savedAddresses.userId], references: [users.id] }),
 }))
