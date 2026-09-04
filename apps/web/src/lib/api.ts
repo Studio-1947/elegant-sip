@@ -277,6 +277,8 @@ export const api = {
     resetPassword: (payload: { token: string; password: string }) =>
       post<{ ok: true }>('/v1/auth/password/reset', payload),
     verifyEmail: (token: string) => post<{ ok: true }>('/v1/auth/verify-email', { token }),
+    requestWhatsApp: (phone: string) => post<{ ok: true; challengeId?: string }>('/v1/auth/whatsapp/request', { phone }),
+    verifyWhatsApp: (challengeId: string, code: string) => post<{ user: SessionUser }>('/v1/auth/whatsapp/verify', { challengeId, code }),
   },
 
   pricing: {
@@ -326,6 +328,8 @@ export const api = {
     addresses: () => request<{ addresses: SavedAddress[] }>('/v1/account/addresses'),
     saveAddress: (payload: Omit<SavedAddress, 'id'>) => post<{ address: SavedAddress }>('/v1/account/addresses', payload),
     deleteAddress: (id: string) => request<{ ok: true }>(`/v1/account/addresses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    requestWhatsApp: (phone: string) => post<{ ok: true; challengeId: string }>('/v1/account/whatsapp/request', { phone }),
+    verifyWhatsApp: (challengeId: string, code: string) => post<{ ok: true }>('/v1/account/whatsapp/verify', { challengeId, code }),
   },
 
   admin: {

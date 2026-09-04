@@ -3,6 +3,7 @@ import { useUi } from './UiContext'
 import { useCart } from './CartContext'
 import { useEffect, useState } from 'react'
 import { api, type OrderView } from '../lib/api'
+import { ApiClientError } from '../lib/api'
 import { formatINR } from '../lib/currency'
 import { Link, navigate, useDocumentMeta } from '../lib/router'
 
@@ -12,6 +13,11 @@ export default function AccountPage() {
   const { wishlist, addToCart } = useCart()
   const [orders, setOrders] = useState<OrderView[]>([])
   const [loadingOrders, setLoadingOrders] = useState(true)
+  const [phone, setPhone] = useState('')
+  const [phoneChallenge, setPhoneChallenge] = useState<string | null>(null)
+  const [phoneCode, setPhoneCode] = useState('')
+  const [phoneMessage, setPhoneMessage] = useState<string | null>(null)
+  const [phoneBusy, setPhoneBusy] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -36,6 +42,18 @@ export default function AccountPage() {
       addToCart({ productSlug: item.productSlug, size: item.variantSize, name: item.productName, price: item.unitPrice, imageSrc: item.imageSrc }, item.quantity)
     }
     navigate('/cart')
+  }
+
+  const requestWhatsAppLink = async () => {
+    setPhoneMessage(null); setPhoneBusy(true)
+    try { const result = await api.account.requestWhatsApp(phone); setPhoneChallenge(result.challengeId); setPhoneMessage('A code has been sent to WhatsApp.') }
+    catch (err) { setPhoneMessage(err instanceof ApiClientError ? err.message : 'Could not send a code.') } finally { setPhoneBusy(false) }
+  }
+  const verifyWhatsAppLink = async () => {
+    if (!phoneChallenge) return
+    setPhoneMessage(null); setPhoneBusy(true)
+    try { await api.account.verifyWhatsApp(phoneChallenge, phoneCode); setPhoneMessage('WhatsApp is linked. You can now sign in with a code.'); setPhoneChallenge(null); setPhoneCode('') }
+    catch (err) { setPhoneMessage(err instanceof ApiClientError ? err.message : 'Could not verify that code.') } finally { setPhoneBusy(false) }
   }
 
   if (!user) {
@@ -86,6 +104,13 @@ export default function AccountPage() {
             <p className="text-xs text-[#4a584a]">Browse teas from named gardens</p>
           </Link>
         </div>
+
+        <section className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 mb-12">
+          <h2 className="text-sm font-bold uppercase tracking-wide mb-1">WhatsApp sign-in</h2>
+          <p className="text-xs text-[#4a584a] mb-4">Link your number once, then use a WhatsApp OTP instead of your password.</p>
+          {!phoneChallenge ? <div className="flex flex-col sm:flex-row gap-3"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" inputMode="numeric" className="flex-1 border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm" /><button onClick={() => void requestWhatsAppLink()} disabled={phoneBusy} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">{phoneBusy ? 'Sending…' : 'Link WhatsApp'}</button></div> : <div className="flex flex-col sm:flex-row gap-3"><input value={phoneCode} onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" inputMode="numeric" className="flex-1 border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm tracking-[0.25em]" /><button onClick={() => void verifyWhatsAppLink()} disabled={phoneBusy || phoneCode.length !== 6} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">Verify number</button></div>}
+          {phoneMessage && <p role="status" className="text-xs text-[#4a584a] mt-3">{phoneMessage}</p>}
+        </section>
 
         {/* Order history */}
         <h2 className="text-lg font-bold uppercase tracking-wide mb-2">Order History</h2>

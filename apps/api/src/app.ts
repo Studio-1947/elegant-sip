@@ -25,6 +25,7 @@ import { productRoutes } from './routes/products.js'
 import { gardenRoutes } from './routes/gardens.js'
 import { journalRoutes } from './routes/journal.js'
 import { pricingRoutes } from './routes/pricing.js'
+import { otpRoutes } from './routes/otp.js'
 
 /**
  * Builds the app without listening, so tests can drive it via `inject()`
@@ -140,6 +141,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(healthRoutes)
   await app.register(authRoutes, { prefix: '/v1' })
+  await app.register(otpRoutes, { prefix: '/v1' })
   await app.register(productRoutes, { prefix: '/v1' })
   await app.register(gardenRoutes, { prefix: '/v1' })
   await app.register(journalRoutes, { prefix: '/v1' })

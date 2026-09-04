@@ -34,6 +34,8 @@ export const users = pgTable(
     /** Argon2id digest. */
     passwordHash: text('password_hash').notNull(),
     role: userRole('role').notNull().default('customer'),
+    phone: text('phone').unique(),
+    phoneVerifiedAt: timestamp('phone_verified_at', { withTimezone: true }),
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -42,6 +44,24 @@ export const users = pgTable(
 )
 
 export const tokenPurpose = pgEnum('token_purpose', ['email_verification', 'password_reset'])
+export const otpPurpose = pgEnum('otp_purpose', ['phone_login', 'phone_link'])
+
+/** Short-lived, single-use WhatsApp codes. Only Argon2 hashes are retained. */
+export const otpChallenges = pgTable(
+  'otp_challenges',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    phone: text('phone').notNull(),
+    purpose: otpPurpose('purpose').notNull(),
+    codeHash: text('code_hash').notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('otp_challenges_phone_idx').on(t.phone), index('otp_challenges_user_idx').on(t.userId)],
+)
 
 /**
  * Single-use tokens. Only a SHA-256 hash is stored — a leaked database dump

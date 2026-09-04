@@ -23,6 +23,7 @@ interface AuthContextType {
   /** True until the first /auth/me has resolved — avoids flashing signed-out UI. */
   loading: boolean
   login: (email: string, password: string) => Promise<void>
+  loginWithWhatsApp: (challengeId: string, code: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   refresh: () => Promise<void>
@@ -64,6 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(toUser(session))
   }, [])
 
+  const loginWithWhatsApp = useCallback(async (challengeId: string, code: string) => {
+    const { user: session } = await api.auth.verifyWhatsApp(challengeId, code)
+    setUser(toUser(session))
+  }, [])
+
   const register = useCallback(async (name: string, email: string, password: string) => {
     await api.auth.register({ name, email, password })
     /* Registration deliberately does not sign you in: the address is not
@@ -82,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, refresh }),
-    [user, loading, login, register, logout, refresh],
+    () => ({ user, loading, login, loginWithWhatsApp, register, logout, refresh }),
+    [user, loading, login, loginWithWhatsApp, register, logout, refresh],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

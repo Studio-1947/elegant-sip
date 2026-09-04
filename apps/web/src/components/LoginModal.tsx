@@ -16,10 +16,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const { login, register } = useAuth()
+  const { login, loginWithWhatsApp, register } = useAuth()
   const [submitting, setSubmitting] = useState(false)
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [whatsapp, setWhatsapp] = useState(false)
+  const [phone, setPhone] = useState('')
+  const [challengeId, setChallengeId] = useState<string | null>(null)
+  const [code, setCode] = useState('')
 
   // Focus trap, focus restoration, Escape and scroll lock.
   const dialogRef = useDialog(isOpen, onClose)
@@ -65,6 +69,20 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const sendWhatsAppCode = async () => {
+    setError(null); setSubmitting(true)
+    try {
+      const result = await api.auth.requestWhatsApp(phone)
+      if (!result.challengeId) throw new Error('This number is not linked yet. Sign in with email first, then link WhatsApp from your account.')
+      setChallengeId(result.challengeId)
+    } catch (err) { setError(err instanceof ApiClientError ? err.message : err instanceof Error ? err.message : 'Could not send a code.') } finally { setSubmitting(false) }
+  }
+  const verifyWhatsAppCode = async () => {
+    if (!challengeId) return
+    setError(null); setSubmitting(true)
+    try { await loginWithWhatsApp(challengeId, code); track('login', { method: 'whatsapp' }); onClose() } catch (err) { setError(err instanceof ApiClientError ? err.message : 'That code could not be verified.') } finally { setSubmitting(false) }
   }
 
   return (
@@ -115,7 +133,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           ))}
         </div>
 
-        {registered ? (
+        {whatsapp ? (
+          <div className="space-y-4">
+            <p className="text-xs text-[#4a584a] leading-relaxed">Use the WhatsApp number linked to your Elegant Sip account.</p>
+            {!challengeId ? <><label className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a]">WhatsApp number</label><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" inputMode="numeric" className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm" /><button onClick={() => void sendWhatsAppCode()} disabled={submitting} className="w-full bg-[#1b261b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg">{submitting ? 'Sending…' : 'Send WhatsApp code'}</button></> : <><label className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a]">6-digit code</label><input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm tracking-[0.4em]" /><button onClick={() => void verifyWhatsAppCode()} disabled={submitting || code.length !== 6} className="w-full bg-[#1b261b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg">Verify and sign in</button></>}
+            {error && <p className="text-xs text-red-700" role="alert">{error}</p>}
+            <button onClick={() => { setWhatsapp(false); setError(null) }} className="text-[11px] font-mono tracking-wider uppercase text-[#4a7333]">Use email and password</button>
+          </div>
+        ) : registered ? (
           <div className="bg-[#4a7333]/8 border border-[#4a7333]/25 rounded-xl p-5 text-sm text-[#45523f] leading-relaxed">
             <p className="font-bold text-[#1b261b] mb-2">Check your inbox</p>
             <p>
@@ -209,6 +234,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           </button>
         </form>
         )}
+
+        {!registered && mode === 'signin' && !whatsapp && <button onClick={() => { setWhatsapp(true); setError(null) }} className="w-full mt-4 border border-[#4a7333]/40 text-[#4a7333] text-xs font-bold tracking-widest uppercase py-3 rounded-lg">Continue with WhatsApp</button>}
 
         <p className="text-[11px] text-[#4a584a] mt-6 leading-relaxed">
           We store your name, email and order history. Nothing is shared with anyone, and we never
