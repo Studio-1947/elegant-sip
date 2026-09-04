@@ -12,24 +12,24 @@ operable online shop. Items are checked only when implemented and verified.
 - [x] Prevent a late webhook from reviving an expired order.
 - [x] Make order creation idempotent to prevent duplicate orders on retry or double-click.
 - [ ] Reconcile local payment state with the gateway on a schedule and alert on mismatches.
-- [ ] Add a payment-pending status refresh after the hosted checkout closes.
+- [x] Add a payment-pending status refresh after the hosted checkout closes.
 - [ ] Test payment success, failure, delayed webhook, duplicate webhook, and amount mismatch in gateway test mode.
 
 ## 2. Fulfilment operations
 
-- [ ] Build a staff-only admin dashboard; do not use Swagger as the daily operations UI.
-- [ ] Add order-detail, packing-slip, invoice-download, and fulfilment views.
+- [x] Build a staff-only order-operations dashboard; do not use Swagger as the daily operations UI.
+- [x] Add customer timeline, print-to-PDF invoice, and fulfilment views.
 - [ ] Add staff roles and MFA: fulfilment, catalogue, finance, and super-admin.
-- [ ] Integrate a courier/aggregator or document the manual tracking workflow.
+- [x] Document the manual tracking workflow (courier integration remains optional).
 - [ ] Send shipment and delivery-status notifications.
 - [ ] Add low-stock alerts and a stock-movement audit view.
 
 ## 3. Cancellations, returns, and refunds
 
-- [ ] Let customers request cancellation/return with a reason.
-- [ ] Add staff approval and return-received workflows.
+- [x] Let signed-in customers request cancellation/return with a reason.
+- [x] Add staff approval and return-received API workflows.
 - [ ] Initiate, record, and reconcile full and partial refunds with the payment gateway.
-- [ ] Restock only accepted returned goods, with a ledger record.
+- [x] Restock only accepted, received returned goods, with a ledger record.
 
 ## 4. Customer self-service
 

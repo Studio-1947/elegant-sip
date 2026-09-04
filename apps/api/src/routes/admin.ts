@@ -1,10 +1,10 @@
-import { desc, eq, sql } from 'drizzle-orm'
+import { desc, eq, lte, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { paiseSchema, problemSchema, slugSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { productVariants, products, reviews } from '../db/schema.js'
-import { orders, stockLedger } from '../db/schema-commerce.js'
+import { orders, returnRequests, stockLedger } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import { adminProductRoutes } from './admin-products.js'
 import { getInvoiceView } from '../lib/invoice.js'
@@ -87,6 +87,106 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
           shippingCity: o.shippingCity,
           trackingNumber: o.trackingNumber,
         })),
+      }
+    },
+  )
+
+  app.get(
+    '/admin/return-requests',
+    {
+      schema: {
+        tags: ['Admin'], summary: 'Cancellation and return queue',
+        querystring: z.object({ status: z.enum(['requested', 'approved', 'rejected', 'received']).optional() }),
+        response: { 200: z.object({ requests: z.array(z.object({ id: z.string().uuid(), number: z.string(), type: z.string(), status: z.string(), reason: z.string(), requestedAt: z.iso.datetime() })) }) },
+      },
+    },
+    async (request) => {
+      const rows = await db.query.returnRequests.findMany({
+        where: request.query.status ? eq(returnRequests.status, request.query.status) : undefined,
+        with: { order: true },
+        orderBy: desc(returnRequests.requestedAt),
+      })
+      return { requests: rows.map((item) => ({ id: item.id, number: item.order.number, type: item.type, status: item.status, reason: item.reason, requestedAt: item.requestedAt.toISOString() })) }
+    },
+  )
+
+  app.patch(
+    '/admin/return-requests/:id',
+    {
+      schema: {
+        tags: ['Admin'], summary: 'Review a cancellation or return request',
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({ status: z.enum(['approved', 'rejected', 'received']), staffNote: z.string().trim().max(500).optional() }),
+        response: { 200: z.object({ ok: z.literal(true), restocked: z.boolean() }), 404: problemSchema, 409: problemSchema },
+      },
+    },
+    async (request) => {
+      const item = await db.query.returnRequests.findFirst({ where: eq(returnRequests.id, request.params.id), with: { order: { with: { items: true } } } })
+      if (!item) throw ApiError.notFound('That return request')
+      const { status, staffNote } = request.body
+      const allowed = (item.status === 'requested' && (status === 'approved' || status === 'rejected')) || (item.status === 'approved' && status === 'received')
+      if (!allowed) throw ApiError.conflict('invalid_return_transition', `Cannot change a ${item.status} request to ${status}.`)
+      let restocked = false
+      await db.transaction(async (tx) => {
+        await tx.update(returnRequests).set({ status, staffNote: staffNote ?? item.staffNote, ...(status === 'approved' || status === 'rejected' ? { decidedAt: new Date() } : {}), ...(status === 'received' ? { receivedAt: new Date() } : {}) }).where(eq(returnRequests.id, item.id))
+        // Only inspected, accepted physical returns go back into available stock.
+        if (status === 'received' && item.type === 'return') {
+          for (const line of item.order.items) {
+            if (!line.variantId) continue
+            await tx.update(productVariants).set({ stock: sql`${productVariants.stock} + ${line.quantity}` }).where(eq(productVariants.id, line.variantId))
+            await tx.insert(stockLedger).values({ variantId: line.variantId, orderId: item.order.id, delta: line.quantity, reason: 'restock', note: `Return request ${item.id} received` })
+          }
+          restocked = true
+        }
+      })
+      return { ok: true as const, restocked }
+    },
+  )
+
+  app.get(
+    '/admin/orders/:number',
+    {
+      schema: {
+        tags: ['Admin'],
+        summary: 'Full order detail for fulfilment staff',
+        params: z.object({ number: z.string().min(3).max(40) }),
+        response: {
+          200: z.object({
+            number: z.string(),
+            status: z.string(),
+            placedAt: z.iso.datetime(),
+            email: z.string(),
+            phone: z.string().nullable(),
+            notes: z.string().nullable(),
+            items: z.array(z.object({ productName: z.string(), variantSize: z.string(), quantity: z.number().int() })),
+            shipping: z.object({ name: z.string(), line1: z.string(), city: z.string(), postalCode: z.string(), state: z.string().nullable(), country: z.string() }),
+          }),
+          404: problemSchema,
+        },
+      },
+    },
+    async (request) => {
+      const order = await db.query.orders.findFirst({
+        where: eq(orders.number, request.params.number),
+        with: { items: true },
+      })
+      if (!order) throw ApiError.notFound(`Order ${request.params.number}`)
+      return {
+        number: order.number,
+        status: order.status,
+        placedAt: order.placedAt.toISOString(),
+        email: order.email,
+        phone: order.shippingPhone,
+        notes: order.notes,
+        items: order.items.map((item) => ({ productName: item.productName, variantSize: item.variantSize, quantity: item.quantity })),
+        shipping: {
+          name: order.shippingName,
+          line1: order.shippingLine1,
+          city: order.shippingCity,
+          postalCode: order.shippingPostalCode,
+          state: order.shippingState,
+          country: order.shippingCountry,
+        },
       }
     },
   )
@@ -223,6 +323,27 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       })
 
       return { productSlug, variantSize, stock: updated.stock }
+    },
+  )
+
+  app.get(
+    '/admin/stock/low',
+    {
+      schema: {
+        tags: ['Admin'],
+        summary: 'Low-stock variants for the staff dashboard',
+        querystring: z.object({ threshold: z.coerce.number().int().min(0).max(1000).default(5) }),
+        response: { 200: z.object({ variants: z.array(z.object({ productSlug: slugSchema, productName: z.string(), size: z.string(), sku: z.string(), stock: z.number().int() })) }) },
+      },
+    },
+    async (request) => {
+      const variants = await db
+        .select({ productSlug: products.slug, productName: products.name, size: productVariants.size, sku: productVariants.sku, stock: productVariants.stock })
+        .from(productVariants)
+        .innerJoin(products, eq(productVariants.productId, products.id))
+        .where(lte(productVariants.stock, request.query.threshold))
+        .orderBy(productVariants.stock, products.name, productVariants.size)
+      return { variants }
     },
   )
 

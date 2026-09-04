@@ -192,6 +192,14 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
           {/* Account */}
           {user ? (
             <div className="hidden md:flex items-center gap-3">
+              {user.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="text-xs font-mono uppercase tracking-wider text-[#4a584a] hover:text-[#4a7333] transition-colors"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 to="/account"
                 className="text-xs font-mono uppercase tracking-wider text-[#4a584a] hover:text-[#4a7333] transition-colors max-w-[120px] truncate"
@@ -263,6 +271,16 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
                 >
                   Login
                 </button>
+              )}
+              {user && (
+                user.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'admin' ? 'text-[#4a7333] font-bold' : 'text-[#1b261b] hover:text-[#4a7333]'}`}
+                  >
+                    Admin
+                  </Link>
+                )
               )}
               {user && (
                 <Link

@@ -129,6 +129,9 @@ export interface OrderView {
   number: string
   status: 'pending_payment' | 'paid' | 'packed' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
   placedAt: string
+  paidAt: string | null
+  shippedAt: string | null
+  cancelledAt: string | null
   email: string
   items: PricedLine[]
   subtotal: number
@@ -179,6 +182,68 @@ export interface ReviewView {
   text: string
   publishedAt: string | null
   verified: boolean
+}
+
+export type AdminOrderStatus = OrderView['status']
+
+export interface AdminOrder {
+  number: string
+  status: AdminOrderStatus
+  placedAt: string
+  email: string
+  total: number
+  itemCount: number
+  shippingCity: string
+  trackingNumber: string | null
+}
+
+export interface AdminConfig {
+  paymentProvider: string
+  paymentsLive: boolean
+  emailConfigured: boolean
+  gstinConfigured: boolean
+  sellerState: string
+}
+
+export interface AdminOrderDetail {
+  number: string
+  status: AdminOrderStatus
+  placedAt: string
+  email: string
+  phone: string | null
+  notes: string | null
+  items: { productName: string; variantSize: string; quantity: number }[]
+  shipping: { name: string; line1: string; city: string; postalCode: string; state: string | null; country: string }
+}
+
+export interface AdminReturnRequest {
+  id: string
+  number: string
+  type: 'cancellation' | 'return'
+  status: 'requested' | 'approved' | 'rejected' | 'received'
+  reason: string
+  requestedAt: string
+}
+
+export interface LowStockVariant {
+  productSlug: string
+  productName: string
+  size: string
+  sku: string
+  stock: number
+}
+
+export interface InvoiceView {
+  number: string
+  issuedAt: string
+  isTaxInvoice: boolean
+  sellerGstin: string | null
+  placeOfSupply: string
+  hsn: string
+  taxRatePercent: number
+  lines: { description: string; quantity: number; unitPrice: string; lineTotal: string }[]
+  totals: { subtotal: string; discount: string; shipping: string; cgst: string | null; sgst: string | null; igst: string | null; total: string }
+  buyer: { name: string; line1: string; city: string; postalCode: string; state: string | null }
 }
 
 /* ── The API surface the storefront uses ──────────────────────────────────── */
@@ -233,6 +298,36 @@ export const api = {
       request<OrderView>(`/v1/orders/${encodeURIComponent(number)}`, {
         ...(guestAccessToken ? { headers: { 'X-Order-Access-Token': guestAccessToken } } : {}),
       }),
+    requestReturn: (number: string, payload: { type: 'cancellation' | 'return'; reason: string }) =>
+      post<{ id: string; status: 'requested' }>(`/v1/orders/${encodeURIComponent(number)}/return-requests`, payload),
+    invoice: (number: string, guestAccessToken?: string | null) => request<{ invoice: InvoiceView }>(`/v1/orders/${encodeURIComponent(number)}/invoice`, {
+      ...(guestAccessToken ? { headers: { 'X-Order-Access-Token': guestAccessToken } } : {}),
+    }),
+  },
+
+  admin: {
+    listOrders: (status?: AdminOrderStatus) =>
+      request<{ orders: AdminOrder[] }>(
+        `/v1/admin/orders${status ? `?status=${encodeURIComponent(status)}` : ''}`,
+      ),
+    getOrder: (number: string) => request<AdminOrderDetail>(`/v1/admin/orders/${encodeURIComponent(number)}`),
+    updateOrder: (
+      number: string,
+      payload: {
+        status?: Extract<AdminOrderStatus, 'packed' | 'shipped' | 'delivered' | 'cancelled'>
+        trackingCarrier?: string
+        trackingNumber?: string
+      },
+    ) =>
+      request<{ ok: true; notified: boolean }>(`/v1/admin/orders/${encodeURIComponent(number)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    config: () => request<AdminConfig>('/v1/admin/config'),
+    listReturnRequests: () => request<{ requests: AdminReturnRequest[] }>('/v1/admin/return-requests'),
+    updateReturnRequest: (id: string, payload: { status: 'approved' | 'rejected' | 'received'; staffNote?: string }) =>
+      request<{ ok: true; restocked: boolean }>(`/v1/admin/return-requests/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    lowStock: (threshold = 5) => request<{ variants: LowStockVariant[] }>(`/v1/admin/stock/low?threshold=${threshold}`),
   },
 
   reviews: {

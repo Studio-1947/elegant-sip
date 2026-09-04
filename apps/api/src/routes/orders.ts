@@ -19,12 +19,14 @@ import {
   orderItems,
   orders,
   payments,
+  returnRequests,
   stockLedger,
 } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import { getGateway } from '../lib/gateway.js'
 import { sendEmail } from '../lib/email.js'
 import { env } from '../env.js'
+import { getInvoiceView } from '../lib/invoice.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Orders.
@@ -70,6 +72,9 @@ const orderDto = z.object({
   number: z.string(),
   status: z.enum(['pending_payment', 'paid', 'packed', 'shipped', 'delivered', 'cancelled', 'refunded']),
   placedAt: z.iso.datetime(),
+  paidAt: z.iso.datetime().nullable(),
+  shippedAt: z.iso.datetime().nullable(),
+  cancelledAt: z.iso.datetime().nullable(),
   email: z.string(),
   items: z.array(orderItemDto),
   subtotal: paiseSchema,
@@ -105,6 +110,9 @@ const toOrderDto = (row: OrderRow) => ({
   number: row.number,
   status: row.status,
   placedAt: row.placedAt.toISOString(),
+  paidAt: row.paidAt?.toISOString() ?? null,
+  shippedAt: row.shippedAt?.toISOString() ?? null,
+  cancelledAt: row.cancelledAt?.toISOString() ?? null,
   email: row.email,
   items: row.items.map((i) => ({
     productSlug: i.productSlug,
@@ -475,6 +483,57 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         throw ApiError.notFound('That order')
       }
       return toOrderDto(row)
+    },
+  )
+
+  app.get(
+    '/orders/:number/invoice',
+    {
+      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+      schema: {
+        tags: ['Orders'],
+        summary: 'Your issued invoice',
+        description: 'Readable by the order account or by a guest holding the checkout access token. The browser can print this document to PDF.',
+        params: z.object({ number: z.string().min(3).max(40) }),
+        headers: z.object({ 'x-order-access-token': z.string().min(40).max(100).optional() }).passthrough(),
+        response: { 200: z.object({ invoice: z.any() }), 404: problemSchema },
+      },
+    },
+    async (request) => {
+      const order = await db.query.orders.findFirst({ where: eq(orders.number, request.params.number) })
+      if (!order) throw ApiError.notFound(`Order ${request.params.number}`)
+      const token = request.headers['x-order-access-token']
+      const suppliedHash = typeof token === 'string' ? createHash('sha256').update(token).digest('hex') : null
+      const permitted = request.session?.userId === order.userId || (order.userId === null && suppliedHash === order.guestAccessTokenHash)
+      if (!permitted) throw ApiError.notFound('That order')
+      const invoice = await getInvoiceView(order.id)
+      if (!invoice) throw ApiError.notFound(`An invoice for ${request.params.number}`)
+      return { invoice }
+    },
+  )
+
+  app.post(
+    '/orders/:number/return-requests',
+    {
+      schema: {
+        tags: ['Orders'],
+        summary: 'Request a cancellation or return',
+        params: z.object({ number: z.string().min(3).max(40) }),
+        body: z.object({ type: z.enum(['cancellation', 'return']), reason: z.string().trim().min(10).max(500) }),
+        response: { 201: z.object({ id: z.string().uuid(), status: z.literal('requested') }), 401: problemSchema, 404: problemSchema, 409: problemSchema },
+      },
+    },
+    async (request, reply) => {
+      if (!request.session) throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in to request a return.')
+      const order = await db.query.orders.findFirst({ where: eq(orders.number, request.params.number) })
+      if (!order || order.userId !== request.session.userId) throw ApiError.notFound('That order')
+      if (!['paid', 'packed', 'shipped', 'delivered'].includes(order.status)) {
+        throw ApiError.conflict('return_not_available', 'This order is not eligible for a cancellation or return request.')
+      }
+      const existing = await db.query.returnRequests.findFirst({ where: eq(returnRequests.orderId, order.id) })
+      if (existing) throw ApiError.conflict('return_already_requested', 'A cancellation or return request already exists for this order.')
+      const [created] = await db.insert(returnRequests).values({ orderId: order.id, type: request.body.type, reason: request.body.reason }).returning({ id: returnRequests.id })
+      return reply.status(201).send({ id: created.id, status: 'requested' as const })
     },
   )
 }

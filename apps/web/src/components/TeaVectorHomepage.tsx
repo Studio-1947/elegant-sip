@@ -24,6 +24,7 @@ const FaqPage = lazy(() => import('./FaqPage'))
 const ContactPage = lazy(() => import('./ContactPage'))
 const OrderPage = lazy(() => import('./OrderPage'))
 const AccountPage = lazy(() => import('./AccountPage'))
+const AdminPage = lazy(() => import('./AdminPage'))
 const BrewingGuidePage = lazy(() => import('./BrewingGuidePage'))
 const GardensPage = lazy(() => import('./GardensPage'))
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'))
@@ -215,6 +216,9 @@ export default function TeaVectorHomepage() {
       break
     case 'account':
       page = <AccountPage />
+      break
+    case 'admin':
+      page = <AdminPage />
       break
     case 'brewing':
       page = <BrewingGuidePage />

@@ -162,6 +162,26 @@ export const orderItems = pgTable(
 
 export const paymentStatus = pgEnum('payment_status', ['created', 'captured', 'failed', 'refunded'])
 
+export const returnRequestType = pgEnum('return_request_type', ['cancellation', 'return'])
+export const returnRequestStatus = pgEnum('return_request_status', ['requested', 'approved', 'rejected', 'received'])
+
+/** Customer requests are operational records, separate from payment refunds. */
+export const returnRequests = pgTable(
+  'return_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orderId: uuid('order_id').notNull().references(() => orders.id, { onDelete: 'restrict' }).unique(),
+    type: returnRequestType('type').notNull(),
+    status: returnRequestStatus('status').notNull().default('requested'),
+    reason: text('reason').notNull(),
+    staffNote: text('staff_note'),
+    requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    receivedAt: timestamp('received_at', { withTimezone: true }),
+  },
+  (t) => [index('return_requests_status_idx').on(t.status), index('return_requests_order_idx').on(t.orderId)],
+)
+
 export const payments = pgTable(
   'payments',
   {
@@ -312,6 +332,10 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
   order: one(orders, { fields: [payments.orderId], references: [orders.id] }),
+}))
+
+export const returnRequestsRelations = relations(returnRequests, ({ one }) => ({
+  order: one(orders, { fields: [returnRequests.orderId], references: [orders.id] }),
 }))
 
 export const invoicesRelations = relations(invoices, ({ one }) => ({

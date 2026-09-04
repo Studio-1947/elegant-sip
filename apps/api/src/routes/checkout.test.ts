@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { randomUUID } from 'node:crypto'
 import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
 import { buildApp } from '../app.js'
@@ -127,8 +128,10 @@ describe('checkout', () => {
     if (!available) return
     const before = await stockFor(SLUG)
     const headers = {
-      'idempotency-key': '32c3b419-1eff-4ab1-9dd0-dc244b8fc73e',
-      'x-guest-access-token': 'a_very_long_guest_access_token_that_is_safe_to_hash_123',
+      // The suite points at the developer database. A fixed key would reuse a
+      // checkout from a previous test run and falsely look like no stock moved.
+      'idempotency-key': randomUUID(),
+      'x-guest-access-token': `guest_access_token_for_idempotency_test_${randomUUID()}`,
     }
     const first = await app.inject({ method: 'POST', url: '/v1/orders', headers, payload: order() })
     const retry = await app.inject({
