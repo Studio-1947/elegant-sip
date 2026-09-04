@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.js'
@@ -141,7 +141,16 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
           // Already paid — a legitimate re-delivery of an event we handled.
           if (order.status !== 'pending_payment') return finish('already_paid')
 
-          await db.transaction(async (tx) => {
+          const captured = await db.transaction(async (tx) => {
+            // The expiry worker may have cancelled this order after it was
+            // loaded above. Transition conditionally so a late payment cannot
+            // turn a cancelled, restocked order back into paid.
+            const transitioned = await tx
+              .update(orders)
+              .set({ status: 'paid', paidAt: new Date() })
+              .where(and(eq(orders.id, order.id), eq(orders.status, 'pending_payment')))
+              .returning({ id: orders.id })
+            if (transitioned.length === 0) return false
             await tx
               .update(payments)
               .set({
@@ -151,11 +160,9 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
                 capturedAt: new Date(),
               })
               .where(eq(payments.id, paymentRow.id))
-            await tx
-              .update(orders)
-              .set({ status: 'paid', paidAt: new Date() })
-              .where(eq(orders.id, order.id))
+            return true
           })
+          if (!captured) return finish('already_paid')
 
           /* Side effects run after the transaction commits and never fail the
              webhook: the payment is captured whether or not the email lands. */
@@ -176,15 +183,20 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
 
         case 'payment.failed': {
           if (order.status === 'pending_payment') {
-            await db.transaction(async (tx) => {
-              await tx.update(payments).set({ status: 'failed' }).where(eq(payments.id, paymentRow.id))
-              await tx
+            const cancelled = await db.transaction(async (tx) => {
+              const transitioned = await tx
                 .update(orders)
                 .set({ status: 'cancelled', cancelledAt: new Date() })
-                .where(eq(orders.id, order.id))
+                .where(and(eq(orders.id, order.id), eq(orders.status, 'pending_payment')))
+                .returning({ id: orders.id })
+              if (transitioned.length === 0) return false
+              await tx.update(payments).set({ status: 'failed' }).where(eq(payments.id, paymentRow.id))
+              return true
             })
-            // Put the reserved packs back on the shelf.
-            await releaseStock(order.id)
+            if (cancelled) {
+              // Put the reserved packs back on the shelf.
+              await releaseStock(order.id)
+            }
           }
           return finish('order_cancelled')
         }

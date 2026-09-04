@@ -96,6 +96,8 @@ export const orders = pgTable(
     userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
     /** SHA-256 of a 256-bit token returned only to a guest at checkout. */
     guestAccessTokenHash: text('guest_access_token_hash').unique(),
+    /** Client-generated UUID that makes a checkout retry return the original order. */
+    idempotencyKey: text('idempotency_key').unique(),
     status: orderStatus('status').notNull().default('pending_payment'),
 
     email: text('email').notNull(),

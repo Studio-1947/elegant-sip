@@ -53,6 +53,28 @@ function loadRazorpay(): Promise<RazorpayConstructor> {
   })
 }
 
+const CHECKOUT_ATTEMPT_KEY = 'elegant_sip_checkout_attempt'
+
+function checkoutAttempt() {
+  const stored = sessionStorage.getItem(CHECKOUT_ATTEMPT_KEY)
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored) as { idempotencyKey?: string; guestAccessToken?: string }
+      if (parsed.idempotencyKey && parsed.guestAccessToken) return parsed as { idempotencyKey: string; guestAccessToken: string }
+    } catch {
+      // Replace malformed browser state with a fresh safe attempt.
+    }
+  }
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  const attempt = {
+    idempotencyKey: crypto.randomUUID(),
+    guestAccessToken: btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''),
+  }
+  sessionStorage.setItem(CHECKOUT_ATTEMPT_KEY, JSON.stringify(attempt))
+  return attempt
+}
+
 export default function CheckoutPage() {
   const { cart, cartTotal, discount, coupon, clearCart, quote, toCartLines } = useCart()
   const { user } = useAuth()
@@ -148,6 +170,7 @@ export default function CheckoutPage() {
     setOrderError(null)
     try {
       const notes = localStorage.getItem('elegant_sip_order_notes') || ''
+      const attempt = checkoutAttempt()
       const result = await api.orders.place({
         items: toCartLines(),
         email: form.email,
@@ -162,9 +185,10 @@ export default function CheckoutPage() {
         shippingMethod,
         ...(coupon ? { couponCode: coupon } : {}),
         ...(notes ? { notes } : {}),
-      })
+      }, { idempotencyKey: attempt.idempotencyKey, ...(user ? {} : { guestAccessToken: attempt.guestAccessToken }) })
 
       localStorage.removeItem('elegant_sip_order_notes')
+      sessionStorage.removeItem(CHECKOUT_ATTEMPT_KEY)
       if (result.guestAccessToken) {
         // Not included in URLs, browser history, referrers, or persistent local storage.
         sessionStorage.setItem(`elegant_sip_order_access_${result.order.number}`, result.guestAccessToken)

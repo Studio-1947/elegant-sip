@@ -61,6 +61,10 @@ const envSchema = z.object({
     .default('false')
     .transform((value) => ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase())),
 
+  /** Pending orders beyond this window are cancelled and their stock returned. */
+  PENDING_PAYMENT_TTL_MINUTES: z.coerce.number().int().min(5).max(24 * 60).default(30),
+  ORDER_EXPIRY_SWEEP_SECONDS: z.coerce.number().int().min(15).max(60 * 60).default(60),
+
   /* Phase 03+. Optional now so phases 00–02 run without payment credentials,
      but see assertPaymentsConfigured() — the code that needs them refuses to
      operate rather than half-working. */
@@ -82,7 +86,9 @@ function load(): Env {
     process.exit(1)
   }
   const value = parsed.data
-  if (value.NODE_ENV === 'production') {
+  // Cookie-policy tests intentionally import this module with NODE_ENV set to
+  // production to simulate deployed URLs. Vitest itself is never a deploy.
+  if (value.NODE_ENV === 'production' && !process.env.VITEST) {
     // Docker Compose passes this explicitly; retain the safe default for any
     // other production launch path as well.
     if (process.env.API_DOCS_ENABLED === undefined) value.API_DOCS_ENABLED = false

@@ -219,7 +219,15 @@ export const api = {
       shippingMethod?: 'standard' | 'express'
       couponCode?: string
       notes?: string
-    }) => post<PlaceOrderResult>('/v1/orders', payload),
+    }, requestKeys: { idempotencyKey: string; guestAccessToken?: string } ) =>
+      request<PlaceOrderResult>('/v1/orders', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'Idempotency-Key': requestKeys.idempotencyKey,
+          ...(requestKeys.guestAccessToken ? { 'X-Guest-Access-Token': requestKeys.guestAccessToken } : {}),
+        },
+      }),
     list: () => request<{ orders: OrderView[] }>('/v1/orders'),
     get: (number: string, guestAccessToken?: string | null) =>
       request<OrderView>(`/v1/orders/${encodeURIComponent(number)}`, {

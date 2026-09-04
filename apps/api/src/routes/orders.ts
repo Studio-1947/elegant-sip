@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import {
@@ -24,6 +24,7 @@ import {
 import { ApiError } from '../lib/problem.js'
 import { getGateway } from '../lib/gateway.js'
 import { sendEmail } from '../lib/email.js'
+import { env } from '../env.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Orders.
@@ -135,6 +136,42 @@ const toOrderDto = (row: OrderRow) => ({
       : null,
 })
 
+/** Returns a previous checkout only to the same account or token-holding guest. */
+async function idempotentOrderResult(input: {
+  key: string
+  userId: string | null
+  guestAccessToken: string | undefined
+}) {
+  const row = await db.query.orders.findFirst({
+    where: eq(orders.idempotencyKey, input.key),
+    with: { items: true, payments: true },
+  })
+  if (!row) return null
+
+  const guestHash = input.guestAccessToken
+    ? createHash('sha256').update(input.guestAccessToken).digest('hex')
+    : null
+  const allowed =
+    (row.userId !== null && row.userId === input.userId) ||
+    (row.userId === null && guestHash !== null && guestHash === row.guestAccessTokenHash)
+  if (!allowed) throw new ApiError(409, 'idempotency_conflict', 'Checkout conflict', 'This checkout key cannot be reused.')
+
+  const payment = row.payments.find((p) => p.status === 'created') ?? row.payments[0]
+  if (!payment) throw new ApiError(409, 'idempotency_conflict', 'Checkout conflict', 'The original checkout has no payment record.')
+
+  return {
+    order: toOrderDto(row),
+    payment: {
+      provider: payment.provider,
+      gatewayOrderId: payment.providerOrderId,
+      amount: payment.amount,
+      currency: payment.currency,
+      publicKey: payment.provider === 'razorpay' ? (env.RAZORPAY_KEY_ID ?? '') : 'rzp_test_fake',
+    },
+    guestAccessToken: row.userId === null ? input.guestAccessToken ?? null : null,
+  }
+}
+
 export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/orders',
@@ -160,6 +197,12 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           couponCode: z.string().trim().toUpperCase().max(32).optional(),
           notes: z.string().trim().max(500).optional(),
         }),
+        headers: z
+          .object({
+            'idempotency-key': z.string().uuid().optional(),
+            'x-guest-access-token': z.string().min(40).max(100).optional(),
+          })
+          .passthrough(),
         response: {
           200: z.object({
             order: orderDto,
@@ -180,7 +223,15 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const { items, email, shipping, shippingMethod, couponCode, notes } = request.body
       const userId = request.session?.userId ?? null
-      const guestAccessToken = userId ? null : randomBytes(32).toString('base64url')
+      const idempotencyKey = request.headers['idempotency-key']
+      const guestTokenHeader = request.headers['x-guest-access-token']
+      const suppliedGuestAccessToken = typeof guestTokenHeader === 'string' ? guestTokenHeader : undefined
+      if (typeof idempotencyKey === 'string') {
+        const prior = await idempotentOrderResult({ key: idempotencyKey, userId, guestAccessToken: suppliedGuestAccessToken })
+        if (prior) return prior
+      }
+
+      const guestAccessToken = userId ? null : suppliedGuestAccessToken ?? randomBytes(32).toString('base64url')
       const guestAccessTokenHash = guestAccessToken
         ? createHash('sha256').update(guestAccessToken).digest('hex')
         : null
@@ -283,6 +334,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             number,
             userId,
             guestAccessTokenHash,
+            idempotencyKey: typeof idempotencyKey === 'string' ? idempotencyKey : null,
             email,
             shippingName: shipping.name,
             shippingLine1: shipping.line1,
@@ -467,6 +519,60 @@ export async function releaseStock(orderId: string, reason: 'order_released' = '
       })
     }
   })
+}
+
+/**
+ * Cancels abandoned checkouts and restores their reserved stock atomically.
+ * The row lock and status re-check mean concurrent sweepers or a late gateway
+ * callback cannot release the same order twice.
+ */
+export async function expirePendingOrders(olderThan: Date, limit = 100): Promise<number> {
+  const candidates = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .where(and(eq(orders.status, 'pending_payment'), lt(orders.placedAt, olderThan)))
+    .limit(limit)
+
+  let expired = 0
+  for (const candidate of candidates) {
+    const didExpire = await db.transaction(async (tx) => {
+      const [order] = await tx
+        .select({ id: orders.id, status: orders.status, placedAt: orders.placedAt })
+        .from(orders)
+        .where(eq(orders.id, candidate.id))
+        .for('update')
+
+      if (!order || order.status !== 'pending_payment' || order.placedAt >= olderThan) return false
+
+      await tx
+        .update(orders)
+        .set({ status: 'cancelled', cancelledAt: new Date() })
+        .where(eq(orders.id, order.id))
+      await tx
+        .update(payments)
+        .set({ status: 'failed' })
+        .where(and(eq(payments.orderId, order.id), eq(payments.status, 'created')))
+
+      const lines = await tx.select().from(orderItems).where(eq(orderItems.orderId, order.id))
+      for (const line of lines) {
+        if (!line.variantId) continue
+        await tx
+          .update(productVariants)
+          .set({ stock: sql`${productVariants.stock} + ${line.quantity}` })
+          .where(eq(productVariants.id, line.variantId))
+        await tx.insert(stockLedger).values({
+          variantId: line.variantId,
+          orderId: order.id,
+          delta: line.quantity,
+          reason: 'order_released',
+          note: 'Pending payment expired',
+        })
+      }
+      return true
+    })
+    if (didExpire) expired += 1
+  }
+  return expired
 }
 
 /** True when a paid order from this customer contains the product. */

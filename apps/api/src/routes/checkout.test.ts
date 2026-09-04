@@ -7,6 +7,7 @@ import { productVariants, products } from '../db/schema.js'
 import { orders, stockLedger } from '../db/schema-commerce.js'
 import { FakeGateway } from '../lib/gateway.js'
 import { redis } from '../lib/sessions.js'
+import { expirePendingOrders } from './orders.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Checkout, end to end, against a live database and the fake gateway.
@@ -122,6 +123,29 @@ describe('checkout', () => {
     expect(allowed.statusCode).toBe(200)
   })
 
+  it('returns the original order on an idempotent checkout retry', async () => {
+    if (!available) return
+    const before = await stockFor(SLUG)
+    const headers = {
+      'idempotency-key': '32c3b419-1eff-4ab1-9dd0-dc244b8fc73e',
+      'x-guest-access-token': 'a_very_long_guest_access_token_that_is_safe_to_hash_123',
+    }
+    const first = await app.inject({ method: 'POST', url: '/v1/orders', headers, payload: order() })
+    const retry = await app.inject({
+      method: 'POST',
+      url: '/v1/orders',
+      headers,
+      // A stale retry must return the original checkout, not price this new body.
+      payload: order({ items: [{ productSlug: SLUG, variantSize: SIZE, quantity: 1 }] }),
+    })
+
+    expect(first.statusCode).toBe(200)
+    expect(retry.statusCode).toBe(200)
+    expect(retry.json().order.number).toBe(first.json().order.number)
+    expect(retry.json().payment.gatewayOrderId).toBe(first.json().payment.gatewayOrderId)
+    expect((await stockFor(SLUG)).stock).toBe(before.stock - 2)
+  })
+
   it('reserves stock inside the order transaction', async () => {
     if (!available) return
     const before = await stockFor(SLUG)
@@ -135,6 +159,22 @@ describe('checkout', () => {
       .from(stockLedger)
       .where(eq(stockLedger.reason, 'order_reserved'))
     expect(ledger.length).toBeGreaterThan(0)
+  })
+
+  it('expires an abandoned checkout and restores stock exactly once', async () => {
+    if (!available) return
+    const before = await stockFor(SLUG)
+    const created = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    const placed = created.json().order
+    expect((await stockFor(SLUG)).stock).toBe(before.stock - 2)
+
+    await db.update(orders).set({ placedAt: new Date(Date.now() - 31 * 60_000) }).where(eq(orders.number, placed.number))
+    expect(await expirePendingOrders(new Date(Date.now() - 30 * 60_000))).toBe(1)
+    expect(await expirePendingOrders(new Date(Date.now() - 30 * 60_000))).toBe(0)
+
+    const expired = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+    expect(expired?.status).toBe('cancelled')
+    expect((await stockFor(SLUG)).stock).toBe(before.stock)
   })
 
   it('refuses to oversell', async () => {
