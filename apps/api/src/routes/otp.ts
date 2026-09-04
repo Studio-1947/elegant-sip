@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto'
+import { randomBytes, randomInt } from 'node:crypto'
 import { hash, verify } from '@node-rs/argon2'
 import { and, eq, gt, isNotNull, isNull } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
@@ -30,7 +30,7 @@ async function sendOtp(phone: string, code: string, challengeId: string) {
   })
   if (!result.ok) throw new ApiError(503, 'otp_delivery_failed', 'WhatsApp sign-in unavailable', 'We could not send a WhatsApp code. Please try again shortly.')
 }
-async function issue(userId: string, phone: string, purpose: 'phone_login' | 'phone_link') {
+async function issue(userId: string | null, phone: string, purpose: 'phone_login' | 'phone_link') {
   const code = String(randomInt(100000, 1_000_000))
   const [challenge] = await db.insert(otpChallenges).values({ userId, phone, purpose, codeHash: await hash(code, ARGON2), expiresAt: new Date(Date.now() + 10 * 60_000) }).returning({ id: otpChallenges.id })
   await sendOtp(phone, code, challenge.id)
@@ -49,14 +49,26 @@ export const otpRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post('/auth/whatsapp/request', { config: limit(5, '10 minutes'), schema: { tags: ['Auth'], body: z.object({ phone: phoneSchema }), response: { 200: response } } }, async (request) => {
     const phone = normalisePhone(request.body.phone)
     const user = await db.query.users.findFirst({ where: and(eq(users.phone, phone), isNotNull(users.phoneVerifiedAt)) })
-    if (user) return { ok: true as const, challengeId: await issue(user.id, phone, 'phone_login') }
-    // Do not reveal whether a phone is registered.
-    return { ok: true as const }
+    // A new phone receives an account-creation challenge; an existing phone
+    // receives a sign-in challenge. The response intentionally stays identical.
+    return { ok: true as const, challengeId: await issue(user?.id ?? null, phone, 'phone_login') }
   })
   app.post('/auth/whatsapp/verify', { config: limit(10, '10 minutes'), schema: { tags: ['Auth'], body: z.object({ challengeId: z.string().uuid(), code: codeSchema }), response: { 200: z.object({ user: publicUserSchema }) } } }, async (request, reply) => {
     const challenge = await consume(request.body.challengeId, request.body.code, 'phone_login')
-    if (!challenge.userId) throw ApiError.badRequest('That code is invalid or has expired. Request a new one.')
-    const user = await db.query.users.findFirst({ where: eq(users.id, challenge.userId) })
+    let user = challenge.userId ? await db.query.users.findFirst({ where: eq(users.id, challenge.userId) }) : null
+    if (!user) {
+      const local = challenge.phone.slice(1)
+      const [created] = await db.insert(users).values({
+        name: 'Tea Lover',
+        // Email remains an internal required column for legacy password flows.
+        // This reserved domain is never mailed and is not shown as a contact address.
+        email: `whatsapp-${local}@whatsapp.elegantsip.invalid`,
+        passwordHash: await hash(randomBytes(32).toString('base64url'), ARGON2),
+        phone: challenge.phone,
+        phoneVerifiedAt: new Date(),
+      }).returning()
+      user = created
+    }
     if (!user) throw ApiError.badRequest('That code is invalid or has expired. Request a new one.')
     reply.setCookie(SESSION_COOKIE, await createSession({ userId: user.id, email: user.email, role: user.role }), sessionCookieOptions(request.hostname))
     return { user: toPublicUser(user) }

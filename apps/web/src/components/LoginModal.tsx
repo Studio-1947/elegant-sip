@@ -20,7 +20,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [submitting, setSubmitting] = useState(false)
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
-  const [whatsapp, setWhatsapp] = useState(false)
+  const [whatsapp, setWhatsapp] = useState(true)
   const [phone, setPhone] = useState('')
   const [challengeId, setChallengeId] = useState<string | null>(null)
   const [code, setCode] = useState('')
@@ -103,19 +103,21 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </button>
 
         <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">
-          {mode === 'signin' ? 'Welcome Back' : 'Join the Circle'}
+          {whatsapp ? 'WhatsApp sign-in' : mode === 'signin' ? 'Welcome Back' : 'Join the Circle'}
         </span>
         <h2 id="login-modal-title" className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
-          {mode === 'signin' ? 'Sign in to Elegant Sip' : 'Create your account'}
+          {whatsapp ? 'Continue with WhatsApp' : mode === 'signin' ? 'Sign in to Elegant Sip' : 'Create your account'}
         </h2>
         <p className="text-xs text-[#4a584a] leading-relaxed mb-8">
-          {mode === 'signin'
+          {whatsapp
+            ? 'A new number creates your account; an existing number signs you in securely.'
+            : mode === 'signin'
             ? 'Access your order history, wishlist, and saved addresses.'
             : 'Save your wishlist, track orders, and get early access to limited harvests.'}
         </p>
 
         {/* Tabs */}
-        <div className="flex border border-[#1b261b]/15 rounded-xl p-1 mb-8">
+        {!whatsapp && <div className="flex border border-[#1b261b]/15 rounded-xl p-1 mb-8">
           {(['signin', 'signup'] as const).map((m) => (
             <button
               key={m}
@@ -131,14 +133,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               {m === 'signin' ? 'Sign In' : 'Create Account'}
             </button>
           ))}
-        </div>
+        </div>}
 
         {whatsapp ? (
           <div className="space-y-4">
-            <p className="text-xs text-[#4a584a] leading-relaxed">Use the WhatsApp number linked to your Elegant Sip account.</p>
+            <p className="text-xs text-[#4a584a] leading-relaxed">New here? Verify your WhatsApp number to create an account. Already registered? The same code signs you in.</p>
             {!challengeId ? <><label className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a]">WhatsApp number</label><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" inputMode="numeric" className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm" /><button onClick={() => void sendWhatsAppCode()} disabled={submitting} className="w-full bg-[#1b261b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg">{submitting ? 'Sending…' : 'Send WhatsApp code'}</button></> : <><label className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a]">6-digit code</label><input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" className="w-full bg-white border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm tracking-[0.4em]" /><button onClick={() => void verifyWhatsAppCode()} disabled={submitting || code.length !== 6} className="w-full bg-[#1b261b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg">Verify and sign in</button></>}
             {error && <p className="text-xs text-red-700" role="alert">{error}</p>}
-            <button onClick={() => { setWhatsapp(false); setError(null) }} className="text-[11px] font-mono tracking-wider uppercase text-[#4a7333]">Use email and password</button>
+            <button onClick={() => { setWhatsapp(false); setError(null) }} className="text-[11px] font-mono tracking-wider uppercase text-[#4a7333]">Use email and password instead</button>
           </div>
         ) : registered ? (
           <div className="bg-[#4a7333]/8 border border-[#4a7333]/25 rounded-xl p-5 text-sm text-[#45523f] leading-relaxed">

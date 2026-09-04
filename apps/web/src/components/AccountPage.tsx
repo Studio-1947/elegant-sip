@@ -83,7 +83,7 @@ export default function AccountPage() {
           <div>
             <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-2">My Account</span>
             <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight">Hello, {user.name.split(' ')[0]}</h1>
-            <p className="text-xs font-mono text-[#4a584a] mt-3">{user.email}</p>
+            {!user.email.endsWith('@whatsapp.elegantsip.invalid') && <p className="text-xs font-mono text-[#4a584a] mt-3">{user.email}</p>}
           </div>
           <button
             onClick={logout}
