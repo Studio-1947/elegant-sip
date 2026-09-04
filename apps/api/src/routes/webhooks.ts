@@ -1,8 +1,10 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.js'
 import { orders, payments, webhookEvents } from '../db/schema-commerce.js'
+import { env, isProduction } from '../env.js'
 import { getGateway } from '../lib/gateway.js'
 import { issueInvoice } from '../lib/invoice.js'
 import { releaseStock, sendOrderConfirmation } from './orders.js'
@@ -206,4 +208,97 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
       }
     },
   )
+
+  const interaktEventSchema = z.object({
+    version: z.string().optional(),
+    timestamp: z.string().optional(),
+    type: z.string().min(1).max(100),
+    data: z.object({
+      customer: z.object({ channel_phone_number: z.string().optional() }).passthrough().optional(),
+      message: z
+        .object({
+          id: z.string().min(1).max(200).optional(),
+          message_status: z.string().optional(),
+          channel_failure_reason: z.string().nullable().optional(),
+        })
+        .passthrough()
+        .optional(),
+    }).passthrough().optional(),
+  }).passthrough()
+
+  const interaktResponseSchema = z.object({ received: z.literal(true), status: z.string() })
+
+  const verifyInteraktSignature = (rawBody: string, signature: string | undefined) => {
+    if (!env.INTERAKT_WEBHOOK_SECRET || !signature) return false
+    const expected = `sha256=${createHmac('sha256', env.INTERAKT_WEBHOOK_SECRET).update(rawBody).digest('hex')}`
+    const actualBytes = Buffer.from(signature)
+    const expectedBytes = Buffer.from(expected)
+    return actualBytes.length === expectedBytes.length && timingSafeEqual(actualBytes, expectedBytes)
+  }
+
+  const recordInteraktEvent = async (payload: z.infer<typeof interaktEventSchema>) => {
+    const message = payload.data?.message
+    // Interakt's message id is shared by its sent/delivered/read lifecycle.
+    // Include type + timestamp so each status is preserved while retrying an
+    // identical callback remains idempotent.
+    const eventId = [message?.id ?? 'unknown', payload.type, payload.timestamp ?? 'undated'].join(':')
+    const inserted = await db
+      .insert(webhookEvents)
+      .values({ provider: 'interakt', eventId, eventType: payload.type, payload })
+      .onConflictDoNothing()
+      .returning({ id: webhookEvents.id })
+    return inserted.length === 0 ? 'duplicate' : 'recorded'
+  }
+
+  app.post(
+    '/webhooks/interakt',
+    {
+      config: { rateLimit: { max: 300, timeWindow: '1 minute' } },
+      schema: {
+        tags: ['Webhooks'],
+        summary: 'Interakt WhatsApp message status callback',
+        description:
+          'Verifies the Interakt-Signature HMAC on the raw JSON body, then records sent, delivered, read, and failed status events.',
+        response: { 200: interaktResponseSchema, 401: z.object({ error: z.string() }), 503: z.object({ error: z.string() }) },
+      },
+    },
+    async (request, reply) => {
+      if (!env.INTERAKT_WEBHOOK_SECRET) {
+        request.log.error('Interakt webhook received without INTERAKT_WEBHOOK_SECRET configured')
+        return reply.status(503).send({ error: 'webhook is not configured' })
+      }
+      const rawBody = (request as unknown as { rawBody?: string }).rawBody ?? ''
+      const signature = request.headers['interakt-signature'] as string | undefined
+      if (!verifyInteraktSignature(rawBody, signature)) {
+        request.log.warn({ signature: Boolean(signature) }, 'Interakt webhook signature rejected')
+        return reply.status(401).send({ error: 'invalid signature' })
+      }
+
+      const parsed = interaktEventSchema.safeParse(request.body)
+      if (!parsed.success) return reply.send({ received: true as const, status: 'ignored_unparseable' })
+      const status = await recordInteraktEvent(parsed.data)
+      return reply.send({ received: true as const, status })
+    },
+  )
+
+  // This exists solely for local development and integration tests. It is not
+  // registered in production, so no unauthenticated callback path can exist
+  // on the public service.
+  if (!isProduction) {
+    app.post(
+      '/dev/webhooks/interakt',
+      {
+        schema: {
+          tags: ['Webhooks'],
+          summary: 'Local Interakt webhook receiver (development only)',
+          response: { 200: interaktResponseSchema },
+        },
+      },
+      async (request) => {
+        const parsed = interaktEventSchema.safeParse(request.body)
+        if (!parsed.success) return { received: true as const, status: 'ignored_unparseable' }
+        return { received: true as const, status: await recordInteraktEvent(parsed.data) }
+      },
+    )
+  }
 }

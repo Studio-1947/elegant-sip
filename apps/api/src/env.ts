@@ -65,6 +65,14 @@ const envSchema = z.object({
   PENDING_PAYMENT_TTL_MINUTES: z.coerce.number().int().min(5).max(24 * 60).default(30),
   ORDER_EXPIRY_SWEEP_SECONDS: z.coerce.number().int().min(15).max(60 * 60).default(60),
 
+  /** WhatsApp OTP stays disabled until Interakt is fully configured. */
+  AUTH_OTP_PROVIDER: z.enum(['disabled', 'interakt']).default('disabled'),
+  INTERAKT_API_KEY: z.string().optional(),
+  INTERAKT_API_BASE_URL: z.string().url().default('https://api.interakt.ai/v1/public'),
+  INTERAKT_OTP_TEMPLATE: z.string().trim().min(1).default('elegant_sip_otp'),
+  INTERAKT_OTP_TEMPLATE_LANGUAGE: z.string().trim().min(2).max(20).default('en'),
+  INTERAKT_WEBHOOK_SECRET: z.string().optional(),
+
   /* Phase 03+. Optional now so phases 00–02 run without payment credentials,
      but see assertPaymentsConfigured() — the code that needs them refuses to
      operate rather than half-working. */
@@ -86,6 +94,10 @@ function load(): Env {
     process.exit(1)
   }
   const value = parsed.data
+  if (value.AUTH_OTP_PROVIDER === 'interakt' && !value.INTERAKT_API_KEY) {
+    console.error('Invalid environment configuration:\n  INTERAKT_API_KEY: required when AUTH_OTP_PROVIDER=interakt\n')
+    process.exit(1)
+  }
   // Cookie-policy tests intentionally import this module with NODE_ENV set to
   // production to simulate deployed URLs. Vitest itself is never a deploy.
   if (value.NODE_ENV === 'production' && !process.env.VITEST) {
