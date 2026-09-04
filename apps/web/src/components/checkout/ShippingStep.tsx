@@ -3,6 +3,7 @@ import { useUi } from '../UiContext'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../../lib/pricing'
 import { formatINR } from '../../lib/currency'
 import { COUNTRIES, type FormState } from './checkoutData'
+import type { SavedAddress } from '../../lib/api'
 
 interface ShippingStepProps {
   form: FormState
@@ -15,6 +16,10 @@ interface ShippingStepProps {
   setShippingMethod: (m: ShippingMethodId) => void
   cartTotal: number
   discount: number
+  savedAddresses: SavedAddress[]
+  selectSavedAddress: (address: SavedAddress) => void
+  saveAddress: boolean
+  setSaveAddress: (value: boolean) => void
 }
 
 /** Step 1 of checkout: contact + shipping address + shipping method. */
@@ -29,6 +34,10 @@ export default function ShippingStep({
   setShippingMethod,
   cartTotal,
   discount,
+  savedAddresses,
+  selectSavedAddress,
+  saveAddress,
+  setSaveAddress,
 }: ShippingStepProps) {
   const { user } = useAuth()
   const { openLogin } = useUi()
@@ -49,6 +58,12 @@ export default function ShippingStep({
             Sign In
           </button>
         </div>
+      )}
+      {user && savedAddresses.length > 0 && (
+        <fieldset className="mb-6">
+          <legend className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-2.5">Saved addresses</legend>
+          <div className="space-y-2">{savedAddresses.map((address) => <button type="button" key={address.id} onClick={() => selectSavedAddress(address)} className="w-full rounded-xl border border-[#1b261b]/15 px-4 py-3 text-left text-xs hover:border-[#8bb56e] transition-colors"><span className="font-bold">{address.label}{address.isDefault ? ' · Default' : ''}</span><span className="block mt-1 text-[#4a584a]">{address.name} · {address.line1}, {address.city} {address.postalCode}</span></button>)}</div>
+        </fieldset>
       )}
       <div className="space-y-4">
         <div>
@@ -99,6 +114,7 @@ export default function ShippingStep({
             ))}
           </select>
         </div>
+        {user && <label className="flex items-center gap-2 text-xs text-[#4a584a]"><input type="checkbox" checked={saveAddress} onChange={(event) => setSaveAddress(event.target.checked)} className="accent-[#4a7333]" /> Save this address to my account</label>}
 
         {/* Shipping method */}
         <fieldset className="pt-2">

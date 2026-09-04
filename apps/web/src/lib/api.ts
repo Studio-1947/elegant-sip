@@ -246,6 +246,19 @@ export interface InvoiceView {
   buyer: { name: string; line1: string; city: string; postalCode: string; state: string | null }
 }
 
+export interface SavedAddress {
+  id: string
+  label: string
+  name: string
+  line1: string
+  city: string
+  postalCode: string
+  state: string | null
+  country: 'India'
+  phone: string | null
+  isDefault: boolean
+}
+
 /* ── The API surface the storefront uses ──────────────────────────────────── */
 
 export const api = {
@@ -303,6 +316,12 @@ export const api = {
     invoice: (number: string, guestAccessToken?: string | null) => request<{ invoice: InvoiceView }>(`/v1/orders/${encodeURIComponent(number)}/invoice`, {
       ...(guestAccessToken ? { headers: { 'X-Order-Access-Token': guestAccessToken } } : {}),
     }),
+  },
+
+  account: {
+    addresses: () => request<{ addresses: SavedAddress[] }>('/v1/account/addresses'),
+    saveAddress: (payload: Omit<SavedAddress, 'id'>) => post<{ address: SavedAddress }>('/v1/account/addresses', payload),
+    deleteAddress: (id: string) => request<{ ok: true }>(`/v1/account/addresses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   },
 
   admin: {

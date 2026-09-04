@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { paiseSchema, problemSchema, slugSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { productVariants, products, reviews } from '../db/schema.js'
-import { orders, returnRequests, stockLedger } from '../db/schema-commerce.js'
+import { adminAuditEvents, orders, returnRequests, stockLedger } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import { adminProductRoutes } from './admin-products.js'
 import { getInvoiceView } from '../lib/invoice.js'
@@ -31,6 +31,19 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       // 403, not 404: the caller is authenticated and simply lacks the role.
       throw new ApiError(403, 'forbidden', 'Not permitted', 'This area is restricted to shop staff.')
     }
+  })
+
+  app.addHook('onResponse', async (request, reply) => {
+    // Read-only staff views are intentionally omitted. Never log request bodies:
+    // they can contain customer data and an audit trail should minimise it.
+    if (request.method === 'GET' || reply.statusCode >= 400 || !request.session) return
+    const route = request.routeOptions.url ?? request.url.split('?')[0]
+    await db.insert(adminAuditEvents).values({
+      actorId: request.session.userId,
+      action: `${request.method} ${route}`,
+      resource: request.url.split('?')[0],
+      statusCode: reply.statusCode,
+    })
   })
 
   /* Catalogue management lives in its own module (300-line rule) but registers

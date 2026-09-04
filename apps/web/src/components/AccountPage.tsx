@@ -4,12 +4,12 @@ import { useCart } from './CartContext'
 import { useEffect, useState } from 'react'
 import { api, type OrderView } from '../lib/api'
 import { formatINR } from '../lib/currency'
-import { Link, useDocumentMeta } from '../lib/router'
+import { Link, navigate, useDocumentMeta } from '../lib/router'
 
 export default function AccountPage() {
   const { user, logout } = useAuth()
   const { openLogin } = useUi()
-  const { wishlist } = useCart()
+  const { wishlist, addToCart } = useCart()
   const [orders, setOrders] = useState<OrderView[]>([])
   const [loadingOrders, setLoadingOrders] = useState(true)
 
@@ -30,6 +30,13 @@ export default function AccountPage() {
   }, [user])
 
   useDocumentMeta('My Account | Elegant Sip', 'Your Elegant Sip orders and saved teas.', { noindex: true })
+
+  const repeatOrder = (order: OrderView) => {
+    for (const item of order.items) {
+      addToCart({ productSlug: item.productSlug, size: item.variantSize, name: item.productName, price: item.unitPrice, imageSrc: item.imageSrc }, item.quantity)
+    }
+    navigate('/cart')
+  }
 
   if (!user) {
     return (
@@ -96,6 +103,7 @@ export default function AccountPage() {
           </div>
         ) : (
           <div className="space-y-4">
+            <button onClick={() => repeatOrder(orders[0])} className="w-full rounded-xl bg-[#1b261b] px-5 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#4a7333]">Order these teas again</button>
             {orders.map((order) => (
               <Link
                 key={order.number}

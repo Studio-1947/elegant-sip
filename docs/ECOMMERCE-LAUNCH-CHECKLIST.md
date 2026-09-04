@@ -34,7 +34,7 @@ operable online shop. Items are checked only when implemented and verified.
 ## 4. Customer self-service
 
 - [ ] Provide durable guest-order links or account conversion after checkout.
-- [ ] Add saved addresses and repeat purchase.
+- [x] Add saved addresses and repeat purchase.
 - [ ] Add invoice download and a customer-visible order timeline.
 - [ ] Add support ticket/reference handling.
 

@@ -50,6 +50,13 @@
       "when": 1788777600000,
       "tag": "0006_saved_addresses",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788864000000,
+      "tag": "0007_admin_audit_events",
+      "breakpoints": true
     }
   ]
 }

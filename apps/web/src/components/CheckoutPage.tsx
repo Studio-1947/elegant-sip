@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
-import { api, ApiClientError } from '../lib/api'
+import { api, ApiClientError, type SavedAddress } from '../lib/api'
 import { formatINR } from '../lib/currency'
 import {
   EMAIL_PATTERN,
@@ -87,6 +87,8 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>('standard')
   const [placing, setPlacing] = useState(false)
   const [prefilled, setPrefilled] = useState(false)
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
+  const [saveAddress, setSaveAddress] = useState(false)
 
   // Prefill only for a signed-in visitor. Orders are stored per-device, so
   // prefilling a signed-out visitor would disclose the previous customer's
@@ -100,6 +102,20 @@ export default function CheckoutPage() {
       return next
     })
   }, [user])
+
+  useEffect(() => {
+    if (!user) { setSavedAddresses([]); return }
+    let cancelled = false
+    void api.account.addresses().then((result) => !cancelled && setSavedAddresses(result.addresses)).catch(() => {})
+    return () => { cancelled = true }
+  }, [user])
+
+  const selectSavedAddress = (address: SavedAddress) => {
+    const parts = address.name.trim().split(/\s+/)
+    setForm((current) => ({ ...current, email: current.email || user?.email || '', firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), address: address.line1, city: address.city, state: address.state ?? '', zip: address.postalCode, country: address.country }))
+    setErrors({})
+    setPrefilled(true)
+  }
 
   useDocumentMeta('Checkout | Elegant Sip', 'Complete your Elegant Sip order.', { noindex: true })
 
@@ -186,6 +202,11 @@ export default function CheckoutPage() {
         ...(coupon ? { couponCode: coupon } : {}),
         ...(notes ? { notes } : {}),
       }, { idempotencyKey: attempt.idempotencyKey, ...(user ? {} : { guestAccessToken: attempt.guestAccessToken }) })
+
+      if (user && saveAddress) {
+        // A failed save must not turn a successful checkout into an apparent failure.
+        void api.account.saveAddress({ label: 'Checkout address', name: `${form.firstName} ${form.lastName}`.trim(), line1: form.address, city: form.city, postalCode: form.zip, state: form.state || null, country: 'India', phone: null, isDefault: savedAddresses.length === 0 }).catch(() => {})
+      }
 
       localStorage.removeItem('elegant_sip_order_notes')
       sessionStorage.removeItem(CHECKOUT_ATTEMPT_KEY)
@@ -304,6 +325,10 @@ export default function CheckoutPage() {
                 setShippingMethod={setShippingMethod}
                 cartTotal={cartTotal}
                 discount={discount}
+                savedAddresses={savedAddresses}
+                selectSavedAddress={selectSavedAddress}
+                saveAddress={saveAddress}
+                setSaveAddress={setSaveAddress}
               />
             )}
 

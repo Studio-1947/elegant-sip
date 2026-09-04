@@ -203,6 +203,20 @@ export const savedAddresses = pgTable(
   (t) => [index('saved_addresses_user_idx').on(t.userId)],
 )
 
+/** Append-only staff mutation log. Payloads are deliberately excluded to avoid storing secrets or customer PII twice. */
+export const adminAuditEvents = pgTable(
+  'admin_audit_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    actorId: uuid('actor_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+    action: text('action').notNull(),
+    resource: text('resource').notNull(),
+    statusCode: integer('status_code').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('admin_audit_events_actor_idx').on(t.actorId), index('admin_audit_events_occurred_idx').on(t.occurredAt)],
+)
+
 export const payments = pgTable(
   'payments',
   {
@@ -339,6 +353,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   wishlist: many(wishlistItems),
   savedAddresses: many(savedAddresses),
+  adminAuditEvents: many(adminAuditEvents),
 }))
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -371,4 +386,8 @@ export const wishlistItemsRelations = relations(wishlistItems, ({ one }) => ({
 
 export const savedAddressesRelations = relations(savedAddresses, ({ one }) => ({
   user: one(users, { fields: [savedAddresses.userId], references: [users.id] }),
+}))
+
+export const adminAuditEventsRelations = relations(adminAuditEvents, ({ one }) => ({
+  actor: one(users, { fields: [adminAuditEvents.actorId], references: [users.id] }),
 }))
