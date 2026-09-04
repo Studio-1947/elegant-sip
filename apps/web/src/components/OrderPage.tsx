@@ -16,8 +16,9 @@ export default function OrderPage({ id }: { id?: string }) {
     }
     let cancelled = false
     setLoading(true)
+    const guestAccessToken = sessionStorage.getItem(`elegant_sip_order_access_${id}`)
     void api.orders
-      .get(id)
+      .get(id, guestAccessToken)
       .then((o) => !cancelled && setOrder(o))
       .catch((err) => {
         if (cancelled) return

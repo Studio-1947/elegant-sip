@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -170,6 +170,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
               currency: z.string(),
               publicKey: z.string(),
             }),
+            guestAccessToken: z.string().nullable(),
           }),
           400: problemSchema,
           409: problemSchema,
@@ -179,6 +180,10 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const { items, email, shipping, shippingMethod, couponCode, notes } = request.body
       const userId = request.session?.userId ?? null
+      const guestAccessToken = userId ? null : randomBytes(32).toString('base64url')
+      const guestAccessTokenHash = guestAccessToken
+        ? createHash('sha256').update(guestAccessToken).digest('hex')
+        : null
 
       const result = await db.transaction(async (tx) => {
         /* Lock the variant rows before reading stock. Ordered by id so two
@@ -277,6 +282,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           .values({
             number,
             userId,
+            guestAccessTokenHash,
             email,
             shippingName: shipping.name,
             shippingLine1: shipping.line1,
@@ -359,6 +365,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           currency: result.gatewayOrder.currency,
           publicKey: result.gatewayOrder.publicKey,
         },
+        guestAccessToken,
       }
     },
   )
@@ -389,14 +396,15 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/orders/:number',
     {
+      config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
       schema: {
         tags: ['Orders'],
         summary: 'One order',
         description:
-          'Readable by the account that placed it, or by anyone who supplies the matching email — which is how a guest reaches their own order without an account.',
+          'Readable by the account that placed it. A guest supplies the high-entropy checkout token in X-Order-Access-Token.',
         params: z.object({ number: z.string().min(3).max(40) }),
-        querystring: z.object({ email: z.string().email().optional() }),
-        response: { 200: orderDto, 403: problemSchema, 404: problemSchema },
+        headers: z.object({ 'x-order-access-token': z.string().min(40).max(100).optional() }).passthrough(),
+        response: { 200: orderDto, 404: problemSchema },
       },
     },
     async (request) => {
@@ -406,19 +414,13 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       })
       if (!row) throw ApiError.notFound(`Order ${request.params.number}`)
 
-      const ownedBySession = request.session && row.userId === request.session.userId
-      const matchesEmail =
-        request.query.email && row.email.toLowerCase() === request.query.email.toLowerCase()
-      if (!ownedBySession && !matchesEmail) {
-        // 403 rather than 404: the order number was valid, the caller just
-        // cannot read it. Leaking that distinction is acceptable here because
-        // order numbers are random and not enumerable.
-        throw new ApiError(
-          403,
-          'forbidden',
-          'Not your order',
-          'Sign in with the account that placed this order, or supply the email address it was placed with.',
-        )
+      const ownedBySession = request.session?.userId === row.userId
+      const token = request.headers['x-order-access-token']
+      const suppliedHash = typeof token === 'string' ? createHash('sha256').update(token).digest('hex') : null
+      const hasGuestAccess = row.userId === null && suppliedHash === row.guestAccessTokenHash
+      if (!ownedBySession && !hasGuestAccess) {
+        // Do not confirm whether a guessed number exists.
+        throw ApiError.notFound('That order')
       }
       return toOrderDto(row)
     },

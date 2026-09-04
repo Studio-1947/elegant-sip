@@ -9,7 +9,8 @@ import type { Problem } from '@elegantsip/shared'
  * the UI can surface it verbatim instead of inventing its own wording.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-const BASE = (import.meta.env.VITE_API_URL ?? 'http://localhost:4000').replace(/\/$/, '')
+// Production uses the same origin under /api. Vite proxies this path locally.
+const BASE = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '')
 
 export class ApiClientError extends Error {
   constructor(
@@ -157,6 +158,8 @@ export interface PlaceOrderResult {
     currency: string
     publicKey: string
   }
+  /** Returned only for a guest and retained in session storage by the storefront. */
+  guestAccessToken: string | null
 }
 
 export interface ShippingAddress {
@@ -218,8 +221,10 @@ export const api = {
       notes?: string
     }) => post<PlaceOrderResult>('/v1/orders', payload),
     list: () => request<{ orders: OrderView[] }>('/v1/orders'),
-    get: (number: string, email?: string) =>
-      request<OrderView>(`/v1/orders/${encodeURIComponent(number)}${email ? `?email=${encodeURIComponent(email)}` : ''}`),
+    get: (number: string, guestAccessToken?: string | null) =>
+      request<OrderView>(`/v1/orders/${encodeURIComponent(number)}`, {
+        ...(guestAccessToken ? { headers: { 'X-Order-Access-Token': guestAccessToken } } : {}),
+      }),
   },
 
   reviews: {

@@ -28,8 +28,14 @@ const envSchema = z.object({
   SELLER_GSTIN: z.string().optional(),
   SELLER_STATE: z.string().default('West Bengal'),
 
-  /** Which payment gateway to use. 'fake' makes checkout testable without credentials. */
+  /** Which payment gateway to use. 'fake' is allowed only outside production. */
   PAYMENT_PROVIDER: z.enum(['razorpay', 'fake']).default('fake'),
+
+  /** Swagger is useful locally but should not disclose operations by default in production. */
+  API_DOCS_ENABLED: z
+    .string()
+    .optional()
+    .transform((value) => value === undefined || ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase())),
 
   /** Origins allowed to call this API with credentials. Comma-separated. */
   CORS_ORIGINS: z
@@ -75,7 +81,28 @@ function load(): Env {
     console.error(`Invalid environment configuration:\n${issues}\n`)
     process.exit(1)
   }
-  return parsed.data
+  const value = parsed.data
+  if (value.NODE_ENV === 'production') {
+    // Docker Compose passes this explicitly; retain the safe default for any
+    // other production launch path as well.
+    if (process.env.API_DOCS_ENABLED === undefined) value.API_DOCS_ENABLED = false
+    if (value.PAYMENT_PROVIDER !== 'razorpay') {
+      console.error('Invalid environment configuration:\n  PAYMENT_PROVIDER: production requires razorpay\n')
+      process.exit(1)
+    }
+    const missing = (['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'] as const).filter(
+      (key) => !value[key],
+    )
+    if (missing.length > 0) {
+      console.error(`Invalid environment configuration:\n  ${missing.join(', ')}: required for Razorpay in production\n`)
+      process.exit(1)
+    }
+    if (!value.SMTP_URL) {
+      console.error('Invalid environment configuration:\n  SMTP_URL: production requires transactional email\n')
+      process.exit(1)
+    }
+  }
+  return value
 }
 
 export const env = load()

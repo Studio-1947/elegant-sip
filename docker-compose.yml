@@ -66,7 +66,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      NODE_ENV: production
+      # This is the local development stack. Production settings live only in
+      # docker-compose.prod.yml, where real payment and SMTP configuration is required.
+      NODE_ENV: development
       DATABASE_URL: postgres://elegantsip:elegantsip@postgres:5432/elegantsip
       REDIS_URL: redis://redis:6379
     command: ['sh', '-c', 'node dist/db/migrate.js && node dist/db/seed.js']
@@ -88,7 +90,7 @@ services:
       init:
         condition: service_completed_successfully
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 4000
       LOG_LEVEL: info
       DATABASE_URL: postgres://elegantsip:elegantsip@postgres:5432/elegantsip

@@ -15,9 +15,13 @@ import type { OrderView } from '../../lib/api'
 export function OrderConfirmedScreen({
   orderNumber,
   order,
+  paymentProvider,
+  paymentError,
 }: {
   orderNumber: string
   order: OrderView | null
+  paymentProvider?: string
+  paymentError?: string | null
 }) {
   const awaitingPayment = order?.status === 'pending_payment' || order === null
 
@@ -50,13 +54,25 @@ export function OrderConfirmedScreen({
           </p>
         )}
 
-        {awaitingPayment && (
+        {awaitingPayment && paymentProvider !== 'razorpay' && (
           <p className="text-[11px] text-[#4a584a] leading-relaxed mb-8 border border-[#b0782e]/30 bg-[#b0782e]/8 rounded-lg px-4 py-3">
-            Payment is not yet connected on this site. To complete this order, message us on{' '}
+            This development order has not been charged. To complete it, message us on{' '}
             <a href="https://wa.me/917583995294" className="font-semibold text-[#4a7333] underline underline-offset-2">
               WhatsApp
             </a>{' '}
             quoting your order number.
+          </p>
+        )}
+
+        {awaitingPayment && paymentProvider === 'razorpay' && (
+          <p className="text-[11px] text-[#4a584a] leading-relaxed mb-8 border border-[#4a7333]/30 bg-[#4a7333]/8 rounded-lg px-4 py-3">
+            Payment is being confirmed securely. Open your order again to see its latest status.
+          </p>
+        )}
+
+        {paymentError && (
+          <p role="alert" className="text-[11px] text-red-800 leading-relaxed mb-8 border border-red-700/30 bg-red-50 rounded-lg px-4 py-3">
+            Your order was saved, but checkout could not open: {paymentError}
           </p>
         )}
 

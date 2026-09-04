@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "npm run dev --workspace @elegantsip/web",
     "dev:api": "npm run dev --workspace @elegantsip/api",
-    "build": "npm run build --workspace @elegantsip/web && npm run build --workspace @elegantsip/api",
+    "build": "npm run build --workspace @elegantsip/web && npm run build --workspace @elegantsip/api && npm run openapi:check --workspace @elegantsip/api",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",

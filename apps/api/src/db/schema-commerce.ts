@@ -94,6 +94,8 @@ export const orders = pgTable(
     /** Customer-facing, e.g. ES-20260824-K3P9Q. */
     number: text('number').notNull().unique(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    /** SHA-256 of a 256-bit token returned only to a guest at checkout. */
+    guestAccessTokenHash: text('guest_access_token_hash').unique(),
     status: orderStatus('status').notNull().default('pending_payment'),
 
     email: text('email').notNull(),

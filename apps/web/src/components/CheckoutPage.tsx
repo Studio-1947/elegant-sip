@@ -19,6 +19,40 @@ import { EmptyCartScreen, OrderConfirmedScreen } from './checkout/CheckoutScreen
 import CheckoutSummary from './checkout/CheckoutSummary'
 import ShippingStep from './checkout/ShippingStep'
 
+type RazorpayInstance = { open: () => void }
+type RazorpayConstructor = new (options: {
+  key: string
+  amount: number
+  currency: string
+  name: string
+  description: string
+  order_id: string
+  prefill: { name: string; email: string }
+  theme: { color: string }
+  handler: () => void
+  modal: { ondismiss: () => void }
+}) => RazorpayInstance
+
+function loadRazorpay(): Promise<RazorpayConstructor> {
+  const available = (window as typeof window & { Razorpay?: RazorpayConstructor }).Razorpay
+  if (available) return Promise.resolve(available)
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-razorpay-checkout]')
+    if (existing) {
+      existing.addEventListener('load', () => resolve((window as typeof window & { Razorpay: RazorpayConstructor }).Razorpay), { once: true })
+      existing.addEventListener('error', () => reject(new Error('Razorpay checkout could not load.')), { once: true })
+      return
+    }
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    script.dataset.razorpayCheckout = 'true'
+    script.onload = () => resolve((window as typeof window & { Razorpay: RazorpayConstructor }).Razorpay)
+    script.onerror = () => reject(new Error('Razorpay checkout could not load.'))
+    document.head.appendChild(script)
+  })
+}
+
 export default function CheckoutPage() {
   const { cart, cartTotal, discount, coupon, clearCart, quote, toCartLines } = useCart()
   const { user } = useAuth()
@@ -131,10 +165,31 @@ export default function CheckoutPage() {
       })
 
       localStorage.removeItem('elegant_sip_order_notes')
+      if (result.guestAccessToken) {
+        // Not included in URLs, browser history, referrers, or persistent local storage.
+        sessionStorage.setItem(`elegant_sip_order_access_${result.order.number}`, result.guestAccessToken)
+      }
       setOrderNumber(result.order.number)
       setPlacedOrder(result)
       clearCart()
       track('purchase', { order: result.order.number, value: result.order.total, items: result.order.items.length })
+      if (result.payment.provider === 'razorpay') {
+        const Razorpay = await loadRazorpay()
+        new Razorpay({
+          key: result.payment.publicKey,
+          amount: result.payment.amount,
+          currency: result.payment.currency,
+          name: 'Elegant Sip',
+          description: `Order ${result.order.number}`,
+          order_id: result.payment.gatewayOrderId,
+          prefill: { name: `${form.firstName} ${form.lastName}`.trim(), email: form.email },
+          theme: { color: '#4a7333' },
+          // This only updates the browser experience. A signed webhook remains
+          // the sole authority for changing the server-side order to paid.
+          handler: () => window.scrollTo(0, 0),
+          modal: { ondismiss: () => window.scrollTo(0, 0) },
+        }).open()
+      }
       window.scrollTo(0, 0)
     } catch (err) {
       /* A rejected order usually means the cart moved under the customer —
@@ -152,7 +207,7 @@ export default function CheckoutPage() {
   }
 
   if (orderNumber) {
-    return <OrderConfirmedScreen orderNumber={orderNumber} order={placedOrder?.order ?? null} />
+    return <OrderConfirmedScreen orderNumber={orderNumber} order={placedOrder?.order ?? null} paymentProvider={placedOrder?.payment.provider} paymentError={orderError} />
   }
 
   if (cart.length === 0) {

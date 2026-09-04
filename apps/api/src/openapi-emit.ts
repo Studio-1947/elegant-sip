@@ -1,3 +1,4 @@
+import './dev-defaults.js'
 import { writeFileSync } from 'node:fs'
 import { buildApp } from './app.js'
 

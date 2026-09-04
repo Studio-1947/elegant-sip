@@ -131,10 +131,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     transform: jsonSchemaTransform,
   })
 
-  await app.register(swaggerUi, {
-    routePrefix: '/docs',
-    uiConfig: { docExpansion: 'list', deepLinking: true, displayRequestDuration: true },
-  })
+  if (env.API_DOCS_ENABLED) {
+    await app.register(swaggerUi, {
+      routePrefix: '/docs',
+      uiConfig: { docExpansion: 'list', deepLinking: true, displayRequestDuration: true },
+    })
+  }
 
   await app.register(healthRoutes)
   await app.register(authRoutes, { prefix: '/v1' })

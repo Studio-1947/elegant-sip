@@ -70,13 +70,11 @@ function shellForRoute(template: string, path: string): string {
 
 /*
  * VITE_API_URL is inlined at build time, so a deployment built without it ships
- * a bundle pointing at http://localhost:4000 — every API call then tries to
- * reach the visitor's own machine and silently fails. That is invisible until a
- * customer cannot sign in, so the build says so loudly.
+ * a bundle pointing at the same-origin /api path. That is safe for the Docker
+ * deployment; an external API deployment must set its explicit origin.
  *
- * A warning rather than an error: local builds legitimately have no API (the
- * SEO audit runs against static output), and the catalogue snapshot means the
- * site still renders. But a real deploy must set it.
+ * Local Vite development proxies /api to Fastify, while the production Caddy
+ * instance proxies it inside the same origin.
  */
 function apiUrlPlugin(): Plugin {
   return {
@@ -84,17 +82,15 @@ function apiUrlPlugin(): Plugin {
     apply: 'build',
     closeBundle() {
       const url = process.env.VITE_API_URL
-      if (url && !url.includes('localhost')) {
-        this.info(`API base URL: ${url}`)
+      if (!url || url.startsWith('/') || url.startsWith('https://')) {
+        this.info(`API base URL: ${url || '/api (same origin)'}`)
         return
       }
       this.warn(
         [
           '',
-          '  VITE_API_URL is ' + (url ? `"${url}"` : 'not set') + '.',
-          '  This bundle will call http://localhost:4000 for auth, pricing and orders.',
-          '  Fine locally. On a deployed site nothing that touches the API will work.',
-          '  Set VITE_API_URL to the deployed API origin before shipping.',
+          `  VITE_API_URL is "${url}".`,
+          '  An external API URL must use HTTPS outside local development.',
           '',
         ].join('\n'),
       )
@@ -165,6 +161,11 @@ export default defineConfig({
   test: {
     // Only this project's tests — the repo also holds unrelated local tooling.
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+  },
+  server: {
+    proxy: {
+      '/api': { target: 'http://localhost:4000', changeOrigin: true, rewrite: (path) => path.replace(/^\/api/, '') },
+    },
   },
   build: {
     rollupOptions: {

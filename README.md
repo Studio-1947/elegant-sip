@@ -170,10 +170,12 @@ obtains and renews the certificate.
 
 Open VPS firewall ports **80** and **443** (and retain SSH access); do not open
 Postgres, Redis or API port 4000. Check the deployment with
-`curl -fsS http://127.0.0.1/api/health` (or the HTTPS domain), and use
-`/api/docs` for Swagger. The backup runs at 02:30 Asia/Kolkata by default;
+`curl -fsS http://127.0.0.1/api/health` (or the HTTPS domain). Swagger is
+disabled publicly by default; set `API_DOCS_ENABLED=true` only temporarily
+from a trusted network. The backup runs at 02:30 Asia/Kolkata by default;
 change `BACKUP_TIMEZONE` in `.env` only if the business operating timezone
-changes.
+changes, and protect the host `backups/` directory with encrypted storage and
+owner-only access.
 
 ### Sharing the VPS with other projects
 

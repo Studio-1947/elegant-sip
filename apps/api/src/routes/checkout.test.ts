@@ -104,6 +104,24 @@ describe('checkout', () => {
     expect(body.order.total % 100).toBe(0)
   })
 
+  it('requires the opaque guest token to read a guest order', async () => {
+    if (!available) return
+    const created = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    expect(created.statusCode).toBe(200)
+    const body = created.json()
+    expect(body.guestAccessToken).toMatch(/^[A-Za-z0-9_-]{43}$/)
+
+    const denied = await app.inject({ method: 'GET', url: `/v1/orders/${body.order.number}` })
+    expect(denied.statusCode).toBe(404)
+
+    const allowed = await app.inject({
+      method: 'GET',
+      url: `/v1/orders/${body.order.number}`,
+      headers: { 'x-order-access-token': body.guestAccessToken },
+    })
+    expect(allowed.statusCode).toBe(200)
+  })
+
   it('reserves stock inside the order transaction', async () => {
     if (!available) return
     const before = await stockFor(SLUG)
