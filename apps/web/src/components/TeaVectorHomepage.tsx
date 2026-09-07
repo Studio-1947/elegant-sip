@@ -156,7 +156,8 @@ export default function TeaVectorHomepage() {
   // Reset scrub progress on any route change so the header returns to its
   // centered/transparent state when landing back on the home experience.
   useEffect(() => {
-    setScrub({ past95: false })
+    const reset = window.setTimeout(() => setScrub({ past95: false }), 0)
+    return () => window.clearTimeout(reset)
   }, [route])
 
   // Announce navigation to screen readers: a client-side route change is

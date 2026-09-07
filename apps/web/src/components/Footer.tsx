@@ -50,6 +50,7 @@ export default function Footer() {
             <h2 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Support</h2>
             <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
               <li><Link to="/contact" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Support</Link></li>
+              <li><Link to="/faq" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Frequently Asked Questions</Link></li>
               <li><Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping & Returns</Link></li>
               <li><Link to="/account" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">My Account</Link></li>
               <li><a href="mailto:elegantsipdarjeeling@gmail.com" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">elegantsipdarjeeling@gmail.com</a></li>
