@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
+import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
@@ -18,6 +19,7 @@ import {
 import { EmptyCartScreen, OrderConfirmedScreen } from './checkout/CheckoutScreens'
 import CheckoutSummary from './checkout/CheckoutSummary'
 import ShippingStep from './checkout/ShippingStep'
+import BillingAddressSection from './checkout/BillingAddressSection'
 
 type RazorpayInstance = { open: () => void }
 type RazorpayConstructor = new (options: {
@@ -78,6 +80,7 @@ function checkoutAttempt() {
 export default function CheckoutPage() {
   const { cart, cartTotal, discount, coupon, clearCart, quote, toCartLines } = useCart()
   const { user } = useAuth()
+  const { openLogin } = useUi()
   const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
@@ -89,6 +92,9 @@ export default function CheckoutPage() {
   const [prefilled, setPrefilled] = useState(false)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
   const [saveAddress, setSaveAddress] = useState(false)
+  const [sameAsShipping, setSameAsShipping] = useState(true)
+  const [billingAddressId, setBillingAddressId] = useState<string | null>(null)
+  const [billingAddressError, setBillingAddressError] = useState<string | null>(null)
   const [paymentsAvailable, setPaymentsAvailable] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -102,16 +108,22 @@ export default function CheckoutPage() {
   // name, email and street address on any shared or family machine.
   useEffect(() => {
     if (!user) return
-    const [first = '', ...rest] = user.name.split(' ')
-    setForm((f) => {
-      const next = { ...f, email: f.email || user.email, firstName: f.firstName || first, lastName: f.lastName || rest.join(' ') }
-      if (next.email) setPrefilled(true)
-      return next
-    })
+    const prefill = window.setTimeout(() => {
+      const [first = '', ...rest] = user.name.split(' ')
+      setForm((f) => {
+        const next = { ...f, email: f.email || user.email, firstName: f.firstName || first, lastName: f.lastName || rest.join(' ') }
+        if (next.email) setPrefilled(true)
+        return next
+      })
+    }, 0)
+    return () => window.clearTimeout(prefill)
   }, [user])
 
   useEffect(() => {
-    if (!user) { setSavedAddresses([]); return }
+    if (!user) {
+      const clearAddresses = window.setTimeout(() => setSavedAddresses([]), 0)
+      return () => window.clearTimeout(clearAddresses)
+    }
     let cancelled = false
     void api.account.addresses().then((result) => !cancelled && setSavedAddresses(result.addresses)).catch(() => {})
     return () => { cancelled = true }
@@ -123,6 +135,9 @@ export default function CheckoutPage() {
     setErrors({})
     setPrefilled(true)
   }
+
+  const selectedBillingAddress = savedAddresses.find((address) => address.id === billingAddressId)
+    ?? savedAddresses.find((address) => address.isDefaultBilling)
 
   useDocumentMeta('Checkout | Elegant Sip', 'Complete your Elegant Sip order.', { noindex: true })
 
@@ -158,9 +173,11 @@ export default function CheckoutPage() {
     if (!form.city.trim()) next.city = 'Enter your city.'
     const postal = POSTAL_RULES[form.country] ?? GENERIC_POSTAL
     if (!postal.pattern.test(form.zip.trim())) next.zip = postal.hint
+    if (!sameAsShipping && !selectedBillingAddress) setBillingAddressError('Choose a billing address from your address book.')
+    else setBillingAddressError(null)
     setErrors(next)
     if (Object.keys(next).length > 0) focusFirstError(next)
-    return Object.keys(next).length === 0
+    return Object.keys(next).length === 0 && (sameAsShipping || Boolean(selectedBillingAddress))
   }
 
   const goNext = () => {
@@ -194,17 +211,35 @@ export default function CheckoutPage() {
     try {
       const notes = localStorage.getItem('elegant_sip_order_notes') || ''
       const attempt = checkoutAttempt()
+      const shipping = {
+        name: `${form.firstName} ${form.lastName}`.trim(),
+        line1: form.address,
+        city: form.city,
+        postalCode: form.zip,
+        state: form.state || undefined,
+        country: 'India' as const,
+      }
+      const billing = sameAsShipping
+        ? shipping
+        : selectedBillingAddress && {
+          name: selectedBillingAddress.name,
+          line1: selectedBillingAddress.line1,
+          city: selectedBillingAddress.city,
+          postalCode: selectedBillingAddress.postalCode,
+          state: selectedBillingAddress.state ?? undefined,
+          country: 'India' as const,
+          phone: selectedBillingAddress.phone ?? undefined,
+        }
+      if (!billing) {
+        setBillingAddressError('Choose a billing address from your address book.')
+        setStep(1)
+        return
+      }
       const result = await api.orders.place({
         items: toCartLines(),
         email: form.email,
-        shipping: {
-          name: `${form.firstName} ${form.lastName}`.trim(),
-          line1: form.address,
-          city: form.city,
-          postalCode: form.zip,
-          state: form.state || undefined,
-          country: 'India',
-        },
+        shipping,
+        billing,
         shippingMethod,
         ...(coupon ? { couponCode: coupon } : {}),
         ...(notes ? { notes } : {}),
@@ -212,7 +247,7 @@ export default function CheckoutPage() {
 
       if (user && saveAddress) {
         // A failed save must not turn a successful checkout into an apparent failure.
-        void api.account.saveAddress({ label: 'Checkout address', name: `${form.firstName} ${form.lastName}`.trim(), line1: form.address, city: form.city, postalCode: form.zip, state: form.state || null, country: 'India', phone: null, isDefault: savedAddresses.length === 0 }).catch(() => {})
+        void api.account.saveAddress({ label: 'Checkout address', name: `${form.firstName} ${form.lastName}`.trim(), line1: form.address, city: form.city, postalCode: form.zip, state: form.state || undefined, country: 'India', phone: undefined, isDefaultShipping: !savedAddresses.some((address) => address.isDefaultShipping), isDefaultBilling: sameAsShipping && !savedAddresses.some((address) => address.isDefaultBilling) }).catch(() => {})
       }
 
       localStorage.removeItem('elegant_sip_order_notes')
@@ -266,6 +301,19 @@ export default function CheckoutPage() {
     return <EmptyCartScreen />
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#f9faf7] px-6 pb-24 pt-32 text-[#1b261b] font-sans md:px-12 lg:px-24">
+        <div className="mx-auto max-w-xl rounded-2xl border border-[#1b261b]/10 bg-white p-8 shadow-[0_12px_40px_rgba(27,38,27,0.04)] md:p-10">
+          <Link to="/cart" className="inline-flex items-center gap-3 rounded-lg border border-[#1b261b]/20 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[#1b261b] transition-colors hover:border-[#4a7333] hover:bg-[#8bb56e]/10"><span aria-hidden="true" className="text-xl leading-none">←</span> Back to cart</Link>
+          <h1 className="mt-8 text-4xl font-bold uppercase tracking-tight">Sign in to checkout</h1>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-[#4a584a]">Sign in or create an account to use your delivery and billing address book securely.</p>
+          <button onClick={openLogin} className="mt-7 w-full rounded-lg bg-[#1b261b] px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#4a7333] active:translate-y-px">Sign in or create account</button>
+        </div>
+      </div>
+    )
+  }
+
   const inputClass = (field: keyof FormState) =>
     `w-full bg-white border rounded-lg px-4 py-3 text-sm focus:border-[#4a7333] transition-colors placeholder:text-[#1b261b]/45 ${errors[field] ? 'border-red-600' : 'border-[#1b261b]/15'
     }`
@@ -295,8 +343,8 @@ export default function CheckoutPage() {
         )}
         <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <Link to="/cart" className="text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors">
-              ← Back to Cart
+            <Link to="/cart" className="inline-flex items-center gap-3 rounded-lg bg-[#1b261b] px-4 py-3 text-xs font-bold tracking-widest uppercase text-white shadow-[0_8px_18px_rgba(27,38,27,0.14)] transition-all hover:-translate-y-0.5 hover:bg-[#4a7333] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a7333] active:translate-y-px">
+              <span aria-hidden="true" className="text-2xl leading-none">←</span> Back to Cart
             </Link>
             <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight mt-3">Checkout</h1>
           </div>
@@ -325,8 +373,9 @@ export default function CheckoutPage() {
             onSubmit={handleSubmit}
             noValidate
             className="lg:col-span-2 bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-10"
-          >
+            >
             {step === 1 && (
+              <>
               <ShippingStep
                 form={form}
                 errors={errors}
@@ -343,6 +392,15 @@ export default function CheckoutPage() {
                 saveAddress={saveAddress}
                 setSaveAddress={setSaveAddress}
               />
+              <BillingAddressSection
+                sameAsShipping={sameAsShipping}
+                setSameAsShipping={setSameAsShipping}
+                addresses={savedAddresses}
+                selectedAddress={selectedBillingAddress ?? null}
+                selectAddress={(address) => { setBillingAddressId(address.id); setBillingAddressError(null) }}
+                error={billingAddressError}
+              />
+              </>
             )}
 
             {step === 2 && (
@@ -362,6 +420,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="bg-[#f9faf7] border border-[#1b261b]/10 rounded-xl p-4 text-xs space-y-1.5 text-[#4a584a]">
                   <p><span className="font-bold text-[#1b261b]">Ship to:</span> {form.firstName} {form.lastName}, {form.address}, {form.city}{form.state ? `, ${form.state}` : ''} {form.zip}, {form.country}</p>
+                  <p><span className="font-bold text-[#1b261b]">Bill to:</span> {sameAsShipping ? 'Same as shipping address' : `${selectedBillingAddress?.name}, ${selectedBillingAddress?.line1}, ${selectedBillingAddress?.city} ${selectedBillingAddress?.postalCode}`}</p>
                   <p><span className="font-bold text-[#1b261b]">Shipping:</span> {SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.label} ({SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.detail})</p>
                   <p><span className="font-bold text-[#1b261b]">Contact:</span> {form.email}</p>
                 </div>

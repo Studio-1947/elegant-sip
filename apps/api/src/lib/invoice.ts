@@ -184,11 +184,11 @@ export async function getInvoiceView(orderId: string): Promise<InvoiceView | nul
       total: formatPaise(order.total),
     },
     buyer: {
-      name: order.shippingName,
-      line1: order.shippingLine1,
-      city: order.shippingCity,
-      postalCode: order.shippingPostalCode,
-      state: order.shippingState,
+      name: order.billingName ?? order.shippingName,
+      line1: order.billingLine1 ?? order.shippingLine1,
+      city: order.billingCity ?? order.shippingCity,
+      postalCode: order.billingPostalCode ?? order.shippingPostalCode,
+      state: order.billingState ?? order.shippingState,
     },
   }
 }

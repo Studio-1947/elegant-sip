@@ -108,9 +108,10 @@ export default function ShippingStep({
         </div>
       )}
       {user && savedAddresses.length > 0 && (
-        <fieldset className="mb-6">
-          <legend className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-2.5">Saved addresses</legend>
-          <div className="space-y-2">{savedAddresses.map((address) => <button type="button" key={address.id} onClick={() => selectSavedAddress(address)} className="w-full rounded-xl border border-[#1b261b]/15 px-4 py-3 text-left text-xs hover:border-[#8bb56e] transition-colors"><span className="font-bold">{address.label}{address.isDefault ? ' · Default' : ''}</span><span className="block mt-1 text-[#4a584a]">{address.name} · {address.line1}, {address.city} {address.postalCode}</span></button>)}</div>
+        <fieldset className="mb-7 rounded-2xl border border-[#8bb56e]/35 bg-[#8bb56e]/5 p-4">
+          <legend className="px-1 text-[11px] font-mono tracking-widest uppercase text-[#4a584a]">Deliver to a saved address</legend>
+          <p className="mb-3 text-xs text-[#4a584a]">Choose an address below to fill your shipping details instantly.</p>
+          <div className="space-y-2">{savedAddresses.map((address) => <button type="button" key={address.id} onClick={() => selectSavedAddress(address)} className="w-full rounded-xl border border-[#1b261b]/15 px-4 py-3 text-left text-xs hover:border-[#8bb56e] transition-colors"><span className="font-bold">{address.label}{address.isDefaultShipping ? ' · Default shipping' : ''}</span><span className="block mt-1 text-[#4a584a]">{address.name} · {address.line1}, {address.city} {address.postalCode}</span></button>)}</div>
         </fieldset>
       )}
       <div className="space-y-4">
@@ -180,7 +181,7 @@ export default function ShippingStep({
             ))}
           </select>
         </div>
-        {user && <label className="flex items-center gap-2 text-xs text-[#4a584a]"><input type="checkbox" checked={saveAddress} onChange={(event) => setSaveAddress(event.target.checked)} className="accent-[#4a7333]" /> Save this address to my account</label>}
+        {user && <label className="flex items-center gap-2 text-xs text-[#4a584a]"><input type="checkbox" checked={saveAddress} onChange={(event) => setSaveAddress(event.target.checked)} className="accent-[#4a7333]" /> Save this as my default shipping address</label>}
 
         {/* Shipping method */}
         <fieldset className="pt-2">

@@ -27,6 +27,7 @@ const SIZE = '100 g'
 
 let app: FastifyInstance
 let available = true
+let buyerCookie = ''
 
 const SEED_STOCK = 20
 
@@ -65,6 +66,12 @@ beforeEach(async () => {
   if (!available) return
   const v = await variantRow()
   await db.update(productVariants).set({ stock: SEED_STOCK }).where(eq(productVariants.id, v.id))
+  const email = `checkout.${Date.now()}.${Math.round(performance.now() * 1000)}@example.test`
+  await app.inject({ method: 'POST', url: '/v1/auth/register', payload: { name: 'Checkout Buyer', email, password: 'correct-horse-battery' } })
+  const login = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { email, password: 'correct-horse-battery' } })
+  const session = login.cookies.find((cookie) => cookie.name === 'es_session')
+  if (!session) throw new Error('Checkout test sign-in did not return a session')
+  buyerCookie = `es_session=${session.value}`
 })
 
 const order = (overrides: Record<string, unknown> = {}) => ({
@@ -82,18 +89,18 @@ const order = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+const checkout = (payload = order(), headers: Record<string, string> = {}) =>
+  app.inject({ method: 'POST', url: '/v1/orders', headers: { cookie: buyerCookie, ...headers }, payload })
+
 describe('checkout', () => {
   it('prices from the catalogue and ignores any price sent by the client', async () => {
     if (!available) return
     const before = await stockFor(SLUG)
 
-    const res = await app.inject({
-      method: 'POST',
-      url: '/v1/orders',
-      payload: order({
-        items: [{ productSlug: SLUG, variantSize: SIZE, quantity: 2, unitPrice: 1, lineTotal: 1 }],
-      }),
-    })
+    const res = await checkout(order({
+      items: [{ productSlug: SLUG, variantSize: SIZE, quantity: 2, unitPrice: 1, lineTotal: 1 }],
+      billing: { name: 'Invoice Buyer', line1: '8 Chowrasta Road', city: 'Darjiling', postalCode: '734101', state: 'West Bengal', country: 'India' },
+    }))
 
     expect(res.statusCode).toBe(200)
     const body = res.json()
@@ -102,24 +109,22 @@ describe('checkout', () => {
     expect(body.order.shippingFee).toBe(15000)
     expect(body.order.total).toBe(body.order.subtotal + body.order.shippingFee + body.order.tax)
     expect(body.order.status).toBe('pending_payment')
+    expect(body.order.billing).toMatchObject({ name: 'Invoice Buyer', line1: '8 Chowrasta Road' })
     // Every total lands on a whole rupee.
     expect(body.order.total % 100).toBe(0)
   })
 
-  it('requires the opaque guest token to read a guest order', async () => {
+  it('requires sign-in before an order can be placed', async () => {
     if (!available) return
-    const created = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    const denied = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    expect(denied.statusCode).toBe(401)
+    const created = await checkout()
     expect(created.statusCode).toBe(200)
     const body = created.json()
-    expect(body.guestAccessToken).toMatch(/^[A-Za-z0-9_-]{43}$/)
-
-    const denied = await app.inject({ method: 'GET', url: `/v1/orders/${body.order.number}` })
-    expect(denied.statusCode).toBe(404)
-
     const allowed = await app.inject({
       method: 'GET',
       url: `/v1/orders/${body.order.number}`,
-      headers: { 'x-order-access-token': body.guestAccessToken },
+      headers: { cookie: buyerCookie },
     })
     expect(allowed.statusCode).toBe(200)
   })
@@ -133,14 +138,10 @@ describe('checkout', () => {
       'idempotency-key': randomUUID(),
       'x-guest-access-token': `guest_access_token_for_idempotency_test_${randomUUID()}`,
     }
-    const first = await app.inject({ method: 'POST', url: '/v1/orders', headers, payload: order() })
-    const retry = await app.inject({
-      method: 'POST',
-      url: '/v1/orders',
-      headers,
+    const first = await checkout(order(), headers)
+    const retry = await checkout(
       // A stale retry must return the original checkout, not price this new body.
-      payload: order({ items: [{ productSlug: SLUG, variantSize: SIZE, quantity: 1 }] }),
-    })
+      order({ items: [{ productSlug: SLUG, variantSize: SIZE, quantity: 1 }] }), headers)
 
     expect(first.statusCode).toBe(200)
     expect(retry.statusCode).toBe(200)
@@ -152,7 +153,7 @@ describe('checkout', () => {
   it('reserves stock inside the order transaction', async () => {
     if (!available) return
     const before = await stockFor(SLUG)
-    const res = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    const res = await checkout()
     expect(res.statusCode).toBe(200)
     const after = await stockFor(SLUG)
     expect(after.stock).toBe(before.stock - 2)
@@ -167,7 +168,7 @@ describe('checkout', () => {
   it('expires an abandoned checkout and restores stock exactly once', async () => {
     if (!available) return
     const before = await stockFor(SLUG)
-    const created = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    const created = await checkout()
     const placed = created.json().order
     expect((await stockFor(SLUG)).stock).toBe(before.stock - 2)
 
@@ -183,11 +184,7 @@ describe('checkout', () => {
   it('refuses to oversell', async () => {
     if (!available) return
     const current = await stockFor(SLUG)
-    const res = await app.inject({
-      method: 'POST',
-      url: '/v1/orders',
-      payload: order({ items: [{ productSlug: SLUG, variantSize: SIZE, quantity: current.stock + 5 }] }),
-    })
+    const res = await checkout(order({ items: [{ productSlug: SLUG, variantSize: SIZE, quantity: current.stock + 5 }] }))
     expect(res.statusCode).toBe(409)
     expect(res.json().type).toBe('out_of_stock')
 
@@ -198,17 +195,13 @@ describe('checkout', () => {
 
   it('rejects a coming-soon product', async () => {
     if (!available) return
-    const res = await app.inject({
-      method: 'POST',
-      url: '/v1/orders',
-      payload: order({ items: [{ productSlug: 'second-flush', variantSize: '100 g', quantity: 1 }] }),
-    })
+    const res = await checkout(order({ items: [{ productSlug: 'second-flush', variantSize: '100 g', quantity: 1 }] }))
     expect(res.statusCode).toBe(400)
   })
 
   it('marks the order paid only on a correctly signed webhook', async () => {
     if (!available) return
-    const created = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    const created = await checkout()
     const { order: placed, payment } = created.json()
     expect(placed.status).toBe('pending_payment')
 
@@ -244,7 +237,7 @@ describe('checkout', () => {
 
   it('ignores a replayed webhook instead of capturing twice', async () => {
     if (!available) return
-    const created = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    const created = await checkout()
     const { order: placed, payment } = created.json()
 
     const gateway = new FakeGateway()
@@ -261,7 +254,7 @@ describe('checkout', () => {
 
   it('refuses to capture when the amount does not match the order', async () => {
     if (!available) return
-    const created = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    const created = await checkout()
     const { order: placed, payment } = created.json()
 
     const gateway = new FakeGateway()
@@ -283,7 +276,7 @@ describe('checkout', () => {
   it('returns stock when a payment fails', async () => {
     if (!available) return
     const before = await stockFor(SLUG)
-    const created = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
+    const created = await checkout()
     const { order: placed, payment } = created.json()
 
     const reserved = await stockFor(SLUG)
