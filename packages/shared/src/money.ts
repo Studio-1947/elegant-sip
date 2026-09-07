@@ -22,8 +22,8 @@
 /** 1 rupee, in paise. */
 export const RUPEE = 100
 
-/** GST rate on tea in India. */
-export const TAX_RATE = 0.05
+/** GST rate applied by the storefront. */
+export const TAX_RATE = 0.18
 
 /** Order value (after discount) at which standard shipping becomes free. */
 export const FREE_SHIPPING_THRESHOLD = 4000 * RUPEE
@@ -95,7 +95,7 @@ export interface Pricing {
  * The authoritative price calculation.
  *
  * GST applies to the shipping fee as well as the goods — the summary line is
- * labelled "GST (5%)", so taxing only the goods would understate the total.
+ * labelled "GST (18%)", so taxing only the goods would understate the total.
  */
 export function calculatePricing({
   subtotal,

@@ -1,17 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useCart } from './CartContext'
 import { getDefaultVariant, isInStock, type Product } from '../data/products'
-import { Link } from '../lib/router'
+import { Link, navigate } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
 import { FREE_SHIPPING_THRESHOLD } from '../lib/pricing'
 import SkeletonImage from './SkeletonImage'
-
-/* Compact brew-stat values parsed from the full brewing guide strings. */
-const celsius = (temperature: string) =>
-  temperature.split('/').map((s) => s.trim()).find((s) => s.includes('°C')) ?? temperature
-const shortTime = (time: string) => time.replace('minutes', 'min').replace('minute', 'min')
-const shortLeaf = (leafAmount: string) => leafAmount.split(' per ')[0]
+import { useUi } from './UiContext'
 
 export default function ProductCard({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1)
@@ -20,6 +15,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
   const { addToCart, toggleWishlist, isWishlisted } = useCart()
+  const { showToast } = useUi()
 
   // Derived server-side from published reviews and carried on the product, so
   // there is no per-render localStorage read and no invented default.
@@ -34,7 +30,6 @@ export default function ProductCard({ product }: { product: Product }) {
   const comingSoon = product.status === 'coming-soon'
   const totalStock = product.variants.reduce((acc, v) => acc + v.stock, 0)
   const gallery = [product.imageSrc]
-  const brew = product.brewingGuide
 
   // Tracked so pending state flips are cancelled if the card unmounts mid-add
   // (navigating away, filtering the grid) instead of setting state on a dead
@@ -49,12 +44,17 @@ export default function ProductCard({ product }: { product: Product }) {
   )
 
   const handleAddToCart = () => {
+    if (isAdded) {
+      navigate('/cart')
+      return
+    }
     if (!variantInStock || comingSoon) return
     setIsAdding(true)
     addToCart(
       { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
+    showToast(`${product.name} added to your cart`)
     track('add_to_cart', { product: product.slug, quantity, source: 'product_card' })
     timers.current.push(
       window.setTimeout(() => {
@@ -64,6 +64,16 @@ export default function ProductCard({ product }: { product: Product }) {
         timers.current.push(window.setTimeout(() => setIsAdded(false), 2000))
       }, 800),
     )
+  }
+
+  const handleBuyNow = () => {
+    if (!variantInStock || comingSoon) return
+    addToCart(
+      { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
+      quantity,
+    )
+    track('add_to_cart', { product: product.slug, quantity, source: 'product_card_buy_now' })
+    navigate('/checkout')
   }
 
   // Roving arrow-key navigation for the tier picker, as ARIA radiogroup requires.
@@ -82,6 +92,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
   const handleWishlist = () => {
     toggleWishlist(product.slug)
+    showToast(wishlisted ? `${product.name} removed from your wishlist` : `${product.name} saved to your wishlist`)
     track('wishlist_toggle', { product: product.slug })
   }
 
@@ -220,43 +231,11 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        {/* Body meter */}
-        {product.bodyLevel !== null && (
-          <div className="mb-4">
-            <div className="flex justify-between text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-1.5">
-              <span>Light</span>
-              <span>Body</span>
-              <span>Full</span>
-            </div>
-            <div className="h-[3px] bg-[#1b261b]/10 rounded-full overflow-hidden">
-              <div className="h-full bg-[#b0782e] rounded-full" style={{ width: `${(product.bodyLevel / 5) * 100}%` }} />
-            </div>
-          </div>
-        )}
-
-        {/* Brew stats */}
-        {brew && (
-          <div className="grid grid-cols-3 divide-x divide-[#1b261b]/10 bg-[#f9faf7] border border-[#1b261b]/10 rounded-xl mb-4">
-            {(
-              [
-                [celsius(brew.temperature), 'Water'],
-                [shortTime(brew.time), 'Steep'],
-                [shortLeaf(brew.leafAmount), 'Per Cup'],
-              ] as [string, string][]
-            ).map(([value, label]) => (
-              <div key={label} className="text-center py-2.5 px-1">
-                <p className="text-xs font-bold text-[#1b261b] whitespace-nowrap">{value}</p>
-                <p className="text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mt-0.5">{label}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Quality tier picker */}
+        {/* Size picker. Rich brewing information is available in the product view. */}
         {!comingSoon && hasMultipleSizes && (
           <div className="mb-4">
             <span className="block text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-1.5">Size</span>
-            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Quality tier" onKeyDown={handleTierKeys}>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Size" onKeyDown={handleTierKeys}>
               {product.variants.map((v) => {
                 const selected = v.size === activeVariant.size
                 const soldOut = v.stock <= 0
@@ -311,7 +290,7 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
           <button
             onClick={handleAddToCart}
-            disabled={isAdding || isAdded || !variantInStock || comingSoon}
+            disabled={isAdding || !variantInStock || comingSoon}
             className={`flex-grow text-[11px] sm:text-xs font-bold tracking-widest uppercase py-3 px-3 sm:px-6 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
               !variantInStock || comingSoon
                 ? 'bg-[#1b261b]/10 text-[#4a584a] cursor-not-allowed'
@@ -331,9 +310,18 @@ export default function ProductCard({ product }: { product: Product }) {
               : isAdding
               ? 'Adding...'
               : isAdded
-              ? 'Added ✓'
+              ? 'Go to Cart'
               : 'Add to Cart'}
           </button>
+          {!comingSoon && variantInStock && (
+            <button
+              onClick={handleBuyNow}
+              disabled={isAdding}
+              className="border border-[#1b261b]/25 px-4 text-[11px] font-bold tracking-widest uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] disabled:opacity-50"
+            >
+              Buy now
+            </button>
+          )}
         </div>
 
         {/* Status for assistive tech — the visual button label changes, but a

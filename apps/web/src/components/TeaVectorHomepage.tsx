@@ -86,7 +86,7 @@ export default function TeaVectorHomepage() {
       // Release at 15% buffered rather than fully buffered: seeks are already
       // clamped to the buffered range, so the playhead simply trails the
       // download instead of the visitor staring at an opaque loader.
-      const enoughBuffered = fraction >= 0.15 && elapsed > 1200
+      const enoughBuffered = fraction >= 0.35 && elapsed > 1200
       if (enoughBuffered || stalled || elapsed > 10000) finish()
     }, 150)
     return () => {
@@ -156,7 +156,8 @@ export default function TeaVectorHomepage() {
   // Reset scrub progress on any route change so the header returns to its
   // centered/transparent state when landing back on the home experience.
   useEffect(() => {
-    setScrub({ past95: false })
+    const reset = window.setTimeout(() => setScrub({ past95: false }), 0)
+    return () => window.clearTimeout(reset)
   }, [route])
 
   // Announce navigation to screen readers: a client-side route change is

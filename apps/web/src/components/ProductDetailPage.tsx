@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getProduct, getDefaultVariant, getGardenForProduct, PRODUCTS } from '../data/products'
 import { api, type ReviewView } from '../lib/api'
-import { Link, useDocumentMeta, useJsonLd } from '../lib/router'
+import { Link, navigate, useDocumentMeta, useJsonLd } from '../lib/router'
 import { useCart } from './CartContext'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
@@ -11,6 +11,7 @@ import { productRouteMeta } from '../lib/seoRoutes'
 import ProductCard from './ProductCard'
 import ProductInfoCards from './ProductInfoCards'
 import ProductReviews from './ProductReviews'
+import { useUi } from './UiContext'
 
 export default function ProductDetailPage({ id }: { id?: string }) {
   const product = getProduct(id)
@@ -21,6 +22,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const [reviews, setReviews] = useState<ReviewView[]>([])
   const [rating, setRating] = useState({ average: 0, count: 0 })
   const { addToCart } = useCart()
+  const { showToast } = useUi()
 
   // Reset per-product state when navigating between products (same component instance)
   useEffect(() => {
@@ -184,12 +186,17 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const garden = getGardenForProduct(product.slug)
 
   const handleAddToCart = () => {
+    if (isAdded) {
+      navigate('/cart')
+      return
+    }
     if (!variantInStock) return
     setIsAdding(true)
     addToCart(
       { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
+    showToast(`${product.name} added to your cart`)
     track('add_to_cart', { product: product.slug, quantity, source: 'product_detail' })
     setTimeout(() => {
       setIsAdding(false)
@@ -197,6 +204,16 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       setQuantity(1)
       setTimeout(() => setIsAdded(false), 2000)
     }, 800)
+  }
+
+  const handleBuyNow = () => {
+    if (!variantInStock || comingSoon) return
+    addToCart(
+      { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
+      quantity,
+    )
+    track('add_to_cart', { product: product.slug, quantity, source: 'product_detail_buy_now' })
+    navigate('/checkout')
   }
 
   return (
@@ -268,7 +285,10 @@ export default function ProductDetailPage({ id }: { id?: string }) {
 
             <p className="text-sm text-[#4a584a] leading-relaxed mb-6">{product.description}</p>
             {product.longDescription && (
-              <p className="text-xs text-[#4a584a] leading-relaxed mb-8">{product.longDescription}</p>
+              <details className="mb-8 text-sm text-[#4a584a]">
+                <summary className="cursor-pointer font-medium text-[#1b261b] marker:text-[#4a7333]">More about this tea</summary>
+                <p className="mt-3 leading-relaxed">{product.longDescription}</p>
+              </details>
             )}
 
             {/* Size picker */}
@@ -335,14 +355,23 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               )}
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding || isAdded || !variantInStock || comingSoon}
+                disabled={isAdding || !variantInStock || comingSoon}
                 className={`flex-grow text-xs font-bold tracking-widest uppercase py-4 px-8 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${!variantInStock || comingSoon
                     ? 'bg-[#1b261b]/10 text-[#4a584a] cursor-not-allowed'
                     : isAdded ? 'bg-[#8bb56e] text-white' : isAdding ? 'bg-[#1b261b]/50 text-white/50 cursor-wait' : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
                   }`}
               >
-                {comingSoon ? 'Coming Soon' : !variantInStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add to Cart • ${formatINR(activeVariant.price * quantity)}`}
+                {comingSoon ? 'Coming Soon' : !variantInStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Go to Cart' : `Add to Cart • ${formatINR(activeVariant.price * quantity)}`}
               </button>
+              {!comingSoon && variantInStock && (
+                <button
+                  onClick={handleBuyNow}
+                  disabled={isAdding}
+                  className="border border-[#1b261b]/25 px-7 text-xs font-bold tracking-widest uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] disabled:opacity-50"
+                >
+                  Buy now
+                </button>
+              )}
             </div>
 
             {/* Trust microcopy */}

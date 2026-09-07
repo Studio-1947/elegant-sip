@@ -149,6 +149,14 @@ export interface OrderView {
     state: string | null
     country: string
   }
+  billing: {
+    name: string
+    line1: string
+    city: string
+    postalCode: string
+    state: string | null
+    country: string
+  }
   tracking: { carrier: string | null; number: string | null } | null
 }
 
@@ -182,6 +190,16 @@ export interface ReviewView {
   text: string
   publishedAt: string | null
   verified: boolean
+}
+
+export type AddressBookEntry = Omit<ShippingAddress, 'country' | 'phone'> & {
+  id: string
+  label: string
+  country: 'India'
+  phone: string | null
+  isDefaultShipping: boolean
+  isDefaultBilling: boolean
+  isDefault: boolean
 }
 
 export type AdminOrderStatus = OrderView['status']
@@ -246,17 +264,15 @@ export interface InvoiceView {
   buyer: { name: string; line1: string; city: string; postalCode: string; state: string | null }
 }
 
-export interface SavedAddress {
-  id: string
-  label: string
-  name: string
-  line1: string
+export type SavedAddress = AddressBookEntry
+
+export interface PincodeLocation {
+  officeName: string
   city: string
-  postalCode: string
-  state: string | null
+  district: string
+  state: string
   country: 'India'
-  phone: string | null
-  isDefault: boolean
+  deliveryStatus: string | null
 }
 
 /* ── The API surface the storefront uses ──────────────────────────────────── */
@@ -264,6 +280,11 @@ export interface SavedAddress {
 export const api = {
   storefront: {
     status: () => request<{ paymentsAvailable: boolean }>('/storefront-status'),
+  },
+
+  locations: {
+    pincode: (pincode: string) =>
+      request<{ pincode: string; locations: PincodeLocation[] }>(`/v1/locations/pincode/${encodeURIComponent(pincode)}`),
   },
 
   auth: {
@@ -300,6 +321,7 @@ export const api = {
       items: CartLine[]
       email: string
       shipping: ShippingAddress
+      billing: ShippingAddress
       shippingMethod?: 'standard' | 'express'
       couponCode?: string
       notes?: string
@@ -326,7 +348,9 @@ export const api = {
 
   account: {
     addresses: () => request<{ addresses: SavedAddress[] }>('/v1/account/addresses'),
-    saveAddress: (payload: Omit<SavedAddress, 'id'>) => post<{ address: SavedAddress }>('/v1/account/addresses', payload),
+    saveAddress: (payload: Omit<SavedAddress, 'id' | 'phone' | 'isDefault'> & { phone?: string | null }) => post<{ address: SavedAddress }>('/v1/account/addresses', payload),
+    updateAddress: (id: string, payload: Omit<SavedAddress, 'id' | 'phone' | 'isDefault'> & { phone?: string | null }) =>
+      request<{ address: SavedAddress }>(`/v1/account/addresses/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     deleteAddress: (id: string) => request<{ ok: true }>(`/v1/account/addresses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     requestWhatsApp: (phone: string) => post<{ ok: true; challengeId: string }>('/v1/account/whatsapp/request', { phone }),
     verifyWhatsApp: (challengeId: string, code: string) => post<{ ok: true }>('/v1/account/whatsapp/verify', { challengeId, code }),

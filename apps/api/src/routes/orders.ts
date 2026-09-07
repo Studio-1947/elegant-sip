@@ -92,6 +92,14 @@ const orderDto = z.object({
     state: z.string().nullable(),
     country: z.string(),
   }),
+  billing: z.object({
+    name: z.string(),
+    line1: z.string(),
+    city: z.string(),
+    postalCode: z.string(),
+    state: z.string().nullable(),
+    country: z.string(),
+  }),
   tracking: z
     .object({ carrier: z.string().nullable(), number: z.string().nullable() })
     .nullable(),
@@ -137,6 +145,14 @@ const toOrderDto = (row: OrderRow) => ({
     postalCode: row.shippingPostalCode,
     state: row.shippingState,
     country: row.shippingCountry,
+  },
+  billing: {
+    name: row.billingName ?? row.shippingName,
+    line1: row.billingLine1 ?? row.shippingLine1,
+    city: row.billingCity ?? row.shippingCity,
+    postalCode: row.billingPostalCode ?? row.shippingPostalCode,
+    state: row.billingState ?? row.shippingState,
+    country: row.billingCountry ?? row.shippingCountry,
   },
   tracking:
     row.trackingNumber || row.trackingCarrier
@@ -201,6 +217,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           items: z.array(cartLineInputSchema).min(1).max(50),
           email: z.string().trim().toLowerCase().email(),
           shipping: addressSchema,
+          billing: addressSchema.optional(),
           shippingMethod: shippingMethodIdSchema.default('standard'),
           couponCode: z.string().trim().toUpperCase().max(32).optional(),
           notes: z.string().trim().max(500).optional(),
@@ -224,6 +241,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             guestAccessToken: z.string().nullable(),
           }),
           400: problemSchema,
+          401: problemSchema,
           409: problemSchema,
         },
       },
@@ -232,8 +250,9 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!paymentsEnabled) {
         throw new ApiError(503, 'payments_unavailable', 'Checkout unavailable', 'Online checkout will be available soon. Please check back shortly.')
       }
-      const { items, email, shipping, shippingMethod, couponCode, notes } = request.body
-      const userId = request.session?.userId ?? null
+      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes } = request.body
+      if (!request.session) throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in before checking out.')
+      const userId = request.session.userId
       const idempotencyKey = request.headers['idempotency-key']
       const guestTokenHeader = request.headers['x-guest-access-token']
       const suppliedGuestAccessToken = typeof guestTokenHeader === 'string' ? guestTokenHeader : undefined
@@ -242,10 +261,8 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         if (prior) return prior
       }
 
-      const guestAccessToken = userId ? null : suppliedGuestAccessToken ?? randomBytes(32).toString('base64url')
-      const guestAccessTokenHash = guestAccessToken
-        ? createHash('sha256').update(guestAccessToken).digest('hex')
-        : null
+      const guestAccessToken = null
+      const guestAccessTokenHash = null
 
       const result = await db.transaction(async (tx) => {
         /* Lock the variant rows before reading stock. Ordered by id so two
@@ -354,6 +371,13 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             shippingState: shipping.state ?? null,
             shippingCountry: shipping.country,
             shippingPhone: shipping.phone ?? null,
+            billingName: billing.name,
+            billingLine1: billing.line1,
+            billingCity: billing.city,
+            billingPostalCode: billing.postalCode,
+            billingState: billing.state ?? null,
+            billingCountry: billing.country,
+            billingPhone: billing.phone ?? null,
             subtotal: pricing.subtotal,
             discount: pricing.discount,
             couponCode: appliedCoupon?.code ?? null,
@@ -556,7 +580,7 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
     facts: [
       ...row.items.map((i) => [`${i.productName} (${i.variantSize}) × ${i.quantity}`, formatPaise(i.lineTotal)] as [string, string]),
       ['Shipping', row.shippingFee === 0 ? 'Free' : formatPaise(row.shippingFee)],
-      ['GST (5%)', formatPaise(row.tax)],
+      ['GST (18%)', formatPaise(row.tax)],
       ['Total paid', formatPaise(row.total)],
     ],
     footnote: `Delivering to ${row.shippingName}, ${row.shippingCity} ${row.shippingPostalCode}.`,

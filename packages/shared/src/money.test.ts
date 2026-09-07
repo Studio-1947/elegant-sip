@@ -39,10 +39,10 @@ describe('calculatePricing', () => {
     expect(p.shippingFee).toBe(rupees(150))
   })
 
-  it('taxes goods AND shipping, matching the "GST (5%)" label', () => {
+  it('taxes goods AND shipping, matching the "GST (18%)" label', () => {
     const p = calculatePricing({ subtotal: rupees(1000) })
     expect(p.tax).toBe(toWholeRupees((rupees(1000) + rupees(150)) * TAX_RATE))
-    expect(p.tax).toBe(rupees(58))
+    expect(p.tax).toBe(rupees(207))
   })
 
   it('adds up: total = goods after discount + shipping + tax', () => {
@@ -99,15 +99,14 @@ describe('calculatePricing', () => {
     }
   })
 
-  it('matches the legacy client-side figures exactly', () => {
-    // Values produced by the original getOrderPricing() before the backend existed.
-    const legacy = [
-      { subtotal: 1000, discount: 0, method: 'standard', shipping: 150, tax: 58, total: 1208 },
-      { subtotal: 4000, discount: 0, method: 'standard', shipping: 0, tax: 200, total: 4200 },
-      { subtotal: 2500, discount: 250, method: 'express', shipping: 450, tax: 135, total: 2835 },
-      { subtotal: 600, discount: 60, method: 'standard', shipping: 150, tax: 35, total: 725 },
+  it('matches the published 18% GST figures exactly', () => {
+    const published = [
+      { subtotal: 1000, discount: 0, method: 'standard', shipping: 150, tax: 207, total: 1357 },
+      { subtotal: 4000, discount: 0, method: 'standard', shipping: 0, tax: 720, total: 4720 },
+      { subtotal: 2500, discount: 250, method: 'express', shipping: 450, tax: 486, total: 3186 },
+      { subtotal: 600, discount: 60, method: 'standard', shipping: 150, tax: 124, total: 814 },
     ] as const
-    for (const c of legacy) {
+    for (const c of published) {
       const p = calculatePricing({
         subtotal: rupees(c.subtotal),
         discount: rupees(c.discount),

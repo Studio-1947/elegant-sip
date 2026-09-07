@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -49,17 +49,18 @@ function TickerStrip() {
  * instantly), with the hero copy fading out as the journey begins. Falls back
  * to a static poster hero for prefers-reduced-motion.
  */
-function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; onJourneyDone: (done: boolean) => void }) {
+function MobileScrubHero({ openQuiz, onJourneyDone, skipVideo }: { openQuiz: () => void; onJourneyDone: (done: boolean) => void; skipVideo: boolean }) {
   const sectionRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   // Data Saver or a 2G/3G connection gets the poster instead of 3 MB of video.
   const [lightMedia] = useState(shouldSkipHeavyMedia)
+  const showPoster = reduced || lightMedia || skipVideo
 
   useGSAP(
     () => {
-      if (reduced || lightMedia) {
+      if (showPoster) {
         // No scrub journey to finish — unlock dependent UI right away.
         onJourneyDone(true)
         return
@@ -146,13 +147,13 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
         video.removeEventListener('error', onVideoError)
       }
     },
-    { scope: sectionRef, dependencies: [reduced, lightMedia] },
+    { scope: sectionRef, dependencies: [showPoster] },
   )
 
   return (
-    <section ref={sectionRef} className={`relative ${reduced || lightMedia ? 'h-[86svh] min-h-[540px]' : 'h-[320vh]'}`}>
-      <div className={`${reduced || lightMedia ? 'absolute inset-0' : 'sticky top-0 h-[100svh]'} w-full overflow-hidden bg-[#1b261b]`}>
-        {reduced || lightMedia ? (
+    <section ref={sectionRef} className={`relative ${showPoster ? 'h-[86svh] min-h-[540px]' : 'h-[320vh]'}`}>
+      <div className={`${showPoster ? 'absolute inset-0' : 'sticky top-0 h-[100svh]'} w-full overflow-hidden bg-[#1b261b]`}>
+        {showPoster ? (
           <img
             src="/mobile-poster.webp"
             alt="Illustrated tea hills of Darjeeling at first light"
@@ -214,13 +215,19 @@ function MobileScrubHero({ openQuiz, onJourneyDone }: { openQuiz: () => void; on
  */
 export default function MobileHome() {
   const { openQuiz } = useUi()
+  const [hasSeenIntro] = useState(() => sessionStorage.getItem('elegantsip-intro-seen') === 'true')
   // The floating quiz pill stays hidden until the scroll animation has played through.
   const [journeyDone, setJourneyDone] = useState(false)
+
+  useEffect(() => {
+    if (!hasSeenIntro) sessionStorage.setItem('elegantsip-intro-seen', 'true')
+  }, [hasSeenIntro])
 
   return (
     <div className="bg-[#f9faf7] pt-20">
       <MobileScrubHero
         openQuiz={openQuiz}
+        skipVideo={hasSeenIntro}
         onJourneyDone={(done) => setJourneyDone((prev) => (prev === done ? prev : done))}
       />
 

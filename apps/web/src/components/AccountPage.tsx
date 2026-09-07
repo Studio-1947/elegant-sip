@@ -6,6 +6,7 @@ import { api, type OrderView } from '../lib/api'
 import { ApiClientError } from '../lib/api'
 import { formatINR } from '../lib/currency'
 import { Link, navigate, useDocumentMeta } from '../lib/router'
+import AddressBookSection from './account/AddressBookSection'
 
 export default function AccountPage() {
   const { user, logout } = useAuth()
@@ -21,8 +22,8 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!user) {
-      setLoadingOrders(false)
-      return
+      const clearLoading = window.setTimeout(() => setLoadingOrders(false), 0)
+      return () => window.clearTimeout(clearLoading)
     }
     let cancelled = false
     void api.orders
@@ -111,6 +112,8 @@ export default function AccountPage() {
           {!phoneChallenge ? <div className="flex flex-col sm:flex-row gap-3"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" inputMode="numeric" className="flex-1 border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm" /><button onClick={() => void requestWhatsAppLink()} disabled={phoneBusy} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">{phoneBusy ? 'Sending…' : 'Link WhatsApp'}</button></div> : <div className="flex flex-col sm:flex-row gap-3"><input value={phoneCode} onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" inputMode="numeric" className="flex-1 border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm tracking-[0.25em]" /><button onClick={() => void verifyWhatsAppLink()} disabled={phoneBusy || phoneCode.length !== 6} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">Verify number</button></div>}
           {phoneMessage && <p role="status" className="text-xs text-[#4a584a] mt-3">{phoneMessage}</p>}
         </section>
+
+        <AddressBookSection />
 
         {/* Order history */}
         <h2 className="text-lg font-bold uppercase tracking-wide mb-2">Order History</h2>

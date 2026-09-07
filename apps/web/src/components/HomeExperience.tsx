@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -9,8 +9,11 @@ import { useUi } from './UiContext'
 import { useIsCompact } from '../lib/useMediaQuery'
 import { reportVideoProgress, markVideoFailed } from '../lib/videoLoading'
 import { scrollToY } from '../lib/scroll'
+import { Link } from '../lib/router'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
+
+const INTRO_SEEN_KEY = 'elegantsip-intro-seen'
 
 interface HomeExperienceProps {
   /** Called with scrub progress 0..1 so the app shell can style the header. */
@@ -26,12 +29,23 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
   // Only the threshold crossing lives in React state; raw progress would
   // re-render this whole subtree on every scroll frame.
   const [isContent, setIsContent] = useState(false)
+  const [hasSeenIntro] = useState(() => sessionStorage.getItem(INTRO_SEEN_KEY) === 'true')
   const { openQuiz } = useUi()
   const isCompact = useIsCompact()
+
+  const markIntroSeen = () => {
+    sessionStorage.setItem(INTRO_SEEN_KEY, 'true')
+  }
+
+  useEffect(() => {
+    if (!hasSeenIntro) markIntroSeen()
+    if (hasSeenIntro) onProgress(1)
+  }, [hasSeenIntro, onProgress])
 
   // Scroll-driven video scrubbing via GSAP ScrollTrigger
   useGSAP(
     () => {
+      if (hasSeenIntro) return
       const video = videoRef.current
       if (!video) return
 
@@ -48,6 +62,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
             onProgress(self.progress)
             const content = self.progress > 0.95
             setIsContent((c) => (c === content ? c : content))
+            if (content) markIntroSeen()
             // Progress bar is driven directly — no React render per frame.
             if (progressBarRef.current) {
               progressBarRef.current.style.width = `${Math.round(self.progress * 100)}%`
@@ -111,13 +126,13 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         video.removeEventListener('error', onVideoError)
       }
     },
-    { scope: containerRef },
+    { scope: containerRef, dependencies: [hasSeenIntro] },
   )
 
   // Video parallax: fade and scale the background as content takes over
   useGSAP(
     () => {
-      if (!ready || !videoRef.current) return
+      if (hasSeenIntro || !ready || !videoRef.current) return
 
       gsap.fromTo(
         videoRef.current,
@@ -136,7 +151,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         },
       )
     },
-    { scope: containerRef, dependencies: [ready] },
+    { scope: containerRef, dependencies: [hasSeenIntro, ready] },
   )
 
   const handleSkipIntro = () => {
@@ -146,6 +161,8 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
     // right where the video runway ends, so align the runway's bottom edge
     // with the top of the viewport (its pin starts at 'top top', progress 0).
     const targetY = track.getBoundingClientRect().bottom + window.scrollY
+    markIntroSeen()
+    setIsContent(true)
     scrollToY(targetY)
   }
 
@@ -156,6 +173,16 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
       <Suspense fallback={<div className="min-h-screen bg-[#1b261b]" />}>
         <MobileHome />
       </Suspense>
+    )
+  }
+
+  if (hasSeenIntro) {
+    return (
+      <div className="bg-[#f9faf7] pt-20">
+        <Suspense fallback={null}>
+          <HeroScrollSection />
+        </Suspense>
+      </div>
     )
   }
 
@@ -179,12 +206,17 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
 
       {/* Skip Intro */}
       {!isContent && (
-        <button
-          onClick={handleSkipIntro}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 rounded-full bg-[#0c130c]/60 border border-white/40 text-white hover:bg-[#0c130c]/80 hover:border-white/70 backdrop-blur-sm text-[11px] font-mono font-bold tracking-widest uppercase shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all cursor-pointer"
-        >
-          Skip Intro →
-        </button>
+        <div className="fixed bottom-8 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3">
+          <button
+            onClick={handleSkipIntro}
+            className="px-5 py-2.5 rounded-full bg-[#0c130c]/60 border border-white/40 text-white hover:bg-[#0c130c]/80 hover:border-white/70 backdrop-blur-sm text-[11px] font-mono font-bold tracking-widest uppercase shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all cursor-pointer"
+          >
+            Skip Intro →
+          </button>
+          <Link to="/cart" className="rounded-full border border-white/40 bg-white/90 px-5 py-2.5 text-[11px] font-mono font-bold uppercase tracking-widest text-[#1b261b] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-colors hover:bg-white">
+            View Cart
+          </Link>
+        </div>
       )}
 
       {/* Scrub progress indicator (width driven directly by the scroll handler) */}

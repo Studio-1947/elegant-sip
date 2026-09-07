@@ -37,7 +37,7 @@ export interface CartItem {
    * misread is the fix.
    */
   productSlug: string
-  /** Variant size label, e.g. "Classic · 100 g". */
+  /** Variant size label, e.g. "200 g". */
   size: string
   name: string
   /** Unit price in paise — display only, re-priced by the server. */

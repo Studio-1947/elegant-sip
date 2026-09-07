@@ -85,7 +85,7 @@ export const productVariants = pgTable(
     productId: uuid('product_id')
       .notNull()
       .references(() => products.id, { onDelete: 'cascade' }),
-    /** Display label, e.g. "Premium · 100 g". */
+    /** Display label, e.g. "200 g". */
     size: text('size').notNull(),
     sku: text('sku').notNull().unique(),
     /** Paise. */

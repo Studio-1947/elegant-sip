@@ -82,7 +82,7 @@ export default function TermsPage() {
           </li>
           <li>
             <strong className="text-[#1b261b]">Pricing & currency:</strong> all prices are in INR
-            and include or exclude GST as displayed at checkout (currently modeled at 5%). Shipping
+            and include or exclude GST as displayed at checkout (currently modeled at 18%). Shipping
             is calculated per our published rates (e.g., free above a threshold, flat rates below
             it) and shown before you pay.
           </li>

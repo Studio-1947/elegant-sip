@@ -32,7 +32,7 @@ export const productStatusSchema = z
 
 export const productVariantSchema = z.object({
   id: z.string().uuid(),
-  size: z.string().describe('Display label, e.g. "Classic · 100 g"'),
+  size: z.string().describe('Display label, e.g. "200 g"'),
   price: paiseSchema,
   stock: z.number().int().nonnegative().describe('Units available in the current lot'),
   sku: z.string(),

@@ -128,6 +128,14 @@ export const orders = pgTable(
     shippingState: text('shipping_state'),
     shippingCountry: text('shipping_country').notNull().default('India'),
     shippingPhone: text('shipping_phone'),
+    /* Billing is immutable order data, never a reference to an editable address-book row. */
+    billingName: text('billing_name'),
+    billingLine1: text('billing_line1'),
+    billingCity: text('billing_city'),
+    billingPostalCode: text('billing_postal_code'),
+    billingState: text('billing_state'),
+    billingCountry: text('billing_country'),
+    billingPhone: text('billing_phone'),
 
     /* Paise, snapshotted at purchase — never recomputed from a catalogue that
        may have changed since the order was placed. */
@@ -216,6 +224,9 @@ export const savedAddresses = pgTable(
     state: text('state'),
     country: text('country').notNull().default('India'),
     phone: text('phone'),
+    /** One address may be the customer's default for either or both checkout roles. */
+    isDefaultShipping: boolean('is_default_shipping').notNull().default(false),
+    isDefaultBilling: boolean('is_default_billing').notNull().default(false),
     isDefault: boolean('is_default').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

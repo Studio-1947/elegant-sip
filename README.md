@@ -288,10 +288,10 @@ as free.
 
 | Product | Tiers | Notes |
 |---|---|---|
-| First Flush Whole Leaf | Basic ₹600 · Classic ₹600 · Premium ₹1,000 | Gopaldhara |
-| First Flush Broken Leaf | Basic ₹500 · Classic ₹600 · Premium ₹700 | Gopaldhara |
-| First Flush Broken Mixed | Basic ₹150 · Premium ₹300 | Rohini |
-| First Flush Fannings | Basic ₹100 · Premium ₹200 | Rohini |
+| First Flush Whole Leaf | 100 g ₹600 · 200 g ₹1,200 · 500 g ₹3,000 | Gopaldhara |
+| First Flush Broken Leaf | 100 g ₹500 · 200 g ₹1,000 · 500 g ₹2,500 | Gopaldhara |
+| First Flush Broken Mixed | 100 g ₹150 · 200 g ₹300 · 500 g ₹750 | Rohini |
+| First Flush Fannings | 100 g ₹100 · 200 g ₹200 · 500 g ₹500 | Rohini |
 | Second Flush | — | `status: 'coming-soon'` |
 | Third Flush | — | `status: 'coming-soon'` |
 

@@ -64,6 +64,38 @@ describe('changing your name', () => {
   })
 })
 
+describe('address book roles', () => {
+  it('keeps independent default shipping and billing addresses', async () => {
+    const { cookie } = await signUp(unique('addresses'))
+    const create = async (payload: { label: string; isDefaultShipping?: boolean; isDefaultBilling?: boolean }) =>
+      app.inject({
+        method: 'POST',
+        url: '/v1/account/addresses',
+        headers: { cookie: cookie! },
+        payload: {
+          ...payload,
+          name: 'Test Person',
+          line1: '12 Hill Cart Road',
+          city: 'Darjiling',
+          postalCode: '734101',
+          state: 'West Bengal',
+          country: 'India',
+        },
+      })
+
+    const home = await create({ label: 'Home', isDefaultShipping: true, isDefaultBilling: true })
+    expect(home.statusCode).toBe(201)
+    const office = await create({ label: 'Office', isDefaultBilling: true })
+    expect(office.statusCode).toBe(201)
+
+    const listed = await app.inject({ method: 'GET', url: '/v1/account/addresses', headers: { cookie: cookie! } })
+    expect(listed.statusCode).toBe(200)
+    const addresses = listed.json().addresses as { label: string; isDefaultShipping: boolean; isDefaultBilling: boolean }[]
+    expect(addresses.find((address) => address.label === 'Home')).toMatchObject({ isDefaultShipping: true, isDefaultBilling: false })
+    expect(addresses.find((address) => address.label === 'Office')).toMatchObject({ isDefaultShipping: false, isDefaultBilling: true })
+  })
+})
+
 describe('changing your password', () => {
   it('requires the current one', async () => {
     const email = unique('wrongcurrent')
