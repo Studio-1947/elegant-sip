@@ -75,7 +75,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
           variants: z
             .array(
               z.object({
-                size: z.string().trim().min(1).max(60).describe('e.g. "Premium · 100 g"'),
+                size: z.string().trim().min(1).max(60).describe('e.g. "200 g"'),
                 price: paiseSchema,
                 stock: z.number().int().min(0).default(0),
               }),

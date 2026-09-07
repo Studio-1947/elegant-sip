@@ -117,7 +117,7 @@ const placed = await app.inject({
   url: '/v1/orders',
   headers: auth,
   payload: {
-    items: [{ productSlug: 'first-flush-broken-leaf', variantSize: 'Classic · 100 g', quantity: 3 }],
+    items: [{ productSlug: 'first-flush-broken-leaf', variantSize: '100 g', quantity: 3 }],
     email: EMAIL,
     shipping: {
       name: 'Smoke Buyer',
@@ -224,7 +224,7 @@ const restock = await app.inject({
   method: 'POST',
   url: '/v1/admin/stock',
   headers: adminAuth,
-  payload: { productSlug: 'first-flush-broken-leaf', variantSize: 'Classic · 100 g', delta: 12, note: 'New lot' },
+  payload: { productSlug: 'first-flush-broken-leaf', variantSize: '100 g', delta: 12, note: 'New lot' },
 })
 restock.statusCode === 200 ? ok('restock', `stock now ${restock.json().stock}`) : fail('restock', String(restock.statusCode))
 

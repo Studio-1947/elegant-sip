@@ -12,7 +12,7 @@ import { paiseSchema, slugSchema } from './catalogue.js'
 
 export const cartLineInputSchema = z.object({
   productSlug: slugSchema,
-  variantSize: z.string().min(1).describe('Variant label, e.g. "Premium · 100 g"'),
+  variantSize: z.string().min(1).describe('Variant label, e.g. "200 g"'),
   quantity: z.number().int().min(1).max(99),
 })
 
@@ -48,7 +48,7 @@ export const pricingQuoteResponseSchema = z.object({
     .describe('Why the submitted code was not applied — shown to the customer verbatim'),
   shippingMethod: shippingMethodIdSchema,
   shippingFee: paiseSchema,
-  tax: paiseSchema.describe('GST at 5% on goods and shipping, rounded to a whole rupee'),
+  tax: paiseSchema.describe('GST at 18% on goods and shipping, rounded to a whole rupee'),
   total: paiseSchema,
   amountToFreeShipping: paiseSchema,
   adjustments: z

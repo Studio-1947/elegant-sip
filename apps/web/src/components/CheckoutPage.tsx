@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { Link, useDocumentMeta } from '../lib/router'
@@ -132,10 +132,10 @@ export default function CheckoutPage() {
   const estimatedTax = quote?.tax ?? fallback.estimatedTax
   const finalTotal = quote?.total ?? fallback.finalTotal
 
-  const setField = (field: keyof FormState, value: string) => {
+  const setField = useCallback((field: keyof FormState, value: string) => {
     setForm((f) => ({ ...f, [field]: value }))
     setErrors((e) => ({ ...e, [field]: undefined }))
-  }
+  }, [])
 
   /** Move focus to the first field that failed, so the error is discoverable. */
   const focusFirstError = (next: Partial<Record<keyof FormState, string>>) => {
@@ -361,7 +361,7 @@ export default function CheckoutPage() {
                   ))}
                 </div>
                 <div className="bg-[#f9faf7] border border-[#1b261b]/10 rounded-xl p-4 text-xs space-y-1.5 text-[#4a584a]">
-                  <p><span className="font-bold text-[#1b261b]">Ship to:</span> {form.firstName} {form.lastName}, {form.address}, {form.city} {form.zip}, {form.country}</p>
+                  <p><span className="font-bold text-[#1b261b]">Ship to:</span> {form.firstName} {form.lastName}, {form.address}, {form.city}{form.state ? `, ${form.state}` : ''} {form.zip}, {form.country}</p>
                   <p><span className="font-bold text-[#1b261b]">Shipping:</span> {SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.label} ({SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.detail})</p>
                   <p><span className="font-bold text-[#1b261b]">Contact:</span> {form.email}</p>
                 </div>

@@ -9,8 +9,7 @@ const NAV_LINKS = [
   { to: '/shop', label: 'Shop' },
   { to: '/journal', label: 'Journal' },
   { to: '/about', label: 'About' },
-  { to: '/faq', label: 'FAQ' },
-  { to: '/contact', label: 'Contact' },
+  { to: '/contact', label: 'Support' },
 ]
 
 interface SiteHeaderProps {

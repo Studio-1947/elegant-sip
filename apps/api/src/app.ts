@@ -26,6 +26,7 @@ import { gardenRoutes } from './routes/gardens.js'
 import { journalRoutes } from './routes/journal.js'
 import { pricingRoutes } from './routes/pricing.js'
 import { otpRoutes } from './routes/otp.js'
+import { pincodeRoutes } from './routes/pincode.js'
 
 /**
  * Builds the app without listening, so tests can drive it via `inject()`
@@ -127,6 +128,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         { name: 'Account', description: 'Reviews, wishlist, newsletter and contact.' },
         { name: 'Admin', description: 'Shop operations. Every route requires the admin role.' },
         { name: 'Pricing', description: 'Server-authoritative money. The client displays; it never calculates.' },
+        { name: 'Locations', description: 'Postal locality suggestions for delivery checkout.' },
       ],
     },
     transform: jsonSchemaTransform,
@@ -146,6 +148,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(gardenRoutes, { prefix: '/v1' })
   await app.register(journalRoutes, { prefix: '/v1' })
   await app.register(pricingRoutes, { prefix: '/v1' })
+  await app.register(pincodeRoutes, { prefix: '/v1' })
   await app.register(orderRoutes, { prefix: '/v1' })
   await app.register(webhookRoutes, { prefix: '/v1' })
   await app.register(accountRoutes, { prefix: '/v1' })

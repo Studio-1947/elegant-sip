@@ -8,8 +8,8 @@
       "name": "First Flush Whole Leaf",
       "status": "active",
       "fromPrice": 60000,
-      "description": "The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for. In three quality tiers.",
-      "longDescription": "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in the Rungbong Valley, withered long and fired light, this is the grade that brews pale gold rather than red. Choose your tier — Basic, Classic, or Premium — each whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
+      "description": "The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for.",
+      "longDescription": "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in the Rungbong Valley, withered long and fired light, this tea brews pale gold rather than red. Each pack is whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
       "imageSrc": "/morningdew.webp",
       "category": "First Flush",
       "tastingNotes": [
@@ -22,24 +22,24 @@
       "variants": [
         {
           "id": "0c97097f-364e-4048-98f3-44c0219fc009",
-          "size": "Basic · 100 g",
+          "size": "100 g",
           "price": 60000,
           "stock": 20,
-          "sku": "first-flush-whole-leaf--basic"
+          "sku": "first-flush-whole-leaf--100-g"
         },
         {
           "id": "e027d924-abb7-455b-a01e-f753759d46d6",
-          "size": "Classic · 100 g",
-          "price": 60000,
+          "size": "200 g",
+          "price": 120000,
           "stock": 20,
-          "sku": "first-flush-whole-leaf--classic"
+          "sku": "first-flush-whole-leaf--200-g"
         },
         {
           "id": "42829b51-9ed0-41f4-b81b-13f186fb2fae",
-          "size": "Premium · 100 g",
-          "price": 100000,
+          "size": "500 g",
+          "price": 300000,
           "stock": 20,
-          "sku": "first-flush-whole-leaf--premium"
+          "sku": "first-flush-whole-leaf--500-g"
         }
       ],
       "origin": {
@@ -88,24 +88,24 @@
       "variants": [
         {
           "id": "b68bd455-88a5-4cdb-8e53-a374c9a80040",
-          "size": "Basic · 100 g",
+          "size": "100 g",
           "price": 50000,
           "stock": 20,
-          "sku": "first-flush-broken-leaf--basic"
+          "sku": "first-flush-broken-leaf--100-g"
         },
         {
           "id": "f2f250fc-d154-4cbe-9cf3-bffd419c067b",
-          "size": "Classic · 100 g",
-          "price": 60000,
+          "size": "200 g",
+          "price": 100000,
           "stock": 56,
-          "sku": "first-flush-broken-leaf--classic"
+          "sku": "first-flush-broken-leaf--200-g"
         },
         {
           "id": "21f6e8ae-fd93-49dd-a1b0-11852f714586",
-          "size": "Premium · 100 g",
-          "price": 70000,
+          "size": "500 g",
+          "price": 250000,
           "stock": 20,
-          "sku": "first-flush-broken-leaf--premium"
+          "sku": "first-flush-broken-leaf--500-g"
         }
       ],
       "origin": {
@@ -154,17 +154,24 @@
       "variants": [
         {
           "id": "7d6c6552-65b2-465c-aed0-1f3d82bd84d1",
-          "size": "Basic · 100 g",
+          "size": "100 g",
           "price": 15000,
           "stock": 20,
-          "sku": "first-flush-broken-mixed--basic"
+          "sku": "first-flush-broken-mixed--100-g"
         },
         {
           "id": "4be351a4-7e12-40f0-8008-e72572f7e4a8",
-          "size": "Premium · 100 g",
+          "size": "200 g",
           "price": 30000,
           "stock": 20,
-          "sku": "first-flush-broken-mixed--premium"
+          "sku": "first-flush-broken-mixed--200-g"
+        },
+        {
+          "id": "4be351a4-7e12-40f0-8008-e72572f7e4a9",
+          "size": "500 g",
+          "price": 75000,
+          "stock": 20,
+          "sku": "first-flush-broken-mixed--500-g"
         }
       ],
       "origin": {
@@ -213,17 +220,24 @@
       "variants": [
         {
           "id": "aa434c81-fa63-4da5-b517-b8e50041a588",
-          "size": "Basic · 100 g",
+          "size": "100 g",
           "price": 10000,
           "stock": 20,
-          "sku": "first-flush-fannings--basic"
+          "sku": "first-flush-fannings--100-g"
         },
         {
           "id": "7efda3a6-f93e-424e-93b5-193f98bee969",
-          "size": "Premium · 100 g",
+          "size": "200 g",
           "price": 20000,
           "stock": 20,
-          "sku": "first-flush-fannings--premium"
+          "sku": "first-flush-fannings--200-g"
+        },
+        {
+          "id": "7efda3a6-f93e-424e-93b5-193f98bee96a",
+          "size": "500 g",
+          "price": 50000,
+          "stock": 20,
+          "sku": "first-flush-fannings--500-g"
         }
       ],
       "origin": {

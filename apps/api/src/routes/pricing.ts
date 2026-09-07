@@ -78,7 +78,7 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
           'drop come back in `adjustments` — show them to the customer rather than silently',
           'reconciling.',
           '',
-          'GST is 5% on goods *and* shipping, rounded to a whole rupee by the same shared rule',
+          'GST is 18% on goods *and* shipping, rounded to a whole rupee by the same shared rule',
           'the storefront uses for display.',
         ].join('\n'),
         body: pricingQuoteRequestSchema,

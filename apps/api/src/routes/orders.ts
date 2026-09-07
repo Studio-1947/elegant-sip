@@ -556,7 +556,7 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
     facts: [
       ...row.items.map((i) => [`${i.productName} (${i.variantSize}) × ${i.quantity}`, formatPaise(i.lineTotal)] as [string, string]),
       ['Shipping', row.shippingFee === 0 ? 'Free' : formatPaise(row.shippingFee)],
-      ['GST (5%)', formatPaise(row.tax)],
+      ['GST (18%)', formatPaise(row.tax)],
       ['Total paid', formatPaise(row.total)],
     ],
     footnote: `Delivering to ${row.shippingName}, ${row.shippingCity} ${row.shippingPostalCode}.`,

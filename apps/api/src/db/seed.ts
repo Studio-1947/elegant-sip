@@ -2,6 +2,7 @@ import '../dev-defaults.js'
 import { argv } from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { rupees } from '@elegantsip/shared'
+import { and, eq, notInArray } from 'drizzle-orm'
 import { db, sql } from './client.js'
 import { coupons, gardenProducts, gardens, journalPosts, productVariants, products } from './schema.js'
 
@@ -21,9 +22,9 @@ const PRODUCTS = [
     name: 'First Flush Whole Leaf',
     status: 'active' as const,
     description:
-      'The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for. In three quality tiers.',
+      'The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for.',
     longDescription:
-      "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in the Rungbong Valley, withered long and fired light, this is the grade that brews pale gold rather than red. Choose your tier — Basic, Classic, or Premium — each whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
+      "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in the Rungbong Valley, withered long and fired light, this tea brews pale gold rather than red. Each pack is whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
     imageSrc: '/morningdew.webp',
     category: 'First Flush',
     tastingNotes: ['Floral', 'Muscatel', 'Bright finish'],
@@ -47,9 +48,9 @@ const PRODUCTS = [
     },
     garden: 'gopaldhara',
     variants: [
-      { size: 'Basic · 100 g', price: rupees(600), stock: 20 },
-      { size: 'Classic · 100 g', price: rupees(600), stock: 20 },
-      { size: 'Premium · 100 g', price: rupees(1000), stock: 20 },
+      { size: '100 g', price: rupees(600), stock: 20 },
+      { size: '200 g', price: rupees(1200), stock: 20 },
+      { size: '500 g', price: rupees(3000), stock: 20 },
     ],
   },
   {
@@ -81,9 +82,9 @@ const PRODUCTS = [
     },
     garden: 'gopaldhara',
     variants: [
-      { size: 'Basic · 100 g', price: rupees(500), stock: 20 },
-      { size: 'Classic · 100 g', price: rupees(600), stock: 20 },
-      { size: 'Premium · 100 g', price: rupees(700), stock: 20 },
+      { size: '100 g', price: rupees(500), stock: 20 },
+      { size: '200 g', price: rupees(1000), stock: 20 },
+      { size: '500 g', price: rupees(2500), stock: 20 },
     ],
   },
   {
@@ -116,8 +117,9 @@ const PRODUCTS = [
     },
     garden: 'rohini',
     variants: [
-      { size: 'Basic · 100 g', price: rupees(150), stock: 20 },
-      { size: 'Premium · 100 g', price: rupees(300), stock: 20 },
+      { size: '100 g', price: rupees(150), stock: 20 },
+      { size: '200 g', price: rupees(300), stock: 20 },
+      { size: '500 g', price: rupees(750), stock: 20 },
     ],
   },
   {
@@ -150,8 +152,9 @@ const PRODUCTS = [
     },
     garden: 'rohini',
     variants: [
-      { size: 'Basic · 100 g', price: rupees(100), stock: 20 },
-      { size: 'Premium · 100 g', price: rupees(200), stock: 20 },
+      { size: '100 g', price: rupees(100), stock: 20 },
+      { size: '200 g', price: rupees(200), stock: 20 },
+      { size: '500 g', price: rupees(500), stock: 20 },
     ],
   },
   {
@@ -295,17 +298,20 @@ export async function seed() {
           updatedAt: new Date(),
         },
       })
-      .returning({ id: products.id })
+    .returning({ id: products.id })
+
+    await db
+      .delete(productVariants)
+      .where(and(eq(productVariants.productId, row.id), notInArray(productVariants.size, variants.map((v) => v.size))))
 
     for (const [vi, v] of variants.entries()) {
-      // SKU is derived, stable and unique: slug + tier.
-      const tier = v.size.split(' · ')[0].toLowerCase().replace(/\s+/g, '-')
+      const sizeKey = v.size.toLowerCase().replace(/\s+/g, '-')
       await db
         .insert(productVariants)
-        .values({ productId: row.id, size: v.size, sku: `${p.slug}--${tier}`, price: v.price, stock: v.stock, sortOrder: vi })
+        .values({ productId: row.id, size: v.size, sku: `${p.slug}--${sizeKey}`, price: v.price, stock: v.stock, sortOrder: vi })
         .onConflictDoUpdate({
           target: [productVariants.productId, productVariants.size],
-          set: { price: v.price, sortOrder: vi },
+          set: { sku: `${p.slug}--${sizeKey}`, price: v.price, stock: v.stock, sortOrder: vi },
         })
       variantCount += 1
     }

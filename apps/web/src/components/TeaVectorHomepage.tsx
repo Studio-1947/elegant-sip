@@ -86,7 +86,7 @@ export default function TeaVectorHomepage() {
       // Release at 15% buffered rather than fully buffered: seeks are already
       // clamped to the buffered range, so the playhead simply trails the
       // download instead of the visitor staring at an opaque loader.
-      const enoughBuffered = fraction >= 0.15 && elapsed > 1200
+      const enoughBuffered = fraction >= 0.35 && elapsed > 1200
       if (enoughBuffered || stalled || elapsed > 10000) finish()
     }, 150)
     return () => {

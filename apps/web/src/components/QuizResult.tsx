@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useCart } from './CartContext'
 import { getDefaultVariant, type Product } from '../data/products'
 import { formatINR } from '../lib/currency'
-import { Link } from '../lib/router'
+import { Link, navigate } from '../lib/router'
 import { track } from '../lib/analytics'
+import { useUi } from './UiContext'
 
 /* Compact brew-stat values parsed from the full brewing guide strings. */
 const celsius = (temperature: string) =>
@@ -16,11 +17,17 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
   const { addToCart } = useCart()
+  const { showToast } = useUi()
 
   const handleAddToCart = () => {
+    if (isAdded) {
+      navigate('/cart')
+      return
+    }
     const variant = getDefaultVariant(match)
     setIsAdding(true)
     addToCart({ productSlug: match.slug, name: match.name, price: variant.price, imageSrc: match.imageSrc, size: variant.size }, 1)
+    showToast(`${match.name} added to your cart`)
     track('add_to_cart', { product: match.slug, source: 'quiz' })
     setTimeout(() => {
       setIsAdding(false)
@@ -119,7 +126,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
           <div className="qz-rise flex flex-col gap-2.5 pt-1 mt-auto" style={delay(0.44)}>
             <button
               onClick={handleAddToCart}
-              disabled={isAdding || isAdded}
+              disabled={isAdding}
               className={`w-full text-xs font-bold tracking-widest uppercase py-3 px-6 rounded-xl transition-all duration-300 active:scale-[0.98] cursor-pointer ${
                 isAdded
                   ? 'bg-[#8bb56e] text-white'
@@ -128,7 +135,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
                   : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white shadow-md'
               }`}
             >
-              {isAdding ? 'Adding...' : isAdded ? 'Added ✓' : `Add Match to Cart • ${formatINR(match.fromPrice ?? 0)}`}
+              {isAdding ? 'Adding...' : isAdded ? 'Go to Cart' : `Add Match to Cart • ${formatINR(match.fromPrice ?? 0)}`}
             </button>
             <button
               onClick={onReset}

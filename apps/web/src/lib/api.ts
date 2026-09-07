@@ -259,11 +259,25 @@ export interface SavedAddress {
   isDefault: boolean
 }
 
+export interface PincodeLocation {
+  officeName: string
+  city: string
+  district: string
+  state: string
+  country: 'India'
+  deliveryStatus: string | null
+}
+
 /* ── The API surface the storefront uses ──────────────────────────────────── */
 
 export const api = {
   storefront: {
     status: () => request<{ paymentsAvailable: boolean }>('/storefront-status'),
+  },
+
+  locations: {
+    pincode: (pincode: string) =>
+      request<{ pincode: string; locations: PincodeLocation[] }>(`/v1/locations/pincode/${encodeURIComponent(pincode)}`),
   },
 
   auth: {

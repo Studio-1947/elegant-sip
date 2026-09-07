@@ -3,9 +3,11 @@ import { getProduct, getDefaultVariant, isInStock } from '../data/products'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
+import { useUi } from './UiContext'
 
 export default function WishlistPage() {
   const { wishlist, toggleWishlist, addToCart } = useCart()
+  const { showToast } = useUi()
   useDocumentMeta('Wishlist | Elegant Sip', 'Teas you have saved for later.', { noindex: true })
 
   const items = wishlist
@@ -68,6 +70,7 @@ export default function WishlistPage() {
                     onClick={() => {
                       const variant = getDefaultVariant(item)
                       addToCart({ productSlug: item.slug, name: item.name, price: variant.price, imageSrc: item.imageSrc, size: variant.size }, 1)
+                      showToast(`${item.name} added to your cart`)
                       track('add_to_cart', { product: item.slug, source: 'wishlist' })
                     }}
                     disabled={!isInStock(item) || item.status === 'coming-soon'}
@@ -76,7 +79,10 @@ export default function WishlistPage() {
                     {item.status === 'coming-soon' ? 'Coming Soon' : isInStock(item) ? 'Add to Cart' : 'Sold Out'}
                   </button>
                   <button
-                    onClick={() => toggleWishlist(item.slug)}
+                    onClick={() => {
+                      toggleWishlist(item.slug)
+                      showToast(`${item.name} removed from your wishlist`)
+                    }}
                     className="text-[11px] font-mono uppercase tracking-wider text-[#4a584a] hover:text-red-600 transition-colors cursor-pointer"
                   >
                     Remove

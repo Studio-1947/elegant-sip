@@ -23,7 +23,7 @@ import { expirePendingOrders } from './orders.js'
  * ──────────────────────────────────────────────────────────────────────────── */
 
 const SLUG = 'first-flush-fannings'
-const SIZE = 'Basic · 100 g'
+const SIZE = '100 g'
 
 let app: FastifyInstance
 let available = true
