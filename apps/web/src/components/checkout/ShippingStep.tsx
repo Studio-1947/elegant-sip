@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { useAuth } from '../AuthContext'
 import { useUi } from '../UiContext'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../../lib/pricing'
 import { formatINR } from '../../lib/currency'
 import { COUNTRIES, type FormState } from './checkoutData'
-import { api, type PincodeLocation, type SavedAddress } from '../../lib/api'
+import { type SavedAddress } from '../../lib/api'
+import { usePincodeLookup } from '../../lib/usePincodeLookup'
+import LocalityPicker from '../LocalityPicker'
 
 interface ShippingStepProps {
   form: FormState
@@ -22,8 +24,6 @@ interface ShippingStepProps {
   saveAddress: boolean
   setSaveAddress: (value: boolean) => void
 }
-
-type LookupStatus = 'idle' | 'loading' | 'found' | 'empty' | 'unavailable'
 
 /** Step 1 of checkout: contact + shipping address + shipping method. */
 export default function ShippingStep({
@@ -44,53 +44,20 @@ export default function ShippingStep({
 }: ShippingStepProps) {
   const { user } = useAuth()
   const { openLogin } = useUi()
-  const [lookupStatus, setLookupStatus] = useState<LookupStatus>('idle')
-  const [locations, setLocations] = useState<PincodeLocation[]>([])
-  const [selectedOffice, setSelectedOffice] = useState<string | null>(null)
-  const [pickerOpen, setPickerOpen] = useState(false)
 
-  const applyLocation = useCallback((location: PincodeLocation) => {
-    setField('city', location.city)
-    setField('state', location.state)
-    setField('country', location.country)
-    setSelectedOffice(location.officeName)
-  }, [setField])
-
-  useEffect(() => {
-    const pincode = form.zip.trim()
-    if (form.country !== 'India' || !/^[1-9]\d{5}$/.test(pincode)) {
-      const reset = window.setTimeout(() => {
-        setLookupStatus('idle')
-        setLocations([])
-        setSelectedOffice(null)
-        setPickerOpen(false)
-      }, 0)
-      return () => window.clearTimeout(reset)
-    }
-
-    let cancelled = false
-    const timeout = window.setTimeout(() => {
-      setLookupStatus('loading')
-      setLocations([])
-      setSelectedOffice(null)
-      setPickerOpen(false)
-      void api.locations.pincode(pincode)
-        .then((result) => {
-          if (cancelled) return
-          setLocations(result.locations)
-          setLookupStatus(result.locations.length ? 'found' : 'empty')
-          setPickerOpen(result.locations.length > 0)
-          const preferred = result.locations.find((location) => location.deliveryStatus === 'Delivery') ?? result.locations[0]
-          if (preferred) applyLocation(preferred)
-        })
-        .catch(() => !cancelled && setLookupStatus('unavailable'))
-    }, 300)
-
-    return () => {
-      cancelled = true
-      window.clearTimeout(timeout)
-    }
-  }, [applyLocation, form.country, form.zip])
+  const applyLocation = useCallback(
+    (location: { city: string; state: string; country: string }) => {
+      setField('city', location.city)
+      setField('state', location.state)
+      setField('country', location.country)
+    },
+    [setField],
+  )
+  const { status: lookupStatus, locations, selectedOffice, pickerOpen, reopenPicker, selectLocation } = usePincodeLookup(
+    form.zip,
+    form.country,
+    applyLocation,
+  )
 
   const updatePincode = (value: string) => setField('zip', value.replace(/\D/g, '').slice(0, 6))
 
@@ -156,29 +123,14 @@ export default function ShippingStep({
             {lookupStatus === 'unavailable' && <p className="mt-1.5 text-[11px] text-[#4a584a]">Location suggestions are unavailable right now. You can still enter your city manually.</p>}
           </div>
         </div>
-        {lookupStatus === 'found' && locations.length > 0 && pickerOpen && (
-          <fieldset className="rounded-xl border border-[#8bb56e]/35 bg-[#8bb56e]/5 px-4 py-3">
-            <legend className="px-1 text-[11px] font-mono tracking-widest uppercase text-[#4a584a]">Locality found for this PIN</legend>
-            <p className="mb-2 text-xs text-[#4a584a]">City and state have been filled from India Post. Choose the matching post office if needed.</p>
-            <div className="space-y-1.5">
-              {locations.map((location) => {
-                const selected = selectedOffice === location.officeName
-                return <button type="button" key={`${location.officeName}-${location.city}-${location.state}`} onClick={() => { applyLocation(location); setPickerOpen(false) }} className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition-colors ${selected ? 'border-[#4a7333] bg-white' : 'border-[#1b261b]/10 bg-white/60 hover:border-[#8bb56e]'}`}>
-                  <span className="font-bold text-[#1b261b]">{location.officeName}</span>
-                  <span className="block mt-0.5 text-[#4a584a]">{location.city}, {location.state}{location.deliveryStatus ? ` · ${location.deliveryStatus}` : ''}</span>
-                </button>
-              })}
-            </div>
-          </fieldset>
-        )}
-        {lookupStatus === 'found' && locations.length > 0 && !pickerOpen && selectedOffice && (
-          <p className="text-[11px] text-[#4a584a]">
-            Delivering to <span className="font-bold text-[#1b261b]">{selectedOffice}</span> ·{' '}
-            <button type="button" onClick={() => setPickerOpen(true)} className="text-[#4a7333] font-bold uppercase tracking-widest hover:text-[#1b261b] transition-colors cursor-pointer">
-              Change
-            </button>
-          </p>
-        )}
+        <LocalityPicker
+          status={lookupStatus}
+          locations={locations}
+          selectedOffice={selectedOffice}
+          pickerOpen={pickerOpen}
+          onSelect={selectLocation}
+          onReopen={reopenPicker}
+        />
         <div>
           <label htmlFor="co-country" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Country</label>
           <select

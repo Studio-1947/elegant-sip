@@ -60,11 +60,6 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans">
       <main className="pt-20">
-        <header className="mx-auto max-w-[1400px] px-6 pt-16 text-center md:px-12 lg:px-16">
-          <p className="mb-3 font-mono text-xs uppercase tracking-[0.3em] text-[#4a7333]">From the Himalayan foothills</p>
-          <h1 className="text-4xl font-bold uppercase tracking-tight md:text-5xl">Shop Darjeeling Tea</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#4a584a] md:text-base">Single-origin whole leaf teas, sourced directly from estate gardens and packed for freshness.</p>
-        </header>
         <ProductsSection showFilters searchQuery={q} />
       </main>
 

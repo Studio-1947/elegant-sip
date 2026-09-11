@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiClientError, api, type SavedAddress } from '../../lib/api'
+import { usePincodeLookup } from '../../lib/usePincodeLookup'
+import LocalityPicker from '../LocalityPicker'
 
 type AddressDraft = {
   label: string
@@ -110,6 +112,11 @@ export default function AddressBookSection() {
 
   const set = <K extends keyof AddressDraft>(key: K, value: AddressDraft[K]) => setDraft((current) => ({ ...current, [key]: value }))
 
+  const applyLocation = useCallback((location: { city: string; state: string }) => {
+    setDraft((current) => ({ ...current, city: location.city, state: location.state }))
+  }, [])
+  const pincodeLookup = usePincodeLookup(editing ? draft.postalCode : '', 'India', applyLocation)
+
   return (
     <section aria-labelledby="address-book-heading" className="mb-12">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -133,6 +140,16 @@ export default function AddressBookSection() {
             <label className="block text-xs font-medium">State<input value={draft.state} onChange={(event) => set('state', event.target.value)} autoComplete="address-level1" className={`${inputClass} mt-1.5`} /></label>
             <label className="block text-xs font-medium">PIN code<input value={draft.postalCode} onChange={(event) => set('postalCode', event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="postal-code" className={`${inputClass} mt-1.5`} /></label>
             <label className="block text-xs font-medium">Phone <span className="font-normal text-[#4a584a]">(optional)</span><input value={draft.phone} onChange={(event) => set('phone', event.target.value)} inputMode="tel" autoComplete="tel" className={`${inputClass} mt-1.5`} /></label>
+          </div>
+          <div className="mt-3">
+            <LocalityPicker
+              status={pincodeLookup.status}
+              locations={pincodeLookup.locations}
+              selectedOffice={pincodeLookup.selectedOffice}
+              pickerOpen={pincodeLookup.pickerOpen}
+              onSelect={pincodeLookup.selectLocation}
+              onReopen={pincodeLookup.reopenPicker}
+            />
           </div>
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
             <label className="flex items-center gap-2 rounded-lg border border-[#1b261b]/10 px-3.5 py-3 text-xs"><input type="checkbox" checked={draft.isDefaultShipping} onChange={(event) => set('isDefaultShipping', event.target.checked)} className="accent-[#4a7333]" /> Use as my default shipping address</label>
