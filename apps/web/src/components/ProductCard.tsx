@@ -317,7 +317,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <button
               onClick={handleBuyNow}
               disabled={isAdding}
-              className="border border-[#1b261b]/25 px-4 text-[11px] font-bold tracking-widest uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] disabled:opacity-50"
+              className="flex items-center justify-center text-center border border-[#1b261b]/25 px-4 rounded-lg text-[11px] font-bold tracking-widest uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] disabled:opacity-50"
             >
               Buy now
             </button>
