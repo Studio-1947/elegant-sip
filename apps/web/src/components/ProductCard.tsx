@@ -268,12 +268,12 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
 
         {/* Quantity & CTA row */}
-        <div className="flex flex-row gap-3 items-stretch mt-auto">
+        <div className="flex flex-row gap-2 items-stretch mt-auto">
           {!comingSoon && (
-            <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-4 py-2 w-24 sm:w-28 bg-white flex-shrink-0">
+            <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-3 py-2 w-24 sm:w-28 bg-white flex-shrink-0">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="text-[#1b261b] hover:text-[#4a7333] font-bold text-lg leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center -my-2 cursor-pointer"
+                className="text-[#1b261b] hover:text-[#4a7333] font-bold text-lg leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center -mx-2 -my-2 cursor-pointer"
                 aria-label="Decrease quantity"
               >
                 −
@@ -281,7 +281,7 @@ export default function ProductCard({ product }: { product: Product }) {
               <span className="text-[#1b261b] font-mono text-sm font-semibold select-none">{quantity}</span>
               <button
                 onClick={() => setQuantity((q) => Math.min(q + 1, activeVariant.stock))}
-                className="text-[#1b261b] hover:text-[#4a7333] font-bold text-lg leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center -my-2 cursor-pointer"
+                className="text-[#1b261b] hover:text-[#4a7333] font-bold text-lg leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center -mx-2 -my-2 cursor-pointer"
                 aria-label="Increase quantity"
               >
                 +
@@ -291,7 +291,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             onClick={handleAddToCart}
             disabled={isAdding || !variantInStock || comingSoon}
-            className={`flex-grow text-[11px] sm:text-xs font-bold tracking-widest uppercase py-3 px-3 sm:px-6 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
+            className={`flex-grow whitespace-nowrap text-[11px] font-bold tracking-normal uppercase py-3 px-2 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
               !variantInStock || comingSoon
                 ? 'bg-[#1b261b]/10 text-[#4a584a] cursor-not-allowed'
                 : isAdded
@@ -317,7 +317,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <button
               onClick={handleBuyNow}
               disabled={isAdding}
-              className="flex items-center justify-center text-center border border-[#1b261b]/25 px-4 rounded-lg text-[11px] font-bold tracking-widest uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] disabled:opacity-50"
+              className="flex items-center justify-center text-center whitespace-nowrap border border-[#1b261b]/25 px-3 rounded-lg text-[11px] font-bold tracking-normal uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] disabled:opacity-50"
             >
               Buy now
             </button>
