@@ -11,9 +11,23 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-12 mb-12 md:mb-14">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <span className="text-white md:text-[#1b261b] text-lg font-bold uppercase tracking-tight block mb-4">
-              Elegant <span className="text-[#a8cf8a] md:text-[#4a7333]">Sip</span>
-            </span>
+            <span
+              role="img"
+              aria-label="Elegant Sip"
+              className="inline-block h-8 bg-white md:bg-[#1b261b] mb-4"
+              style={{
+                width: 'auto',
+                aspectRatio: '5508 / 1921',
+                WebkitMaskImage: 'url(/weblogo.svg)',
+                maskImage: 'url(/weblogo.svg)',
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+                WebkitMaskPosition: 'left center',
+                maskPosition: 'left center',
+              }}
+            />
             <p className="text-xs text-white/60 md:text-[#4a584a] leading-relaxed">
               The journey of tea, from mountain mist to golden cup. Single-origin leaves,
               sourced directly from named gardens.

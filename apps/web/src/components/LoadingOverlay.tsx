@@ -18,7 +18,7 @@ export default function LoadingOverlay({ percentage, fading }: { percentage: num
         <img
           src="/loadinglogo.svg"
           alt="Elegant Sip"
-          className="mx-auto w-40 md:w-48 h-auto animate-pulse"
+          className="mx-auto w-40 md:w-48 h-auto"
         />
         <p className="text-[#8bb56e] text-sm font-mono tracking-widest uppercase">
           The Journey of Tea

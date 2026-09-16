@@ -166,7 +166,19 @@ export default defineConfig({
     proxy: {
       // `localhost` can resolve to an unrelated IPv6 listener on Windows/WSL.
       // The local Fastify process binds IPv4, so proxy to it explicitly.
-      '/api': { target: 'http://127.0.0.1:4000', changeOrigin: true, rewrite: (path) => path.replace(/^\/api/, '') },
+      '/api': {
+        target: 'http://127.0.0.1:4000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
+            if (res && 'writeHead' in res && !('headersSent' in res && res.headersSent)) {
+              (res as any).writeHead(502, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: 'API Offline', message: err.message }))
+            }
+          })
+        },
+      },
     },
   },
   build: {
