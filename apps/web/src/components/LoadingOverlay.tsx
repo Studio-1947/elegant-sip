@@ -15,9 +15,11 @@ export default function LoadingOverlay({ percentage, fading }: { percentage: num
       }`}
     >
       <div className="text-center space-y-6">
-        <p className="text-white text-5xl md:text-6xl font-extrabold tracking-tight uppercase font-sans animate-pulse">
-          Elegant Sip
-        </p>
+        <img
+          src="/loadinglogo.svg"
+          alt="Elegant Sip"
+          className="mx-auto w-40 md:w-48 h-auto animate-pulse"
+        />
         <p className="text-[#8bb56e] text-sm font-mono tracking-widest uppercase">
           The Journey of Tea
         </p>

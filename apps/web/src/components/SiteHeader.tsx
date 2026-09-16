@@ -53,9 +53,9 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
   const brandLeft = 'clamp(16px, 4vw, 32px)'
   const brandStyle = isNavbar
     ? isMobile
-      ? { left: '50%', transform: 'translate(-50%, 0)' }
-      : { left: brandLeft, transform: 'translate(0, 0)' }
-    : { left: '50%', transform: 'translate(-50%, 10vh)' }
+      ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
+      : { top: '50%', left: brandLeft, transform: 'translate(0, -50%)' }
+    : { top: '1.5rem', left: '50%', transform: 'translate(-50%, 10vh)' }
 
   return (
     <>
@@ -70,18 +70,27 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
         {/* Brand Container */}
         <div
           style={brandStyle}
-          className={`absolute top-6 flex items-center transition-all duration-700 ease-in-out pointer-events-auto cursor-pointer ${isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
+          className={`absolute flex items-center transition-all duration-700 ease-in-out pointer-events-auto cursor-pointer ${isNavbar ? 'flex-row gap-3' : 'flex-col gap-3 text-center'
             }`}
         >
           <Link to="/" aria-label="Elegant Sip home">
             <span
-              className={`font-sans uppercase transition-all duration-700 ease-in-out font-bold ${isNavbar
-                  ? 'text-lg sm:text-xl tracking-tight text-[#1b261b]'
-                  : 'text-5xl md:text-6xl tracking-tight text-white'
+              aria-hidden="true"
+              className={`inline-block transition-all duration-700 ease-in-out ${isNavbar ? 'h-9 sm:h-10 bg-[#1b261b]' : 'h-24 sm:h-28 md:h-36 lg:h-40 bg-white'
                 }`}
-            >
-              Elegant Sip
-            </span>
+              style={{
+                width: 'auto',
+                aspectRatio: '5508 / 1921',
+                WebkitMaskImage: 'url(/weblogo.svg)',
+                maskImage: 'url(/weblogo.svg)',
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+                WebkitMaskPosition: 'center',
+                maskPosition: 'center',
+              }}
+            />
           </Link>
         </div>
 
