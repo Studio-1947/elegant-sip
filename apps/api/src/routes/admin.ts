@@ -383,6 +383,101 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
   )
 
   app.get(
+    '/admin/reviews',
+    {
+      schema: {
+        tags: ['Admin'],
+        summary: 'All product reviews for moderation',
+        response: {
+          200: z.object({
+            reviews: z.array(
+              z.object({
+                id: z.string().uuid(),
+                productId: z.string().uuid(),
+                productSlug: slugSchema,
+                productName: z.string(),
+                authorName: z.string(),
+                rating: z.number().int(),
+                body: z.string(),
+                createdAt: z.iso.datetime(),
+                publishedAt: z.iso.datetime().nullable(),
+              }),
+            ),
+          }),
+        },
+      },
+    },
+    async () => {
+      const rows = await db
+        .select({
+          id: reviews.id,
+          productId: reviews.productId,
+          productSlug: products.slug,
+          productName: products.name,
+          authorName: reviews.authorName,
+          rating: reviews.rating,
+          body: reviews.body,
+          createdAt: reviews.createdAt,
+          publishedAt: reviews.publishedAt,
+        })
+        .from(reviews)
+        .innerJoin(products, eq(reviews.productId, products.id))
+        .orderBy(desc(reviews.createdAt))
+
+      return {
+        reviews: rows.map((r) => ({
+          ...r,
+          createdAt: r.createdAt.toISOString(),
+          publishedAt: r.publishedAt ? r.publishedAt.toISOString() : null,
+        })),
+      }
+    },
+  )
+
+  app.get(
+    '/admin/audit-logs',
+    {
+      schema: {
+        tags: ['Admin'],
+        summary: 'Recent staff audit events',
+        querystring: z.object({
+          limit: z.coerce.number().int().min(1).max(200).default(50),
+        }),
+        response: {
+          200: z.object({
+            events: z.array(
+              z.object({
+                id: z.string().uuid(),
+                actorId: z.string().uuid(),
+                action: z.string(),
+                resource: z.string(),
+                statusCode: z.number().int(),
+                occurredAt: z.iso.datetime(),
+              }),
+            ),
+          }),
+        },
+      },
+    },
+    async (request) => {
+      const rows = await db.query.adminAuditEvents.findMany({
+        orderBy: desc(adminAuditEvents.occurredAt),
+        limit: request.query.limit,
+      })
+      return {
+        events: rows.map((e) => ({
+          id: e.id,
+          actorId: e.actorId,
+          action: e.action,
+          resource: e.resource,
+          statusCode: e.statusCode,
+          occurredAt: e.occurredAt.toISOString(),
+        })),
+      }
+    },
+  )
+
+  app.get(
     '/admin/config',
     {
       schema: {

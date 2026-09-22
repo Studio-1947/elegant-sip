@@ -43,7 +43,18 @@ export function getOrderPricing(
   discount: number,
   methodId: ShippingMethodId = 'standard',
 ): OrderPricing {
-  const p = calculatePricing({ subtotal: cartTotal, discount, shippingMethod: methodId })
+  const isRupees = cartTotal < 10000
+  const subtotal = isRupees ? cartTotal * 100 : cartTotal
+  const disc = isRupees ? discount * 100 : discount
+  const p = calculatePricing({ subtotal, discount: disc, shippingMethod: methodId })
+  if (isRupees) {
+    return {
+      shippingFee: Math.round(p.shippingFee / 100),
+      estimatedTax: Math.round(p.tax / 100),
+      finalTotal: Math.round(p.total / 100),
+      amountToFreeShipping: Math.round(p.amountToFreeShipping / 100),
+    }
+  }
   return {
     shippingFee: p.shippingFee,
     estimatedTax: p.tax,
