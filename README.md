@@ -150,32 +150,274 @@ obtained and renewed without configuration.
 
 ### Hostinger VPS deployment
 
-On a fresh Ubuntu VPS, install Docker Engine and the Compose plugin, then clone
-this repository. From its root:
+| | |
+|---|---|
+| Server | `deploy@187.127.185.82` (Ubuntu). Never deploy as `root`. |
+| App directory | `/var/www/elegant-sip` |
+| Compose file | `docker-compose.prod.yml` (project `elegantsip-prod`) |
+| Public ports | 80 and 443 (Caddy only). Postgres, Redis and the API publish nothing. |
+
+Every command below runs **on the VPS** unless marked otherwise. To save
+typing, set this alias once (step 5 adds it to `~/.bashrc`):
 
 ```bash
-cp .env.prod.example .env
-nano .env
-docker compose -f docker-compose.prod.yml config
-docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml logs -f
+alias dc='docker compose -f /var/www/elegant-sip/docker-compose.prod.yml --project-directory /var/www/elegant-sip'
 ```
 
-Set `POSTGRES_PASSWORD` to a long URL-safe secret (for example,
-`openssl rand -hex 30`). While using the server IP, leave `SITE_ADDRESS` blank
-and set `SITE_URL=http://<server-ip>`. Once the `elegantsip.in` DNS A record
-points to the VPS, set `SITE_ADDRESS=elegantsip.in` and
-`SITE_URL=https://elegantsip.in`, then run the final command again. Caddy
-obtains and renews the certificate.
+#### 1. One-time: create the `deploy` user
 
-Open VPS firewall ports **80** and **443** (and retain SSH access); do not open
-Postgres, Redis or API port 4000. Check the deployment with
-`curl -fsS http://127.0.0.1/api/health` (or the HTTPS domain). Swagger is
-disabled publicly by default; set `API_DOCS_ENABLED=true` only temporarily
-from a trusted network. The backup runs at 02:30 Asia/Kolkata by default;
-change `BACKUP_TIMEZONE` in `.env` only if the business operating timezone
-changes, and protect the host `backups/` directory with encrypted storage and
-owner-only access.
+Only this step uses `root`, with the login from the Hostinger panel:
+
+```bash
+ssh root@187.127.185.82
+
+adduser deploy                      # choose a strong password
+usermod -aG sudo deploy
+mkdir -p /home/deploy/.ssh
+cp ~/.ssh/authorized_keys /home/deploy/.ssh/authorized_keys   # reuse your SSH key
+chown -R deploy:deploy /home/deploy/.ssh
+chmod 700 /home/deploy/.ssh && chmod 600 /home/deploy/.ssh/authorized_keys
+exit
+```
+
+From now on, sign in as `deploy`:
+
+```bash
+ssh deploy@187.127.185.82
+```
+
+#### 2. One-time: install Docker and the firewall
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl git
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker deploy
+exit                                # sign out and back in so the docker group applies
+```
+
+```bash
+ssh deploy@187.127.185.82
+docker --version && docker compose version
+
+sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw --force enable             # --force skips the y/n prompt; SSH is already allowed
+sudo ufw status
+```
+
+Also allow only 22, 80 and 443 in the Hostinger panel firewall. Never open 5432,
+6379 or 4000.
+
+#### 3. One-time: give the server read access to GitHub
+
+The repository is private, so the server needs a read-only deploy key:
+
+```bash
+ssh-keygen -t ed25519 -C "elegant-sip-vps" -f ~/.ssh/github_deploy -N ""
+cat ~/.ssh/github_deploy.pub
+```
+
+Add the printed public key in GitHub → `Studio-1947/elegant-sip` → Settings →
+Deploy keys → *Add deploy key*, with write access **off**. Then:
+
+```bash
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+  IdentityFile ~/.ssh/github_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+ssh -T git@github.com               # expect: "successfully authenticated"
+
+sudo mkdir -p /var/www/elegant-sip
+sudo chown deploy:deploy /var/www/elegant-sip
+git clone git@github.com:Studio-1947/elegant-sip.git /var/www/elegant-sip
+cd /var/www/elegant-sip
+```
+
+#### 4. One-time: write the production `.env`
+
+```bash
+cd /var/www/elegant-sip
+cp .env.prod.example .env
+chmod 600 .env
+
+# Print fresh secrets to paste into .env:
+echo "POSTGRES_PASSWORD=$(openssl rand -hex 30)"
+echo "SHIPROCKET_WEBHOOK_TOKEN=$(openssl rand -hex 24)"
+
+nano .env
+```
+
+What to fill in (each one is explained inside `.env.prod.example`):
+
+| Setting | Value |
+|---|---|
+| `POSTGRES_PASSWORD` | the generated hex value |
+| `SITE_ADDRESS` / `SITE_URL` | `elegantsip.in` / `https://elegantsip.in` once DNS points here. Before that: blank / `http://187.127.185.82` |
+| `SMTP_URL`, `MAIL_FROM` | real mail settings, or blank to send nothing |
+| `PAYMENT_PROVIDER` | `disabled` until Razorpay is ready, then `razorpay` |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | from the Razorpay dashboard; use **live** keys (`rzp_live_…`) for real sales |
+| `SHIPPING_PROVIDER` | `manual`, or `shiprocket` when the values below are set |
+| `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD` | the Shiprocket **API user**, not the dashboard login |
+| `SHIPROCKET_PICKUP_LOCATION`, `SHIPROCKET_PICKUP_POSTCODE` | pickup address nickname exactly as in Shiprocket, and its pincode |
+| `SHIPROCKET_WEBHOOK_TOKEN` | the generated hex value |
+| `SELLER_GSTIN` | your GSTIN, or invoices are marked provisional |
+
+The API refuses to start if a provider is switched on without all of its
+settings. That is deliberate: the logs name what is missing.
+
+#### 5. First start
+
+Check that the DNS A record points here before setting `SITE_ADDRESS`, or Caddy
+cannot get a certificate:
+
+```bash
+dig +short elegantsip.in            # must print 187.127.185.82
+
+cd /var/www/elegant-sip
+echo "alias dc='docker compose -f /var/www/elegant-sip/docker-compose.prod.yml --project-directory /var/www/elegant-sip'" >> ~/.bashrc
+source ~/.bashrc
+
+dc config -q                        # validates .env; silent means OK
+dc up -d --build                    # first build takes a few minutes
+dc ps                               # every service "running" / "healthy"
+dc logs -f api                      # Ctrl+C to stop following
+```
+
+Migrations and the catalogue seed run automatically when the API starts
+(`MIGRATE_ON_START`).
+
+#### 6. Check it works
+
+```bash
+curl -fsS https://elegantsip.in/api/health          # {"status":"ok",...}
+curl -fsS https://elegantsip.in/api/v1/products | head -c 200
+curl -fsS https://elegantsip.in/api/storefront-status   # paymentsAvailable true once Razorpay is set
+curl -sI https://elegantsip.in | head -n 1           # HTTP/2 200
+```
+
+Before DNS is ready, use `http://187.127.185.82/...` instead. Swagger
+(`/api/docs`) stays off unless `API_DOCS_ENABLED=true`; turn it on only briefly.
+
+#### 7. Make a staff (admin) account
+
+Register on the site first, then:
+
+```bash
+dc exec postgres psql -U elegantsip -d elegantsip \
+  -c "update users set role = 'admin' where email = 'you@example.com';"
+```
+
+Sign out and back in; the **Admin** link appears in the header.
+
+#### 8. Connect the webhooks
+
+| Service | Where | URL | Secret |
+|---|---|---|---|
+| Razorpay | Dashboard → Settings → Webhooks | `https://elegantsip.in/api/v1/webhooks/razorpay` | `RAZORPAY_WEBHOOK_SECRET`; events `payment.captured`, `payment.failed` |
+| Shiprocket | Settings → API → Webhooks | `https://elegantsip.in/api/v1/webhooks/courier` | `SHIPROCKET_WEBHOOK_TOKEN` as the token |
+
+Shiprocket rejects webhook URLs containing "shiprocket", "kartrocket", "sr" or
+"kr", which is why the path is `/courier`.
+
+#### Deploy an update
+
+Pushing to `main` deploys automatically once CI passes (see *Automatic GitHub
+Actions deployment* below). To deploy by hand:
+
+```bash
+cd /var/www/elegant-sip
+git fetch --prune origin main
+git checkout --detach origin/main
+dc up -d --build
+dc ps
+curl -fsS https://elegantsip.in/api/health
+docker image prune -f               # reclaim space from old builds
+```
+
+After changing `.env` only, no rebuild is needed: `dc up -d`. Containers are
+recreated with the new values.
+
+#### Roll back
+
+```bash
+cd /var/www/elegant-sip
+git log --oneline -10 origin/main   # pick the last good commit
+git checkout --detach <commit>
+dc up -d --build
+```
+
+Migrations only move forward. They are additive, so older code runs against a
+newer schema, but take a backup first if a release contains a migration.
+
+#### Everyday commands
+
+```bash
+dc ps                               # status
+dc logs -f --tail=200 api           # API logs (also: web, postgres, backup)
+dc restart api                      # restart one service
+dc down                             # stop everything (data is kept in volumes)
+dc up -d                            # start again
+dc exec postgres psql -U elegantsip -d elegantsip   # SQL shell (\q to quit)
+df -h && docker system df           # disk usage
+```
+
+Never run `dc down -v`: `-v` deletes the database volume.
+
+The database commands assume the default `POSTGRES_USER` and `POSTGRES_DB` of
+`elegantsip`; substitute yours if you changed them in `.env`.
+
+#### Backups and restore
+
+A dump is taken nightly at 02:30 (`BACKUP_TIMEZONE`, default Asia/Kolkata) into
+`/var/www/elegant-sip/backups`, keeping 14. Copy them off the server regularly
+and keep the folder owner-only (`chmod 700 backups`).
+
+```bash
+ls -lh /var/www/elegant-sip/backups
+cat /var/www/elegant-sip/backups/last-error.log 2>/dev/null   # exists only if the last run failed
+
+# Backup right now (do this before risky changes):
+dc exec -T postgres pg_dump -U elegantsip -d elegantsip --no-owner --format=custom \
+  > backups/manual-$(date +%F-%H%M).dump
+
+# Download to your computer (run on YOUR machine):
+scp deploy@187.127.185.82:/var/www/elegant-sip/backups/<file>.dump .
+```
+
+Restore replaces the live data, so stop the API first:
+
+```bash
+dc stop api
+dc exec -T postgres pg_restore -U elegantsip -d elegantsip --clean --if-exists --no-owner \
+  < backups/<file>.dump
+dc start api
+```
+
+#### Product catalogue changes
+
+Shop pages read the committed snapshot `apps/web/src/data/catalogue.json`, not
+the live API. After changing products or prices in the database, refresh it on
+your own machine, commit, and deploy:
+
+```bash
+# On your machine, with VITE_API_URL pointing at the production API:
+VITE_API_URL=https://elegantsip.in/api npm run catalogue:sync
+git add apps/web/src/data/catalogue.json && git commit -m "chore: sync catalogue"
+git push
+```
+
+Checkout always re-prices on the server, so a stale snapshot never charges a
+wrong price. It can only show a stale price or stock badge.
 
 ### Sharing the VPS with other projects
 
