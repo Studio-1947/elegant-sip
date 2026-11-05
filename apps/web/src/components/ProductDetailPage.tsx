@@ -1,5 +1,6 @@
+import ProductGallery from './ProductGallery'
 import { useEffect, useState } from 'react'
-import { getProduct, getDefaultVariant, getGardenForProduct, PRODUCTS } from '../data/products'
+import { getProduct, getDefaultVariant, getGardenForProduct, getProductImages, PRODUCTS } from '../data/products'
 import { api, type ReviewView } from '../lib/api'
 import { Link, navigate, useDocumentMeta, useJsonLd } from '../lib/router'
 import { useCart } from './CartContext'
@@ -72,7 +73,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
         '@id': `${absoluteUrl(`/product/${product.slug}`)}#product`,
         name: product.name,
         description: product.longDescription ?? product.description,
-        image: [absoluteUrl(product.imageSrc)],
+        image: getProductImages(product).map(absoluteUrl),
         url: absoluteUrl(`/product/${product.slug}`),
         sku: product.slug,
         category: `Darjeeling ${product.category}`,
@@ -239,17 +240,8 @@ export default function ProductDetailPage({ id }: { id?: string }) {
 
         {/* Hero grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start mb-24">
-          {/* Image */}
-          <div className="relative rounded-2xl overflow-hidden border border-[#1b261b]/10 bg-white shadow-[0_12px_40px_rgba(27,38,27,0.04)]">
-            <img
-              src={product.imageSrc}
-              alt={`${product.name} — loose-leaf Darjeeling ${product.category.toLowerCase()} tea in an Elegant Sip pack`}
-              width={1200}
-              height={1500}
-              fetchPriority="high"
-              className="w-full h-auto object-cover"
-            />
-          </div>
+          {/* Photos */}
+          <ProductGallery key={product.slug} product={product} />
 
           {/* Info */}
           <div>

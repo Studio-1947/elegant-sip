@@ -22,7 +22,45 @@ export type JournalArticle = JournalPost
 
 export const CATALOGUE_SYNCED_AT: string = snapshot.syncedAt
 
-export const PRODUCTS: Product[] = snapshot.products as Product[]
+/**
+ * Products temporarily taken off the storefront (Nov 2026, while the new range
+ * launches). They stay in the API and the snapshot; empty this list to bring
+ * them back.
+ */
+const HIDDEN_PRODUCT_SLUGS = new Set([
+  'first-flush-whole-leaf',
+  'first-flush-broken-leaf',
+  'first-flush-broken-mixed',
+  'first-flush-fannings',
+  'second-flush',
+  'autumn-flush',
+])
+
+export const PRODUCTS: Product[] = (snapshot.products as Product[]).filter(
+  (p) => !HIDDEN_PRODUCT_SLUGS.has(p.slug),
+)
+
+/** Extra photos beyond `imageSrc`, in display order. Not in the API yet. */
+const EXTRA_IMAGES: Record<string, string[]> = {
+  'first-flush': ['/products/first-flush-leaf.webp', '/products/first-flush-pile.webp'],
+  'golden-needle': ['/products/golden-needle-alt.webp', '/products/golden-needle-leaf.webp', '/products/golden-needle-pile.webp'],
+  'green-tea': ['/products/green-tea-alt.webp'],
+  'pan-roasted': ['/products/pan-roasted-alt.webp', '/products/pan-roasted-leaf.webp', '/products/pan-roasted-pile.webp'],
+  'silver-needle': ['/products/silver-needle-alt.webp', '/products/silver-needle-leaf.webp', '/products/silver-needle-pile.webp'],
+  'white-tea': ['/products/white-tea-alt.webp'],
+}
+
+export const getProductImages = (product: Product): string[] => [
+  product.imageSrc,
+  ...(EXTRA_IMAGES[product.slug] ?? []),
+]
+
+/** Alt text for a product photo, read from its filename suffix. */
+export const describeProductImage = (product: Product, src: string): string => {
+  if (src.endsWith('-leaf.webp')) return `Close-up of ${product.name} dry tea leaves`
+  if (src.endsWith('-pile.webp')) return `${product.name} loose leaf tea`
+  return `${product.name} — loose-leaf Darjeeling tea in an Elegant Sip pack`
+}
 export const GARDENS: Garden[] = snapshot.gardens as Garden[]
 export const JOURNAL: JournalPost[] = snapshot.journal as JournalPost[]
 

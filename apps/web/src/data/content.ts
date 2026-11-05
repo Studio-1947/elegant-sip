@@ -123,8 +123,8 @@ export const FAQS: Faq[] = [
    actually drinks — "fresh & grassy" pointing at chai-ready fannings was both
    a duplicate and a mismatch. */
 export const QUIZ_OPTIONS: Record<string, string> = {
-  "Light & floral": "first-flush-whole-leaf",
-  "Brisk & muscatel": "first-flush-broken-leaf",
-  "Strong & malty": "first-flush-broken-mixed",
-  "Chai & spice": "first-flush-fannings",
+  "Light & delicate": "silver-needle",
+  "Bright & floral": "first-flush",
+  "Fresh & grassy": "green-tea",
+  "Rich & honeyed": "golden-needle",
 }

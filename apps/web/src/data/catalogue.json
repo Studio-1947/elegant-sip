@@ -333,6 +333,372 @@
         "average": 0,
         "count": 0
       }
+    },
+    {
+      "id": "92195095-0aba-4070-b99e-6f31f71ae6b3",
+      "slug": "first-flush",
+      "name": "First Flush",
+      "status": "active",
+      "fromPrice": 70000,
+      "description": "The first pluck of spring — a bright, floral Darjeeling with the light muscatel lift the season is known for.",
+      "longDescription": "First flush leaves are picked in the first weeks after winter, when the bush is full of stored aromatics. The cup brews pale gold rather than red, light in body and fragrant, and is best drunk plain so nothing stands between you and the spring.",
+      "imageSrc": "/products/first-flush.webp",
+      "category": "Black Tea",
+      "tastingNotes": [
+        "Floral",
+        "Muscatel",
+        "Bright"
+      ],
+      "bodyLevel": 2,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "ccee8938-d42d-4943-945f-3ba738ad43ae",
+          "size": "100 g",
+          "price": 70000,
+          "stock": 20,
+          "sku": "P001-S100"
+        },
+        {
+          "id": "31b915ad-c94d-4a07-91a1-6f9684c37fb4",
+          "size": "250 g",
+          "price": 161000,
+          "stock": 20,
+          "sku": "P001-S250"
+        },
+        {
+          "id": "23f047a9-8048-4cca-a2f2-158a681c553b",
+          "size": "500 g",
+          "price": 310000,
+          "stock": 20,
+          "sku": "P001-S500"
+        },
+        {
+          "id": "920dd569-2397-4dce-8a38-f75d29e4177e",
+          "size": "1 kg",
+          "price": 603000,
+          "stock": 20,
+          "sku": "P001-S1KG"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "194°F / 90°C",
+        "time": "3–4 minutes",
+        "steeps": "2–3",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "Skip the milk — a slightly cooler pour keeps the bright spring aromatics intact."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "736e706d-8296-4313-a767-3871ddab365c",
+      "slug": "golden-needle",
+      "name": "Golden Needle",
+      "status": "active",
+      "fromPrice": 111000,
+      "description": "Golden-tipped buds that brew a rounded, honeyed cup — the richest tea in the range.",
+      "longDescription": "Golden Needle is made from tender buds that turn a deep gold as they are rolled and oxidised. The cup is smooth and full, with a natural sweetness that holds up to a second and third steep.",
+      "imageSrc": "/products/golden-needle.webp",
+      "category": "Black Tea",
+      "tastingNotes": [
+        "Honeyed",
+        "Malty",
+        "Smooth"
+      ],
+      "bodyLevel": 4,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "7f56bfba-c15e-4b60-83d2-a470ff500ddd",
+          "size": "100 g",
+          "price": 111000,
+          "stock": 20,
+          "sku": "P023-S100"
+        },
+        {
+          "id": "3dabbf81-46a9-403b-869e-3840ef66d24c",
+          "size": "250 g",
+          "price": 264000,
+          "stock": 20,
+          "sku": "P023-S250"
+        },
+        {
+          "id": "8ee0c9c5-ba9d-4e82-9e35-92f6a4f7c171",
+          "size": "500 g",
+          "price": 515000,
+          "stock": 20,
+          "sku": "P023-S500"
+        },
+        {
+          "id": "83a93ef9-fd8c-4dc7-94f1-f6ac05dd5335",
+          "size": "1 kg",
+          "price": 1012000,
+          "stock": 20,
+          "sku": "P023-S1KG"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "194°F / 90°C",
+        "time": "3–4 minutes",
+        "steeps": "2–3",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "Rich enough to take a splash of milk, but try the first cup plain."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "ef98ff03-363c-4201-9866-c26b3aca236c",
+      "slug": "green-tea",
+      "name": "Green Tea",
+      "status": "active",
+      "fromPrice": 39000,
+      "description": "Unoxidised Darjeeling leaf — fresh, grassy and gentle, for an everyday lighter cup.",
+      "longDescription": "Green tea is heated soon after plucking to stop oxidation, which keeps the leaf green and the cup fresh. Brew it cooler and shorter than black tea; boiling water draws out bitterness.",
+      "imageSrc": "/products/green-tea.webp",
+      "category": "Green Tea",
+      "tastingNotes": [
+        "Fresh",
+        "Grassy",
+        "Clean finish"
+      ],
+      "bodyLevel": 2,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "54969218-4a2c-4d39-9e50-6af56bc724c3",
+          "size": "100 g",
+          "price": 39000,
+          "stock": 20,
+          "sku": "P019-S100"
+        },
+        {
+          "id": "8136a792-2a4d-49d2-a7df-5ebf6fb6907e",
+          "size": "250 g",
+          "price": 85000,
+          "stock": 20,
+          "sku": "P019-S250"
+        },
+        {
+          "id": "40c612f4-3876-46cc-ab51-fbdd1f20dc5b",
+          "size": "500 g",
+          "price": 157000,
+          "stock": 20,
+          "sku": "P019-S500"
+        },
+        {
+          "id": "1b3c74e8-cc8a-4547-b4bd-e93b04dd1f64",
+          "size": "1 kg",
+          "price": 295000,
+          "stock": 20,
+          "sku": "P019-S1KG"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "176°F / 80°C",
+        "time": "2–3 minutes",
+        "steeps": "3",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "Let boiled water rest for a few minutes first — too hot and the cup turns bitter."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "1315c685-adfa-4142-8266-2b8bb86da674",
+      "slug": "pan-roasted",
+      "name": "Pan Roasted",
+      "status": "active",
+      "fromPrice": 50000,
+      "description": "Leaf fired in a hot pan by hand, giving a toasty, nutty green tea with a soft finish.",
+      "longDescription": "Instead of steaming, the leaf is tossed in a heated pan to stop oxidation. The fire adds a gentle toasted, nutty character on top of the fresh green notes.",
+      "imageSrc": "/products/pan-roasted.webp",
+      "category": "Green Tea",
+      "tastingNotes": [
+        "Toasty",
+        "Nutty",
+        "Soft"
+      ],
+      "bodyLevel": 3,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "af786908-a6d2-4e9b-bcbe-fc9546207b2d",
+          "size": "100 g",
+          "price": 50000,
+          "stock": 20,
+          "sku": "P020-S100"
+        },
+        {
+          "id": "141ef5a7-7ff5-4081-9a94-095a488c1dd6",
+          "size": "250 g",
+          "price": 110000,
+          "stock": 20,
+          "sku": "P020-S250"
+        },
+        {
+          "id": "f2a10a6e-e24c-4b34-aa3d-c50692168bd2",
+          "size": "500 g",
+          "price": 208000,
+          "stock": 20,
+          "sku": "P020-S500"
+        },
+        {
+          "id": "1d4d6805-0217-46a0-aae7-c0bf3224d21a",
+          "size": "1 kg",
+          "price": 398000,
+          "stock": 20,
+          "sku": "P020-S1KG"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "185°F / 85°C",
+        "time": "2–3 minutes",
+        "steeps": "3",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "A little hotter than other green teas brings out the roasted notes."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "55f71bac-9ccb-4c04-a633-6c82e665847c",
+      "slug": "silver-needle",
+      "name": "Silver Needle",
+      "status": "active",
+      "fromPrice": 111000,
+      "description": "Downy silver buds, simply withered and dried — the most delicate cup we make.",
+      "longDescription": "Silver Needle uses only the unopened bud, covered in fine white hairs. It is barely processed, so the cup is pale, light and subtly sweet. Give it time: the buds open slowly.",
+      "imageSrc": "/products/silver-needle.webp",
+      "category": "White Tea",
+      "tastingNotes": [
+        "Delicate",
+        "Sweet",
+        "Light"
+      ],
+      "bodyLevel": 1,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "61892a5a-260a-4624-8604-5474d69069e0",
+          "size": "100 g",
+          "price": 111000,
+          "stock": 20,
+          "sku": "P024-S100"
+        },
+        {
+          "id": "7f96e34a-a8cc-4643-a4b5-87b1787ee9a1",
+          "size": "250 g",
+          "price": 264000,
+          "stock": 20,
+          "sku": "P024-S250"
+        },
+        {
+          "id": "f4386cf1-5b8a-44b4-8aed-fee02ee87a29",
+          "size": "500 g",
+          "price": 515000,
+          "stock": 20,
+          "sku": "P024-S500"
+        },
+        {
+          "id": "c5238519-d809-4c57-84ea-93ae9c594bf4",
+          "size": "1 kg",
+          "price": 1012000,
+          "stock": 20,
+          "sku": "P024-S1KG"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "176°F / 80°C",
+        "time": "4–5 minutes",
+        "steeps": "3–4",
+        "leafAmount": "2 tsp per 8 oz",
+        "notes": "The buds are bulky, so use more by volume and a longer steep than you would for black tea."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "273bfc0a-67f0-4915-b735-076c966a0e0f",
+      "slug": "white-tea",
+      "name": "White Tea",
+      "status": "active",
+      "fromPrice": 91000,
+      "description": "Gently withered leaf and bud — soft, sweet and lightly floral.",
+      "longDescription": "White tea is withered and dried with as little handling as possible. It brews a pale, mellow cup with a soft sweetness, and rewards several short steeps.",
+      "imageSrc": "/products/white-tea.webp",
+      "category": "White Tea",
+      "tastingNotes": [
+        "Soft",
+        "Sweet",
+        "Floral"
+      ],
+      "bodyLevel": 1,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "4c93edef-c291-43cd-8799-6bbf9dda7260",
+          "size": "100 g",
+          "price": 91000,
+          "stock": 20,
+          "sku": "P021-S100"
+        },
+        {
+          "id": "87c22f48-06e4-485b-8a3c-451ace76bf09",
+          "size": "250 g",
+          "price": 213000,
+          "stock": 20,
+          "sku": "P021-S250"
+        },
+        {
+          "id": "fe63092b-ccfa-41e5-94eb-a5a783d0d8ae",
+          "size": "500 g",
+          "price": 413000,
+          "stock": 20,
+          "sku": "P021-S500"
+        },
+        {
+          "id": "8213ddcc-6b05-49a6-895d-760095e72d21",
+          "size": "1 kg",
+          "price": 808000,
+          "stock": 20,
+          "sku": "P021-S1KG"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "176°F / 80°C",
+        "time": "3–4 minutes",
+        "steeps": "3",
+        "leafAmount": "2 tsp per 8 oz",
+        "notes": "Keep the water below boiling and do not rush it."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
     }
   ],
   "gardens": [

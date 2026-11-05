@@ -5,13 +5,12 @@ import { Link, navigate } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
 import { FREE_SHIPPING_THRESHOLD } from '../lib/pricing'
-import SkeletonImage from './SkeletonImage'
+import ProductCardGallery from './ProductCardGallery'
 import { useUi } from './UiContext'
 
 export default function ProductCard({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
-  const [imageIndex, setImageIndex] = useState(0)
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
   const { addToCart, toggleWishlist, isWishlisted } = useCart()
@@ -29,7 +28,6 @@ export default function ProductCard({ product }: { product: Product }) {
   const hasMultipleSizes = product.variants.length > 1
   const comingSoon = product.status === 'coming-soon'
   const totalStock = product.variants.reduce((acc, v) => acc + v.stock, 0)
-  const gallery = [product.imageSrc]
 
   // Tracked so pending state flips are cancelled if the card unmounts mid-add
   // (navigating away, filtering the grid) instead of setting state on a dead
@@ -99,21 +97,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group w-full bg-white rounded-2xl border border-[#1b261b]/10 overflow-hidden flex flex-col transition-all duration-500 hover:shadow-[0_12px_30px_rgba(27,38,27,0.06)] hover:-translate-y-1">
       {/* ── Image area ── */}
-      <div className="relative aspect-[4/5] bg-[#f5f0e6] overflow-hidden">
-        <Link to={`/product/${product.slug}`} aria-label={`View ${product.name}`}>
-          <SkeletonImage
-            src={gallery[imageIndex]}
-            alt={`${product.name} — loose-leaf Darjeeling tea`}
-            loading="lazy"
-            // Intrinsic 4:5 matching the card's aspect box, so the browser
-            // reserves the space before the file lands.
-            width={800}
-            height={1000}
-            wrapperClassName="w-full h-full"
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-          />
-        </Link>
-
+      <ProductCardGallery product={product}>
         {/* Badges */}
         <div className="absolute top-3.5 left-3.5 z-20 flex flex-col items-start gap-2">
           {comingSoon ? (
@@ -152,23 +136,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </svg>
         </button>
 
-        {/* Gallery dots (only when the product has extra images) */}
-        {gallery.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
-            {gallery.map((src, i) => (
-              <button
-                key={src}
-                onClick={() => setImageIndex(i)}
-                aria-label={`Show image ${i + 1}`}
-                aria-current={i === imageIndex}
-                className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
-                  i === imageIndex ? 'w-5 bg-[#1b261b]' : 'w-2.5 bg-[#1b261b]/25'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      </ProductCardGallery>
 
       {/* ── Info block ── */}
       <div className="p-5 md:p-6 flex flex-col flex-grow">

@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url'
 import { rupees } from '@elegantsip/shared'
 import { and, eq, notInArray } from 'drizzle-orm'
 import { db, sql } from './client.js'
+import { NEW_RANGE } from './seed-new-range.js'
 import { coupons, gardenProducts, gardens, journalPosts, productVariants, products } from './schema.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -278,7 +279,8 @@ export async function seed() {
   console.log(`  gardens      ${GARDENS.length}`)
 
   let variantCount = 0
-  for (const [i, p] of PRODUCTS.entries()) {
+  const ALL_PRODUCTS = [...PRODUCTS, ...NEW_RANGE]
+  for (const [i, p] of ALL_PRODUCTS.entries()) {
     const { variants, garden, ...fields } = p
     const [row] = await db
       .insert(products)
@@ -306,12 +308,14 @@ export async function seed() {
 
     for (const [vi, v] of variants.entries()) {
       const sizeKey = v.size.toLowerCase().replace(/\s+/g, '-')
+      // The new range carries the pricing sheet's SKU codes; older rows derive one.
+      const sku: string = 'sku' in v && typeof v.sku === 'string' ? v.sku : `${p.slug}--${sizeKey}`
       await db
         .insert(productVariants)
-        .values({ productId: row.id, size: v.size, sku: `${p.slug}--${sizeKey}`, price: v.price, stock: v.stock, sortOrder: vi })
+        .values({ productId: row.id, size: v.size, sku, price: v.price, stock: v.stock, sortOrder: vi })
         .onConflictDoUpdate({
           target: [productVariants.productId, productVariants.size],
-          set: { sku: `${p.slug}--${sizeKey}`, price: v.price, stock: v.stock, sortOrder: vi },
+          set: { sku, price: v.price, stock: v.stock, sortOrder: vi },
         })
       variantCount += 1
     }
@@ -323,7 +327,7 @@ export async function seed() {
       }
     }
   }
-  console.log(`  products     ${PRODUCTS.length} (${variantCount} variants)`)
+  console.log(`  products     ${ALL_PRODUCTS.length} (${variantCount} variants)`)
 
   for (const post of JOURNAL) {
     await db
