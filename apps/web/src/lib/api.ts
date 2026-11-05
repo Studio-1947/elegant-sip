@@ -158,6 +158,15 @@ export interface OrderView {
     country: string
   }
   tracking: { carrier: string | null; number: string | null } | null
+  shipment: {
+    status: string
+    courierName: string | null
+    awb: string | null
+    trackingUrl: string | null
+    expectedDeliveryAt: string | null
+    deliveredAt: string | null
+    events: { at: string; status: string; location: string | null }[]
+  } | null
 }
 
 export interface PlaceOrderResult {
@@ -213,6 +222,7 @@ export interface AdminOrder {
   itemCount: number
   shippingCity: string
   trackingNumber: string | null
+  shipmentStatus: string | null
 }
 
 export interface AdminConfig {
@@ -221,6 +231,35 @@ export interface AdminConfig {
   emailConfigured: boolean
   gstinConfigured: boolean
   sellerState: string
+  shippingProvider: 'manual' | 'shiprocket' | 'fake'
+  shippingLive: boolean
+}
+
+export interface AdminShipment {
+  provider: string
+  status: string
+  providerStatus: string | null
+  awb: string | null
+  courierName: string | null
+  trackingUrl: string | null
+  labelUrl: string | null
+  weightGrams: number
+  pickupScheduledAt: string | null
+  expectedDeliveryAt: string | null
+  deliveredAt: string | null
+  lastError: string | null
+  lastSyncedAt: string | null
+  events: { at: string; status: string; location: string | null; detail: string | null }[]
+}
+
+export interface CourierOption {
+  courierId: number
+  courierName: string
+  /** Paise. */
+  rate: number
+  estimatedDays: number | null
+  etd: string | null
+  rating: number | null
 }
 
 export interface AdminOrderDetail {
@@ -339,6 +378,17 @@ export const api = {
       request<OrderView>(`/v1/orders/${encodeURIComponent(number)}`, {
         ...(guestAccessToken ? { headers: { 'X-Order-Access-Token': guestAccessToken } } : {}),
       }),
+    /** Sends Razorpay checkout's success response to the server for signature and capture checks. */
+    verifyPayment: (
+      number: string,
+      payload: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string },
+      guestAccessToken?: string | null,
+    ) =>
+      request<{ status: 'paid' | 'pending' }>(`/v1/orders/${encodeURIComponent(number)}/payment/verify`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        ...(guestAccessToken ? { headers: { 'X-Order-Access-Token': guestAccessToken } } : {}),
+      }),
     requestReturn: (number: string, payload: { type: 'cancellation' | 'return'; reason: string }) =>
       post<{ id: string; status: 'requested' }>(`/v1/orders/${encodeURIComponent(number)}/return-requests`, payload),
     invoice: (number: string, guestAccessToken?: string | null) => request<{ invoice: InvoiceView }>(`/v1/orders/${encodeURIComponent(number)}/invoice`, {
@@ -379,6 +429,20 @@ export const api = {
     updateReturnRequest: (id: string, payload: { status: 'approved' | 'rejected' | 'received'; staffNote?: string }) =>
       request<{ ok: true; restocked: boolean }>(`/v1/admin/return-requests/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     lowStock: (threshold = 5) => request<{ variants: LowStockVariant[] }>(`/v1/admin/stock/low?threshold=${threshold}`),
+    shipment: (number: string) =>
+      request<{ provider: AdminConfig['shippingProvider']; phone: string | null; shipment: AdminShipment | null }>(
+        `/v1/admin/orders/${encodeURIComponent(number)}/shipment`,
+      ),
+    courierRates: (number: string) =>
+      request<{ weightGrams: number; recommendedCourierId: number | null; couriers: CourierOption[] }>(
+        `/v1/admin/orders/${encodeURIComponent(number)}/shipment/couriers`,
+      ),
+    bookShipment: (number: string, payload: { courierId?: number; phone?: string }) =>
+      post<{ shipment: AdminShipment }>(`/v1/admin/orders/${encodeURIComponent(number)}/shipment`, payload),
+    syncShipment: (number: string) =>
+      post<{ shipment: AdminShipment }>(`/v1/admin/orders/${encodeURIComponent(number)}/shipment/sync`, {}),
+    cancelShipment: (number: string) =>
+      post<{ shipment: AdminShipment }>(`/v1/admin/orders/${encodeURIComponent(number)}/shipment/cancel`, {}),
   },
 
   reviews: {

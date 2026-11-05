@@ -19,6 +19,7 @@ import { healthRoutes } from './routes/health.js'
 import { accountRoutes } from './routes/account.js'
 import { profileRoutes } from './routes/profile.js'
 import { adminRoutes } from './routes/admin.js'
+import { paymentRoutes } from './routes/payments.js'
 import { orderRoutes } from './routes/orders.js'
 import { webhookRoutes } from './routes/webhooks.js'
 import { productRoutes } from './routes/products.js'
@@ -150,6 +151,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(pricingRoutes, { prefix: '/v1' })
   await app.register(pincodeRoutes, { prefix: '/v1' })
   await app.register(orderRoutes, { prefix: '/v1' })
+  await app.register(paymentRoutes, { prefix: '/v1' })
   await app.register(webhookRoutes, { prefix: '/v1' })
   await app.register(accountRoutes, { prefix: '/v1' })
   await app.register(profileRoutes, { prefix: '/v1' })

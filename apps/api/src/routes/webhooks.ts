@@ -3,11 +3,13 @@ import { and, eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.js'
-import { orders, payments, webhookEvents } from '../db/schema-commerce.js'
+import { orders, payments, shipments, webhookEvents } from '../db/schema-commerce.js'
+import { applyTracking } from '../lib/fulfilment.js'
+import { parseProviderDate } from '../lib/shipping.js'
 import { env, isProduction } from '../env.js'
 import { getGateway } from '../lib/gateway.js'
-import { issueInvoice } from '../lib/invoice.js'
-import { releaseStock, sendOrderConfirmation } from './orders.js'
+import { capturePayment } from '../lib/capture.js'
+import { releaseStock } from './orders.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Payment webhooks.
@@ -140,47 +142,21 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
             )
           }
 
-          // Already paid — a legitimate re-delivery of an event we handled.
+          // Already paid — a legitimate re-delivery, or the checkout verify
+          // endpoint got there first.
           if (order.status !== 'pending_payment') return finish('already_paid')
 
-          const captured = await db.transaction(async (tx) => {
-            // The expiry worker may have cancelled this order after it was
-            // loaded above. Transition conditionally so a late payment cannot
-            // turn a cancelled, restocked order back into paid.
-            const transitioned = await tx
-              .update(orders)
-              .set({ status: 'paid', paidAt: new Date() })
-              .where(and(eq(orders.id, order.id), eq(orders.status, 'pending_payment')))
-              .returning({ id: orders.id })
-            if (transitioned.length === 0) return false
-            await tx
-              .update(payments)
-              .set({
-                status: 'captured',
-                providerPaymentId: parsed.payment!.paymentId,
-                method: parsed.payment!.method ?? null,
-                capturedAt: new Date(),
-              })
-              .where(eq(payments.id, paymentRow.id))
-            return true
-          })
-          if (!captured) return finish('already_paid')
-
-          /* Side effects run after the transaction commits and never fail the
-             webhook: the payment is captured whether or not the email lands. */
-          try {
-            await issueInvoice(order.id)
-          } catch (err) {
-            request.log.error({ err, orderNumber: order.number }, 'invoice generation failed')
-          }
-          try {
-            await sendOrderConfirmation(order.id)
-          } catch (err) {
-            request.log.error({ err, orderNumber: order.number }, 'confirmation email failed')
-          }
-
-          request.log.info({ orderNumber: order.number }, 'order paid')
-          return finish('order_paid')
+          const captured = await capturePayment(
+            {
+              orderId: order.id,
+              orderNumber: order.number,
+              paymentRowId: paymentRow.id,
+              paymentId: parsed.payment.paymentId,
+              method: parsed.payment.method,
+            },
+            request.log,
+          )
+          return finish(captured ? 'order_paid' : 'already_paid')
         }
 
         case 'payment.failed': {
@@ -206,6 +182,101 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
         default:
           return finish(`ignored_${parsed.eventType}`)
       }
+    },
+  )
+
+  /*
+   * Courier tracking (Shiprocket). Shiprocket refuses webhook URLs containing
+   * "shiprocket", "kartrocket", "sr" or "kr", hence the neutral path. It
+   * authenticates with the token configured in its panel, sent as x-api-key.
+   */
+  const courierScanSchema = z
+    .object({
+      date: z.string().optional(),
+      activity: z.string().optional(),
+      location: z.string().optional(),
+      'sr-status-label': z.string().optional(),
+    })
+    .passthrough()
+  const courierEventSchema = z
+    .object({
+      awb: z.union([z.string(), z.number()]).transform(String),
+      current_status: z.string().optional(),
+      current_timestamp: z.string().optional(),
+      etd: z.string().optional(),
+      scans: z.array(courierScanSchema).optional(),
+    })
+    .passthrough()
+
+  app.post(
+    '/webhooks/courier',
+    {
+      config: { rateLimit: { max: 300, timeWindow: '1 minute' } },
+      schema: {
+        tags: ['Webhooks'],
+        summary: 'Shiprocket tracking updates',
+        description:
+          'Authenticated by the x-api-key token set in Shiprocket → Settings → API → Webhooks. Updates the shipment and moves the order to shipped / delivered. Always 200 for an accepted token so Shiprocket does not disable the hook.',
+        response: {
+          200: z.object({ received: z.literal(true), status: z.string() }),
+          401: z.object({ error: z.string() }),
+          503: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      if (!env.SHIPROCKET_WEBHOOK_TOKEN) return reply.status(503).send({ error: 'webhook is not configured' })
+      const supplied = request.headers['x-api-key']
+      const ok =
+        typeof supplied === 'string' &&
+        Buffer.byteLength(supplied) === Buffer.byteLength(env.SHIPROCKET_WEBHOOK_TOKEN) &&
+        timingSafeEqual(Buffer.from(supplied), Buffer.from(env.SHIPROCKET_WEBHOOK_TOKEN))
+      if (!ok) {
+        request.log.warn('courier webhook token rejected')
+        return reply.status(401).send({ error: 'invalid token' })
+      }
+
+      const parsed = courierEventSchema.safeParse(request.body)
+      if (!parsed.success) return reply.send({ received: true as const, status: 'ignored_unparseable' })
+      const event = parsed.data
+
+      const inserted = await db
+        .insert(webhookEvents)
+        .values({
+          provider: 'shiprocket',
+          eventId: `${event.awb}:${event.current_status ?? 'unknown'}:${event.current_timestamp ?? 'undated'}`,
+          eventType: event.current_status ?? 'unknown',
+          payload: request.body as object,
+        })
+        .onConflictDoNothing()
+        .returning({ id: webhookEvents.id })
+      if (inserted.length === 0) return reply.send({ received: true as const, status: 'duplicate' })
+
+      const shipment = await db.query.shipments.findFirst({ where: eq(shipments.awb, event.awb) })
+      if (!shipment) {
+        await db.update(webhookEvents).set({ processedAt: new Date(), error: 'unknown awb' }).where(eq(webhookEvents.id, inserted[0].id))
+        return reply.send({ received: true as const, status: 'unknown_awb' })
+      }
+
+      const updated = await applyTracking(
+        shipment,
+        {
+          providerStatus: event.current_status ?? null,
+          trackingUrl: null,
+          expectedDeliveryAt: parseProviderDate(event.etd),
+          scans: (event.scans ?? [])
+            .map((scan) => ({
+              at: parseProviderDate(scan.date) ?? '',
+              status: scan['sr-status-label'] || scan.activity || 'Update',
+              location: scan.location || null,
+              detail: scan.activity || null,
+            }))
+            .filter((scan) => scan.at),
+        },
+        request.log,
+      )
+      await db.update(webhookEvents).set({ processedAt: new Date() }).where(eq(webhookEvents.id, inserted[0].id))
+      return reply.send({ received: true as const, status: updated.status })
     },
   )
 

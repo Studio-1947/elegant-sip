@@ -31,9 +31,27 @@ export interface GatewayPayment {
   method?: string
 }
 
+/** A payment as the gateway itself reports it, fetched server-to-server. */
+export interface GatewayPaymentStatus extends GatewayPayment {
+  status: 'created' | 'authorized' | 'captured' | 'refunded' | 'failed'
+}
+
+export interface CheckoutResponse {
+  orderId: string
+  paymentId: string
+  signature: string
+}
+
 export interface PaymentGateway {
   readonly name: string
   createOrder(input: { amount: number; receipt: string; notes?: Record<string, string> }): Promise<GatewayOrder>
+  /**
+   * Checks the signature the browser checkout returns on success:
+   * HMAC-SHA256(order_id + "|" + payment_id) keyed with the API key secret.
+   */
+  verifyCheckoutSignature(response: CheckoutResponse): boolean
+  /** Asks the gateway directly for a payment's state. Null when it does not exist. */
+  fetchPayment(paymentId: string): Promise<GatewayPaymentStatus | null>
   /** Constant-time signature check over the raw request body. */
   verifyWebhook(rawBody: string, signature: string | undefined): boolean
   /** Normalises a provider payload into the shape the handler needs. */
@@ -77,6 +95,31 @@ class RazorpayGateway implements PaymentGateway {
     return { id: body.id, amount: body.amount, currency: body.currency, publicKey: this.keyId }
   }
 
+  verifyCheckoutSignature({ orderId, paymentId, signature }: CheckoutResponse): boolean {
+    const expected = createHmac('sha256', this.keySecret).update(`${orderId}|${paymentId}`).digest('hex')
+    return safeCompare(expected, signature)
+  }
+
+  async fetchPayment(paymentId: string): Promise<GatewayPaymentStatus | null> {
+    const auth = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64')
+    const response = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `Basic ${auth}` },
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (response.status === 400 || response.status === 404) return null
+    if (!response.ok) {
+      throw new Error(`Razorpay payment lookup failed (${response.status}): ${await response.text()}`)
+    }
+    const body = (await response.json()) as {
+      id: string
+      order_id: string
+      amount: number
+      method?: string
+      status: GatewayPaymentStatus['status']
+    }
+    return { paymentId: body.id, orderId: body.order_id, amount: body.amount, method: body.method, status: body.status }
+  }
+
   verifyWebhook(rawBody: string, signature: string | undefined): boolean {
     if (!signature) return false
     const expected = createHmac('sha256', this.webhookSecret).update(rawBody).digest('hex')
@@ -114,6 +157,9 @@ class RazorpayGateway implements PaymentGateway {
 export class FakeGateway implements PaymentGateway {
   readonly name = 'fake'
   private readonly secret = env.RAZORPAY_WEBHOOK_SECRET ?? 'fake-webhook-secret'
+  private static readonly keySecret = 'fake-key-secret'
+  /** Shared across instances so a test's gateway and the app's gateway agree. */
+  private static readonly payments = new Map<string, GatewayPaymentStatus>()
 
   async createOrder(input: { amount: number; receipt: string }): Promise<GatewayOrder> {
     return {
@@ -122,6 +168,27 @@ export class FakeGateway implements PaymentGateway {
       currency: 'INR',
       publicKey: 'rzp_test_fake',
     }
+  }
+
+  verifyCheckoutSignature({ orderId, paymentId, signature }: CheckoutResponse): boolean {
+    const expected = createHmac('sha256', FakeGateway.keySecret).update(`${orderId}|${paymentId}`).digest('hex')
+    return safeCompare(expected, signature)
+  }
+
+  async fetchPayment(paymentId: string): Promise<GatewayPaymentStatus | null> {
+    return FakeGateway.payments.get(paymentId) ?? null
+  }
+
+  /** What the browser checkout hands back after a successful payment. */
+  simulateCheckout(
+    gatewayOrderId: string,
+    amount: number,
+    status: GatewayPaymentStatus['status'] = 'captured',
+  ): CheckoutResponse {
+    const paymentId = `pay_fake_${randomBytes(9).toString('hex')}`
+    FakeGateway.payments.set(paymentId, { paymentId, orderId: gatewayOrderId, amount, method: 'upi', status })
+    const signature = createHmac('sha256', FakeGateway.keySecret).update(`${gatewayOrderId}|${paymentId}`).digest('hex')
+    return { orderId: gatewayOrderId, paymentId, signature }
   }
 
   verifyWebhook(rawBody: string, signature: string | undefined): boolean {

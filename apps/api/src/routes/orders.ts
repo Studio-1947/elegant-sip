@@ -20,6 +20,7 @@ import {
   orders,
   payments,
   returnRequests,
+  shipments,
   stockLedger,
 } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
@@ -103,6 +104,18 @@ const orderDto = z.object({
   tracking: z
     .object({ carrier: z.string().nullable(), number: z.string().nullable() })
     .nullable(),
+  /** Live courier tracking. Null until a courier is booked, and after it is cancelled. */
+  shipment: z
+    .object({
+      status: z.string(),
+      courierName: z.string().nullable(),
+      awb: z.string().nullable(),
+      trackingUrl: z.string().nullable(),
+      expectedDeliveryAt: z.string().nullable(),
+      deliveredAt: z.string().nullable(),
+      events: z.array(z.object({ at: z.string(), status: z.string(), location: z.string().nullable() })),
+    })
+    .nullable(),
 })
 
 /** ES-20260824-K3P9Q — date-prefixed and random, so it cannot collide. */
@@ -112,7 +125,10 @@ function generateOrderNumber(): string {
   return `ES-${stamp}-${randomBytes(3).toString('hex').toUpperCase()}`
 }
 
-type OrderRow = typeof orders.$inferSelect & { items: (typeof orderItems.$inferSelect)[] }
+type OrderRow = typeof orders.$inferSelect & {
+  items: (typeof orderItems.$inferSelect)[]
+  shipment?: typeof shipments.$inferSelect | null
+}
 
 const toOrderDto = (row: OrderRow) => ({
   number: row.number,
@@ -157,6 +173,19 @@ const toOrderDto = (row: OrderRow) => ({
   tracking:
     row.trackingNumber || row.trackingCarrier
       ? { carrier: row.trackingCarrier, number: row.trackingNumber }
+      : null,
+  shipment:
+    row.shipment && row.shipment.status !== 'cancelled' && row.shipment.awb
+      ? {
+          status: row.shipment.status,
+          courierName: row.shipment.courierName,
+          awb: row.shipment.awb,
+          trackingUrl: row.shipment.trackingUrl,
+          expectedDeliveryAt: row.shipment.expectedDeliveryAt?.toISOString() ?? null,
+          deliveredAt: row.shipment.deliveredAt?.toISOString() ?? null,
+          // Customers see where the parcel has been, not the courier's internal notes.
+          events: row.shipment.events.map(({ at, status, location }) => ({ at, status, location })),
+        }
       : null,
 })
 
@@ -243,6 +272,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           400: problemSchema,
           401: problemSchema,
           409: problemSchema,
+          502: problemSchema,
         },
       },
     },
@@ -421,11 +451,22 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         /* Gateway order last: if it throws, the transaction rolls back and the
            reserved stock is released with it. */
         const gateway = getGateway()
-        const gatewayOrder = await gateway.createOrder({
-          amount: pricing.total,
-          receipt: number,
-          notes: { order_number: number },
-        })
+        const gatewayOrder = await gateway
+          .createOrder({
+            amount: pricing.total,
+            receipt: number,
+            notes: { order_number: number },
+          })
+          .catch((err: unknown) => {
+            // Bad keys, an outage or a timeout. The detail is for operators, not shoppers.
+            request.log.error({ err, orderNumber: number }, 'gateway order creation failed')
+            throw new ApiError(
+              502,
+              'gateway_unavailable',
+              'Payment unavailable',
+              'We could not start payment just now. Nothing has been charged — please try again shortly.',
+            )
+          })
 
         await tx.insert(payments).values({
           orderId: order.id,
@@ -473,7 +514,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       }
       const rows = await db.query.orders.findMany({
         where: eq(orders.userId, request.session.userId),
-        with: { items: true },
+        with: { items: true, shipment: true },
         orderBy: desc(orders.placedAt),
       })
       return { orders: rows.map(toOrderDto) }
@@ -497,7 +538,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const row = await db.query.orders.findFirst({
         where: eq(orders.number, request.params.number),
-        with: { items: true },
+        with: { items: true, shipment: true },
       })
       if (!row) throw ApiError.notFound(`Order ${request.params.number}`)
 

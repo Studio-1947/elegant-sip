@@ -273,6 +273,72 @@ describe('checkout', () => {
     expect(unpaid?.status).toBe('pending_payment')
   })
 
+  const verify = (number: string, response: { orderId: string; paymentId: string; signature: string }) =>
+    app.inject({
+      method: 'POST',
+      url: `/v1/orders/${number}/payment/verify`,
+      headers: { cookie: buyerCookie },
+      payload: {
+        razorpay_order_id: response.orderId,
+        razorpay_payment_id: response.paymentId,
+        razorpay_signature: response.signature,
+      },
+    })
+
+  it('marks the order paid when checkout returns a valid signature for a captured payment', async () => {
+    if (!available) return
+    const { order: placed, payment } = (await checkout()).json()
+    const response = new FakeGateway().simulateCheckout(payment.gatewayOrderId, placed.total)
+
+    const res = await verify(placed.number, response)
+    expect(res.statusCode).toBe(200)
+    expect(res.json().status).toBe('paid')
+    const paid = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+    expect(paid?.status).toBe('paid')
+
+    // Verifying again, or the webhook arriving later, changes nothing.
+    expect((await verify(placed.number, response)).json().status).toBe('paid')
+  })
+
+  it('rejects a forged checkout signature and leaves the order pending', async () => {
+    if (!available) return
+    const { order: placed, payment } = (await checkout()).json()
+    const response = new FakeGateway().simulateCheckout(payment.gatewayOrderId, placed.total)
+
+    const res = await verify(placed.number, { ...response, signature: 'f'.repeat(64) })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().type).toBe('invalid_signature')
+    const pending = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+    expect(pending?.status).toBe('pending_payment')
+  })
+
+  it('does not mark paid when the gateway reports the wrong amount or an uncaptured payment', async () => {
+    if (!available) return
+    const { order: placed, payment } = (await checkout()).json()
+    const gateway = new FakeGateway()
+
+    const short = await verify(placed.number, gateway.simulateCheckout(payment.gatewayOrderId, placed.total - 100))
+    expect(short.statusCode).toBe(400)
+
+    const authorised = await verify(placed.number, gateway.simulateCheckout(payment.gatewayOrderId, placed.total, 'authorized'))
+    expect(authorised.json().status).toBe('pending')
+
+    const pending = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+    expect(pending?.status).toBe('pending_payment')
+  })
+
+  it('does not let another account verify payment on someone else\'s order', async () => {
+    if (!available) return
+    const { order: placed, payment } = (await checkout()).json()
+    const response = new FakeGateway().simulateCheckout(payment.gatewayOrderId, placed.total)
+    const res = await app.inject({
+      method: 'POST',
+      url: `/v1/orders/${placed.number}/payment/verify`,
+      payload: { razorpay_order_id: response.orderId, razorpay_payment_id: response.paymentId, razorpay_signature: response.signature },
+    })
+    expect(res.statusCode).toBe(404)
+  })
+
   it('returns stock when a payment fails', async () => {
     if (!available) return
     const before = await stockFor(SLUG)

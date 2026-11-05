@@ -91,6 +91,11 @@ export default function ShippingStep({
           <input id="co-email" type="email" autoComplete="email" {...fieldProps('email')} value={form.email} onChange={(e) => setField('email', e.target.value)} placeholder="you@example.com" className={inputClass('email')} />
           {errors.email && <p id="co-email-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.email}</p>}
         </div>
+        <div>
+          <label htmlFor="co-phone" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Mobile number</label>
+          <input id="co-phone" type="tel" autoComplete="tel-national" inputMode="tel" maxLength={16} {...fieldProps('phone')} value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="98300 12345" className={inputClass('phone')} />
+          {errors.phone ? <p id="co-phone-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.phone}</p> : <p className="text-[11px] text-[#4a584a] mt-1">The courier calls this number if they cannot find you.</p>}
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="co-first" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">First Name</label>

@@ -16,12 +16,16 @@ export function OrderConfirmedScreen({
   orderNumber,
   order,
   paymentProvider,
-  paymentError,
+  paymentNotice,
+  paying = false,
+  onPay,
 }: {
   orderNumber: string
   order: OrderView | null
   paymentProvider?: string
-  paymentError?: string | null
+  paymentNotice?: string | null
+  paying?: boolean
+  onPay?: () => void
 }) {
   const awaitingPayment = order?.status === 'pending_payment' || order === null
 
@@ -64,19 +68,29 @@ export function OrderConfirmedScreen({
           </p>
         )}
 
-        {awaitingPayment && paymentProvider === 'razorpay' && (
+        {awaitingPayment && paymentProvider === 'razorpay' && !paymentNotice && (
           <p className="text-[11px] text-[#4a584a] leading-relaxed mb-8 border border-[#4a7333]/30 bg-[#4a7333]/8 rounded-lg px-4 py-3">
-            Payment is being confirmed securely. Open your order again to see its latest status.
+            {paying ? 'Complete payment in the Razorpay window.' : 'Your order is saved. Pay now to confirm it.'}
           </p>
         )}
 
-        {paymentError && (
+        {awaitingPayment && paymentNotice && (
           <p role="alert" className="text-[11px] text-red-800 leading-relaxed mb-8 border border-red-700/30 bg-red-50 rounded-lg px-4 py-3">
-            Your order was saved, but checkout could not open: {paymentError}
+            {paymentNotice}
           </p>
         )}
 
         <div className="flex flex-col gap-3">
+          {awaitingPayment && paymentProvider === 'razorpay' && onPay && (
+            <button
+              type="button"
+              onClick={onPay}
+              disabled={paying}
+              className="w-full bg-[#4a7333] hover:bg-[#3b5c29] disabled:opacity-60 text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-colors"
+            >
+              {paying ? 'Processing…' : 'Pay now'}
+            </button>
+          )}
           <Link to={`/order/${orderNumber}`} className="w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3.5 rounded-lg transition-colors text-center">
             View Order
           </Link>

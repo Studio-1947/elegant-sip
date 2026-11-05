@@ -180,7 +180,8 @@ verifiedReview.json().review?.verified === true
 
 /* 10. Someone else cannot read this order */
 const stranger = await app.inject({ method: 'GET', url: `/v1/orders/${order.number}` })
-stranger.statusCode === 403 ? ok('another visitor cannot read the order') : fail('order leaked', String(stranger.statusCode))
+// 404, not 403: the API does not confirm that a guessed order number exists.
+stranger.statusCode === 404 ? ok('another visitor cannot read the order') : fail('order leaked', String(stranger.statusCode))
 
 line('\nSHOPKEEPER')
 

@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext'
 import { ApiClientError, api, type AdminConfig, type AdminOrder, type AdminOrderDetail, type AdminOrderStatus, type AdminReturnRequest, type LowStockVariant } from '../lib/api'
 import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
+import ShipmentPanel from './admin/ShipmentPanel'
 
 const filters: Array<{ value: '' | AdminOrderStatus; label: string }> = [
   { value: '', label: 'All orders' },
@@ -159,10 +160,11 @@ export default function AdminPage() {
           <button onClick={() => void load(filter)} disabled={loading} className="rounded-full border border-[#1b261b]/20 px-5 py-2.5 text-xs font-mono uppercase tracking-wider hover:border-[#8bb56e] disabled:opacity-50">{loading ? 'Refreshing…' : 'Refresh queue'}</button>
         </div>
 
-        {config && <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <ConfigCard label="Payments" value={config.paymentsLive ? 'Razorpay live' : `${config.paymentProvider} not live`} ready={config.paymentsLive} />
+        {config && <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <ConfigCard label="Payments" value={config.paymentsLive ? 'Razorpay live' : config.paymentProvider === 'razorpay' ? 'Razorpay test mode' : `${config.paymentProvider} not live`} ready={config.paymentsLive} />
           <ConfigCard label="Customer email" value={config.emailConfigured ? 'Configured' : 'Not configured'} ready={config.emailConfigured} />
           <ConfigCard label="GST invoice" value={config.gstinConfigured ? 'GSTIN configured' : 'GSTIN needed'} ready={config.gstinConfigured} />
+          <ConfigCard label="Shipping" value={config.shippingLive ? 'Shiprocket live' : config.shippingProvider === 'fake' ? 'Shiprocket test mode' : 'Manual tracking'} ready={config.shippingLive} />
           <ConfigCard label="Seller location" value={config.sellerState} ready />
         </div>}
 
@@ -187,9 +189,9 @@ export default function AdminPage() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2.5"><Link to={`/order/${order.number}`} className="font-mono text-sm font-bold hover:text-[#4a7333]">{order.number}</Link><StatusPill status={order.status} /></div>
                     <p className="mt-2 text-xs text-[#4a584a]">{order.email} · {order.itemCount} items · {order.shippingCity} · {new Date(order.placedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                    {order.trackingNumber && <p className="mt-1 text-xs font-mono text-[#4a7333]">Tracking: {order.trackingNumber}</p>}
+                    {order.trackingNumber && <p className="mt-1 text-xs font-mono text-[#4a7333]">Tracking: {order.trackingNumber}{order.shipmentStatus && order.shipmentStatus !== 'cancelled' ? ` · ${order.shipmentStatus.replaceAll('_', ' ')}` : ''}</p>}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 lg:justify-end"><span className="mr-2 text-sm font-bold">{formatINR(order.total)}</span><button onClick={() => void openDetail(order)} disabled={loadingDetail === order.number} className="rounded-full border border-[#1b261b]/20 px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider hover:border-[#8bb56e] disabled:opacity-50">{loadingDetail === order.number ? 'Loading…' : 'Details'}</button>{nextActions[order.status].map((action) => <button key={action.status} disabled={updating === order.number} onClick={() => action.status === 'shipped' ? (setShippingOrder(order), setCarrier(''), setTrackingNumber('')) : void update(order, action.status)} className={`rounded-full px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider disabled:opacity-50 ${action.status === 'cancelled' ? 'border border-rose-200 text-rose-700 hover:bg-rose-50' : 'bg-[#1b261b] text-white hover:bg-[#4a7333]'}`}>{updating === order.number ? 'Saving…' : action.label}</button>)}</div>
+                  <div className="flex flex-wrap items-center gap-2 lg:justify-end"><span className="mr-2 text-sm font-bold">{formatINR(order.total)}</span><button onClick={() => void openDetail(order)} disabled={loadingDetail === order.number} className="rounded-full border border-[#1b261b]/20 px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider hover:border-[#8bb56e] disabled:opacity-50">{loadingDetail === order.number ? 'Loading…' : 'Details'}</button>{nextActions[order.status].filter((action) => !(action.status === 'shipped' && order.shipmentStatus && order.shipmentStatus !== 'cancelled')).map((action) => <button key={action.status} disabled={updating === order.number} onClick={() => action.status === 'shipped' ? (setShippingOrder(order), setCarrier(''), setTrackingNumber('')) : void update(order, action.status)} className={`rounded-full px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider disabled:opacity-50 ${action.status === 'cancelled' ? 'border border-rose-200 text-rose-700 hover:bg-rose-50' : 'bg-[#1b261b] text-white hover:bg-[#4a7333]'}`}>{updating === order.number ? 'Saving…' : action.label}</button>)}</div>
                 </div>
                 {shippingOrder?.number === order.number && <form onSubmit={(event) => { event.preventDefault(); if (!trackingNumber.trim()) { setError('A tracking number is required before marking an order shipped.'); return }; void update(order, 'shipped', { carrier: carrier.trim(), trackingNumber: trackingNumber.trim() }) }} className="mt-5 grid gap-3 rounded-xl bg-[#f9faf7] p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
                   <label className="text-[10px] font-mono uppercase tracking-wider text-[#4a584a]">Courier<input value={carrier} onChange={(event) => setCarrier(event.target.value)} maxLength={60} className="mt-1.5 block w-full rounded-lg border border-[#1b261b]/15 bg-white px-3 py-2 text-sm" placeholder="e.g. Delhivery" /></label>
@@ -208,7 +210,7 @@ export default function AdminPage() {
           </div>
         </section>
       </div>
-      {detail && <OrderDetailModal detail={detail} onClose={() => setDetail(null)} />}
+      {detail && <OrderDetailModal detail={detail} onClose={() => setDetail(null)} onChanged={() => void load(filter)} />}
     </div>
   )
 }
@@ -217,7 +219,7 @@ function ConfigCard({ label, value, ready }: { label: string; value: string; rea
   return <div className="rounded-xl border border-[#1b261b]/10 bg-white p-4"><p className="text-[10px] font-mono uppercase tracking-widest text-[#4a584a]">{label}</p><p className={`mt-2 text-sm font-bold ${ready ? 'text-[#315b26]' : 'text-amber-700'}`}>{value}</p></div>
 }
 
-function OrderDetailModal({ detail, onClose }: { detail: AdminOrderDetail; onClose: () => void }) {
+function OrderDetailModal({ detail, onClose, onChanged }: { detail: AdminOrderDetail; onClose: () => void; onChanged: () => void }) {
   const printSlip = () => {
     const popup = window.open('', '_blank', 'noopener,noreferrer,width=720,height=820')
     if (!popup) return
@@ -232,6 +234,7 @@ function OrderDetailModal({ detail, onClose }: { detail: AdminOrderDetail; onClo
       <div className="mt-6 grid gap-6 sm:grid-cols-2"><section><h3 className="text-xs font-bold uppercase tracking-wider">Delivery</h3><p className="mt-2 text-sm leading-relaxed text-[#4a584a]">{detail.shipping.name}<br />{detail.shipping.line1}<br />{detail.shipping.city}{detail.shipping.state ? `, ${detail.shipping.state}` : ''} {detail.shipping.postalCode}<br />{detail.shipping.country}</p></section><section><h3 className="text-xs font-bold uppercase tracking-wider">Customer</h3><p className="mt-2 text-sm leading-relaxed text-[#4a584a]">{detail.email}<br />{detail.phone ?? 'No phone supplied'}<br />Placed {new Date(detail.placedAt).toLocaleString('en-IN')}</p></section></div>
       <section className="mt-6"><h3 className="text-xs font-bold uppercase tracking-wider">Pack list</h3><ul className="mt-2 divide-y divide-[#1b261b]/10 border-y border-[#1b261b]/10">{detail.items.map((item, index) => <li key={`${item.productName}-${index}`} className="flex justify-between gap-4 py-3 text-sm"><span>{item.productName} <span className="text-[#4a584a]">({item.variantSize})</span></span><b>×{item.quantity}</b></li>)}</ul></section>
       {detail.notes && <p className="mt-5 rounded-lg bg-[#f9faf7] p-3 text-sm text-[#4a584a]"><b>Customer note:</b> {detail.notes}</p>}
+      <ShipmentPanel orderNumber={detail.number} orderStatus={detail.status} onChanged={onChanged} />
       <button onClick={printSlip} className="mt-6 rounded-lg bg-[#1b261b] px-5 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#4a7333]">Print packing slip</button>
     </div>
   </div>

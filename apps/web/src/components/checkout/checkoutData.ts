@@ -29,6 +29,7 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 /** DOM ids for each field, so validation can move focus to the first error. */
 export const FIELD_IDS: Record<string, string> = {
   email: 'co-email',
+  phone: 'co-phone',
   firstName: 'co-first',
   lastName: 'co-last',
   address: 'co-address',
@@ -40,6 +41,8 @@ export const FIELD_IDS: Record<string, string> = {
 
 export interface FormState {
   email: string
+  /** Couriers will not accept a shipment without the recipient's mobile. */
+  phone: string
   firstName: string
   lastName: string
   address: string
@@ -52,6 +55,7 @@ export interface FormState {
 
 export const EMPTY_FORM: FormState = {
   email: '',
+  phone: '',
   firstName: '',
   lastName: '',
   address: '',

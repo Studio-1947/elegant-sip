@@ -5,7 +5,7 @@ import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
-import { api, ApiClientError, type SavedAddress } from '../lib/api'
+import { api, ApiClientError, type PlaceOrderResult, type SavedAddress } from '../lib/api'
 import { formatINR } from '../lib/currency'
 import {
   EMAIL_PATTERN,
@@ -21,7 +21,12 @@ import CheckoutSummary from './checkout/CheckoutSummary'
 import ShippingStep from './checkout/ShippingStep'
 import BillingAddressSection from './checkout/BillingAddressSection'
 
-type RazorpayInstance = { open: () => void }
+type RazorpaySuccess = { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }
+type RazorpayFailure = { error?: { description?: string } }
+type RazorpayInstance = {
+  open: () => void
+  on: (event: 'payment.failed', handler: (response: RazorpayFailure) => void) => void
+}
 type RazorpayConstructor = new (options: {
   key: string
   amount: number
@@ -31,7 +36,7 @@ type RazorpayConstructor = new (options: {
   order_id: string
   prefill: { name: string; email: string }
   theme: { color: string }
-  handler: () => void
+  handler: (response: RazorpaySuccess) => void
   modal: { ondismiss: () => void }
 }) => RazorpayInstance
 
@@ -56,6 +61,7 @@ function loadRazorpay(): Promise<RazorpayConstructor> {
 }
 
 const CHECKOUT_ATTEMPT_KEY = 'elegant_sip_checkout_attempt'
+const INDIAN_MOBILE = /^[6-9]\d{9}$/
 
 function checkoutAttempt() {
   const stored = sessionStorage.getItem(CHECKOUT_ATTEMPT_KEY)
@@ -85,8 +91,10 @@ export default function CheckoutPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
   const [orderNumber, setOrderNumber] = useState<string | null>(null)
-  const [placedOrder, setPlacedOrder] = useState<Awaited<ReturnType<typeof api.orders.place>> | null>(null)
+  const [placedOrder, setPlacedOrder] = useState<PlaceOrderResult | null>(null)
   const [orderError, setOrderError] = useState<string | null>(null)
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
+  const [paying, setPaying] = useState(false)
   const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>('standard')
   const [placing, setPlacing] = useState(false)
   const [prefilled, setPrefilled] = useState(false)
@@ -131,7 +139,7 @@ export default function CheckoutPage() {
 
   const selectSavedAddress = (address: SavedAddress) => {
     const parts = address.name.trim().split(/\s+/)
-    setForm((current) => ({ ...current, email: current.email || user?.email || '', firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), address: address.line1, city: address.city, state: address.state ?? '', zip: address.postalCode, country: address.country }))
+    setForm((current) => ({ ...current, phone: address.phone ?? current.phone, email: current.email || user?.email || '', firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), address: address.line1, city: address.city, state: address.state ?? '', zip: address.postalCode, country: address.country }))
     setErrors({})
     setPrefilled(true)
   }
@@ -155,7 +163,7 @@ export default function CheckoutPage() {
   /** Move focus to the first field that failed, so the error is discoverable. */
   const focusFirstError = (next: Partial<Record<keyof FormState, string>>) => {
     const order: (keyof FormState)[] = [
-      'email', 'firstName', 'lastName', 'address', 'city', 'zip',
+      'email', 'phone', 'firstName', 'lastName', 'address', 'city', 'zip',
     ]
     const first = order.find((field) => next[field])
     if (!first) return
@@ -167,6 +175,7 @@ export default function CheckoutPage() {
   const validateStep1 = (): boolean => {
     const next: Partial<Record<keyof FormState, string>> = {}
     if (!EMAIL_PATTERN.test(form.email.trim())) next.email = 'Enter a valid email address.'
+    if (!INDIAN_MOBILE.test(form.phone.replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, ''))) next.phone = 'Enter a 10-digit mobile number.'
     if (!form.firstName.trim()) next.firstName = 'Enter your first name.'
     if (!form.lastName.trim()) next.lastName = 'Enter your last name.'
     if (!form.address.trim()) next.address = 'Enter your street address.'
@@ -218,6 +227,7 @@ export default function CheckoutPage() {
         postalCode: form.zip,
         state: form.state || undefined,
         country: 'India' as const,
+        phone: form.phone.trim(),
       }
       const billing = sameAsShipping
         ? shipping
@@ -247,7 +257,7 @@ export default function CheckoutPage() {
 
       if (user && saveAddress) {
         // A failed save must not turn a successful checkout into an apparent failure.
-        void api.account.saveAddress({ label: 'Checkout address', name: `${form.firstName} ${form.lastName}`.trim(), line1: form.address, city: form.city, postalCode: form.zip, state: form.state || undefined, country: 'India', phone: undefined, isDefaultShipping: !savedAddresses.some((address) => address.isDefaultShipping), isDefaultBilling: sameAsShipping && !savedAddresses.some((address) => address.isDefaultBilling) }).catch(() => {})
+        void api.account.saveAddress({ label: 'Checkout address', name: `${form.firstName} ${form.lastName}`.trim(), line1: form.address, city: form.city, postalCode: form.zip, state: form.state || undefined, country: 'India', phone: form.phone.trim() || undefined, isDefaultShipping: !savedAddresses.some((address) => address.isDefaultShipping), isDefaultBilling: sameAsShipping && !savedAddresses.some((address) => address.isDefaultBilling) }).catch(() => {})
       }
 
       localStorage.removeItem('elegant_sip_order_notes')
@@ -259,25 +269,8 @@ export default function CheckoutPage() {
       setOrderNumber(result.order.number)
       setPlacedOrder(result)
       clearCart()
-      track('purchase', { order: result.order.number, value: result.order.total, items: result.order.items.length })
-      if (result.payment.provider === 'razorpay') {
-        const Razorpay = await loadRazorpay()
-        new Razorpay({
-          key: result.payment.publicKey,
-          amount: result.payment.amount,
-          currency: result.payment.currency,
-          name: 'Elegant Sip',
-          description: `Order ${result.order.number}`,
-          order_id: result.payment.gatewayOrderId,
-          prefill: { name: `${form.firstName} ${form.lastName}`.trim(), email: form.email },
-          theme: { color: '#4a7333' },
-          // This only updates the browser experience. A signed webhook remains
-          // the sole authority for changing the server-side order to paid.
-          handler: () => window.scrollTo(0, 0),
-          modal: { ondismiss: () => window.scrollTo(0, 0) },
-        }).open()
-      }
       window.scrollTo(0, 0)
+      void openPayment(result)
     } catch (err) {
       /* A rejected order usually means the cart moved under the customer —
          something sold out, or a price changed. Say so plainly and leave the
@@ -293,8 +286,90 @@ export default function CheckoutPage() {
     }
   }
 
+  /*
+   * Opens Razorpay for a placed order. Safe to call again: Razorpay accepts
+   * several attempts against one gateway order, so "Pay now" reuses it.
+   */
+  const openPayment = async (placed: PlaceOrderResult) => {
+    if (placed.payment.provider !== 'razorpay') return
+    setPaymentNotice(null)
+    setPaying(true)
+    let succeeded = false
+    let lastFailure: string | null = null
+    try {
+      const Razorpay = await loadRazorpay()
+      const checkout = new Razorpay({
+        key: placed.payment.publicKey,
+        amount: placed.payment.amount,
+        currency: placed.payment.currency,
+        name: 'Elegant Sip',
+        description: `Order ${placed.order.number}`,
+        order_id: placed.payment.gatewayOrderId,
+        prefill: { name: `${form.firstName} ${form.lastName}`.trim(), email: form.email },
+        theme: { color: '#4a7333' },
+        handler: (response) => {
+          succeeded = true
+          void confirmPayment(placed, response)
+        },
+        modal: {
+          ondismiss: () => {
+            if (succeeded) return
+            setPaying(false)
+            setPaymentNotice(
+              lastFailure
+                ? `${lastFailure} Choose Pay now to try again.`
+                : 'Payment was cancelled. Your teas are held for a short while — choose Pay now to finish.',
+            )
+          },
+        },
+      })
+      // Razorpay keeps the modal open after a failed attempt so the customer can retry.
+      checkout.on('payment.failed', (response) => {
+        lastFailure = `Payment failed: ${response.error?.description ?? 'the payment was declined'}.`
+        setPaymentNotice(lastFailure)
+      })
+      checkout.open()
+    } catch (err) {
+      setPaying(false)
+      setPaymentNotice(err instanceof Error ? err.message : 'Checkout could not open.')
+    }
+  }
+
+  /** The server checks the signature and asks Razorpay before the order counts as paid. */
+  const confirmPayment = async (placed: PlaceOrderResult, response: RazorpaySuccess) => {
+    try {
+      const guestToken = sessionStorage.getItem(`elegant_sip_order_access_${placed.order.number}`)
+      const { status } = await api.orders.verifyPayment(placed.order.number, response, guestToken)
+      if (status === 'paid') {
+        setPlacedOrder({ ...placed, order: { ...placed.order, status: 'paid' } })
+        setPaymentNotice(null)
+        track('purchase', { order: placed.order.number, value: placed.order.total, items: placed.order.items.length })
+      } else {
+        setPaymentNotice('Payment received and waiting for your bank to confirm. Your order will update shortly.')
+      }
+    } catch (err) {
+      setPaymentNotice(
+        err instanceof ApiClientError
+          ? err.message
+          : 'We could not confirm the payment yet. If you were charged, your order will update shortly.',
+      )
+    } finally {
+      setPaying(false)
+      window.scrollTo(0, 0)
+    }
+  }
+
   if (orderNumber) {
-    return <OrderConfirmedScreen orderNumber={orderNumber} order={placedOrder?.order ?? null} paymentProvider={placedOrder?.payment.provider} paymentError={orderError} />
+    return (
+      <OrderConfirmedScreen
+        orderNumber={orderNumber}
+        order={placedOrder?.order ?? null}
+        paymentProvider={placedOrder?.payment.provider}
+        paymentNotice={paymentNotice}
+        paying={paying}
+        onPay={placedOrder ? () => void openPayment(placedOrder) : undefined}
+      />
+    )
   }
 
   if (cart.length === 0) {

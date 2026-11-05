@@ -271,6 +271,54 @@ export const payments = pgTable(
   ],
 )
 
+/** One courier scan, newest last. Stored as the provider reported it, minus noise. */
+export interface ShipmentEvent {
+  at: string
+  status: string
+  location: string | null
+  detail: string | null
+}
+
+/**
+ * The courier side of an order. One row per order: cancelling a shipment keeps
+ * the row (status `cancelled`) and creating a new one reuses it, so history of
+ * what the courier saw is never split across rows.
+ *
+ * `status` is our normalised state; `providerStatus` is the courier's own text
+ * (e.g. "REACHED AT DESTINATION HUB"), kept for staff who need the detail.
+ */
+export const shipments = pgTable(
+  'shipments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' })
+      .unique(),
+    provider: text('provider').notNull(),
+    providerOrderId: text('provider_order_id'),
+    providerShipmentId: text('provider_shipment_id'),
+    awb: text('awb'),
+    courierId: integer('courier_id'),
+    courierName: text('courier_name'),
+    status: text('status').notNull().default('created'),
+    providerStatus: text('provider_status'),
+    weightGrams: integer('weight_grams').notNull(),
+    labelUrl: text('label_url'),
+    trackingUrl: text('tracking_url'),
+    pickupScheduledAt: timestamp('pickup_scheduled_at', { withTimezone: true }),
+    expectedDeliveryAt: timestamp('expected_delivery_at', { withTimezone: true }),
+    deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+    /** The last step that failed, so staff can see why a shipment is stuck. */
+    lastError: text('last_error'),
+    events: jsonb('events').$type<ShipmentEvent[]>().notNull().default([]),
+    lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('shipments_awb_idx').on(t.awb), index('shipments_status_idx').on(t.status)],
+)
+
 /**
  * Every gateway webhook, recorded before it is acted on.
  *
@@ -392,6 +440,11 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   items: many(orderItems),
   payments: many(payments),
   invoice: one(invoices, { fields: [orders.id], references: [invoices.orderId] }),
+  shipment: one(shipments, { fields: [orders.id], references: [shipments.orderId] }),
+}))
+
+export const shipmentsRelations = relations(shipments, ({ one }) => ({
+  order: one(orders, { fields: [shipments.orderId], references: [orders.id] }),
 }))
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({

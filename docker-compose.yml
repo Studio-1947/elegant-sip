@@ -17,7 +17,8 @@ services:
       POSTGRES_PASSWORD: elegantsip
       POSTGRES_DB: elegantsip
     ports:
-      - '5432:5432'
+      # Set POSTGRES_PORT in the root .env when 5432 is taken by a local install.
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

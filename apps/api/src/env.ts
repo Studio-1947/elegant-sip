@@ -8,6 +8,10 @@ import { z } from 'zod'
  * deploy, not a silent signature-verification failure during a real payment.
  * ──────────────────────────────────────────────────────────────────────────── */
 
+/** Treats `KEY=` (blank) in an env file the same as the key being absent. */
+const blankAsUnset = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (typeof value === 'string' && value.trim() === '' ? undefined : value), schema.optional())
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
@@ -82,6 +86,28 @@ const envSchema = z.object({
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+
+  /*
+   * Shipping. `manual` keeps the type-in-a-tracking-number flow only; `fake`
+   * exercises the courier flow locally without an account; `shiprocket` books
+   * real shipments. Shiprocket needs an API user (Settings → API → Create API
+   * User), not the main dashboard login.
+   */
+  SHIPPING_PROVIDER: z.enum(['manual', 'shiprocket', 'fake']).default('manual'),
+  SHIPROCKET_API_BASE_URL: z.string().url().default('https://apiv2.shiprocket.in/v1/external'),
+  SHIPROCKET_EMAIL: blankAsUnset(z.string()),
+  SHIPROCKET_PASSWORD: blankAsUnset(z.string()),
+  /** The pickup address nickname exactly as saved in Shiprocket (Settings → Pickup Addresses). */
+  SHIPROCKET_PICKUP_LOCATION: blankAsUnset(z.string()),
+  /** Pincode of that pickup address — used for courier rate lookups. */
+  SHIPROCKET_PICKUP_POSTCODE: blankAsUnset(z.string().regex(/^[1-9]\d{5}$/, 'must be a 6-digit pincode')),
+  /** Token entered in Shiprocket's webhook settings; sent back to us in the x-api-key header. */
+  SHIPROCKET_WEBHOOK_TOKEN: blankAsUnset(z.string().min(16)),
+  /** Default parcel box and packaging weight added on top of the tea itself. */
+  SHIP_PACKAGE_LENGTH_CM: z.coerce.number().positive().default(20),
+  SHIP_PACKAGE_BREADTH_CM: z.coerce.number().positive().default(15),
+  SHIP_PACKAGE_HEIGHT_CM: z.coerce.number().positive().default(10),
+  SHIP_PACKAGING_WEIGHT_GRAMS: z.coerce.number().int().min(0).default(150),
 })
 
 export type Env = z.infer<typeof envSchema>
@@ -97,6 +123,15 @@ function load(): Env {
     process.exit(1)
   }
   const value = parsed.data
+  if (value.SHIPPING_PROVIDER === 'shiprocket') {
+    const missing = (
+      ['SHIPROCKET_EMAIL', 'SHIPROCKET_PASSWORD', 'SHIPROCKET_PICKUP_LOCATION', 'SHIPROCKET_PICKUP_POSTCODE'] as const
+    ).filter((key) => !value[key])
+    if (missing.length > 0) {
+      console.error(`Invalid environment configuration:\n  ${missing.join(', ')}: required when SHIPPING_PROVIDER=shiprocket\n`)
+      process.exit(1)
+    }
+  }
   if (value.AUTH_OTP_PROVIDER === 'interakt' && !value.INTERAKT_API_KEY) {
     console.error('Invalid environment configuration:\n  INTERAKT_API_KEY: required when AUTH_OTP_PROVIDER=interakt\n')
     process.exit(1)

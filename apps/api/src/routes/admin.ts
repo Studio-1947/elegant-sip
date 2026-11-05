@@ -7,8 +7,9 @@ import { productVariants, products, reviews } from '../db/schema.js'
 import { adminAuditEvents, orders, returnRequests, stockLedger } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import { adminProductRoutes } from './admin-products.js'
+import { adminShippingRoutes } from './admin-shipping.js'
 import { getInvoiceView } from '../lib/invoice.js'
-import { sendEmail } from '../lib/email.js'
+import { sendShippedEmail } from '../lib/fulfilment.js'
 import { env } from '../env.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
   /* Catalogue management lives in its own module (300-line rule) but registers
      here, inside the auth hook above. */
   await app.register(adminProductRoutes)
+  await app.register(adminShippingRoutes)
 
   app.get(
     '/admin/orders',
@@ -74,6 +76,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
                 itemCount: z.number().int(),
                 shippingCity: z.string(),
                 trackingNumber: z.string().nullable(),
+                shipmentStatus: z.string().nullable(),
               }),
             ),
           }),
@@ -85,7 +88,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const rows = await db.query.orders.findMany({
         where: request.query.status ? eq(orders.status, request.query.status) : undefined,
-        with: { items: true },
+        with: { items: true, shipment: true },
         orderBy: desc(orders.placedAt),
         limit: request.query.limit,
       })
@@ -99,6 +102,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
           itemCount: o.items.reduce((a, i) => a + i.quantity, 0),
           shippingCity: o.shippingCity,
           trackingNumber: o.trackingNumber,
+          shipmentStatus: o.shipment?.status ?? null,
         })),
       }
     },
@@ -241,20 +245,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       const carrier = trackingCarrier ?? order.trackingCarrier
       const tracking = trackingNumber ?? order.trackingNumber
       if (status === 'shipped' && tracking) {
-        const result = await sendEmail({
-          to: order.email,
-          subject: `Order ${order.number} has shipped`,
-          heading: 'On its way to you',
-          body: [
-            `${order.shippingName}, your tea has left us and is with the courier.`,
-            'Darjeeling travels well, but give it a day to settle before you brew the first cup.',
-          ],
-          facts: [
-            ['Order', order.number],
-            ...(carrier ? ([['Carrier', carrier]] as [string, string][]) : []),
-            ['Tracking', tracking],
-          ],
-        })
+        const result = await sendShippedEmail(order, carrier, tracking)
         notified = result.delivered
       }
 
@@ -397,16 +388,21 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
             emailConfigured: z.boolean(),
             gstinConfigured: z.boolean(),
             sellerState: z.string(),
+            shippingProvider: z.string(),
+            shippingLive: z.boolean(),
           }),
         },
       },
     },
     async () => ({
       paymentProvider: env.PAYMENT_PROVIDER,
-      paymentsLive: env.PAYMENT_PROVIDER === 'razorpay',
+      // Test keys take real-looking payments that never settle — not live.
+      paymentsLive: env.PAYMENT_PROVIDER === 'razorpay' && Boolean(env.RAZORPAY_KEY_ID?.startsWith('rzp_live_')),
       emailConfigured: Boolean(env.SMTP_URL),
       gstinConfigured: Boolean(env.SELLER_GSTIN),
       sellerState: env.SELLER_STATE,
+      shippingProvider: env.SHIPPING_PROVIDER,
+      shippingLive: env.SHIPPING_PROVIDER === 'shiprocket',
     }),
   )
 }

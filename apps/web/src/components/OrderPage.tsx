@@ -143,6 +143,41 @@ export default function OrderPage({ id }: { id?: string }) {
           <ol className="mt-5 space-y-4">{timelineFor(order).map((event) => <li key={event.label} className="flex gap-3 text-xs"><span className={`mt-0.5 h-3 w-3 rounded-full border-2 ${event.complete ? 'border-[#4a7333] bg-[#8bb56e]' : 'border-[#1b261b]/20 bg-white'}`} /><div><p className={event.complete ? 'font-bold text-[#1b261b]' : 'text-[#4a584a]'}>{event.label}</p><p className="mt-0.5 text-[#4a584a]">{event.date ? new Date(event.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : event.detail}</p></div></li>)}</ol>
         </div>
 
+        {order.shipment && (
+          <div className="mb-6 bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1b261b]/10 pb-4">
+              <h2 className="text-sm font-bold uppercase tracking-wide">Tracking</h2>
+              <span className="rounded-full bg-[#8bb56e]/15 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#315b26]">
+                {SHIPMENT_LABELS[order.shipment.status] ?? order.shipment.status.replaceAll('_', ' ')}
+              </span>
+            </div>
+            <div className="mt-4 grid gap-2 text-xs text-[#4a584a] sm:grid-cols-2">
+              <p><span className="font-bold text-[#1b261b]">Courier:</span> {order.shipment.courierName ?? 'Assigned shortly'}</p>
+              <p><span className="font-bold text-[#1b261b]">AWB:</span> <span className="font-mono">{order.shipment.awb}</span></p>
+              {order.shipment.deliveredAt ? (
+                <p><span className="font-bold text-[#1b261b]">Delivered:</span> {new Date(order.shipment.deliveredAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
+              ) : order.shipment.expectedDeliveryAt && (
+                <p><span className="font-bold text-[#1b261b]">Expected by:</span> {new Date(order.shipment.expectedDeliveryAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
+              )}
+            </div>
+            {order.shipment.events.length > 0 && (
+              <ol className="mt-5 space-y-3 border-l border-[#1b261b]/10 pl-4">
+                {[...order.shipment.events].reverse().map((event) => (
+                  <li key={`${event.at}-${event.status}`} className="text-xs">
+                    <p className="font-bold text-[#1b261b]">{event.status}{event.location ? ` · ${event.location}` : ''}</p>
+                    <p className="mt-0.5 text-[#4a584a]">{new Date(event.at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+            {order.shipment.trackingUrl && (
+              <a href={order.shipment.trackingUrl} target="_blank" rel="noreferrer" className="mt-5 inline-block rounded-lg bg-[#1b261b] px-5 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#4a7333]">
+                Track on courier site
+              </a>
+            )}
+          </div>
+        )}
+
         {/* Items */}
         <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8 mb-6">
           <h2 className="text-sm font-bold uppercase tracking-wide border-b border-[#1b261b]/10 pb-4 mb-5">Items</h2>
@@ -196,9 +231,6 @@ export default function OrderPage({ id }: { id?: string }) {
               </p>
             )}
           </div>
-          <p className="text-[11px] font-mono text-[#4a7333] italic mt-5">
-            Demo store — this order is a record on this device only; nothing was charged or shipped.
-          </p>
         </div>
         {canRequestService && (
           <form onSubmit={submitServiceRequest} className="mt-6 bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8">
@@ -216,6 +248,16 @@ export default function OrderPage({ id }: { id?: string }) {
       </div>
     </div>
   )
+}
+
+const SHIPMENT_LABELS: Record<string, string> = {
+  awb_assigned: 'Preparing to ship',
+  pickup_scheduled: 'Awaiting courier pickup',
+  in_transit: 'In transit',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
+  exception: 'Delivery delayed',
+  rto: 'Returning to us',
 }
 
 function timelineFor(order: OrderView) {
