@@ -115,6 +115,11 @@ export interface SendResult {
 export async function sendEmail(message: EmailMessage): Promise<SendResult> {
   const { html, text } = render(message)
 
+  if (message.to.toLowerCase().endsWith('.invalid')) {
+    console.info(`[email] not sending "${message.subject}": recipient is a placeholder address`)
+    return { delivered: false }
+  }
+
   if (!transport) {
     console.info(`[email] SMTP_URL unset — not sending "${message.subject}" to ${message.to}`)
     return { delivered: false }

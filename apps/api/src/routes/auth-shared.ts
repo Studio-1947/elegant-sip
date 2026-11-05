@@ -47,12 +47,26 @@ export const passwordSchema = z
   .max(200)
   .describe('Minimum 10 characters. Length beats complexity rules.')
 
+/**
+ * WhatsApp sign-up creates an account before we know the person's email or
+ * name, so it stores these stand-ins. They must never be mailed, shown as
+ * contact details, or copied onto an order.
+ */
+export const PLACEHOLDER_EMAIL_DOMAIN = '@whatsapp.elegantsip.invalid'
+export const PLACEHOLDER_NAME = 'Tea Lover'
+export const isPlaceholderEmail = (email: string) => email.toLowerCase().endsWith('.invalid')
+
 export const publicUserSchema = z.object({
   id: z.string().uuid(),
   email: z.string(),
   name: z.string(),
   role: z.enum(['customer', 'admin']),
   emailVerified: z.boolean(),
+  /** True for WhatsApp-only accounts: ask for a real address before using it. */
+  emailIsPlaceholder: z.boolean(),
+  nameIsPlaceholder: z.boolean(),
+  /** Verified WhatsApp number, if any. */
+  phone: z.string().nullable(),
 })
 
 /** The only shape of a user that ever leaves the server. */
@@ -62,6 +76,8 @@ export function toPublicUser(user: {
   name: string
   role: 'customer' | 'admin'
   emailVerifiedAt: Date | null
+  phone?: string | null
+  phoneVerifiedAt?: Date | null
 }) {
   return {
     id: user.id,
@@ -69,6 +85,9 @@ export function toPublicUser(user: {
     name: user.name,
     role: user.role,
     emailVerified: user.emailVerifiedAt !== null,
+    emailIsPlaceholder: isPlaceholderEmail(user.email),
+    nameIsPlaceholder: user.name === PLACEHOLDER_NAME,
+    phone: user.phoneVerifiedAt ? (user.phone ?? null) : null,
   }
 }
 

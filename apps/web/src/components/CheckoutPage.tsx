@@ -117,9 +117,11 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!user) return
     const prefill = window.setTimeout(() => {
-      const [first = '', ...rest] = user.name.split(' ')
+      // WhatsApp sign-up stores stand-in email and name values; never copy those onto an order.
+      const [first = '', ...rest] = user.nameIsPlaceholder ? [] : user.name.split(' ')
+      const email = user.emailIsPlaceholder ? '' : user.email
       setForm((f) => {
-        const next = { ...f, email: f.email || user.email, firstName: f.firstName || first, lastName: f.lastName || rest.join(' ') }
+        const next = { ...f, email: f.email || email, phone: f.phone || (user.phone ?? ''), firstName: f.firstName || first, lastName: f.lastName || rest.join(' ') }
         if (next.email) setPrefilled(true)
         return next
       })
@@ -139,7 +141,7 @@ export default function CheckoutPage() {
 
   const selectSavedAddress = (address: SavedAddress) => {
     const parts = address.name.trim().split(/\s+/)
-    setForm((current) => ({ ...current, phone: address.phone ?? current.phone, email: current.email || user?.email || '', firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), address: address.line1, city: address.city, state: address.state ?? '', zip: address.postalCode, country: address.country }))
+    setForm((current) => ({ ...current, phone: address.phone ?? current.phone, email: current.email || (user && !user.emailIsPlaceholder ? user.email : ''), firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), address: address.line1, city: address.city, state: address.state ?? '', zip: address.postalCode, country: address.country }))
     setErrors({})
     setPrefilled(true)
   }
@@ -497,7 +499,7 @@ export default function CheckoutPage() {
                   <p><span className="font-bold text-[#1b261b]">Ship to:</span> {form.firstName} {form.lastName}, {form.address}, {form.city}{form.state ? `, ${form.state}` : ''} {form.zip}, {form.country}</p>
                   <p><span className="font-bold text-[#1b261b]">Bill to:</span> {sameAsShipping ? 'Same as shipping address' : `${selectedBillingAddress?.name}, ${selectedBillingAddress?.line1}, ${selectedBillingAddress?.city} ${selectedBillingAddress?.postalCode}`}</p>
                   <p><span className="font-bold text-[#1b261b]">Shipping:</span> {SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.label} ({SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.detail})</p>
-                  <p><span className="font-bold text-[#1b261b]">Contact:</span> {form.email}</p>
+                  <p><span className="font-bold text-[#1b261b]">Contact:</span> {form.email} · {form.phone}</p>
                 </div>
                 <p className="text-[11px] text-[#4a584a] mt-4">By placing your order you agree to our Terms & Conditions.</p>
               </div>

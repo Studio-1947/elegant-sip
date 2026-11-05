@@ -8,7 +8,7 @@ import { otpChallenges, users } from '../db/schema-commerce.js'
 import { env } from '../env.js'
 import { ApiError } from '../lib/problem.js'
 import { SESSION_COOKIE, createSession, sessionCookieOptions } from '../lib/sessions.js'
-import { ARGON2, limit, publicUserSchema, toPublicUser } from './auth-shared.js'
+import { ARGON2, limit, PLACEHOLDER_EMAIL_DOMAIN, PLACEHOLDER_NAME, publicUserSchema, toPublicUser } from './auth-shared.js'
 
 const phoneSchema = z.string().trim().max(20)
 const codeSchema = z.string().regex(/^\d{6}$/, 'Enter the 6-digit code.')
@@ -65,10 +65,10 @@ export const otpRoutes: FastifyPluginAsyncZod = async (app) => {
     if (!user) {
       const local = challenge.phone.slice(1)
       const [created] = await db.insert(users).values({
-        name: 'Tea Lover',
+        name: PLACEHOLDER_NAME,
         // Email remains an internal required column for legacy password flows.
         // This reserved domain is never mailed and is not shown as a contact address.
-        email: `whatsapp-${local}@whatsapp.elegantsip.invalid`,
+        email: `whatsapp-${local}${PLACEHOLDER_EMAIL_DOMAIN}`,
         passwordHash: await hash(randomBytes(32).toString('base64url'), ARGON2),
         phone: challenge.phone,
         phoneVerifiedAt: new Date(),

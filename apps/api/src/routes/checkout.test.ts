@@ -129,6 +129,19 @@ describe('checkout', () => {
     expect(allowed.statusCode).toBe(200)
   })
 
+  it('refuses a WhatsApp placeholder email as the order contact', async () => {
+    if (!available) return
+    const res = await checkout(order({ email: 'whatsapp-916200301989@whatsapp.elegantsip.invalid' }))
+    expect(res.statusCode).toBe(400)
+    expect(JSON.stringify(res.json().errors)).toContain('order updates')
+  })
+
+  it('tells the browser whether the account email and name are real', async () => {
+    if (!available) return
+    const me = (await app.inject({ method: 'GET', url: '/v1/auth/me', headers: { cookie: buyerCookie } })).json()
+    expect(me.user).toMatchObject({ emailIsPlaceholder: false, nameIsPlaceholder: false, phone: null })
+  })
+
   it('returns the original order on an idempotent checkout retry', async () => {
     if (!available) return
     const before = await stockFor(SLUG)

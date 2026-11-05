@@ -244,7 +244,12 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         ].join('\n'),
         body: z.object({
           items: z.array(cartLineInputSchema).min(1).max(50),
-          email: z.string().trim().toLowerCase().email(),
+          email: z
+            .string()
+            .trim()
+            .toLowerCase()
+            .email()
+            .refine((value) => !value.endsWith('.invalid'), 'Enter the email address where you want order updates.'),
           shipping: addressSchema,
           billing: addressSchema.optional(),
           shippingMethod: shippingMethodIdSchema.default('standard'),

@@ -212,7 +212,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
                 to="/account"
                 className="text-xs font-mono uppercase tracking-wider text-[#4a584a] hover:text-[#4a7333] transition-colors max-w-[120px] truncate"
               >
-                {user.name.split(' ')[0]}
+                {user.nameIsPlaceholder ? 'Account' : user.name.split(' ')[0]}
               </Link>
               <button
                 onClick={logout}
@@ -302,7 +302,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
               {user && (
                 <div className="flex items-center justify-between pt-4 mt-2 border-t border-[#1b261b]/10 md:hidden">
                   <span className="text-xs font-mono uppercase tracking-wider text-[#4a584a] max-w-[160px] truncate">
-                    {user.name.split(' ')[0]}
+                    {user.nameIsPlaceholder ? 'Account' : user.name.split(' ')[0]}
                   </span>
                   <button
                     onClick={() => {

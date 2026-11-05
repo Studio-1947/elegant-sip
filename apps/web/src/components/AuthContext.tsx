@@ -16,6 +16,11 @@ export interface User {
   email: string
   role: 'customer' | 'admin'
   emailVerified: boolean
+  /** WhatsApp-only accounts carry stand-in email/name values that must not reach an order. */
+  emailIsPlaceholder: boolean
+  nameIsPlaceholder: boolean
+  /** Verified WhatsApp number. */
+  phone: string | null
 }
 
 interface AuthContextType {
@@ -37,6 +42,10 @@ const toUser = (u: SessionUser): User => ({
   email: u.email,
   role: u.role,
   emailVerified: u.emailVerified,
+  // Older API responses lack the flags; the reserved .invalid domain still identifies a stand-in.
+  emailIsPlaceholder: u.emailIsPlaceholder ?? u.email.toLowerCase().endsWith('.invalid'),
+  nameIsPlaceholder: u.nameIsPlaceholder ?? false,
+  phone: u.phone ?? null,
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {

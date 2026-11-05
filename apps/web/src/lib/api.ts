@@ -89,6 +89,11 @@ export interface SessionUser {
   name: string
   role: 'customer' | 'admin'
   emailVerified: boolean
+  /** WhatsApp-only accounts carry stand-in values that must not reach an order. */
+  emailIsPlaceholder?: boolean
+  nameIsPlaceholder?: boolean
+  /** Verified WhatsApp number. */
+  phone?: string | null
 }
 
 export interface CartLine {

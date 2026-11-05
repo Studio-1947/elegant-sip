@@ -353,6 +353,22 @@
                         },
                         "emailVerified": {
                           "type": "boolean"
+                        },
+                        "emailIsPlaceholder": {
+                          "type": "boolean"
+                        },
+                        "nameIsPlaceholder": {
+                          "type": "boolean"
+                        },
+                        "phone": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -360,7 +376,10 @@
                         "email",
                         "name",
                         "role",
-                        "emailVerified"
+                        "emailVerified",
+                        "emailIsPlaceholder",
+                        "nameIsPlaceholder",
+                        "phone"
                       ],
                       "additionalProperties": false
                     }
@@ -770,6 +789,22 @@
                             },
                             "emailVerified": {
                               "type": "boolean"
+                            },
+                            "emailIsPlaceholder": {
+                              "type": "boolean"
+                            },
+                            "nameIsPlaceholder": {
+                              "type": "boolean"
+                            },
+                            "phone": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             }
                           },
                           "required": [
@@ -777,7 +812,10 @@
                             "email",
                             "name",
                             "role",
-                            "emailVerified"
+                            "emailVerified",
+                            "emailIsPlaceholder",
+                            "nameIsPlaceholder",
+                            "phone"
                           ],
                           "additionalProperties": false
                         },
@@ -854,6 +892,22 @@
                         },
                         "emailVerified": {
                           "type": "boolean"
+                        },
+                        "emailIsPlaceholder": {
+                          "type": "boolean"
+                        },
+                        "nameIsPlaceholder": {
+                          "type": "boolean"
+                        },
+                        "phone": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -861,7 +915,10 @@
                         "email",
                         "name",
                         "role",
-                        "emailVerified"
+                        "emailVerified",
+                        "emailIsPlaceholder",
+                        "nameIsPlaceholder",
+                        "phone"
                       ],
                       "additionalProperties": false
                     }
@@ -1046,6 +1103,22 @@
                         },
                         "emailVerified": {
                           "type": "boolean"
+                        },
+                        "emailIsPlaceholder": {
+                          "type": "boolean"
+                        },
+                        "nameIsPlaceholder": {
+                          "type": "boolean"
+                        },
+                        "phone": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -1053,7 +1126,10 @@
                         "email",
                         "name",
                         "role",
-                        "emailVerified"
+                        "emailVerified",
+                        "emailIsPlaceholder",
+                        "nameIsPlaceholder",
+                        "phone"
                       ],
                       "additionalProperties": false
                     }
@@ -7402,6 +7478,22 @@
                         },
                         "emailVerified": {
                           "type": "boolean"
+                        },
+                        "emailIsPlaceholder": {
+                          "type": "boolean"
+                        },
+                        "nameIsPlaceholder": {
+                          "type": "boolean"
+                        },
+                        "phone": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -7409,7 +7501,10 @@
                         "email",
                         "name",
                         "role",
-                        "emailVerified"
+                        "emailVerified",
+                        "emailIsPlaceholder",
+                        "nameIsPlaceholder",
+                        "phone"
                       ],
                       "additionalProperties": false
                     }
