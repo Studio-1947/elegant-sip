@@ -34,7 +34,7 @@ type RazorpayConstructor = new (options: {
   name: string
   description: string
   order_id: string
-  prefill: { name: string; email: string }
+  prefill: { name: string; email: string; contact?: string }
   theme: { color: string }
   handler: (response: RazorpaySuccess) => void
   modal: { ondismiss: () => void }
@@ -307,7 +307,12 @@ export default function CheckoutPage() {
         name: 'Elegant Sip',
         description: `Order ${placed.order.number}`,
         order_id: placed.payment.gatewayOrderId,
-        prefill: { name: `${form.firstName} ${form.lastName}`.trim(), email: form.email },
+        prefill: {
+          name: `${form.firstName} ${form.lastName}`.trim(),
+          email: form.email,
+          // Already collected at checkout; spares the buyer Razorpay's contact prompt.
+          contact: form.phone.replace(/\D/g, '').slice(-10) || undefined,
+        },
         theme: { color: '#4a7333' },
         handler: (response) => {
           succeeded = true
