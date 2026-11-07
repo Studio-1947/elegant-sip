@@ -14,6 +14,21 @@
 # to Let's Encrypt on its own; there is no certificate to install or renew.
 # ─────────────────────────────────────────────────────────────────────────────
 
+{
+	servers {
+		# In production this stack sits behind the server's own nginx, so every
+		# request reaches Caddy from a private Docker address. Trusting private
+		# ranges lets the visitor's real address through (nginx must send
+		# `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`).
+		# Without this the API sees nginx as the only visitor, and its rate
+		# limits apply to the whole shop at once instead of to each customer.
+		# Strict mode reads the header right to left, so a value the visitor
+		# made up themselves is never mistaken for their address.
+		trusted_proxies static private_ranges
+		trusted_proxies_strict
+	}
+}
+
 {$SITE_ADDRESS::80} {
 	encode zstd gzip
 
@@ -21,7 +36,11 @@
 	# /api/v1/products arrives at the API as /v1/products — its routes are
 	# unchanged and know nothing about the prefix.
 	handle_path /api/* {
-		reverse_proxy api:4000
+		reverse_proxy api:4000 {
+			# One address, already resolved above. The API trusts this header,
+			# so it must never carry a value the visitor supplied.
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 
 	# Everything else is the storefront.
