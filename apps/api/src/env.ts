@@ -78,7 +78,7 @@ const envSchema = z.object({
   INTERAKT_WEBHOOK_SECRET: z.string().optional(),
   // A shared Interakt workspace has one callback destination. Elegant Sip is that destination
   // and forwards only Aangan-namespaced status events to this internal recipient.
-  AANGAN_INTERAKT_WEBHOOK_URL: z.string().url().optional(),
+  AANGAN_INTERAKT_WEBHOOK_URL: blankAsUnset(z.string().url()),
 
   /* Phase 03+. Optional now so phases 00–02 run without payment credentials,
      but see assertPaymentsConfigured() — the code that needs them refuses to

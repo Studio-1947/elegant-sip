@@ -4,6 +4,7 @@ import { SHIPPING_METHODS } from '../lib/pricing'
 import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
 import { useAuth } from './AuthContext'
+import { loadRazorpay } from '../lib/razorpay'
 
 export default function OrderPage({ id }: { id?: string }) {
   const [order, setOrder] = useState<OrderView | null>(null)
@@ -15,6 +16,8 @@ export default function OrderPage({ id }: { id?: string }) {
   const [requestMessage, setRequestMessage] = useState<string | null>(null)
   const [submittingRequest, setSubmittingRequest] = useState(false)
   const [loadingInvoice, setLoadingInvoice] = useState(false)
+  const [paying, setPaying] = useState(false)
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) {
@@ -101,6 +104,52 @@ export default function OrderPage({ id }: { id?: string }) {
     }
   }
 
+  /* Reopens Razorpay for an order still awaiting payment — for a customer who
+     closed the payment window or came back from the account page. */
+  const payNow = async () => {
+    setPaying(true)
+    setPaymentNotice(null)
+    const guestAccessToken = sessionStorage.getItem(`elegant_sip_order_access_${order.number}`)
+    let succeeded = false
+    try {
+      const [payment, Razorpay] = await Promise.all([api.orders.payment(order.number, guestAccessToken), loadRazorpay()])
+      if (payment.provider !== 'razorpay') {
+        setPaymentNotice('Online payment is not available for this order.')
+        setPaying(false)
+        return
+      }
+      const checkout = new Razorpay({
+        key: payment.publicKey,
+        amount: payment.amount,
+        currency: payment.currency,
+        name: 'Elegant Sip',
+        description: `Order ${order.number}`,
+        order_id: payment.gatewayOrderId,
+        prefill: { name: order.shipping.name, email: order.email.endsWith('.invalid') ? undefined : order.email },
+        theme: { color: '#4a7333' },
+        handler: (response) => {
+          succeeded = true
+          void api.orders
+            .verifyPayment(order.number, response, guestAccessToken)
+            .then(({ status }) => {
+              if (status === 'paid') setOrder({ ...order, status: 'paid', paidAt: new Date().toISOString() })
+              else setPaymentNotice('Payment received and waiting for your bank to confirm. This page will update shortly.')
+            })
+            .catch((cause) => setPaymentNotice(cause instanceof ApiClientError ? cause.message : 'We could not confirm the payment yet. If you were charged, this page will update shortly.'))
+            .finally(() => setPaying(false))
+        },
+        modal: { ondismiss: () => { if (!succeeded) setPaying(false) } },
+      })
+      checkout.on('payment.failed', (response) => {
+        setPaymentNotice(`Payment failed: ${response.error?.description ?? 'the payment was declined'}. You can try again.`)
+      })
+      checkout.open()
+    } catch (cause) {
+      setPaying(false)
+      setPaymentNotice(cause instanceof ApiClientError ? cause.message : cause instanceof Error ? cause.message : 'Payment could not open.')
+    }
+  }
+
   const printInvoice = async () => {
     setLoadingInvoice(true)
     try {
@@ -130,8 +179,24 @@ export default function OrderPage({ id }: { id?: string }) {
         </div>
 
         {order.status === 'pending_payment' && (
-          <p className="mb-6 rounded-lg border border-[#b0782e]/30 bg-[#b0782e]/8 px-4 py-3 text-xs text-[#4a584a]">
-            Payment is awaiting secure confirmation. This page refreshes automatically while it is open.
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border border-[#b0782e]/30 bg-[#b0782e]/8 px-4 py-3 text-xs text-[#4a584a] sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              This order is awaiting payment. If you have already paid, it will update here shortly; otherwise pay now
+              to keep your teas — unpaid orders are released after a short while.
+            </p>
+            <button
+              type="button"
+              onClick={() => void payNow()}
+              disabled={paying}
+              className="shrink-0 rounded-lg bg-[#1b261b] px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#4a7333] disabled:opacity-60"
+            >
+              {paying ? 'Opening…' : `Pay now · ${formatINR(order.total)}`}
+            </button>
+          </div>
+        )}
+        {paymentNotice && (
+          <p role="status" className="mb-6 rounded-lg border border-[#1b261b]/10 bg-white px-4 py-3 text-xs text-[#4a584a]">
+            {paymentNotice}
           </p>
         )}
 

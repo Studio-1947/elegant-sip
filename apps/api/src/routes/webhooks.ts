@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.js'
@@ -8,8 +8,7 @@ import { applyTracking } from '../lib/fulfilment.js'
 import { parseProviderDate } from '../lib/shipping.js'
 import { env, isProduction } from '../env.js'
 import { getGateway } from '../lib/gateway.js'
-import { capturePayment } from '../lib/capture.js'
-import { releaseStock } from './orders.js'
+import { capturePayment, recordCaptureOnClosedOrder } from '../lib/capture.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Payment webhooks.
@@ -142,6 +141,18 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
             )
           }
 
+          if (order.status === 'cancelled' || order.status === 'refunded') {
+            await recordCaptureOnClosedOrder(
+              {
+                orderNumber: order.number,
+                paymentRowId: paymentRow.id,
+                paymentId: parsed.payment.paymentId,
+                method: parsed.payment.method,
+              },
+              request.log,
+            )
+            return finish('refund_required', `Payment captured for ${order.status} order ${order.number}; refund it`)
+          }
           // Already paid — a legitimate re-delivery, or the checkout verify
           // endpoint got there first.
           if (order.status !== 'pending_payment') return finish('already_paid')
@@ -160,23 +171,15 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
         }
 
         case 'payment.failed': {
-          if (order.status === 'pending_payment') {
-            const cancelled = await db.transaction(async (tx) => {
-              const transitioned = await tx
-                .update(orders)
-                .set({ status: 'cancelled', cancelledAt: new Date() })
-                .where(and(eq(orders.id, order.id), eq(orders.status, 'pending_payment')))
-                .returning({ id: orders.id })
-              if (transitioned.length === 0) return false
-              await tx.update(payments).set({ status: 'failed' }).where(eq(payments.id, paymentRow.id))
-              return true
-            })
-            if (cancelled) {
-              // Put the reserved packs back on the shelf.
-              await releaseStock(order.id)
-            }
-          }
-          return finish('order_cancelled')
+          /* One failed attempt is not a failed order. Razorpay keeps the same
+             gateway order open and lets the customer retry with another card
+             or UPI app, and "Pay now" on the order page reuses it too. So the
+             order stays pending and its stock stays held; if no attempt
+             succeeds, the pending-payment expiry sweep releases it. Cancelling
+             here used to turn a successful retry into money taken for a
+             cancelled order. */
+          request.log.info({ orderNumber: order.number, paymentId: parsed.payment.paymentId }, 'payment attempt failed')
+          return finish('attempt_failed')
         }
 
         default:

@@ -72,7 +72,14 @@ export async function buildApp(): Promise<FastifyInstance> {
    */
   app.decorateRequest('session', null)
   app.addHook('onRequest', async (request) => {
-    request.session = await readSession(request.cookies[SESSION_COOKIE])
+    try {
+      request.session = await readSession(request.cookies[SESSION_COOKIE])
+    } catch (err) {
+      // Redis down: treat the visitor as signed out rather than failing every
+      // request, so the catalogue and health checks keep working.
+      request.log.error({ err }, 'session store unavailable')
+      request.session = null
+    }
   })
 
   await app.register(cors, {

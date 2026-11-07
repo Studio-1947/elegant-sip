@@ -4,7 +4,27 @@ import { z } from 'zod'
 import { paiseSchema, problemSchema, slugSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { productVariants, products, reviews } from '../db/schema.js'
-import { adminAuditEvents, orders, returnRequests, stockLedger } from '../db/schema-commerce.js'
+import { adminAuditEvents, orders, returnRequests, stockLedger, users } from '../db/schema-commerce.js'
+import { releaseOrderHoldings } from './orders.js'
+
+/** The status changes staff may make by hand. Anything else is a 409. */
+const STAFF_TRANSITIONS: Record<string, readonly string[]> = {
+  pending_payment: ['cancelled'],
+  paid: ['packed', 'shipped', 'cancelled'],
+  packed: ['shipped', 'cancelled'],
+  shipped: ['delivered'],
+}
+
+/** Cancels an order and returns its stock and coupon use, once. False if it had already moved on. */
+async function cancelOrderAndRelease(orderId: string, fromStatuses: string[], note: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [locked] = await tx.select({ status: orders.status }).from(orders).where(eq(orders.id, orderId)).for('update')
+    if (!locked || !fromStatuses.includes(locked.status)) return false
+    await tx.update(orders).set({ status: 'cancelled', cancelledAt: new Date() }).where(eq(orders.id, orderId))
+    await releaseOrderHoldings(tx, orderId, note)
+    return true
+  })
+}
 import { ApiError } from '../lib/problem.js'
 import { adminProductRoutes } from './admin-products.js'
 import { adminShippingRoutes } from './admin-shipping.js'
@@ -28,7 +48,11 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     if (!request.session) {
       throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in to continue.')
     }
-    if (request.session.role !== 'admin') {
+    /* The role is read from the database, not the session: a session carries
+       the role it was created with for 30 days, so a demoted member of staff
+       would otherwise keep admin access until it expired. */
+    const actor = await db.query.users.findFirst({ where: eq(users.id, request.session.userId), columns: { role: true } })
+    if (actor?.role !== 'admin') {
       // 403, not 404: the caller is authenticated and simply lacks the role.
       throw new ApiError(403, 'forbidden', 'Not permitted', 'This area is restricted to shop staff.')
     }
@@ -144,6 +168,20 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       const allowed = (item.status === 'requested' && (status === 'approved' || status === 'rejected')) || (item.status === 'approved' && status === 'received')
       if (!allowed) throw ApiError.conflict('invalid_return_transition', `Cannot change a ${item.status} request to ${status}.`)
       let restocked = false
+      /* Approving a cancellation cancels the order and returns its stock. Once
+         the parcel has left, it can only come back as a return. Any refund is
+         issued from the Razorpay dashboard. */
+      if (item.type === 'cancellation' && status === 'approved') {
+        if (!['paid', 'packed'].includes(item.order.status)) {
+          throw ApiError.conflict(
+            'order_already_dispatched',
+            `This order is ${item.order.status}. Reject the cancellation and handle it as a return instead.`,
+          )
+        }
+        const cancelled = await cancelOrderAndRelease(item.order.id, ['paid', 'packed'], `Cancellation request ${item.id} approved`)
+        if (!cancelled) throw ApiError.conflict('order_changed', 'The order changed while you were reviewing it. Reload and try again.')
+        restocked = true
+      }
       await db.transaction(async (tx) => {
         await tx.update(returnRequests).set({ status, staffNote: staffNote ?? item.staffNote, ...(status === 'approved' || status === 'rejected' ? { decidedAt: new Date() } : {}), ...(status === 'received' ? { receivedAt: new Date() } : {}) }).where(eq(returnRequests.id, item.id))
         // Only inspected, accepted physical returns go back into available stock.
@@ -222,7 +260,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
           trackingCarrier: z.string().trim().max(60).optional(),
           trackingNumber: z.string().trim().max(60).optional(),
         }),
-        response: { 200: z.object({ ok: z.literal(true), notified: z.boolean() }), 404: problemSchema },
+        response: { 200: z.object({ ok: z.literal(true), notified: z.boolean() }), 404: problemSchema, 409: problemSchema },
       },
     },
     async (request) => {
@@ -230,6 +268,25 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!order) throw ApiError.notFound(`Order ${request.params.number}`)
 
       const { status, trackingCarrier, trackingNumber } = request.body
+      if (status && status !== order.status && !STAFF_TRANSITIONS[order.status]?.includes(status)) {
+        throw ApiError.conflict(
+          'invalid_status_change',
+          `A ${order.status.replaceAll('_', ' ')} order cannot be marked ${status}.`,
+        )
+      }
+
+      /* Cancelling returns the held stock and coupon use in the same
+         transaction. A paid order's refund is issued from the Razorpay
+         dashboard. */
+      if (status === 'cancelled' && order.status !== 'cancelled') {
+        const cancelled = await cancelOrderAndRelease(order.id, [order.status], 'Cancelled by staff')
+        if (!cancelled) throw ApiError.conflict('order_changed', 'The order changed while you were updating it. Reload and try again.')
+        if (order.status !== 'pending_payment') {
+          request.log.warn({ orderNumber: order.number }, 'paid order cancelled by staff: refund it in the gateway dashboard')
+        }
+        return { ok: true as const, notified: false }
+      }
+
       await db
         .update(orders)
         .set({

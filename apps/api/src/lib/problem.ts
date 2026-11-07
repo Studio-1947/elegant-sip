@@ -100,6 +100,23 @@ export function registerErrorHandler(app: FastifyInstance) {
       return reply.status(error.status).send(problem)
     }
 
+    /* A unique constraint lost a race: two identical requests at once (a
+       double-clicked checkout with the same idempotency key, say). That is a
+       conflict to retry, not a server fault. Drizzle wraps the driver error. */
+    const pgCode =
+      (error as { code?: unknown }).code ?? (error as { cause?: { code?: unknown } }).cause?.code
+    if (pgCode === '23505') {
+      request.log.warn({ err: error }, 'unique constraint conflict')
+      const problem: Problem = {
+        type: 'conflict',
+        title: 'Conflict',
+        status: 409,
+        detail: 'That request was already being processed. Please wait a moment and try again.',
+        requestId: request.id,
+      }
+      return reply.status(409).send(problem)
+    }
+
     // Rate limiting and other Fastify-native errors carry their own status.
     const status = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500
     if (status >= 500) request.log.error({ err: error }, 'unhandled error')

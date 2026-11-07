@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm'
 import { buildApp } from '../app.js'
 import { db, sql } from '../db/client.js'
 import { productVariants, products } from '../db/schema.js'
-import { orders, stockLedger } from '../db/schema-commerce.js'
+import { orders, stockLedger, users } from '../db/schema-commerce.js'
 import { FakeGateway } from '../lib/gateway.js'
 import { redis } from '../lib/sessions.js'
 import { expirePendingOrders } from './orders.js'
@@ -89,8 +89,18 @@ const order = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+/* Checkout keeps its own 20-a-minute limit per address even under test, so
+   each call comes from a fresh address; otherwise the file's length decides
+   which test hits 429. */
+let checkoutCount = 0
 const checkout = (payload = order(), headers: Record<string, string> = {}) =>
-  app.inject({ method: 'POST', url: '/v1/orders', headers: { cookie: buyerCookie, ...headers }, payload })
+  app.inject({
+    method: 'POST',
+    url: '/v1/orders',
+    headers: { cookie: buyerCookie, ...headers },
+    payload,
+    remoteAddress: `10.20.${Math.floor(++checkoutCount / 250)}.${checkoutCount % 250}`,
+  })
 
 describe('checkout', () => {
   it('prices from the catalogue and ignores any price sent by the client', async () => {
@@ -186,8 +196,8 @@ describe('checkout', () => {
     expect((await stockFor(SLUG)).stock).toBe(before.stock - 2)
 
     await db.update(orders).set({ placedAt: new Date(Date.now() - 31 * 60_000) }).where(eq(orders.number, placed.number))
-    expect(await expirePendingOrders(new Date(Date.now() - 30 * 60_000))).toBe(1)
-    expect(await expirePendingOrders(new Date(Date.now() - 30 * 60_000))).toBe(0)
+    expect(await expirePendingOrders(new Date(Date.now() - 30 * 60_000), app.log)).toBe(1)
+    expect(await expirePendingOrders(new Date(Date.now() - 30 * 60_000), app.log)).toBe(0)
 
     const expired = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
     expect(expired?.status).toBe('cancelled')
@@ -352,14 +362,11 @@ describe('checkout', () => {
     expect(res.statusCode).toBe(404)
   })
 
-  it('returns stock when a payment fails', async () => {
+  it('keeps the order payable after one failed attempt, so a retry can still succeed', async () => {
     if (!available) return
     const before = await stockFor(SLUG)
     const created = await checkout()
     const { order: placed, payment } = created.json()
-
-    const reserved = await stockFor(SLUG)
-    expect(reserved.stock).toBe(before.stock - 2)
 
     const failure = JSON.stringify({
       event: 'payment.failed',
@@ -374,9 +381,102 @@ describe('checkout', () => {
       headers: { 'content-type': 'application/json', 'x-razorpay-signature': signature },
       payload: failure,
     })
-    expect(res.json().status).toBe('order_cancelled')
+    expect(res.json().status).toBe('attempt_failed')
 
-    const restored = await stockFor(SLUG)
-    expect(restored.stock).toBe(before.stock)
+    // Still pending, stock still held for the retry.
+    const row = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+    expect(row?.status).toBe('pending_payment')
+    expect((await stockFor(SLUG)).stock).toBe(before.stock - 2)
+
+    // The customer retries in the same Razorpay window and it succeeds.
+    const retry = new FakeGateway().simulatePayment(payment.gatewayOrderId, placed.total)
+    const paid = await app.inject({
+      method: 'POST',
+      url: '/v1/webhooks/razorpay',
+      headers: { 'content-type': 'application/json', 'x-razorpay-signature': retry.signature },
+      payload: retry.body,
+    })
+    expect(paid.json().status).toBe('order_paid')
+  })
+
+  it('lets staff cancel an unpaid order only through valid transitions, returning its stock', async () => {
+    if (!available) return
+    const before = await stockFor(SLUG)
+    const placed = (await checkout()).json().order
+    const row = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+    await db.update(users).set({ role: 'admin' }).where(eq(users.id, row!.userId!))
+    const patch = (status: string) =>
+      app.inject({ method: 'PATCH', url: `/v1/admin/orders/${placed.number}`, headers: { cookie: buyerCookie }, payload: { status } })
+
+    expect((await patch('shipped')).statusCode).toBe(409)
+    expect((await patch('cancelled')).statusCode).toBe(200)
+    expect((await stockFor(SLUG)).stock).toBe(before.stock)
+    // A second cancel is not a second release.
+    expect((await patch('cancelled')).statusCode).toBe(200)
+    expect((await stockFor(SLUG)).stock).toBe(before.stock)
+
+    // Admin rights follow the database, not the role frozen into the session.
+    await db.update(users).set({ role: 'customer' }).where(eq(users.id, row!.userId!))
+    expect((await patch('cancelled')).statusCode).toBe(403)
+  })
+
+  it('flags a payment that lands after the order expired instead of ignoring it', async () => {
+    if (!available) return
+    const created = await checkout()
+    const { order: placed, payment } = created.json()
+    await expirePendingOrders(new Date(Date.now() + 60_000), app.log)
+
+    const late = new FakeGateway().simulatePayment(payment.gatewayOrderId, placed.total)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/webhooks/razorpay',
+      headers: { 'content-type': 'application/json', 'x-razorpay-signature': late.signature },
+      payload: late.body,
+    })
+    expect(res.json().status).toBe('refund_required')
+    const row = await db.query.orders.findFirst({ where: eq(orders.number, placed.number), with: { payments: true } })
+    expect(row?.status).toBe('cancelled')
+    expect(row?.payments[0]?.status).toBe('captured')
+  })
+
+  it('captures instead of expiring when the customer paid but no confirmation arrived', async () => {
+    if (!available) return
+    const before = await stockFor(SLUG)
+    const { order: placed, payment } = (await checkout()).json()
+    // Paid at Razorpay, but the tab closed and the webhook never came.
+    new FakeGateway().simulateCheckout(payment.gatewayOrderId, placed.total, 'captured')
+
+    expect(await expirePendingOrders(new Date(Date.now() + 60_000), app.log)).toBe(0)
+    const row = await db.query.orders.findFirst({ where: eq(orders.number, placed.number), with: { payments: true } })
+    expect(row?.status).toBe('paid')
+    expect(row?.payments[0]?.status).toBe('captured')
+    expect((await stockFor(SLUG)).stock).toBe(before.stock - 2)
+  })
+
+  it('keeps an order while the gateway cannot be asked, and expires it once it can', async () => {
+    if (!available) return
+    const before = await stockFor(SLUG)
+    const placed = (await checkout()).json().order
+    FakeGateway.lookupsFail = true
+    try {
+      expect(await expirePendingOrders(new Date(Date.now() + 60_000), app.log)).toBe(0)
+      const held = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+      expect(held?.status).toBe('pending_payment')
+    } finally {
+      FakeGateway.lookupsFail = false
+    }
+    expect(await expirePendingOrders(new Date(Date.now() + 60_000), app.log)).toBe(1)
+    const expired = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+    expect(expired?.status).toBe('cancelled')
+    expect((await stockFor(SLUG)).stock).toBe(before.stock)
+  })
+
+  it('still expires an order whose only payment was authorized but never captured', async () => {
+    if (!available) return
+    const { order: placed, payment } = (await checkout()).json()
+    new FakeGateway().simulateCheckout(payment.gatewayOrderId, placed.total, 'authorized')
+    expect(await expirePendingOrders(new Date(Date.now() + 60_000), app.log)).toBe(1)
+    const row = await db.query.orders.findFirst({ where: eq(orders.number, placed.number) })
+    expect(row?.status).toBe('cancelled')
   })
 })

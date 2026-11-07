@@ -17,7 +17,8 @@
 2. On the VPS, copy `.env.prod.example` to `.env` and set a strong
    `POSTGRES_PASSWORD` plus any approved SMTP, payment, and GST values.
 3. Run `docker compose -f docker-compose.prod.yml up -d --build`.
-4. Verify `/api/health` and `/api/docs` through the HTTPS domain.
+4. Verify `/api/health` and `/api/ready` through the HTTPS domain. `/api/docs`
+   returns 404 unless `API_DOCS_ENABLED=true` (off by default in production).
 
 Do not attempt an SSH deployment unless the user explicitly requests it and
 provides authentication through an approved secure channel.

@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import type { FastifyBaseLogger } from 'fastify'
 import { db } from '../db/client.js'
 import { orders, payments } from '../db/schema-commerce.js'
@@ -53,4 +53,24 @@ export async function capturePayment(
 
   log.info({ orderNumber: input.orderNumber }, 'order paid')
   return true
+}
+
+/**
+ * Money arrived for an order that had already been cancelled (usually the
+ * pending-payment hold expired first). The stock is gone, so the order is not
+ * revived. The capture is recorded on the payment row so the money is visible
+ * to staff, and it is logged at error level: a refund is owed.
+ */
+export async function recordCaptureOnClosedOrder(
+  input: { orderNumber: string; paymentRowId: string; paymentId: string; method?: string | null },
+  log: FastifyBaseLogger,
+): Promise<void> {
+  await db
+    .update(payments)
+    .set({ status: 'captured', providerPaymentId: input.paymentId, method: input.method ?? null, capturedAt: new Date() })
+    .where(and(eq(payments.id, input.paymentRowId), ne(payments.status, 'refunded')))
+  log.error(
+    { orderNumber: input.orderNumber, paymentId: input.paymentId },
+    'REFUND REQUIRED: payment captured for an order that was already cancelled',
+  )
 }

@@ -173,7 +173,7 @@ export default defineConfig({
         configure: (proxy) => {
           proxy.on('error', (err, _req, res) => {
             if (res && 'writeHead' in res && !('headersSent' in res && res.headersSent)) {
-              (res as any).writeHead(502, { 'Content-Type': 'application/json' })
+              ;(res as import('node:http').ServerResponse).writeHead(502, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: 'API Offline', message: err.message }))
             }
           })

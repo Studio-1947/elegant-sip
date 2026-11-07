@@ -52,6 +52,12 @@ export interface PaymentGateway {
   verifyCheckoutSignature(response: CheckoutResponse): boolean
   /** Asks the gateway directly for a payment's state. Null when it does not exist. */
   fetchPayment(paymentId: string): Promise<GatewayPaymentStatus | null>
+  /**
+   * Every payment attempt made against one gateway order, as the gateway
+   * reports it. Used to reconcile before an unpaid order is expired, in case
+   * the webhook and the browser verify call were both lost.
+   */
+  fetchOrderPayments(gatewayOrderId: string): Promise<GatewayPaymentStatus[]>
   /** Constant-time signature check over the raw request body. */
   verifyWebhook(rawBody: string, signature: string | undefined): boolean
   /** Normalises a provider payload into the shape the handler needs. */
@@ -86,6 +92,8 @@ class RazorpayGateway implements PaymentGateway {
         receipt: input.receipt,
         notes: input.notes,
       }),
+      // Called inside the checkout transaction, which holds stock row locks.
+      signal: AbortSignal.timeout(15_000),
     })
     if (!response.ok) {
       const detail = await response.text()
@@ -118,6 +126,27 @@ class RazorpayGateway implements PaymentGateway {
       status: GatewayPaymentStatus['status']
     }
     return { paymentId: body.id, orderId: body.order_id, amount: body.amount, method: body.method, status: body.status }
+  }
+
+  async fetchOrderPayments(gatewayOrderId: string): Promise<GatewayPaymentStatus[]> {
+    const auth = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64')
+    const response = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(gatewayOrderId)}/payments`, {
+      headers: { Authorization: `Basic ${auth}` },
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!response.ok) {
+      throw new Error(`Razorpay order payments lookup failed (${response.status}): ${await response.text()}`)
+    }
+    const body = (await response.json()) as {
+      items?: { id: string; order_id: string; amount: number; method?: string; status: GatewayPaymentStatus['status'] }[]
+    }
+    return (body.items ?? []).map((p) => ({
+      paymentId: p.id,
+      orderId: p.order_id,
+      amount: p.amount,
+      method: p.method,
+      status: p.status,
+    }))
   }
 
   verifyWebhook(rawBody: string, signature: string | undefined): boolean {
@@ -175,8 +204,16 @@ export class FakeGateway implements PaymentGateway {
     return safeCompare(expected, signature)
   }
 
+  /** Test seam: makes order-payment lookups fail, as if the gateway were unreachable. */
+  static lookupsFail = false
+
   async fetchPayment(paymentId: string): Promise<GatewayPaymentStatus | null> {
     return FakeGateway.payments.get(paymentId) ?? null
+  }
+
+  async fetchOrderPayments(gatewayOrderId: string): Promise<GatewayPaymentStatus[]> {
+    if (FakeGateway.lookupsFail) throw new Error('fake gateway unreachable')
+    return [...FakeGateway.payments.values()].filter((p) => p.orderId === gatewayOrderId)
   }
 
   /** What the browser checkout hands back after a successful payment. */

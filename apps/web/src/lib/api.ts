@@ -383,6 +383,11 @@ export const api = {
       request<OrderView>(`/v1/orders/${encodeURIComponent(number)}`, {
         ...(guestAccessToken ? { headers: { 'X-Order-Access-Token': guestAccessToken } } : {}),
       }),
+    /** The gateway handle for an order still awaiting payment, to reopen Razorpay. */
+    payment: (number: string, guestAccessToken?: string | null) =>
+      request<PlaceOrderResult['payment']>(`/v1/orders/${encodeURIComponent(number)}/payment`, {
+        ...(guestAccessToken ? { headers: { 'X-Order-Access-Token': guestAccessToken } } : {}),
+      }),
     /** Sends Razorpay checkout's success response to the server for signature and capture checks. */
     verifyPayment: (
       number: string,

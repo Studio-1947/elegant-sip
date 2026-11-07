@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -7,7 +6,8 @@ import { db } from '../db/client.js'
 import { orders, payments } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import { getGateway } from '../lib/gateway.js'
-import { capturePayment } from '../lib/capture.js'
+import { capturePayment, recordCaptureOnClosedOrder } from '../lib/capture.js'
+import { guestAccessMatches } from './orders.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Checkout payment verification.
@@ -62,11 +62,9 @@ export const paymentRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!order) throw ApiError.notFound('That order')
 
       // Same access rule as reading the order: its account, or a guest holding the checkout token.
-      const token = request.headers['x-order-access-token']
-      const suppliedHash = typeof token === 'string' ? createHash('sha256').update(token).digest('hex') : null
       const permitted =
-        request.session?.userId === order.userId ||
-        (order.userId === null && suppliedHash === order.guestAccessTokenHash)
+        (order.userId !== null && request.session?.userId === order.userId) ||
+        guestAccessMatches(order, request.headers['x-order-access-token'])
       if (!permitted) throw ApiError.notFound('That order')
 
       const { razorpay_order_id: gatewayOrderId, razorpay_payment_id: paymentId, razorpay_signature: signature } =
@@ -84,15 +82,6 @@ export const paymentRoutes: FastifyPluginAsyncZod = async (app) => {
       }
 
       if (PAID_STATUSES.has(order.status)) return { status: 'paid' as const }
-      if (order.status !== 'pending_payment') {
-        // Money arrived for an order that already expired or was cancelled. It
-        // needs a refund, so say so loudly rather than quietly reviving it.
-        request.log.error({ orderNumber: order.number, paymentId }, 'payment received for a non-pending order')
-        throw ApiError.conflict(
-          'order_not_payable',
-          'This order was cancelled before payment completed. Contact us and we will refund you.',
-        )
-      }
 
       let payment
       try {
@@ -110,6 +99,21 @@ export const paymentRoutes: FastifyPluginAsyncZod = async (app) => {
           'checkout payment amount does not match order total',
         )
         throw ApiError.badRequest('The payment amount does not match this order.')
+      }
+
+      if (order.status !== 'pending_payment') {
+        // Money arrived for an order that already expired or was cancelled. It
+        // needs a refund, so record it and say so rather than quietly reviving it.
+        if (payment.status === 'captured') {
+          await recordCaptureOnClosedOrder(
+            { orderNumber: order.number, paymentRowId: paymentRow.id, paymentId, method: payment.method },
+            request.log,
+          )
+        }
+        throw ApiError.conflict(
+          'order_not_payable',
+          'This order was cancelled before payment completed. Contact us and we will refund you.',
+        )
       }
 
       if (payment.status === 'authorized') return { status: 'pending' as const }

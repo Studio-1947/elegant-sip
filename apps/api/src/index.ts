@@ -44,7 +44,7 @@ try {
   const expireOrders = async () => {
     const cutoff = new Date(Date.now() - env.PENDING_PAYMENT_TTL_MINUTES * 60_000)
     try {
-      const expired = await expirePendingOrders(cutoff)
+      const expired = await expirePendingOrders(cutoff, app.log)
       if (expired > 0) app.log.info({ expired }, 'expired pending-payment orders')
     } catch (err) {
       // A later interval retries; never let a maintenance task take checkout down.

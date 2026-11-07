@@ -31,6 +31,8 @@ export interface EmailMessage {
   /** Rendered as a definition list — order summaries, tracking details. */
   facts?: [string, string][]
   footnote?: string
+  /** Where a reply should go, e.g. the customer who used the contact form. */
+  replyTo?: string
 }
 
 const BRAND = '#1b261b'
@@ -129,6 +131,7 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
     const info = await transport.sendMail({
       from: env.MAIL_FROM,
       to: message.to,
+      ...(message.replyTo ? { replyTo: message.replyTo } : {}),
       subject: message.subject,
       text,
       html,

@@ -71,6 +71,10 @@ services:
       SITE_URL: ${SITE_URL}
       SMTP_URL: ${SMTP_URL:-}
       MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.in>}
+      CONTACT_INBOX: ${CONTACT_INBOX:-elegantsipdarjeeling@gmail.com}
+      # How long an unpaid checkout holds stock, and how often that is checked.
+      PENDING_PAYMENT_TTL_MINUTES: ${PENDING_PAYMENT_TTL_MINUTES:-30}
+      ORDER_EXPIRY_SWEEP_SECONDS: ${ORDER_EXPIRY_SWEEP_SECONDS:-60}
       # `disabled` makes this a safe read-only catalogue until live Razorpay
       # credentials are available; it never creates an order or reserves stock.
       PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-disabled}

@@ -202,6 +202,8 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
       const { name, email, subject, message } = request.body
       const result = await sendEmail({
         to: env.CONTACT_INBOX,
+        // Hitting Reply in the shop inbox answers the customer, not the shop itself.
+        replyTo: email,
         subject: `[${subject}] from ${name}`,
         heading: 'New message from the site',
         body: [message],

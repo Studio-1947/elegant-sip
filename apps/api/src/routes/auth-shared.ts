@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, gt, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db/client.js'
 import { authTokens } from '../db/schema-commerce.js'
@@ -112,16 +112,20 @@ export async function issueToken(userId: string, purpose: TokenPurpose): Promise
 
 export async function consumeToken(token: string, purpose: TokenPurpose): Promise<string | null> {
   const tokenHash = createHash('sha256').update(token).digest('hex')
-  const row = await db.query.authTokens.findFirst({
-    where: and(
-      eq(authTokens.tokenHash, tokenHash),
-      eq(authTokens.purpose, purpose),
-      isNull(authTokens.consumedAt),
-    ),
-  })
-  if (!row || row.expiresAt.getTime() < Date.now()) return null
-  await db.update(authTokens).set({ consumedAt: new Date() }).where(eq(authTokens.id, row.id))
-  return row.userId
+  // One conditional UPDATE, so two simultaneous uses of a link cannot both succeed.
+  const [row] = await db
+    .update(authTokens)
+    .set({ consumedAt: new Date() })
+    .where(
+      and(
+        eq(authTokens.tokenHash, tokenHash),
+        eq(authTokens.purpose, purpose),
+        isNull(authTokens.consumedAt),
+        gt(authTokens.expiresAt, new Date()),
+      ),
+    )
+    .returning({ userId: authTokens.userId })
+  return row?.userId ?? null
 }
 
 /**

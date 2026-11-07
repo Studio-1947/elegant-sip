@@ -23,17 +23,24 @@ async function sendOtp(phone: string, code: string, challengeId: string) {
   if (env.AUTH_OTP_PROVIDER !== 'interakt' || !env.INTERAKT_API_KEY) {
     throw new ApiError(503, 'otp_unavailable', 'WhatsApp sign-in unavailable', 'WhatsApp sign-in is being prepared. Please use email and password for now.')
   }
+  const unavailable = () =>
+    new ApiError(503, 'otp_delivery_failed', 'WhatsApp sign-in unavailable', 'We could not send a WhatsApp code. Please try again shortly.')
   const result = await fetch(`${env.INTERAKT_API_BASE_URL.replace(/\/$/, '')}/message/`, {
     method: 'POST',
+    signal: AbortSignal.timeout(10_000),
     headers: { Authorization: `Basic ${env.INTERAKT_API_KEY}`, 'Content-Type': 'application/json' },
     // Interakt authentication templates require the exact same code in the
     // body and Copy Code / one-tap button value.
     body: JSON.stringify({ countryCode: '+91', phoneNumber: phone.slice(3), type: 'Template', callbackData: `otp:${challengeId}`, template: { name: env.INTERAKT_OTP_TEMPLATE, languageCode: env.INTERAKT_OTP_TEMPLATE_LANGUAGE, bodyValues: [code], buttonValues: { '0': [code] } } }),
+  }).catch((err: unknown) => {
+    // Timeout or network failure. Only the error name is logged, never the request.
+    console.warn(`[interakt] OTP template request did not complete (${err instanceof Error ? err.name : 'unknown error'})`)
+    throw unavailable()
   })
   if (!result.ok) {
     // No response body, API key, phone number, or OTP is ever logged.
     console.warn(`[interakt] OTP template request rejected (status=${result.status}, template=${env.INTERAKT_OTP_TEMPLATE})`)
-    throw new ApiError(503, 'otp_delivery_failed', 'WhatsApp sign-in unavailable', 'We could not send a WhatsApp code. Please try again shortly.')
+    throw unavailable()
   }
 }
 async function issue(userId: string | null, phone: string, purpose: 'phone_login' | 'phone_link') {

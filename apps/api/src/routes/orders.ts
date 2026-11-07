@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm'
+import type { FastifyBaseLogger } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import {
@@ -25,6 +26,7 @@ import {
 } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import { getGateway } from '../lib/gateway.js'
+import { capturePayment } from '../lib/capture.js'
 import { sendEmail } from '../lib/email.js'
 import { env, paymentsEnabled } from '../env.js'
 import { getInvoiceView } from '../lib/invoice.js'
@@ -118,6 +120,54 @@ const orderDto = z.object({
     .nullable(),
 })
 
+/**
+ * True only when a guest order's stored token hash matches a supplied token.
+ * Both sides must be present: an order whose account was deleted has a null
+ * user AND a null hash, and `null === null` must never grant access to it.
+ */
+export function guestAccessMatches(
+  order: { userId: string | null; guestAccessTokenHash: string | null },
+  token: unknown,
+): boolean {
+  if (order.userId !== null || !order.guestAccessTokenHash || typeof token !== 'string' || !token) return false
+  return createHash('sha256').update(token).digest('hex') === order.guestAccessTokenHash
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+/**
+ * Puts an order's reserved stock back on the shelf and frees its coupon use.
+ * Runs inside the caller's transaction, after the caller has moved the order
+ * out of its holding state, so a release can never happen twice.
+ */
+export async function releaseOrderHoldings(tx: Tx, orderId: string, note: string): Promise<void> {
+  const lines = await tx.select().from(orderItems).where(eq(orderItems.orderId, orderId))
+  for (const line of lines) {
+    if (!line.variantId) continue
+    await tx
+      .update(productVariants)
+      .set({ stock: sql`${productVariants.stock} + ${line.quantity}` })
+      .where(eq(productVariants.id, line.variantId))
+    await tx.insert(stockLedger).values({
+      variantId: line.variantId,
+      orderId,
+      delta: line.quantity,
+      reason: 'order_released',
+      note,
+    })
+  }
+  const redeemed = await tx
+    .delete(couponRedemptions)
+    .where(eq(couponRedemptions.orderId, orderId))
+    .returning({ couponId: couponRedemptions.couponId })
+  for (const { couponId } of redeemed) {
+    await tx
+      .update(coupons)
+      .set({ redemptionCount: sql`GREATEST(${coupons.redemptionCount} - 1, 0)` })
+      .where(eq(coupons.id, couponId))
+  }
+}
+
 /** ES-20260824-K3P9Q — date-prefixed and random, so it cannot collide. */
 function generateOrderNumber(): string {
   const d = new Date()
@@ -201,12 +251,8 @@ async function idempotentOrderResult(input: {
   })
   if (!row) return null
 
-  const guestHash = input.guestAccessToken
-    ? createHash('sha256').update(input.guestAccessToken).digest('hex')
-    : null
   const allowed =
-    (row.userId !== null && row.userId === input.userId) ||
-    (row.userId === null && guestHash !== null && guestHash === row.guestAccessTokenHash)
+    (row.userId !== null && row.userId === input.userId) || guestAccessMatches(row, input.guestAccessToken)
   if (!allowed) throw new ApiError(409, 'idempotency_conflict', 'Checkout conflict', 'This checkout key cannot be reused.')
 
   const payment = row.payments.find((p) => p.status === 'created') ?? row.payments[0]
@@ -373,7 +419,8 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         let discount = 0
         let appliedCoupon: { id: string; code: string } | null = null
         if (couponCode) {
-          const c = await tx.query.coupons.findFirst({ where: eq(coupons.code, couponCode) })
+          // Locked so two checkouts cannot both take the last redemption of a limited code.
+          const [c] = await tx.select().from(coupons).where(eq(coupons.code, couponCode)).for('update')
           const usable =
             c &&
             c.active &&
@@ -547,10 +594,8 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       })
       if (!row) throw ApiError.notFound(`Order ${request.params.number}`)
 
-      const ownedBySession = request.session?.userId === row.userId
-      const token = request.headers['x-order-access-token']
-      const suppliedHash = typeof token === 'string' ? createHash('sha256').update(token).digest('hex') : null
-      const hasGuestAccess = row.userId === null && suppliedHash === row.guestAccessTokenHash
+      const ownedBySession = row.userId !== null && request.session?.userId === row.userId
+      const hasGuestAccess = guestAccessMatches(row, request.headers['x-order-access-token'])
       if (!ownedBySession && !hasGuestAccess) {
         // Do not confirm whether a guessed number exists.
         throw ApiError.notFound('That order')
@@ -575,13 +620,62 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const order = await db.query.orders.findFirst({ where: eq(orders.number, request.params.number) })
       if (!order) throw ApiError.notFound(`Order ${request.params.number}`)
-      const token = request.headers['x-order-access-token']
-      const suppliedHash = typeof token === 'string' ? createHash('sha256').update(token).digest('hex') : null
-      const permitted = request.session?.userId === order.userId || (order.userId === null && suppliedHash === order.guestAccessTokenHash)
+      const permitted =
+        (order.userId !== null && request.session?.userId === order.userId) ||
+        guestAccessMatches(order, request.headers['x-order-access-token'])
       if (!permitted) throw ApiError.notFound('That order')
       const invoice = await getInvoiceView(order.id)
       if (!invoice) throw ApiError.notFound(`An invoice for ${request.params.number}`)
       return { invoice }
+    },
+  )
+
+  app.get(
+    '/orders/:number/payment',
+    {
+      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+      schema: {
+        tags: ['Orders'],
+        summary: 'Resume payment for an unpaid order',
+        description:
+          'Returns the gateway handle for an order still awaiting payment, so a customer who closed the payment window can pay from the order page before the hold expires.',
+        params: z.object({ number: z.string().min(3).max(40) }),
+        headers: z.object({ 'x-order-access-token': z.string().min(40).max(100).optional() }).passthrough(),
+        response: {
+          200: z.object({
+            provider: z.string(),
+            gatewayOrderId: z.string(),
+            amount: paiseSchema,
+            currency: z.string(),
+            publicKey: z.string(),
+          }),
+          404: problemSchema,
+          409: problemSchema,
+        },
+      },
+    },
+    async (request) => {
+      const order = await db.query.orders.findFirst({
+        where: eq(orders.number, request.params.number),
+        with: { payments: true },
+      })
+      if (!order) throw ApiError.notFound('That order')
+      const permitted =
+        (order.userId !== null && request.session?.userId === order.userId) ||
+        guestAccessMatches(order, request.headers['x-order-access-token'])
+      if (!permitted) throw ApiError.notFound('That order')
+      if (order.status !== 'pending_payment') {
+        throw ApiError.conflict('order_not_payable', 'This order is no longer awaiting payment.')
+      }
+      const payment = order.payments.find((p) => p.status === 'created')
+      if (!payment) throw ApiError.conflict('order_not_payable', 'This order has no open payment. Please place it again.')
+      return {
+        provider: payment.provider,
+        gatewayOrderId: payment.providerOrderId,
+        amount: payment.amount,
+        currency: payment.currency,
+        publicKey: payment.provider === 'razorpay' ? (env.RAZORPAY_KEY_ID ?? '') : 'rzp_test_fake',
+      }
     },
   )
 
@@ -618,7 +712,7 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
   await sendEmail({
     to: row.email,
     subject: `Order ${row.number} confirmed`,
-    heading: 'Your tea is on its way',
+    heading: 'Payment received — thank you',
     body: [
       `Thank you — we have your order and payment for ${row.number}.`,
       'We pack to order rather than from a warehouse shelf, so allow a day or two before the courier collects. You will get tracking as soon as it ships.',
@@ -633,40 +727,28 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
   })
 }
 
-/** Releases reserved stock when a payment fails or an order is cancelled. */
-export async function releaseStock(orderId: string, reason: 'order_released' = 'order_released'): Promise<void> {
-  const lines = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId))
-  await db.transaction(async (tx) => {
-    for (const l of lines) {
-      if (!l.variantId) continue
-      await tx
-        .update(productVariants)
-        .set({ stock: sql`${productVariants.stock} + ${l.quantity}` })
-        .where(eq(productVariants.id, l.variantId))
-      await tx.insert(stockLedger).values({
-        variantId: l.variantId,
-        orderId,
-        delta: l.quantity,
-        reason,
-      })
-    }
-  })
-}
-
 /**
  * Cancels abandoned checkouts and restores their reserved stock atomically.
+ * Each order is first checked with the gateway, so a payment whose webhook
+ * and browser confirmation were both lost is captured rather than cancelled.
  * The row lock and status re-check mean concurrent sweepers or a late gateway
  * callback cannot release the same order twice.
  */
-export async function expirePendingOrders(olderThan: Date, limit = 100): Promise<number> {
+export async function expirePendingOrders(olderThan: Date, log: FastifyBaseLogger, limit = 100): Promise<number> {
   const candidates = await db
-    .select({ id: orders.id })
+    .select({ id: orders.id, number: orders.number })
     .from(orders)
     .where(and(eq(orders.status, 'pending_payment'), lt(orders.placedAt, olderThan)))
     .limit(limit)
 
   let expired = 0
   for (const candidate of candidates) {
+    /* Ask the gateway first, outside any transaction so no row is locked
+       during the network call. If the webhook and the browser verify call
+       were both lost, this is the last chance to notice the customer paid. */
+    const outcome = await reconcileWithGateway(candidate, log)
+    if (outcome !== 'unpaid') continue
+
     const didExpire = await db.transaction(async (tx) => {
       const [order] = await tx
         .select({ id: orders.id, status: orders.status, placedAt: orders.placedAt })
@@ -685,26 +767,71 @@ export async function expirePendingOrders(olderThan: Date, limit = 100): Promise
         .set({ status: 'failed' })
         .where(and(eq(payments.orderId, order.id), eq(payments.status, 'created')))
 
-      const lines = await tx.select().from(orderItems).where(eq(orderItems.orderId, order.id))
-      for (const line of lines) {
-        if (!line.variantId) continue
-        await tx
-          .update(productVariants)
-          .set({ stock: sql`${productVariants.stock} + ${line.quantity}` })
-          .where(eq(productVariants.id, line.variantId))
-        await tx.insert(stockLedger).values({
-          variantId: line.variantId,
-          orderId: order.id,
-          delta: line.quantity,
-          reason: 'order_released',
-          note: 'Pending payment expired',
-        })
-      }
+      await releaseOrderHoldings(tx, order.id, 'Pending payment expired')
       return true
     })
     if (didExpire) expired += 1
   }
   return expired
+}
+
+/**
+ * Checks with the gateway whether an order that looks unpaid was in fact paid.
+ *
+ * - `paid`: a captured payment was found and the order is now paid.
+ * - `unknown`: the gateway could not be asked. The order is left alone and the
+ *   next sweep tries again, because cancelling a paid order is far worse than
+ *   holding stock for another minute.
+ * - `unpaid`: nothing was captured; the order may be expired.
+ */
+async function reconcileWithGateway(
+  order: { id: string; number: string },
+  log: FastifyBaseLogger,
+): Promise<'paid' | 'unknown' | 'unpaid'> {
+  const [payment] = await db
+    .select({ id: payments.id, provider: payments.provider, providerOrderId: payments.providerOrderId })
+    .from(payments)
+    .where(and(eq(payments.orderId, order.id), eq(payments.status, 'created')))
+    .limit(1)
+  if (!payment) return 'unpaid'
+
+  const gateway = getGateway()
+  // An order created under a different gateway (e.g. a test order after a
+  // switch to live keys) cannot be looked up with this one.
+  if (payment.provider !== gateway.name) return 'unpaid'
+
+  let attempts
+  try {
+    attempts = await gateway.fetchOrderPayments(payment.providerOrderId)
+  } catch (err) {
+    log.warn({ err, orderNumber: order.number }, 'could not check payment status before expiry; will retry')
+    return 'unknown'
+  }
+
+  const captured = attempts.find((attempt) => attempt.status === 'captured')
+  if (captured) {
+    const didCapture = await capturePayment(
+      {
+        orderId: order.id,
+        orderNumber: order.number,
+        paymentRowId: payment.id,
+        paymentId: captured.paymentId,
+        method: captured.method ?? null,
+      },
+      log,
+    )
+    if (didCapture) log.warn({ orderNumber: order.number }, 'payment found during expiry check; order marked paid')
+    // Either it is paid now, or something else (webhook, verify) got there first.
+    return 'paid'
+  }
+
+  if (attempts.some((attempt) => attempt.status === 'authorized')) {
+    log.warn(
+      { orderNumber: order.number },
+      'payment authorized but never captured; check that auto-capture is on in the Razorpay dashboard',
+    )
+  }
+  return 'unpaid'
 }
 
 /** True when a paid order from this customer contains the product. */
