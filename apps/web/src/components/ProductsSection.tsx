@@ -20,12 +20,16 @@ type SortValue = (typeof SORT_OPTIONS)[number]['value']
 
 interface ProductsSectionProps {
   showHeading?: boolean
+  /** h1 when the section is the page's main heading (e.g. /shop). */
+  headingLevel?: 'h1' | 'h2'
   showFilters?: boolean
   searchQuery?: string
 }
 
-export default function ProductsSection({ showHeading = true, showFilters = false, searchQuery = '' }: ProductsSectionProps) {
+export default function ProductsSection({ showHeading = true, headingLevel = 'h2', showFilters = false, searchQuery = '' }: ProductsSectionProps) {
   const { openQuiz } = useUi()
+  // Keep heading levels sequential below the section heading (no h1 → h3 skip).
+  const SubHeading = headingLevel === 'h1' ? 'h2' : 'h3'
   const [category, setCategory] = useState('All')
   const [sort, setSort] = useState<SortValue>('featured')
   const [search, setSearch] = useState(searchQuery)
@@ -60,7 +64,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
       {showHeading && (
         <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
           <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Single-Origin Darjeeling</span>
-          <BlurText as="h2" text="Our Collections" delay={120} className="justify-center text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-6" />
+          <BlurText as={headingLevel} text="Our Collections" delay={120} className="justify-center text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-6" />
           <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
             Hand-selected whole leaf teas sourced directly from estate gardens
             <span className="hidden md:inline"> and packaged to preserve complex terroir and freshness</span>.
@@ -77,7 +81,7 @@ export default function ProductsSection({ showHeading = true, showFilters = fals
             </svg>
           </div>
           <div>
-            <h3 className="text-xs font-mono font-bold tracking-wide uppercase text-[#1b261b]">Not sure where to begin?</h3>
+            <SubHeading className="text-xs font-mono font-bold tracking-wide uppercase text-[#1b261b]">Not sure where to begin?</SubHeading>
             <p className="text-[11px] text-[#4a584a] mt-0.5">
               Take the 10-second Taste Matcher<span className="hidden md:inline"> and we'll find your perfect cup</span>.
             </p>
