@@ -7,10 +7,10 @@ export default function ShippingReturnsPage() {
     'Shipping timelines and costs, and the 30-day Elegant Sip Promise on every pack.',
   )
   return (
-    <LegalLayout label="Support" title={<>Shipping & <span className="text-[#4a7333]">Returns</span></>} updated="August 19, 2026">
+    <LegalLayout label="Support" title={<>Shipping & <span className="text-[#4a7333]">Returns</span></>} updated="November 9, 2026">
       <Section title="Shipping within India">
         <p>
-          Standard delivery (2–4 business days) is ₹150, and free on orders of ₹4,000 or more.
+          Standard delivery (2–4 business days) is ₹30, and free on orders of ₹1,000 or more.
           Express delivery (1–2 business days) is ₹450. We pack to order rather than from a
           warehouse shelf, so allow a day or two for packing before the courier collects.
         </p>

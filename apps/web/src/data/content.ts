@@ -65,7 +65,7 @@ export const FAQS: Faq[] = [
     category: "Orders & Shipping",
     question: "How fast is shipping, and is it really free?",
     answer:
-      "Orders of ₹4,000 or more ship free within India. Standard delivery takes 2–4 business days for ₹150; express (1–2 business days) is ₹450. We pack to order rather than from a warehouse shelf, so allow a day or two for packing before the courier collects.",
+      "Orders of ₹1,000 or more ship free within India. Standard delivery takes 2–4 business days for ₹30; express (1–2 business days) is ₹450. We pack to order rather than from a warehouse shelf, so allow a day or two for packing before the courier collects.",
   },
   {
     category: "Orders & Shipping",

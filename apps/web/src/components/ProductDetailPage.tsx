@@ -5,7 +5,8 @@ import { api, type ReviewView } from '../lib/api'
 import { Link, navigate, useDocumentMeta, useJsonLd } from '../lib/router'
 import { useCart } from './CartContext'
 import { track } from '../lib/analytics'
-import { formatINR } from '../lib/currency'
+import { formatINR, RUPEE } from '../lib/currency'
+import PriceTag from './PriceTag'
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from '../lib/pricing'
 import { BRAND, absoluteUrl } from '../lib/site'
 import { productRouteMeta } from '../lib/seoRoutes'
@@ -76,7 +77,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
         image: getProductImages(product).map(absoluteUrl),
         url: absoluteUrl(`/product/${product.slug}`),
         sku: product.slug,
-        category: `Darjeeling ${product.category}`,
+        category: product.category === 'Herbal Tea' ? product.category : `Darjeeling ${product.category}`,
         itemCondition: 'https://schema.org/NewCondition',
         brand: { '@type': 'Brand', name: BRAND },
         ...(product.tastingNotes?.length
@@ -88,13 +89,13 @@ export default function ProductDetailPage({ id }: { id?: string }) {
             offers: {
               '@type': 'AggregateOffer',
               priceCurrency: 'INR',
-              lowPrice: Math.min(...product.variants.map((v) => v.price)),
-              highPrice: Math.max(...product.variants.map((v) => v.price)),
+              lowPrice: Math.min(...product.variants.map((v) => v.price)) / RUPEE,
+              highPrice: Math.max(...product.variants.map((v) => v.price)) / RUPEE,
               offerCount: product.variants.length,
               offers: product.variants.map((v) => ({
                 '@type': 'Offer',
                 priceCurrency: 'INR',
-                price: v.price,
+                price: v.price / RUPEE,
                 name: v.size,
                 sku: `${product.slug}--${v.size.split(' · ')[0].toLowerCase()}`,
                 url: absoluteUrl(`/product/${product.slug}`),
@@ -105,7 +106,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                   '@type': 'OfferShippingDetails',
                   shippingRate: {
                     '@type': 'MonetaryAmount',
-                    value: SHIPPING_METHODS[0].fee,
+                    value: SHIPPING_METHODS[0].fee / RUPEE,
                     currency: 'INR',
                   },
                   shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' },
@@ -269,9 +270,9 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 Coming Soon — arriving with the next harvest
               </p>
             ) : (
-              <div className="flex items-baseline gap-3 mb-6">
-                                <span className="text-3xl font-bold">{formatINR(activeVariant.price)}</span>
-                <span className="text-xs font-mono text-[#4a584a]">/ {activeVariant.size}</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-6">
+                <PriceTag price={activeVariant.price} compareAtPrice={activeVariant.compareAtPrice} size="page" />
+                <span className="text-xs font-mono text-[#4a584a]">/ {activeVariant.size} · incl. GST</span>
               </div>
             )}
 

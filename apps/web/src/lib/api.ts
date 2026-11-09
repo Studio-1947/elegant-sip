@@ -473,7 +473,7 @@ export const api = {
   },
 
   newsletter: {
-    subscribe: (email: string) => post<{ ok: true; welcomeCode: string }>('/v1/newsletter', { email }),
+    subscribe: (email: string) => post<{ ok: true; welcomeCode: string | null }>('/v1/newsletter', { email }),
   },
 
   contact: {

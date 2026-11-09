@@ -39,7 +39,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/shop': {
     title: pageTitle('Buy Darjeeling Tea Online'),
     description:
-      'Shop single-origin Darjeeling first flush tea: whole leaf, broken leaf, broken mixed and fannings. Free shipping over ₹4,000, packed close to harvest.',
+      'Shop single-origin Darjeeling first flush tea: whole leaf, broken leaf, broken mixed and fannings. Free shipping over ₹1,000, packed close to harvest.',
     priority: 0.9,
     changefreq: 'weekly',
     image: '/shopimg.webp',

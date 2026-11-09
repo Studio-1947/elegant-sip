@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { track } from '../lib/analytics'
+import { COUPONS_ENABLED } from '../lib/pricing'
 import { api, ApiClientError } from '../lib/api'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -45,22 +46,34 @@ export default function NewsletterSection() {
               </svg>
             </div>
             <h3 className="text-white text-2xl md:text-3xl font-bold uppercase tracking-tight mb-3">Welcome to the Circle</h3>
-            <p className="text-white/70 text-sm leading-relaxed mb-6">
-              You're in. Enjoy 10% off your first order with the code below — just enter it at checkout.
-            </p>
-            <p className="inline-block bg-[#8bb56e]/15 border border-[#8bb56e]/40 rounded-lg px-6 py-3 text-[#8bb56e] font-mono font-bold tracking-[0.2em] text-lg select-all">
-              WELCOME10
-            </p>
+            {COUPONS_ENABLED ? (
+              <>
+                <p className="text-white/70 text-sm leading-relaxed mb-6">
+                  You're in. Enjoy 10% off your first order with the code below — just enter it at checkout.
+                </p>
+                <p className="inline-block bg-[#8bb56e]/15 border border-[#8bb56e]/40 rounded-lg px-6 py-3 text-[#8bb56e] font-mono font-bold tracking-[0.2em] text-lg select-all">
+                  WELCOME10
+                </p>
+              </>
+            ) : (
+              <p className="text-white/70 text-sm leading-relaxed">
+                You're in. Every tea is already 25% off right now — no code needed.
+              </p>
+            )}
           </div>
         ) : (
           <div className="relative z-10">
             <span className="text-[#8bb56e] text-xs font-mono tracking-[0.3em] uppercase block mb-4">The Tea Circle</span>
             <h2 className="text-white text-3xl md:text-4xl font-bold uppercase tracking-tight mb-4">
-              First Taste of <span className="text-[#8bb56e]">10% Off</span>
+              {COUPONS_ENABLED ? (
+                <>First Taste of <span className="text-[#8bb56e]">10% Off</span></>
+              ) : (
+                <>Join the <span className="text-[#8bb56e]">Tea Circle</span></>
+              )}
             </h2>
             <p className="text-white/70 text-sm leading-relaxed mb-8 max-w-md mx-auto">
               Join the Tea Circle for early access to limited harvests, brewing notes from the
-              gardens, and 10% off your first order.
+              gardens{COUPONS_ENABLED ? ', and 10% off your first order' : ''}.
             </p>
             <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" noValidate>
               <label htmlFor="newsletter-email" className="sr-only">Email address</label>

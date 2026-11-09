@@ -12,10 +12,12 @@
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export {
+  COUPONS_ENABLED,
   FREE_SHIPPING_THRESHOLD,
   SHIPPING_METHODS,
   TAX_RATE,
   calculatePricing,
+  percentOff,
   getShippingMethod,
   toWholeRupees,
   type Pricing,

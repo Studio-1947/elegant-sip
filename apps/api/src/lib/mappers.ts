@@ -47,6 +47,7 @@ export function toProductDto(row: ProductRow): Product {
       id: v.id,
       size: v.size,
       price: v.price,
+      compareAtPrice: v.compareAtPrice,
       stock: v.stock,
       sku: v.sku,
     })),

@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import {
+  COUPONS_ENABLED,
   calculatePricing,
   couponDiscount,
   couponValidateRequestSchema,
@@ -36,6 +37,9 @@ type Adjustment = {
 
 async function resolveCoupon(code: string | undefined, subtotal: number) {
   if (!code) return { coupon: null, discount: 0, couponError: null }
+  if (!COUPONS_ENABLED) {
+    return { coupon: null, discount: 0, couponError: 'Coupons can’t be combined with the current 25% offer.' }
+  }
 
   const row = await db.query.coupons.findFirst({ where: eq(coupons.code, code) })
   if (!row || !row.active) {
@@ -78,8 +82,8 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
           'drop come back in `adjustments` — show them to the customer rather than silently',
           'reconciling.',
           '',
-          'GST is 18% on goods *and* shipping, rounded to a whole rupee by the same shared rule',
-          'the storefront uses for display.',
+          'Prices and shipping are GST-inclusive (5%). `tax` is the GST contained in the total,',
+          'rounded to a whole rupee by the same shared rule the storefront uses for display.',
         ].join('\n'),
         body: pricingQuoteRequestSchema,
         response: { 200: pricingQuoteResponseSchema, 400: problemSchema },

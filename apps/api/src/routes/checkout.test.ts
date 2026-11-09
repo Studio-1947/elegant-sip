@@ -114,10 +114,10 @@ describe('checkout', () => {
 
     expect(res.statusCode).toBe(200)
     const body = res.json()
-    // ₹100 × 2 = ₹200 goods, ₹150 shipping, 5% of ₹350 = ₹17.50 → ₹18 rounded.
+    // ₹100 × 2 = ₹200 goods + ₹30 shipping = ₹230, GST-inclusive (₹11 of it is GST).
     expect(body.order.subtotal).toBe(before.price * 2)
-    expect(body.order.shippingFee).toBe(15000)
-    expect(body.order.total).toBe(body.order.subtotal + body.order.shippingFee + body.order.tax)
+    expect(body.order.shippingFee).toBe(3000)
+    expect(body.order.total).toBe(body.order.subtotal + body.order.shippingFee)
     expect(body.order.status).toBe('pending_payment')
     expect(body.order.billing).toMatchObject({ name: 'Invoice Buyer', line1: '8 Chowrasta Road' })
     // Every total lands on a whole rupee.
@@ -218,7 +218,7 @@ describe('checkout', () => {
 
   it('rejects a coming-soon product', async () => {
     if (!available) return
-    const res = await checkout(order({ items: [{ productSlug: 'second-flush', variantSize: '100 g', quantity: 1 }] }))
+    const res = await checkout(order({ items: [{ productSlug: 'chamomile', variantSize: '100 g', quantity: 1 }] }))
     expect(res.statusCode).toBe(400)
   })
 

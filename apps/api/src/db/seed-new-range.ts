@@ -1,26 +1,29 @@
 import { rupees } from '@elegantsip/shared'
 
 /* ────────────────────────────────────────────────────────────────────────────
- * The new range — six teas with finished pack photography, added Nov 2026.
+ * The new range — teas with finished pack photography, added Nov 2026.
  *
- * Prices are the LOW (single retail pack) column of the Elegant Sip pricing
- * sheet, excl. GST, and SKUs are the sheet's codes. Stock is a placeholder 20
- * per size until real inventory is entered.
+ * Prices come from the Elegant Sip pricing sheet (Nov 2026), per 100 g pack,
+ * GST-inclusive and rounded to whole rupees. `compareAtPrice` is the sheet's
+ * "Final price"; `price` is its "25% off" column, which is what customers pay
+ * during the launch offer. Only 100 g is sold until larger-pack prices are set.
+ * SKUs are the sheet's codes. Stock is a placeholder 20 until real inventory
+ * is entered.
  *
  * Copy describes the style of tea only. No estate, elevation or harvest is
  * claimed until those are confirmed, so `origin` and `garden` stay null.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-const SIZES = [
-  ['100 g', 'S100'],
-  ['250 g', 'S250'],
-  ['500 g', 'S500'],
-  ['1 kg', 'S1KG'],
-] as const
+/** Pricing-sheet product code + 100 g prices in rupees: [regular, offer]. */
+const variants = (code: string, [compareAt, price]: [number, number]) => [
+  { size: '100 g', sku: `${code}-S100`, price: rupees(price), compareAtPrice: rupees(compareAt), stock: 20 },
+]
 
-/** Pricing-sheet product code + LOW prices in rupees for 100 g, 250 g, 500 g, 1 kg. */
-const variants = (code: string, prices: [number, number, number, number]) =>
-  SIZES.map(([size, sizeCode], i) => ({ size, sku: `${code}-${sizeCode}`, price: rupees(prices[i]), stock: 20 }))
+/**
+ * A product with a photo but no price yet. Zero price AND zero stock, so it
+ * cannot be bought and the API reports `fromPrice` as null, never "₹0".
+ */
+const comingSoon = (code: string) => [{ size: '100 g', sku: `${code}-S100`, price: 0, stock: 0 }]
 
 const shared = {
   status: 'active' as const,
@@ -34,7 +37,7 @@ export const NEW_RANGE = [
   {
     ...shared,
     slug: 'first-flush',
-    variants: variants('P001', [700, 1610, 3100, 6030]),
+    variants: variants('P001', [1148, 861]),
     name: 'First Flush',
     description: 'The first pluck of spring — a bright, floral Darjeeling with the light muscatel lift the season is known for.',
     longDescription:
@@ -54,7 +57,7 @@ export const NEW_RANGE = [
   {
     ...shared,
     slug: 'golden-needle',
-    variants: variants('P023', [1110, 2640, 5150, 10120]),
+    variants: variants('P023', [4209, 3157]),
     name: 'Golden Needle',
     description: 'Golden-tipped buds that brew a rounded, honeyed cup — the richest tea in the range.',
     longDescription:
@@ -74,7 +77,7 @@ export const NEW_RANGE = [
   {
     ...shared,
     slug: 'green-tea',
-    variants: variants('P019', [390, 850, 1570, 2950]),
+    variants: variants('P019', [781, 585]),
     name: 'Green Tea',
     description: 'Unoxidised Darjeeling leaf — fresh, grassy and gentle, for an everyday lighter cup.',
     longDescription:
@@ -94,7 +97,7 @@ export const NEW_RANGE = [
   {
     ...shared,
     slug: 'pan-roasted',
-    variants: variants('P020', [500, 1100, 2080, 3980]),
+    variants: variants('P020', [811, 608]),
     name: 'Pan Roasted',
     description: 'Leaf fired in a hot pan by hand, giving a toasty, nutty green tea with a soft finish.',
     longDescription:
@@ -114,7 +117,7 @@ export const NEW_RANGE = [
   {
     ...shared,
     slug: 'silver-needle',
-    variants: variants('P024', [1110, 2640, 5150, 10120]),
+    variants: variants('P024', [4209, 3157]),
     name: 'Silver Needle',
     description: 'Downy silver buds, simply withered and dried — the most delicate cup we make.',
     longDescription:
@@ -134,7 +137,7 @@ export const NEW_RANGE = [
   {
     ...shared,
     slug: 'white-tea',
-    variants: variants('P021', [910, 2130, 4130, 8080]),
+    variants: variants('P021', [1760, 1320]),
     name: 'White Tea',
     description: 'Gently withered leaf and bud — soft, sweet and lightly floral.',
     longDescription:
@@ -150,5 +153,115 @@ export const NEW_RANGE = [
       leafAmount: '2 tsp per 8 oz',
       notes: 'Keep the water below boiling and do not rush it.',
     },
+  },
+
+  /* ── Added Nov 2026 with pack photography ──────────────────────────────────
+   * 2nd Flush and 3rd Flush take over the slugs of the old photo-less
+   * "coming soon" placeholders. 2nd Flush is priced as the sheet's "Second
+   * Flush", 3rd Flush as its "Autumn Flush", and Whole Leaf 1st Flush as its
+   * "First Flush Premium". The sheet has no product codes for these, so SKUs
+   * are descriptive placeholders.
+   * ──────────────────────────────────────────────────────────────────────── */
+  {
+    ...shared,
+    slug: 'whole-leaf-first-flush',
+    variants: variants('WL1F', [2372, 1779]),
+    name: 'Whole Leaf 1st Flush',
+    description: 'Unbroken spring leaves, picked by hand — the fullest expression of a Darjeeling first flush.',
+    longDescription:
+      'Whole leaf means the leaves are left intact through rolling and drying, so they unfurl fully in the pot. The cup is bright and floral with the muscatel lift of spring, with more depth and a longer finish than broken grades.',
+    imageSrc: '/products/whole-leaf-first-flush.webp',
+    category: 'Black Tea',
+    tastingNotes: ['Floral', 'Muscatel', 'Layered'],
+    bodyLevel: 2,
+    brewingGuide: {
+      temperature: '194°F / 90°C',
+      time: '3–4 minutes',
+      steeps: '2–3',
+      leafAmount: '1½ tsp per 8 oz',
+      notes: 'Whole leaves are bulky — use a little more by volume, and drink it plain.',
+    },
+  },
+  {
+    ...shared,
+    slug: 'second-flush',
+    variants: variants('2F', [995, 746]),
+    name: '2nd Flush',
+    description: 'The summer pluck — a deeper, fruitier Darjeeling with the classic muscatel character.',
+    longDescription:
+      'Second flush leaves are picked in early summer, after the spring growth. The cup brews amber, fuller in body than first flush, with ripe fruit and the muscatel note Darjeeling is known for.',
+    imageSrc: '/products/second-flush.webp',
+    category: 'Black Tea',
+    tastingNotes: ['Muscatel', 'Fruity', 'Full'],
+    bodyLevel: 4,
+    brewingGuide: {
+      temperature: '203°F / 95°C',
+      time: '3–4 minutes',
+      steeps: '2',
+      leafAmount: '1 tsp per 8 oz',
+      notes: 'Sturdy enough for a splash of milk, but try the first cup plain.',
+    },
+  },
+  {
+    ...shared,
+    slug: 'autumn-flush',
+    variants: variants('3F', [842, 631]),
+    name: '3rd Flush',
+    description: 'The autumn pluck — a mellow, rounded cup with a coppery colour and a gentle sweetness.',
+    longDescription:
+      'The third flush is picked as the growing season winds down. The leaf brews a coppery, smooth cup, softer and rounder than the summer teas — an easy everyday Darjeeling.',
+    imageSrc: '/products/third-flush.webp',
+    category: 'Black Tea',
+    tastingNotes: ['Mellow', 'Coppery', 'Smooth'],
+    bodyLevel: 3,
+    brewingGuide: {
+      temperature: '203°F / 95°C',
+      time: '3–4 minutes',
+      steeps: '2',
+      leafAmount: '1 tsp per 8 oz',
+      notes: 'Takes milk well, and holds up to a slightly longer steep.',
+    },
+  },
+  {
+    ...shared,
+    status: 'coming-soon' as const,
+    slug: 'whole-leaf-second-flush',
+    variants: comingSoon('WL2F'),
+    name: 'Whole Leaf 2nd Flush',
+    description: 'Unbroken summer leaves for a fuller, fruitier muscatel cup. Arriving soon.',
+    longDescription: null,
+    imageSrc: '/products/whole-leaf-second-flush.webp',
+    category: 'Black Tea',
+    tastingNotes: ['Muscatel', 'Fruity', 'Rich'],
+    bodyLevel: 4,
+    brewingGuide: null,
+  },
+  {
+    ...shared,
+    status: 'coming-soon' as const,
+    slug: 'whole-leaf-autumn-flush',
+    variants: comingSoon('WLAF'),
+    name: 'Whole Leaf Autumn Flush',
+    description: 'Unbroken autumn leaves for a smooth, coppery, gently sweet cup. Arriving soon.',
+    longDescription: null,
+    imageSrc: '/products/whole-leaf-autumn-flush.webp',
+    category: 'Black Tea',
+    tastingNotes: ['Mellow', 'Coppery', 'Sweet'],
+    bodyLevel: 3,
+    brewingGuide: null,
+  },
+  {
+    ...shared,
+    status: 'coming-soon' as const,
+    slug: 'chamomile',
+    variants: comingSoon('CHAM'),
+    name: 'Chamomile',
+    description: 'Whole chamomile flowers for a calm, honeyed, caffeine-free cup. Arriving soon.',
+    longDescription: null,
+    imageSrc: '/products/chamomile.webp',
+    category: 'Herbal Tea',
+    tastingNotes: ['Floral', 'Honeyed', 'Calming'],
+    bodyLevel: 1,
+    brewingGuide: null,
   },
 ]

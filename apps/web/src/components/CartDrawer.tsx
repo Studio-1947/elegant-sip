@@ -174,13 +174,13 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   <span>Shipping</span>
                   <span className="font-mono">{shippingFee === 0 ? 'Free' : formatINR(shippingFee)}</span>
                 </div>
-                <div className="flex justify-between text-[#4a584a]">
-                  <span>GST ({Math.round(TAX_RATE * 100)}%)</span>
-                  <span className="font-mono">{formatINR(estimatedTax)}</span>
-                </div>
                 <div className="border-t border-[#1b261b]/10 pt-2 mt-2 flex justify-between text-sm font-bold">
                   <span>Total</span>
                   <span className="font-mono">{formatINR(finalTotal)}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-[#4a584a]">
+                  <span>Includes GST ({Math.round(TAX_RATE * 100)}%)</span>
+                  <span className="font-mono">{formatINR(estimatedTax)}</span>
                 </div>
               </div>
               <Link

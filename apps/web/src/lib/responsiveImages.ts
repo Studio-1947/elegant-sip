@@ -43,6 +43,12 @@ export const RESPONSIVE_IMAGES = new Set([
   'products/silver-needle-alt',
   'products/silver-needle-pile',
   'products/white-tea-alt',
+  'products/second-flush',
+  'products/third-flush',
+  'products/whole-leaf-first-flush',
+  'products/whole-leaf-second-flush',
+  'products/whole-leaf-autumn-flush',
+  'products/chamomile',
 ])
 
 const WIDTHS = [640, 1024]

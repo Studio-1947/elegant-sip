@@ -4,6 +4,7 @@ import NewsletterSection from './NewsletterSection'
 import { useDocumentMeta, useJsonLd, useRoute, parseRoute } from '../lib/router'
 import { PRODUCTS, isInStock } from '../data/products'
 import { absoluteUrl } from '../lib/site'
+import { RUPEE } from '../lib/currency'
 import { ROUTE_META } from '../lib/seoRoutes'
 
 export default function ShopPage() {
@@ -39,7 +40,7 @@ export default function ShopPage() {
                 offers: {
                   '@type': 'Offer',
                   priceCurrency: 'INR',
-                  price: product.fromPrice ?? 0,
+                  price: (product.fromPrice ?? 0) / RUPEE,
                   availability: isInStock(product)
                     ? 'https://schema.org/InStock'
                     : 'https://schema.org/OutOfStock',

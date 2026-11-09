@@ -1,0 +1,2 @@
+ALTER TABLE "product_variants" ADD COLUMN "compare_at_price" integer;--> statement-breakpoint
+ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_compare_at_above_price" CHECK ("product_variants"."compare_at_price" IS NULL OR "product_variants"."compare_at_price" > "product_variants"."price");

@@ -82,6 +82,7 @@ export default function OrderPage({ id }: { id?: string }) {
   }
 
   const method = SHIPPING_METHODS.find((m) => m.id === order.shippingMethod)
+  const taxAddedOnTop = order.tax > 0 && order.total === order.subtotal - order.discount + order.shippingFee + order.tax
   const placedOn = new Date(order.placedAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -274,10 +275,16 @@ export default function OrderPage({ id }: { id?: string }) {
               <span>Shipping{method ? `  ${method.label}` : ''}</span>
               <span className="font-mono">{order.shippingFee === 0 ? 'Free' : formatINR(order.shippingFee)}</span>
             </div>
-            <div className="flex justify-between text-[#4a584a]"><span>GST</span><span className="font-mono">{formatINR(order.tax)}</span></div>
+            {/* Orders placed before Nov 2026 had GST added on top; newer prices include it. */}
+            {taxAddedOnTop && (
+              <div className="flex justify-between text-[#4a584a]"><span>GST</span><span className="font-mono">{formatINR(order.tax)}</span></div>
+            )}
             <div className="border-t border-[#1b261b]/10 pt-3 mt-3 flex justify-between text-base font-bold">
               <span>Total</span><span className="font-mono">{formatINR(order.total)}</span>
             </div>
+            {!taxAddedOnTop && order.tax > 0 && (
+              <div className="flex justify-between text-[#4a584a]"><span>Includes GST</span><span className="font-mono">{formatINR(order.tax)}</span></div>
+            )}
           </div>
         </div>
 
@@ -345,8 +352,8 @@ function openInvoicePrint(invoice: InvoiceView) {
   const popup = window.open('', '_blank', 'noopener,noreferrer,width=720,height=820')
   if (!popup) return
   const safe = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character]!)
-  const taxLines = [["CGST", invoice.totals.cgst], ["SGST", invoice.totals.sgst], ["IGST", invoice.totals.igst]].filter(([, value]) => value).map(([label, value]) => `<tr><td>${label}</td><td>${safe(value!)}</td></tr>`).join('')
+  const taxLines = [["CGST", invoice.totals.cgst], ["SGST", invoice.totals.sgst], ["IGST", invoice.totals.igst]].filter(([, value]) => value).map(([label, value]) => `<tr><td class="muted">Includes ${label} (${invoice.taxRatePercent / (label === 'IGST' ? 1 : 2)}%)</td><td class="right muted">${safe(value!)}</td></tr>`).join('')
   // eslint-disable-next-line no-useless-escape -- preserves a literal closing script tag in generated print HTML.
-  popup.document.write(`<!doctype html><title>Invoice ${safe(invoice.number)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#182518}h1{font-size:24px}table{border-collapse:collapse;width:100%;margin-top:18px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left}.right{text-align:right}.muted{color:#526052;font-size:12px}</style><h1>Elegant Sip — ${invoice.isTaxInvoice ? 'Tax Invoice' : 'Provisional Invoice'}</h1><p><b>${safe(invoice.number)}</b><br><span class="muted">Issued ${safe(new Date(invoice.issuedAt).toLocaleDateString('en-IN'))} · HSN ${safe(invoice.hsn)}</span></p><p><b>Bill to</b><br>${safe(invoice.buyer.name)}<br>${safe(invoice.buyer.line1)}<br>${safe(invoice.buyer.city)}, ${safe(invoice.buyer.state ?? '')} ${safe(invoice.buyer.postalCode)}</p><table><thead><tr><th>Description</th><th>Qty</th><th class="right">Amount</th></tr></thead><tbody>${invoice.lines.map((line) => `<tr><td>${safe(line.description)}</td><td>${line.quantity}</td><td class="right">${safe(line.lineTotal)}</td></tr>`).join('')}</tbody></table><table><tbody><tr><td>Subtotal</td><td class="right">${safe(invoice.totals.subtotal)}</td></tr><tr><td>Shipping</td><td class="right">${safe(invoice.totals.shipping)}</td></tr>${taxLines}<tr><td><b>Total</b></td><td class="right"><b>${safe(invoice.totals.total)}</b></td></tr></tbody></table><script>window.onload=()=>window.print()<\/script>`)
+  popup.document.write(`<!doctype html><title>Invoice ${safe(invoice.number)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#182518}h1{font-size:24px}table{border-collapse:collapse;width:100%;margin-top:18px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left}.right{text-align:right}.muted{color:#526052;font-size:12px}</style><h1>Elegant Sip — ${invoice.isTaxInvoice ? 'Tax Invoice' : 'Provisional Invoice'}</h1><p><b>${safe(invoice.number)}</b><br><span class="muted">Issued ${safe(new Date(invoice.issuedAt).toLocaleDateString('en-IN'))} · HSN ${safe(invoice.hsn)}</span></p><p><b>Bill to</b><br>${safe(invoice.buyer.name)}<br>${safe(invoice.buyer.line1)}<br>${safe(invoice.buyer.city)}, ${safe(invoice.buyer.state ?? '')} ${safe(invoice.buyer.postalCode)}</p><table><thead><tr><th>Description</th><th>Qty</th><th class="right">Amount</th></tr></thead><tbody>${invoice.lines.map((line) => `<tr><td>${safe(line.description)}</td><td>${line.quantity}</td><td class="right">${safe(line.lineTotal)}</td></tr>`).join('')}</tbody></table><table><tbody><tr><td>Subtotal</td><td class="right">${safe(invoice.totals.subtotal)}</td></tr><tr><td>Shipping</td><td class="right">${safe(invoice.totals.shipping)}</td></tr><tr><td><b>Total</b></td><td class="right"><b>${safe(invoice.totals.total)}</b></td></tr>${taxLines}</tbody></table><script>window.onload=()=>window.print()<\/script>`)
   popup.document.close()
 }

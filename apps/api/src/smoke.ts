@@ -3,6 +3,7 @@ import './dev-defaults.js'
 
 import { createHmac } from 'node:crypto'
 import { eq } from 'drizzle-orm'
+import { COUPONS_ENABLED } from '@elegantsip/shared'
 import { buildApp } from './app.js'
 import { db, sql } from './db/client.js'
 import { users } from './db/schema-commerce.js'
@@ -140,10 +141,16 @@ const r = (p: number) => `₹${p / 100}`
 ok('place order', `${order.number} · ${order.status}`)
 ok(
   '  priced server-side',
-  `sub ${r(order.subtotal)} − ${r(order.discount)} + ship ${r(order.shippingFee)} + GST ${r(order.tax)} = ${r(order.total)}`,
+  `sub ${r(order.subtotal)} − ${r(order.discount)} + ship ${r(order.shippingFee)} = ${r(order.total)} (incl. GST ${r(order.tax)})`,
 )
 order.total % 100 === 0 ? ok('  total is a whole rupee') : fail('  total has paise', String(order.total))
-order.couponCode === 'SIP10' ? ok('  coupon applied server-side') : fail('  coupon not applied')
+if (COUPONS_ENABLED) {
+  order.couponCode === 'SIP10' ? ok('  coupon applied server-side') : fail('  coupon not applied')
+} else {
+  order.couponCode === null && order.discount === 0
+    ? ok('  coupon ignored', 'coupons are off during the 25% offer')
+    : fail('  coupon applied while coupons are off')
+}
 
 /* 8. Capture via signed webhook */
 const webhookBody = JSON.stringify({
