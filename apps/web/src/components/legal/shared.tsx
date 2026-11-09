@@ -69,7 +69,7 @@ export function TemplateNote({ children }: { children: ReactNode }) {
 
 export function DataTable({ rows }: { rows: [string, string][] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full text-sm border border-[#1b261b]/10 rounded-lg">
         <thead>
           <tr className="bg-[#1b261b]/[0.03] text-left">

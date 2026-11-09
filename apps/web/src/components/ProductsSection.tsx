@@ -128,7 +128,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
            z-index here, the grid (later in DOM order) paints over the open dropdown. */
         <div className="relative z-30 max-w-6xl mx-auto mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           {/* Category chips — one swipeable row on phones, wrapping row from sm up */}
-          <div className="flex overflow-x-auto no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
+          <div className="relative flex overflow-x-auto no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
             {CATEGORIES.map((c) => (
               <button
                 key={c}
@@ -160,7 +160,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
       ) : (
         <div
           ref={gridRef}
-          className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 -mx-6 px-6 md:mx-auto md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 lg:gap-10 max-w-6xl"
+          className="relative flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 -mx-6 px-6 md:mx-auto md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 lg:gap-10 max-w-6xl"
         >
           {visibleProducts.map((product) => (
             <div key={product.id} className="min-w-[80vw] sm:min-w-[46vw] md:min-w-0 snap-center flex">
