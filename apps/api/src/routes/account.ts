@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { problemSchema, reviewSchema, slugSchema } from '@elegantsip/shared'
+import { COUPONS_ENABLED, problemSchema, reviewSchema, slugSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { products, reviews } from '../db/schema.js'
 import { newsletterSubscribers, users, wishlistItems } from '../db/schema-commerce.js'
@@ -166,9 +166,9 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Account'],
         summary: 'Subscribe to the newsletter',
         description:
-          'Returns the welcome code in the response. The storefront shows it on screen rather than promising it by email — which it always did, and which is now also true of the API.',
+          'Returns the welcome code in the response. The storefront shows it on screen rather than promising it by email. `welcomeCode` is null while coupons are switched off (during the 25% launch offer), so no code is shown that would not work.',
         body: z.object({ email: z.string().trim().toLowerCase().email() }),
-        response: { 200: z.object({ ok: z.literal(true), welcomeCode: z.string() }) },
+        response: { 200: z.object({ ok: z.literal(true), welcomeCode: z.string().nullable() }) },
       },
     },
     async (request) => {
@@ -176,7 +176,7 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
         .insert(newsletterSubscribers)
         .values({ email: request.body.email })
         .onConflictDoNothing()
-      return { ok: true as const, welcomeCode: 'WELCOME10' }
+      return { ok: true as const, welcomeCode: COUPONS_ENABLED ? 'WELCOME10' : null }
     },
   )
 

@@ -7,7 +7,7 @@ export default function TermsPage() {
     'The terms that govern use of the Elegant Sip site and any order placed through it.',
   )
   return (
-    <LegalLayout label="Legal" title="Terms & Conditions" updated="August 19, 2026">
+    <LegalLayout label="Legal" title="Terms & Conditions" updated="November 9, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
         <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our"). Please read
         these terms before using elegantsip.in (the "Site"). By browsing or using the Site, you
@@ -82,7 +82,7 @@ export default function TermsPage() {
           </li>
           <li>
             <strong className="text-[#1b261b]">Pricing & currency:</strong> all prices are in INR
-            and include or exclude GST as displayed at checkout (currently modeled at 18%). Shipping
+            and include GST (currently 5%), shown as a line in the order summary. Shipping
             is calculated per our published rates (e.g., free above a threshold, flat rates below
             it) and shown before you pay.
           </li>
@@ -117,7 +117,7 @@ export default function TermsPage() {
         <ul className={listClass}>
           <li>
             We currently ship <strong className="text-[#1b261b]">within India</strong>. Standard
-            delivery is ₹150 (free on orders of ₹4,000 or more) and express is ₹450; both are
+            delivery is ₹30 (free on orders of ₹1,000 or more) and express is ₹450; both are
             estimates, not guarantees.
           </li>
           <li>

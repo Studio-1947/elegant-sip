@@ -59,8 +59,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-drawer-title"
-        className={`absolute right-0 top-0 h-full w-[86vw] max-w-sm bg-[#f9faf7] text-[#1b261b] shadow-[-12px_0_40px_rgba(27,38,27,0.18)] flex flex-col transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`absolute right-0 top-0 h-full w-[86vw] max-w-sm bg-[#f9faf7] text-[#1b261b] flex flex-col transition-[transform,box-shadow] duration-300 ease-out ${
+          // The shadow is applied only while open: when parked off-screen its
+          // 40px blur bled back over the page's right edge as a grey strip.
+          isOpen ? 'translate-x-0 shadow-[-12px_0_40px_rgba(27,38,27,0.18)]' : 'translate-x-full shadow-none'
         }`}
       >
         {/* Header */}
@@ -172,13 +174,13 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   <span>Shipping</span>
                   <span className="font-mono">{shippingFee === 0 ? 'Free' : formatINR(shippingFee)}</span>
                 </div>
-                <div className="flex justify-between text-[#4a584a]">
-                  <span>GST ({Math.round(TAX_RATE * 100)}%)</span>
-                  <span className="font-mono">{formatINR(estimatedTax)}</span>
-                </div>
                 <div className="border-t border-[#1b261b]/10 pt-2 mt-2 flex justify-between text-sm font-bold">
                   <span>Total</span>
                   <span className="font-mono">{formatINR(finalTotal)}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-[#4a584a]">
+                  <span>Includes GST ({Math.round(TAX_RATE * 100)}%)</span>
+                  <span className="font-mono">{formatINR(estimatedTax)}</span>
                 </div>
               </div>
               <Link

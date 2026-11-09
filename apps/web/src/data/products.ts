@@ -32,8 +32,6 @@ const HIDDEN_PRODUCT_SLUGS = new Set([
   'first-flush-broken-leaf',
   'first-flush-broken-mixed',
   'first-flush-fannings',
-  'second-flush',
-  'autumn-flush',
 ])
 
 export const PRODUCTS: Product[] = (snapshot.products as Product[]).filter(

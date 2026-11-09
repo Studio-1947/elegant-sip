@@ -5,7 +5,7 @@ export default function StatsBarSection() {
   const stats = [
     { value: '4', label: 'Leaf Grades' },
     { value: '3', label: 'Harvest Flushes' },
-    { value: 'Free', label: 'Shipping over ₹4,000' },
+    { value: 'Free', label: 'Shipping over ₹1,000' },
     { value: '100%', label: 'Freshness Guarantee' },
   ]
 

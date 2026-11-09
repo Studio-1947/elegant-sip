@@ -78,6 +78,13 @@
       "when": 1793876942125,
       "tag": "0010_shipments",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794233517833,
+      "tag": "0011_variant_compare_at_price",
+      "breakpoints": true
     }
   ]
 }

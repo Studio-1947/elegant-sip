@@ -4,6 +4,8 @@ import type { FastifyBaseLogger } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import {
+  COUPONS_ENABLED,
+  TAX_RATE,
   calculatePricing,
   cartLineInputSchema,
   couponDiscount,
@@ -418,7 +420,8 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
            been fully redeemed simply does not apply. */
         let discount = 0
         let appliedCoupon: { id: string; code: string } | null = null
-        if (couponCode) {
+        // Coupons are off during the 25% launch offer (25% max discount per order).
+        if (couponCode && COUPONS_ENABLED) {
           // Locked so two checkouts cannot both take the last redemption of a limited code.
           const [c] = await tx.select().from(coupons).where(eq(coupons.code, couponCode)).for('update')
           const usable =
@@ -720,8 +723,8 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
     facts: [
       ...row.items.map((i) => [`${i.productName} (${i.variantSize}) × ${i.quantity}`, formatPaise(i.lineTotal)] as [string, string]),
       ['Shipping', row.shippingFee === 0 ? 'Free' : formatPaise(row.shippingFee)],
-      ['GST (18%)', formatPaise(row.tax)],
       ['Total paid', formatPaise(row.total)],
+      [`Includes GST (${TAX_RATE * 100}%)`, formatPaise(row.tax)],
     ],
     footnote: `Delivering to ${row.shippingName}, ${row.shippingCity} ${row.shippingPostalCode}.`,
   })

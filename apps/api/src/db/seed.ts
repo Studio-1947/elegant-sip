@@ -1,8 +1,8 @@
 import '../dev-defaults.js'
 import { argv } from 'node:process'
 import { pathToFileURL } from 'node:url'
-import { rupees } from '@elegantsip/shared'
-import { and, eq, notInArray } from 'drizzle-orm'
+import { COUPONS_ENABLED, rupees } from '@elegantsip/shared'
+import { and, eq, notInArray, sql as drizzleSql } from 'drizzle-orm'
 import { db, sql } from './client.js'
 import { NEW_RANGE } from './seed-new-range.js'
 import { coupons, gardenProducts, gardens, journalPosts, productVariants, products } from './schema.js'
@@ -158,44 +158,7 @@ const PRODUCTS = [
       { size: '500 g', price: rupees(500), stock: 20 },
     ],
   },
-  {
-    slug: 'second-flush',
-    name: 'Second Flush',
-    status: 'coming-soon' as const,
-    description:
-      'The summer pluck brings the deeper, fruitier side of Darjeeling. The lots are still with the garden — arriving after the summer harvest.',
-    longDescription: null,
-    imageSrc: '/summerbreeze.webp',
-    category: 'Second Flush',
-    tastingNotes: ['Fruity', 'Muscatel', 'Deep'],
-    bodyLevel: 4,
-    harvestLabel: 'Summer 2026 Harvest',
-    origin: null,
-    flavorProfile: null,
-    brewingGuide: null,
-    garden: null,
-    // Zero price AND zero stock: nothing can be bought, and the API reports
-    // fromPrice as null rather than a misleading "₹0".
-    variants: [{ size: '100 g', price: 0, stock: 0 }],
-  },
-  {
-    slug: 'autumn-flush',
-    name: 'Third Flush',
-    status: 'coming-soon' as const,
-    description:
-      'The third pluck of the year rounds things out with a mellow, coppery cup. Arriving after the autumn harvest.',
-    longDescription: null,
-    imageSrc: '/origin.webp',
-    category: 'Third Flush',
-    tastingNotes: ['Mellow', 'Coppery', 'Smooth'],
-    bodyLevel: 3,
-    harvestLabel: 'Autumn 2026 Harvest',
-    origin: null,
-    flavorProfile: null,
-    brewingGuide: null,
-    garden: null,
-    variants: [{ size: '100 g', price: 0, stock: 0 }],
-  },
+  // second-flush and autumn-flush moved to seed-new-range.ts (Nov 2026, with pack photos).
 ]
 
 const GARDENS = [
@@ -292,6 +255,10 @@ export async function seed() {
           status: fields.status,
           description: fields.description,
           longDescription: fields.longDescription,
+          imageSrc: fields.imageSrc,
+          category: fields.category,
+          bodyLevel: fields.bodyLevel,
+          harvestLabel: fields.harvestLabel,
           tastingNotes: fields.tastingNotes,
           origin: fields.origin,
           flavorProfile: fields.flavorProfile,
@@ -310,12 +277,23 @@ export async function seed() {
       const sizeKey = v.size.toLowerCase().replace(/\s+/g, '-')
       // The new range carries the pricing sheet's SKU codes; older rows derive one.
       const sku: string = 'sku' in v && typeof v.sku === 'string' ? v.sku : `${p.slug}--${sizeKey}`
+      const compareAtPrice = 'compareAtPrice' in v && typeof v.compareAtPrice === 'number' ? v.compareAtPrice : null
       await db
         .insert(productVariants)
-        .values({ productId: row.id, size: v.size, sku, price: v.price, stock: v.stock, sortOrder: vi })
+        .values({ productId: row.id, size: v.size, sku, price: v.price, compareAtPrice, stock: v.stock, sortOrder: vi })
         .onConflictDoUpdate({
           target: [productVariants.productId, productVariants.size],
-          set: { sku, price: v.price, stock: v.stock, sortOrder: vi },
+          // Production re-seeds on every start, so real inventory must never be
+          // reset. The one exception is a zero-price "coming soon" placeholder
+          // becoming a real product: it has no inventory yet, so it takes the
+          // seed's opening stock instead of staying sold out.
+          set: {
+            sku,
+            price: v.price,
+            compareAtPrice,
+            stock: drizzleSql`CASE WHEN ${productVariants.price} = 0 AND ${v.price} > 0 THEN ${v.stock} ELSE ${productVariants.stock} END`,
+            sortOrder: vi,
+          },
         })
       variantCount += 1
     }
@@ -341,9 +319,15 @@ export async function seed() {
     { code: 'SIP10', percentOff: 10 },
     { code: 'WELCOME10', percentOff: 10 },
   ]) {
-    await db.insert(coupons).values(c).onConflictDoNothing()
+    // Inactive while the 25% launch offer runs: the pricing sheet caps total
+    // discount per order at 25%, so no coupon may stack on top of it.
+    const active = COUPONS_ENABLED
+    await db
+      .insert(coupons)
+      .values({ ...c, active })
+      .onConflictDoUpdate({ target: coupons.code, set: { active } })
   }
-  console.log('  coupons      2')
+  console.log(`  coupons      2 (${COUPONS_ENABLED ? 'active' : 'inactive'})`)
 
   console.log('done')
 }

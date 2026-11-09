@@ -4,6 +4,7 @@ import { getDefaultVariant, isInStock, type Product } from '../data/products'
 import { Link, navigate } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
+import PriceTag from './PriceTag'
 import { FREE_SHIPPING_THRESHOLD } from '../lib/pricing'
 import ProductCardGallery from './ProductCardGallery'
 import { useUi } from './UiContext'
@@ -141,27 +142,25 @@ export default function ProductCard({ product }: { product: Product }) {
       {/* ── Info block ── */}
       <div className="p-5 md:p-6 flex flex-col flex-grow">
         {/* Eyebrow */}
-        <span className="flex items-center gap-1.5 text-[11px] font-mono tracking-[0.2em] uppercase text-[#4a584a] mb-2">
+        <span className="flex items-center gap-1.5 text-[11px] font-mono tracking-[0.1em] sm:tracking-[0.15em] uppercase text-[#4a584a] mb-2 whitespace-nowrap overflow-hidden">
           <span className="text-[#b0782e] text-[7px]" aria-hidden="true">●</span>
-          Darjeeling · Single Origin
+          {/* Herbal blends are not Darjeeling single-origin tea, so they must not say so. */}
+          {product.category === 'Herbal Tea' ? 'Herbal · Caffeine free' : 'Darjeeling · Single Origin'}
         </span>
 
-        {/* Name + price */}
-        <div className="flex justify-between items-start gap-3 mb-1.5">
-          <Link to={`/product/${product.slug}`} className="hover:text-[#4a7333] transition-colors">
-            <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide leading-snug">{product.name}</h3>
-          </Link>
-          <span className="flex flex-col items-end pt-0.5">
-            {comingSoon ? (
-              <span className="text-[11px] font-mono uppercase tracking-wider bg-[#8bb56e]/10 text-[#4a7333] px-2.5 py-1 rounded-full whitespace-nowrap">
-                Coming Soon
-              </span>
-            ) : (
-              <span className="text-[#1b261b] text-base lg:text-lg font-bold whitespace-nowrap">
-                {formatINR(activeVariant.price)}
-              </span>
-            )}
-          </span>
+        {/* Name, then price on its own fixed-height row, so every card lines up
+            whatever the name length or whether the tea is priced yet. */}
+        <Link to={`/product/${product.slug}`} className="hover:text-[#4a7333] transition-colors mb-1.5">
+          <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide leading-snug line-clamp-2 min-h-[2lh]" title={product.name}>{product.name}</h3>
+        </Link>
+        <div className="flex items-center h-8 mb-1">
+          {comingSoon ? (
+            <span className="text-[11px] font-mono uppercase tracking-wider bg-[#8bb56e]/10 text-[#4a7333] px-2.5 py-1 rounded-full whitespace-nowrap">
+              Price coming soon
+            </span>
+          ) : (
+            <PriceTag price={activeVariant.price} compareAtPrice={activeVariant.compareAtPrice} />
+          )}
         </div>
 
         {/* Star rating — only when real reviews exist. */}
@@ -192,7 +191,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {product.tastingNotes && product.tastingNotes.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {product.tastingNotes.map((note) => (
-              <span key={note} className="border border-[#1b261b]/15 rounded-full px-3 py-1 text-[11px] text-[#4a584a]">
+              <span key={note} className="border border-[#1b261b]/15 rounded-full px-2.5 sm:px-3 py-1 text-[11px] text-[#4a584a] whitespace-nowrap">
                 {note}
               </span>
             ))}
@@ -236,7 +235,7 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
 
         {/* Quantity & CTA row */}
-        <div className="flex flex-row gap-2 items-stretch mt-auto">
+        <div className="flex flex-row gap-2 items-stretch h-11 mt-auto">
           {!comingSoon && (
             <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-3 py-2 w-24 sm:w-28 bg-white flex-shrink-0">
               <button
@@ -299,11 +298,11 @@ export default function ProductCard({ product }: { product: Product }) {
       </span>
 
       {/* Footer microcopy */}
-        {!comingSoon && (
-          <p className="text-[11px] text-[#4a584a] text-center mt-3">
-            Free shipping over {formatINR(FREE_SHIPPING_THRESHOLD)} · packed to order
-          </p>
-        )}
+        <p className="text-[11px] text-[#4a584a] text-center mt-3 whitespace-nowrap overflow-hidden text-ellipsis">
+          {comingSoon
+            ? 'Arriving with the next harvest'
+            : `Free shipping over ${formatINR(FREE_SHIPPING_THRESHOLD)}`}
+        </p>
       </div>
     </div>
   )

@@ -57,7 +57,9 @@ export interface InvoiceTotals {
 export function splitGst(taxTotal: number, deliveryState: string | null): InvoiceTotals {
   const isIntraState = normaliseState(deliveryState) === normaliseState(env.SELLER_STATE)
   if (!isIntraState) return { isIntraState: false, cgst: 0, sgst: 0, igst: taxTotal }
-  const half = Math.floor(taxTotal / 2)
+  // Split on whole rupees: invoices display whole rupees, so ₹71 must read as
+  // ₹36 + ₹35, not ₹35.50 + ₹35.50 rendered as ₹36 + ₹36.
+  const half = Math.floor(taxTotal / 2 / 100) * 100
   return { isIntraState: true, cgst: taxTotal - half, sgst: half, igst: 0 }
 }
 

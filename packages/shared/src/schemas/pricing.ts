@@ -48,7 +48,7 @@ export const pricingQuoteResponseSchema = z.object({
     .describe('Why the submitted code was not applied — shown to the customer verbatim'),
   shippingMethod: shippingMethodIdSchema,
   shippingFee: paiseSchema,
-  tax: paiseSchema.describe('GST at 18% on goods and shipping, rounded to a whole rupee'),
+  tax: paiseSchema.describe('GST (5%) contained in the GST-inclusive total, rounded to a whole rupee'),
   total: paiseSchema,
   amountToFreeShipping: paiseSchema,
   adjustments: z

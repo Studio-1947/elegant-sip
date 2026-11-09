@@ -88,8 +88,10 @@ export const productVariants = pgTable(
     /** Display label, e.g. "200 g". */
     size: text('size').notNull(),
     sku: text('sku').notNull().unique(),
-    /** Paise. */
+    /** Paise. What the customer pays (GST-inclusive). */
     price: integer('price').notNull(),
+    /** Paise. Regular price shown struck out during an offer; null = no offer. */
+    compareAtPrice: integer('compare_at_price'),
     stock: integer('stock').notNull().default(0),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -100,6 +102,11 @@ export const productVariants = pgTable(
     // Stock can never be driven below zero, whatever the application does.
     check('product_variants_stock_non_negative', sql`${t.stock} >= 0`),
     check('product_variants_price_non_negative', sql`${t.price} >= 0`),
+    // A struck-out price lower than the selling price would advertise a fake saving.
+    check(
+      'product_variants_compare_at_above_price',
+      sql`${t.compareAtPrice} IS NULL OR ${t.compareAtPrice} > ${t.price}`,
+    ),
   ],
 )
 

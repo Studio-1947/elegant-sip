@@ -7,6 +7,7 @@ import {
   calculatePricing,
   couponDiscount,
   formatPaise,
+  percentOff,
   rupees,
   toWholeRupees,
 } from './money.js'
@@ -14,19 +15,19 @@ import {
 /*
  * These tests exist because this file is the one place a bug costs real money,
  * and because the storefront and the API both depend on it agreeing with
- * itself. The legacy expectations below are pinned deliberately: they are the
- * numbers the client-side `getOrderPricing()` produced, and migrating to a
- * server must not quietly change anybody's total.
+ * itself. The published figures below are pinned deliberately: they are what
+ * the Nov 2026 pricing (GST-inclusive, ₹30 standard shipping, free over
+ * ₹1,000) produces, and a refactor must not quietly change anybody's total.
  */
 
 describe('calculatePricing', () => {
   it('charges standard shipping below the free threshold', () => {
-    expect(calculatePricing({ subtotal: rupees(1000) }).shippingFee).toBe(rupees(150))
+    expect(calculatePricing({ subtotal: rupees(500) }).shippingFee).toBe(rupees(30))
   })
 
   it('makes standard shipping free at exactly the threshold, not a rupee sooner', () => {
     expect(calculatePricing({ subtotal: FREE_SHIPPING_THRESHOLD }).shippingFee).toBe(0)
-    expect(calculatePricing({ subtotal: FREE_SHIPPING_THRESHOLD - RUPEE }).shippingFee).toBe(rupees(150))
+    expect(calculatePricing({ subtotal: FREE_SHIPPING_THRESHOLD - RUPEE }).shippingFee).toBe(rupees(30))
   })
 
   it('never makes express free, however large the order', () => {
@@ -34,20 +35,22 @@ describe('calculatePricing', () => {
   })
 
   it('applies the discount before testing the free-shipping threshold', () => {
-    // ₹4,200 less ₹500 is ₹3,700 — below the threshold, so shipping applies.
-    const p = calculatePricing({ subtotal: rupees(4200), discount: rupees(500) })
-    expect(p.shippingFee).toBe(rupees(150))
+    // ₹1,200 less ₹300 is ₹900 — below the threshold, so shipping applies.
+    const p = calculatePricing({ subtotal: rupees(1200), discount: rupees(300) })
+    expect(p.shippingFee).toBe(rupees(30))
   })
 
-  it('taxes goods AND shipping, matching the "GST (18%)" label', () => {
+  it('treats prices as GST-inclusive: tax is the GST contained in the total', () => {
     const p = calculatePricing({ subtotal: rupees(1000) })
-    expect(p.tax).toBe(toWholeRupees((rupees(1000) + rupees(150)) * TAX_RATE))
-    expect(p.tax).toBe(rupees(207))
+    expect(p.total).toBe(rupees(1000))
+    expect(p.tax).toBe(toWholeRupees((rupees(1000) * TAX_RATE) / (1 + TAX_RATE)))
+    expect(p.tax).toBe(rupees(48))
   })
 
-  it('adds up: total = goods after discount + shipping + tax', () => {
+  it('adds up: total = goods after discount + shipping, with GST inside it', () => {
     const p = calculatePricing({ subtotal: rupees(2500), discount: rupees(250) })
-    expect(p.total).toBe(p.taxableGoods + p.shippingFee + p.tax)
+    expect(p.total).toBe(p.taxableGoods + p.shippingFee)
+    expect(p.tax).toBeLessThan(p.total)
   })
 
   it('clamps a discount larger than the cart instead of going negative', () => {
@@ -58,8 +61,8 @@ describe('calculatePricing', () => {
   })
 
   it('reports the gap to free shipping, and 0 once reached', () => {
-    expect(calculatePricing({ subtotal: rupees(3000) }).amountToFreeShipping).toBe(rupees(1000))
-    expect(calculatePricing({ subtotal: rupees(5000) }).amountToFreeShipping).toBe(0)
+    expect(calculatePricing({ subtotal: rupees(600) }).amountToFreeShipping).toBe(rupees(400))
+    expect(calculatePricing({ subtotal: rupees(1500) }).amountToFreeShipping).toBe(0)
   })
 
   it('reports 0 to free shipping for express, which is never free', () => {
@@ -99,12 +102,15 @@ describe('calculatePricing', () => {
     }
   })
 
-  it('matches the published 18% GST figures exactly', () => {
+  it('matches the published figures exactly', () => {
     const published = [
-      { subtotal: 1000, discount: 0, method: 'standard', shipping: 150, tax: 207, total: 1357 },
-      { subtotal: 4000, discount: 0, method: 'standard', shipping: 0, tax: 720, total: 4720 },
-      { subtotal: 2500, discount: 250, method: 'express', shipping: 450, tax: 486, total: 3186 },
-      { subtotal: 600, discount: 60, method: 'standard', shipping: 150, tax: 124, total: 814 },
+      // One Green Tea (offer price) — below the threshold, so ₹30 shipping.
+      { subtotal: 585, discount: 0, method: 'standard', shipping: 30, tax: 29, total: 615 },
+      { subtotal: 1000, discount: 0, method: 'standard', shipping: 0, tax: 48, total: 1000 },
+      // One Golden Needle by express.
+      { subtotal: 3157, discount: 0, method: 'express', shipping: 450, tax: 172, total: 3607 },
+      // First Flush + Green Tea — over ₹1,000, so shipping is free.
+      { subtotal: 1446, discount: 0, method: 'standard', shipping: 0, tax: 69, total: 1446 },
     ] as const
     for (const c of published) {
       const p = calculatePricing({
@@ -116,6 +122,19 @@ describe('calculatePricing', () => {
       expect(p.tax, `tax @ ₹${c.subtotal}`).toBe(rupees(c.tax))
       expect(p.total, `total @ ₹${c.subtotal}`).toBe(rupees(c.total))
     }
+  })
+})
+
+describe('percentOff', () => {
+  it('rounds the saving against the struck-out price to a whole percent', () => {
+    expect(percentOff(rupees(585), rupees(781))).toBe(25)
+    expect(percentOff(rupees(3157), rupees(4209))).toBe(25)
+  })
+
+  it('shows nothing when there is no offer or no saving', () => {
+    expect(percentOff(rupees(585), null)).toBeNull()
+    expect(percentOff(rupees(585), rupees(585))).toBeNull()
+    expect(percentOff(rupees(600), rupees(585))).toBeNull()
   })
 })
 

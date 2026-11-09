@@ -22,11 +22,23 @@
 /** 1 rupee, in paise. */
 export const RUPEE = 100
 
-/** GST rate applied by the storefront. */
-export const TAX_RATE = 0.18
+/**
+ * GST rate on tea (HSN 0902). Prices are GST-INCLUSIVE: the listed price is
+ * what the customer pays, and `tax` reports the GST contained in the total
+ * rather than adding it on top.
+ */
+export const TAX_RATE = 0.05
 
 /** Order value (after discount) at which standard shipping becomes free. */
-export const FREE_SHIPPING_THRESHOLD = 4000 * RUPEE
+export const FREE_SHIPPING_THRESHOLD = 1000 * RUPEE
+
+/**
+ * Coupons are switched off while products carry their 25% launch discount:
+ * the pricing sheet caps total discount per order at 25%, so nothing may
+ * stack on top. The API ignores coupon codes and the storefront hides the
+ * coupon box while this is false.
+ */
+export const COUPONS_ENABLED = false
 
 export type ShippingMethodId = 'standard' | 'express'
 
@@ -45,7 +57,7 @@ export const SHIPPING_METHODS: readonly ShippingMethod[] = [
     id: 'standard',
     label: 'Standard',
     detail: '2–4 business days',
-    fee: 150 * RUPEE,
+    fee: 30 * RUPEE,
     freeOver: FREE_SHIPPING_THRESHOLD,
   },
   {
@@ -84,7 +96,7 @@ export interface Pricing {
   /** Subtotal less discount. */
   taxableGoods: number
   shippingFee: number
-  /** GST on goods AND shipping, rounded to a whole rupee. */
+  /** GST contained in the total (prices are GST-inclusive), rounded to a whole rupee. */
   tax: number
   total: number
   /** How much more to spend for free standard shipping; 0 once reached. */
@@ -94,8 +106,9 @@ export interface Pricing {
 /**
  * The authoritative price calculation.
  *
- * GST applies to the shipping fee as well as the goods — the summary line is
- * labelled "GST (18%)", so taxing only the goods would understate the total.
+ * Prices and the shipping fee are GST-inclusive, so the total is simply goods
+ * after discount plus shipping. `tax` is the GST contained in that total
+ * (total × 5/105), shown as "Includes GST (5%)" and split on the invoice.
  */
 export function calculatePricing({
   subtotal,
@@ -110,8 +123,8 @@ export function calculatePricing({
   const shippingFee =
     method.freeOver !== null && taxableGoods >= method.freeOver ? 0 : method.fee
 
-  const tax = toWholeRupees((taxableGoods + shippingFee) * TAX_RATE)
-  const total = taxableGoods + shippingFee + tax
+  const total = taxableGoods + shippingFee
+  const tax = toWholeRupees((total * TAX_RATE) / (1 + TAX_RATE))
 
   const amountToFreeShipping =
     method.freeOver !== null ? Math.max(0, method.freeOver - taxableGoods) : 0
@@ -138,6 +151,15 @@ export const SEED_COUPONS: readonly CouponRule[] = [
   { code: 'SIP10', percentOff: 0.1 },
   { code: 'WELCOME10', percentOff: 0.1 },
 ]
+
+/**
+ * Whole-number percent saved against a struck-out "compare at" price, or null
+ * when there is no saving to show.
+ */
+export function percentOff(price: number, compareAtPrice: number | null | undefined): number | null {
+  if (!compareAtPrice || compareAtPrice <= price) return null
+  return Math.round((1 - price / compareAtPrice) * 100)
+}
 
 /** Discount for a coupon against a subtotal, in whole rupees. */
 export function couponDiscount(rule: CouponRule, subtotal: number): number {

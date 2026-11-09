@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useCart } from './CartContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { track } from '../lib/analytics'
-import { getOrderPricing, TAX_RATE } from '../lib/pricing'
+import { COUPONS_ENABLED, getOrderPricing, TAX_RATE } from '../lib/pricing'
 import { formatINR } from '../lib/currency'
 
 export default function CartPage() {
@@ -160,7 +160,12 @@ export default function CartPage() {
               Order Summary
             </h2>
 
-            {/* Coupon */}
+            {/* Coupon — hidden while the 25% offer runs, since nothing may stack on it */}
+            {!COUPONS_ENABLED ? (
+              <p className="mb-6 text-[11px] font-mono text-[#4a7333] bg-[#8bb56e]/10 border border-[#8bb56e]/30 rounded-lg px-4 py-2.5">
+                25% off is already applied to every tea. Promo codes can’t be combined with it.
+              </p>
+            ) : (
             <div className="mb-6">
               <label htmlFor="coupon" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-2">
                 Promo Code
@@ -193,6 +198,7 @@ export default function CartPage() {
               )}
               {couponError && <p className="text-[11px] text-red-600 mt-1.5">{couponError}</p>}
             </div>
+            )}
 
             <div className="space-y-4 text-xs">
               <div className="flex justify-between text-[#4a584a]">
@@ -211,10 +217,6 @@ export default function CartPage() {
                   {shippingFee === 0 ? 'Free' : formatINR(shippingFee)}
                 </span>
               </div>
-              <div className="flex justify-between text-[#4a584a]">
-                <span>GST ({Math.round(TAX_RATE * 100)}%)</span>
-                <span className="font-mono">{formatINR(estimatedTax)}</span>
-              </div>
 
               {shippingFee > 0 && (
                 <p className="text-[11px] text-[#4a7333] font-mono italic">
@@ -225,6 +227,10 @@ export default function CartPage() {
               <div className="border-t border-[#1b261b]/10 pt-4 mt-4 flex justify-between text-base font-bold">
                 <span>Total</span>
                 <span className="font-mono">{formatINR(finalTotal)}</span>
+              </div>
+              <div className="flex justify-between text-[11px] text-[#4a584a]">
+                <span>Includes GST ({Math.round(TAX_RATE * 100)}%)</span>
+                <span className="font-mono">{formatINR(estimatedTax)}</span>
               </div>
             </div>
 

@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module'
 import Fastify, { type FastifyInstance } from 'fastify'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
@@ -29,6 +30,15 @@ import { pricingRoutes } from './routes/pricing.js'
 import { otpRoutes } from './routes/otp.js'
 import { pincodeRoutes } from './routes/pincode.js'
 
+function hasPinoPretty(): boolean {
+  try {
+    createRequire(import.meta.url).resolve('pino-pretty')
+    return true
+  } catch {
+    return false
+  }
+}
+
 /**
  * Builds the app without listening, so tests can drive it via `inject()`
  * without binding a port.
@@ -39,7 +49,9 @@ export async function buildApp(): Promise<FastifyInstance> {
       level: env.LOG_LEVEL,
       // Pretty output locally; structured JSON in production, where a log
       // aggregator is doing the reading.
-      ...(isProduction
+      // pino-pretty is a devDependency, so the Docker runtime image (which runs
+      // with NODE_ENV=development locally) doesn't have it; fall back to JSON there.
+      ...(isProduction || !hasPinoPretty()
         ? {}
         : { transport: { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss', ignore: 'pid,hostname' } } }),
       redact: {

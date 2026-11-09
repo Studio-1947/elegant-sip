@@ -84,7 +84,7 @@ export default function TestimonialsSection() {
 
       <div
         ref={gridRef}
-        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 -mx-6 px-6 md:mx-auto md:px-0 md:grid md:grid-cols-2 md:gap-8 max-w-5xl"
+        className="relative flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 -mx-6 px-6 md:mx-auto md:px-0 md:grid md:grid-cols-2 md:gap-8 max-w-5xl"
       >
         {TESTIMONIALS.map((t) => (
           <figure

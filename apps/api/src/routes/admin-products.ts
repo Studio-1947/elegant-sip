@@ -258,9 +258,15 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         description:
           'Stock is deliberately not settable here — use `POST /admin/stock`, which records the movement in the ledger. Writing stock directly would leave an unexplained jump in the running total.',
         params: z.object({ slug: slugSchema, size: z.string().min(1).max(60) }),
-        body: z.object({ price: paiseSchema }),
+        body: z.object({
+          price: paiseSchema,
+          compareAtPrice: paiseSchema
+            .nullable()
+            .optional()
+            .describe('Regular price to show struck out during an offer. Null ends the offer; omit to leave it unchanged.'),
+        }),
         response: {
-          200: z.object({ slug: slugSchema, size: z.string(), price: paiseSchema }),
+          200: z.object({ slug: slugSchema, size: z.string(), price: paiseSchema, compareAtPrice: paiseSchema.nullable() }),
           404: problemSchema,
         },
       },
@@ -279,11 +285,14 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
 
       const [updated] = await db
         .update(productVariants)
-        .set({ price: request.body.price })
+        .set({
+          price: request.body.price,
+          ...(request.body.compareAtPrice !== undefined ? { compareAtPrice: request.body.compareAtPrice } : {}),
+        })
         .where(eq(productVariants.id, variant.id))
-        .returning({ price: productVariants.price })
+        .returning({ price: productVariants.price, compareAtPrice: productVariants.compareAtPrice })
 
-      return { slug: request.params.slug, size: variant.size, price: updated.price }
+      return { slug: request.params.slug, size: variant.size, price: updated.price, compareAtPrice: updated.compareAtPrice }
     },
   )
 }

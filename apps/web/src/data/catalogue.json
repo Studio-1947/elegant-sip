@@ -1,9 +1,9 @@
 {
-  "syncedAt": "2026-08-26T10:43:55.500Z",
+  "syncedAt": "2026-11-09T14:28:08.588Z",
   "source": "http://localhost:4000",
   "products": [
     {
-      "id": "696a229e-560c-44ba-9bc5-257111c84ceb",
+      "id": "6bea7a5c-bede-49b2-992d-dfefcc41b871",
       "slug": "first-flush-whole-leaf",
       "name": "First Flush Whole Leaf",
       "status": "active",
@@ -21,23 +21,26 @@
       "harvestLabel": "Spring 2026 Harvest",
       "variants": [
         {
-          "id": "0c97097f-364e-4048-98f3-44c0219fc009",
+          "id": "d1c9b258-6e3f-454c-a322-24f1365556a4",
           "size": "100 g",
           "price": 60000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-whole-leaf--100-g"
         },
         {
-          "id": "e027d924-abb7-455b-a01e-f753759d46d6",
+          "id": "1769979e-1a5c-40ff-8137-e5278e23d697",
           "size": "200 g",
           "price": 120000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-whole-leaf--200-g"
         },
         {
-          "id": "42829b51-9ed0-41f4-b81b-13f186fb2fae",
+          "id": "fef00f0d-51ce-49c4-bf33-d62c94f9f750",
           "size": "500 g",
           "price": 300000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-whole-leaf--500-g"
         }
@@ -69,7 +72,7 @@
       }
     },
     {
-      "id": "a7ee9253-7b35-4b16-add4-f0939fb8085f",
+      "id": "3e701769-ff21-4096-9c5d-baeb4dc9b1e5",
       "slug": "first-flush-broken-leaf",
       "name": "First Flush Broken Leaf",
       "status": "active",
@@ -87,23 +90,26 @@
       "harvestLabel": "Spring 2026 Harvest",
       "variants": [
         {
-          "id": "b68bd455-88a5-4cdb-8e53-a374c9a80040",
+          "id": "2fb0123c-145f-4fea-b4de-fefacc25d270",
           "size": "100 g",
           "price": 50000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-broken-leaf--100-g"
         },
         {
-          "id": "f2f250fc-d154-4cbe-9cf3-bffd419c067b",
+          "id": "8807ecc4-106b-4a5a-b44f-6762721d5c92",
           "size": "200 g",
           "price": 100000,
-          "stock": 56,
+          "compareAtPrice": null,
+          "stock": 20,
           "sku": "first-flush-broken-leaf--200-g"
         },
         {
-          "id": "21f6e8ae-fd93-49dd-a1b0-11852f714586",
+          "id": "729fb515-0dc1-4bc9-91e4-b51f468413e9",
           "size": "500 g",
           "price": 250000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-broken-leaf--500-g"
         }
@@ -135,7 +141,7 @@
       }
     },
     {
-      "id": "16af64b5-3fdc-467a-9614-2eb03276d813",
+      "id": "1f0d3402-9b6f-46fa-b70f-11b7167920d6",
       "slug": "first-flush-broken-mixed",
       "name": "First Flush Broken Mixed",
       "status": "active",
@@ -153,23 +159,26 @@
       "harvestLabel": "Spring 2026 Harvest",
       "variants": [
         {
-          "id": "7d6c6552-65b2-465c-aed0-1f3d82bd84d1",
+          "id": "f12d2cfd-253f-4f6b-9dde-e8368e4ebdb1",
           "size": "100 g",
           "price": 15000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-broken-mixed--100-g"
         },
         {
-          "id": "4be351a4-7e12-40f0-8008-e72572f7e4a8",
+          "id": "bfd65761-ba27-402e-a988-8397445810b2",
           "size": "200 g",
           "price": 30000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-broken-mixed--200-g"
         },
         {
-          "id": "4be351a4-7e12-40f0-8008-e72572f7e4a9",
+          "id": "9b469fba-d62c-4b6d-a398-0cc5329a41e5",
           "size": "500 g",
           "price": 75000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-broken-mixed--500-g"
         }
@@ -201,7 +210,7 @@
       }
     },
     {
-      "id": "e859dbcb-51df-4e7a-8389-645f8afe9602",
+      "id": "02199964-6faa-4368-87c5-677e60c47e6d",
       "slug": "first-flush-fannings",
       "name": "First Flush Fannings",
       "status": "active",
@@ -219,23 +228,26 @@
       "harvestLabel": "Spring 2026 Harvest",
       "variants": [
         {
-          "id": "aa434c81-fa63-4da5-b517-b8e50041a588",
+          "id": "3b37aba8-7b70-4b49-87bb-fd832b95c0cc",
           "size": "100 g",
           "price": 10000,
-          "stock": 20,
+          "compareAtPrice": null,
+          "stock": 49,
           "sku": "first-flush-fannings--100-g"
         },
         {
-          "id": "7efda3a6-f93e-424e-93b5-193f98bee969",
+          "id": "0a9b307b-88af-4deb-90d3-ff5191b337fb",
           "size": "200 g",
           "price": 20000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-fannings--200-g"
         },
         {
-          "id": "7efda3a6-f93e-424e-93b5-193f98bee96a",
+          "id": "43c31b38-cf93-4bad-9a09-2eae9408b5e2",
           "size": "500 g",
           "price": 50000,
+          "compareAtPrice": null,
           "stock": 20,
           "sku": "first-flush-fannings--500-g"
         }
@@ -267,79 +279,11 @@
       }
     },
     {
-      "id": "b955d5d3-3bd1-49cf-876d-6b5c3abed7b8",
-      "slug": "second-flush",
-      "name": "Second Flush",
-      "status": "coming-soon",
-      "fromPrice": null,
-      "description": "The summer pluck brings the deeper, fruitier side of Darjeeling. The lots are still with the garden — arriving after the summer harvest.",
-      "longDescription": null,
-      "imageSrc": "/summerbreeze.webp",
-      "category": "Second Flush",
-      "tastingNotes": [
-        "Fruity",
-        "Muscatel",
-        "Deep"
-      ],
-      "bodyLevel": 4,
-      "harvestLabel": "Summer 2026 Harvest",
-      "variants": [
-        {
-          "id": "ae62464b-3409-443c-95ed-21bcae540a56",
-          "size": "100 g",
-          "price": 0,
-          "stock": 0,
-          "sku": "second-flush--100-g"
-        }
-      ],
-      "origin": null,
-      "flavorProfile": null,
-      "brewingGuide": null,
-      "rating": {
-        "average": 0,
-        "count": 0
-      }
-    },
-    {
-      "id": "8471d2b2-d254-477d-809d-4319558630f7",
-      "slug": "autumn-flush",
-      "name": "Third Flush",
-      "status": "coming-soon",
-      "fromPrice": null,
-      "description": "The third pluck of the year rounds things out with a mellow, coppery cup. Arriving after the autumn harvest.",
-      "longDescription": null,
-      "imageSrc": "/origin.webp",
-      "category": "Third Flush",
-      "tastingNotes": [
-        "Mellow",
-        "Coppery",
-        "Smooth"
-      ],
-      "bodyLevel": 3,
-      "harvestLabel": "Autumn 2026 Harvest",
-      "variants": [
-        {
-          "id": "a796c61f-364a-4472-b78e-306fc3b9d0b6",
-          "size": "100 g",
-          "price": 0,
-          "stock": 0,
-          "sku": "autumn-flush--100-g"
-        }
-      ],
-      "origin": null,
-      "flavorProfile": null,
-      "brewingGuide": null,
-      "rating": {
-        "average": 0,
-        "count": 0
-      }
-    },
-    {
-      "id": "92195095-0aba-4070-b99e-6f31f71ae6b3",
+      "id": "22fd6bce-ce44-4b86-b156-1e627c072a34",
       "slug": "first-flush",
       "name": "First Flush",
       "status": "active",
-      "fromPrice": 70000,
+      "fromPrice": 86100,
       "description": "The first pluck of spring — a bright, floral Darjeeling with the light muscatel lift the season is known for.",
       "longDescription": "First flush leaves are picked in the first weeks after winter, when the bush is full of stored aromatics. The cup brews pale gold rather than red, light in body and fragrant, and is best drunk plain so nothing stands between you and the spring.",
       "imageSrc": "/products/first-flush.webp",
@@ -353,32 +297,12 @@
       "harvestLabel": null,
       "variants": [
         {
-          "id": "ccee8938-d42d-4943-945f-3ba738ad43ae",
+          "id": "3ec19330-b5ec-4cb7-b703-4684aac74bbc",
           "size": "100 g",
-          "price": 70000,
+          "price": 86100,
+          "compareAtPrice": 114800,
           "stock": 20,
           "sku": "P001-S100"
-        },
-        {
-          "id": "31b915ad-c94d-4a07-91a1-6f9684c37fb4",
-          "size": "250 g",
-          "price": 161000,
-          "stock": 20,
-          "sku": "P001-S250"
-        },
-        {
-          "id": "23f047a9-8048-4cca-a2f2-158a681c553b",
-          "size": "500 g",
-          "price": 310000,
-          "stock": 20,
-          "sku": "P001-S500"
-        },
-        {
-          "id": "920dd569-2397-4dce-8a38-f75d29e4177e",
-          "size": "1 kg",
-          "price": 603000,
-          "stock": 20,
-          "sku": "P001-S1KG"
         }
       ],
       "origin": null,
@@ -396,11 +320,11 @@
       }
     },
     {
-      "id": "736e706d-8296-4313-a767-3871ddab365c",
+      "id": "d4986a23-cc05-44ad-9997-b38b8d743937",
       "slug": "golden-needle",
       "name": "Golden Needle",
       "status": "active",
-      "fromPrice": 111000,
+      "fromPrice": 315700,
       "description": "Golden-tipped buds that brew a rounded, honeyed cup — the richest tea in the range.",
       "longDescription": "Golden Needle is made from tender buds that turn a deep gold as they are rolled and oxidised. The cup is smooth and full, with a natural sweetness that holds up to a second and third steep.",
       "imageSrc": "/products/golden-needle.webp",
@@ -414,32 +338,12 @@
       "harvestLabel": null,
       "variants": [
         {
-          "id": "7f56bfba-c15e-4b60-83d2-a470ff500ddd",
+          "id": "4e8c0205-7ec1-4532-a07d-d1ee7dba3283",
           "size": "100 g",
-          "price": 111000,
+          "price": 315700,
+          "compareAtPrice": 420900,
           "stock": 20,
           "sku": "P023-S100"
-        },
-        {
-          "id": "3dabbf81-46a9-403b-869e-3840ef66d24c",
-          "size": "250 g",
-          "price": 264000,
-          "stock": 20,
-          "sku": "P023-S250"
-        },
-        {
-          "id": "8ee0c9c5-ba9d-4e82-9e35-92f6a4f7c171",
-          "size": "500 g",
-          "price": 515000,
-          "stock": 20,
-          "sku": "P023-S500"
-        },
-        {
-          "id": "83a93ef9-fd8c-4dc7-94f1-f6ac05dd5335",
-          "size": "1 kg",
-          "price": 1012000,
-          "stock": 20,
-          "sku": "P023-S1KG"
         }
       ],
       "origin": null,
@@ -457,11 +361,11 @@
       }
     },
     {
-      "id": "ef98ff03-363c-4201-9866-c26b3aca236c",
+      "id": "8cff20b9-0550-4da3-a67a-16346d85cd0f",
       "slug": "green-tea",
       "name": "Green Tea",
       "status": "active",
-      "fromPrice": 39000,
+      "fromPrice": 58500,
       "description": "Unoxidised Darjeeling leaf — fresh, grassy and gentle, for an everyday lighter cup.",
       "longDescription": "Green tea is heated soon after plucking to stop oxidation, which keeps the leaf green and the cup fresh. Brew it cooler and shorter than black tea; boiling water draws out bitterness.",
       "imageSrc": "/products/green-tea.webp",
@@ -475,32 +379,12 @@
       "harvestLabel": null,
       "variants": [
         {
-          "id": "54969218-4a2c-4d39-9e50-6af56bc724c3",
+          "id": "58596f04-e751-455c-835e-757c9887b6d2",
           "size": "100 g",
-          "price": 39000,
+          "price": 58500,
+          "compareAtPrice": 78100,
           "stock": 20,
           "sku": "P019-S100"
-        },
-        {
-          "id": "8136a792-2a4d-49d2-a7df-5ebf6fb6907e",
-          "size": "250 g",
-          "price": 85000,
-          "stock": 20,
-          "sku": "P019-S250"
-        },
-        {
-          "id": "40c612f4-3876-46cc-ab51-fbdd1f20dc5b",
-          "size": "500 g",
-          "price": 157000,
-          "stock": 20,
-          "sku": "P019-S500"
-        },
-        {
-          "id": "1b3c74e8-cc8a-4547-b4bd-e93b04dd1f64",
-          "size": "1 kg",
-          "price": 295000,
-          "stock": 20,
-          "sku": "P019-S1KG"
         }
       ],
       "origin": null,
@@ -518,11 +402,11 @@
       }
     },
     {
-      "id": "1315c685-adfa-4142-8266-2b8bb86da674",
+      "id": "916369d9-9655-4ab5-b471-bcb6ad060bff",
       "slug": "pan-roasted",
       "name": "Pan Roasted",
       "status": "active",
-      "fromPrice": 50000,
+      "fromPrice": 60800,
       "description": "Leaf fired in a hot pan by hand, giving a toasty, nutty green tea with a soft finish.",
       "longDescription": "Instead of steaming, the leaf is tossed in a heated pan to stop oxidation. The fire adds a gentle toasted, nutty character on top of the fresh green notes.",
       "imageSrc": "/products/pan-roasted.webp",
@@ -536,32 +420,12 @@
       "harvestLabel": null,
       "variants": [
         {
-          "id": "af786908-a6d2-4e9b-bcbe-fc9546207b2d",
+          "id": "45d3b9d3-ff49-4db4-b671-86d19226fbaf",
           "size": "100 g",
-          "price": 50000,
+          "price": 60800,
+          "compareAtPrice": 81100,
           "stock": 20,
           "sku": "P020-S100"
-        },
-        {
-          "id": "141ef5a7-7ff5-4081-9a94-095a488c1dd6",
-          "size": "250 g",
-          "price": 110000,
-          "stock": 20,
-          "sku": "P020-S250"
-        },
-        {
-          "id": "f2a10a6e-e24c-4b34-aa3d-c50692168bd2",
-          "size": "500 g",
-          "price": 208000,
-          "stock": 20,
-          "sku": "P020-S500"
-        },
-        {
-          "id": "1d4d6805-0217-46a0-aae7-c0bf3224d21a",
-          "size": "1 kg",
-          "price": 398000,
-          "stock": 20,
-          "sku": "P020-S1KG"
         }
       ],
       "origin": null,
@@ -579,11 +443,11 @@
       }
     },
     {
-      "id": "55f71bac-9ccb-4c04-a633-6c82e665847c",
+      "id": "d7f53cf1-85b3-4db4-ae5c-b836319a5480",
       "slug": "silver-needle",
       "name": "Silver Needle",
       "status": "active",
-      "fromPrice": 111000,
+      "fromPrice": 315700,
       "description": "Downy silver buds, simply withered and dried — the most delicate cup we make.",
       "longDescription": "Silver Needle uses only the unopened bud, covered in fine white hairs. It is barely processed, so the cup is pale, light and subtly sweet. Give it time: the buds open slowly.",
       "imageSrc": "/products/silver-needle.webp",
@@ -597,32 +461,12 @@
       "harvestLabel": null,
       "variants": [
         {
-          "id": "61892a5a-260a-4624-8604-5474d69069e0",
+          "id": "25a4b288-0069-465e-a194-f541191dd080",
           "size": "100 g",
-          "price": 111000,
+          "price": 315700,
+          "compareAtPrice": 420900,
           "stock": 20,
           "sku": "P024-S100"
-        },
-        {
-          "id": "7f96e34a-a8cc-4643-a4b5-87b1787ee9a1",
-          "size": "250 g",
-          "price": 264000,
-          "stock": 20,
-          "sku": "P024-S250"
-        },
-        {
-          "id": "f4386cf1-5b8a-44b4-8aed-fee02ee87a29",
-          "size": "500 g",
-          "price": 515000,
-          "stock": 20,
-          "sku": "P024-S500"
-        },
-        {
-          "id": "c5238519-d809-4c57-84ea-93ae9c594bf4",
-          "size": "1 kg",
-          "price": 1012000,
-          "stock": 20,
-          "sku": "P024-S1KG"
         }
       ],
       "origin": null,
@@ -640,11 +484,11 @@
       }
     },
     {
-      "id": "273bfc0a-67f0-4915-b735-076c966a0e0f",
+      "id": "87941e29-a3ca-40d0-b4d3-7943bec7e855",
       "slug": "white-tea",
       "name": "White Tea",
       "status": "active",
-      "fromPrice": 91000,
+      "fromPrice": 132000,
       "description": "Gently withered leaf and bud — soft, sweet and lightly floral.",
       "longDescription": "White tea is withered and dried with as little handling as possible. It brews a pale, mellow cup with a soft sweetness, and rewards several short steeps.",
       "imageSrc": "/products/white-tea.webp",
@@ -658,32 +502,12 @@
       "harvestLabel": null,
       "variants": [
         {
-          "id": "4c93edef-c291-43cd-8799-6bbf9dda7260",
+          "id": "33353aaf-ca14-470c-b62d-c21bb339bc67",
           "size": "100 g",
-          "price": 91000,
+          "price": 132000,
+          "compareAtPrice": 176000,
           "stock": 20,
           "sku": "P021-S100"
-        },
-        {
-          "id": "87c22f48-06e4-485b-8a3c-451ace76bf09",
-          "size": "250 g",
-          "price": 213000,
-          "stock": 20,
-          "sku": "P021-S250"
-        },
-        {
-          "id": "fe63092b-ccfa-41e5-94eb-a5a783d0d8ae",
-          "size": "500 g",
-          "price": 413000,
-          "stock": 20,
-          "sku": "P021-S500"
-        },
-        {
-          "id": "8213ddcc-6b05-49a6-895d-760095e72d21",
-          "size": "1 kg",
-          "price": 808000,
-          "stock": 20,
-          "sku": "P021-S1KG"
         }
       ],
       "origin": null,
@@ -699,11 +523,239 @@
         "average": 0,
         "count": 0
       }
+    },
+    {
+      "id": "3507d6a3-eb1b-497a-93c4-29b0b057980e",
+      "slug": "whole-leaf-first-flush",
+      "name": "Whole Leaf 1st Flush",
+      "status": "active",
+      "fromPrice": 177900,
+      "description": "Unbroken spring leaves, picked by hand — the fullest expression of a Darjeeling first flush.",
+      "longDescription": "Whole leaf means the leaves are left intact through rolling and drying, so they unfurl fully in the pot. The cup is bright and floral with the muscatel lift of spring, with more depth and a longer finish than broken grades.",
+      "imageSrc": "/products/whole-leaf-first-flush.webp",
+      "category": "Black Tea",
+      "tastingNotes": [
+        "Floral",
+        "Muscatel",
+        "Layered"
+      ],
+      "bodyLevel": 2,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "a95f967a-cc77-4430-a6a4-689d144cb92e",
+          "size": "100 g",
+          "price": 177900,
+          "compareAtPrice": 237200,
+          "stock": 20,
+          "sku": "WL1F-S100"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "194°F / 90°C",
+        "time": "3–4 minutes",
+        "steeps": "2–3",
+        "leafAmount": "1½ tsp per 8 oz",
+        "notes": "Whole leaves are bulky — use a little more by volume, and drink it plain."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "c578a771-4b2a-47f4-91d6-79be20292321",
+      "slug": "second-flush",
+      "name": "2nd Flush",
+      "status": "active",
+      "fromPrice": 74600,
+      "description": "The summer pluck — a deeper, fruitier Darjeeling with the classic muscatel character.",
+      "longDescription": "Second flush leaves are picked in early summer, after the spring growth. The cup brews amber, fuller in body than first flush, with ripe fruit and the muscatel note Darjeeling is known for.",
+      "imageSrc": "/products/second-flush.webp",
+      "category": "Black Tea",
+      "tastingNotes": [
+        "Muscatel",
+        "Fruity",
+        "Full"
+      ],
+      "bodyLevel": 4,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "aace4c48-f403-4f68-a86d-8833ee0fe78b",
+          "size": "100 g",
+          "price": 74600,
+          "compareAtPrice": 99500,
+          "stock": 20,
+          "sku": "2F-S100"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "203°F / 95°C",
+        "time": "3–4 minutes",
+        "steeps": "2",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "Sturdy enough for a splash of milk, but try the first cup plain."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "ef3018cb-cd2d-4a4d-b234-84719071da61",
+      "slug": "autumn-flush",
+      "name": "3rd Flush",
+      "status": "active",
+      "fromPrice": 63100,
+      "description": "The autumn pluck — a mellow, rounded cup with a coppery colour and a gentle sweetness.",
+      "longDescription": "The third flush is picked as the growing season winds down. The leaf brews a coppery, smooth cup, softer and rounder than the summer teas — an easy everyday Darjeeling.",
+      "imageSrc": "/products/third-flush.webp",
+      "category": "Black Tea",
+      "tastingNotes": [
+        "Mellow",
+        "Coppery",
+        "Smooth"
+      ],
+      "bodyLevel": 3,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "0a587a04-a92e-4cda-a1f7-a5a333bf46a7",
+          "size": "100 g",
+          "price": 63100,
+          "compareAtPrice": 84200,
+          "stock": 20,
+          "sku": "3F-S100"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": {
+        "temperature": "203°F / 95°C",
+        "time": "3–4 minutes",
+        "steeps": "2",
+        "leafAmount": "1 tsp per 8 oz",
+        "notes": "Takes milk well, and holds up to a slightly longer steep."
+      },
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "40a12f57-bec1-49a5-9ea9-52c9f9dee8a0",
+      "slug": "whole-leaf-second-flush",
+      "name": "Whole Leaf 2nd Flush",
+      "status": "coming-soon",
+      "fromPrice": null,
+      "description": "Unbroken summer leaves for a fuller, fruitier muscatel cup. Arriving soon.",
+      "longDescription": null,
+      "imageSrc": "/products/whole-leaf-second-flush.webp",
+      "category": "Black Tea",
+      "tastingNotes": [
+        "Muscatel",
+        "Fruity",
+        "Rich"
+      ],
+      "bodyLevel": 4,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "62f03903-87ac-4798-b806-60b73ccddbb7",
+          "size": "100 g",
+          "price": 0,
+          "compareAtPrice": null,
+          "stock": 0,
+          "sku": "WL2F-S100"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": null,
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "94434edf-69fe-42f6-87db-f4bed202b5b6",
+      "slug": "whole-leaf-autumn-flush",
+      "name": "Whole Leaf Autumn Flush",
+      "status": "coming-soon",
+      "fromPrice": null,
+      "description": "Unbroken autumn leaves for a smooth, coppery, gently sweet cup. Arriving soon.",
+      "longDescription": null,
+      "imageSrc": "/products/whole-leaf-autumn-flush.webp",
+      "category": "Black Tea",
+      "tastingNotes": [
+        "Mellow",
+        "Coppery",
+        "Sweet"
+      ],
+      "bodyLevel": 3,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "9c2fbe52-aa42-4511-9ead-98bb7d883514",
+          "size": "100 g",
+          "price": 0,
+          "compareAtPrice": null,
+          "stock": 0,
+          "sku": "WLAF-S100"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": null,
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
+    },
+    {
+      "id": "e0e14b4f-e608-4ca6-ba5b-8aff3d65dee2",
+      "slug": "chamomile",
+      "name": "Chamomile",
+      "status": "coming-soon",
+      "fromPrice": null,
+      "description": "Whole chamomile flowers for a calm, honeyed, caffeine-free cup. Arriving soon.",
+      "longDescription": null,
+      "imageSrc": "/products/chamomile.webp",
+      "category": "Herbal Tea",
+      "tastingNotes": [
+        "Floral",
+        "Honeyed",
+        "Calming"
+      ],
+      "bodyLevel": 1,
+      "harvestLabel": null,
+      "variants": [
+        {
+          "id": "b7397b24-1764-48dc-a296-ad387d099037",
+          "size": "100 g",
+          "price": 0,
+          "compareAtPrice": null,
+          "stock": 0,
+          "sku": "CHAM-S100"
+        }
+      ],
+      "origin": null,
+      "flavorProfile": null,
+      "brewingGuide": null,
+      "rating": {
+        "average": 0,
+        "count": 0
+      }
     }
   ],
   "gardens": [
     {
-      "id": "7c905367-e718-439b-b933-76d62a6f83e0",
+      "id": "3d1ecc83-5e3b-4f0d-bde1-30cc92cb3d0a",
       "slug": "gopaldhara",
       "name": "Gopaldhara",
       "region": "Rungbong Valley, Mirik · Darjeeling",
@@ -720,7 +772,7 @@
       ]
     },
     {
-      "id": "b4715469-1c75-4980-b3b9-d760c6f1989b",
+      "id": "23df1ead-53de-4bb7-bc3c-0fe143f71d24",
       "slug": "rohini",
       "name": "Rohini",
       "region": "Kurseong Valley · Darjeeling",
@@ -739,7 +791,7 @@
   ],
   "journal": [
     {
-      "id": "4d632d7f-9585-4dd0-8a3f-bfc1171e6464",
+      "id": "ef9e1d20-dd28-4522-9778-b937044906d2",
       "slug": "art-of-first-flush",
       "title": "The Art of the First Flush",
       "excerpt": "The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices — and the most patience.",
@@ -752,7 +804,7 @@
       "body": []
     },
     {
-      "id": "ba4d6ce0-c08a-4fe9-b5e5-9303afe8d6a9",
+      "id": "437d7bb2-0ca5-4f31-8a42-43fcd0831494",
       "slug": "field-guide-to-steeping",
       "title": "A Field Guide to Steeping",
       "excerpt": "Temperature, time, leaf amount, and the often-misunderstood art of the re-steep. Everything you need to stop guessing and start tasting.",
@@ -765,7 +817,7 @@
       "body": []
     },
     {
-      "id": "bde2f1ee-724d-4073-9c36-e738c3f38f78",
+      "id": "b299d74f-0fdb-4d05-99b1-8a51f8126245",
       "slug": "from-mist-to-cup",
       "title": "From Mist to Cup: Our Sourcing Journey",
       "excerpt": "No auction houses, no middlemen, no anonymity. How we built direct relationships with the gardens that grow the leaves we sell.",
