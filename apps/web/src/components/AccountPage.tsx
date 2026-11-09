@@ -8,6 +8,16 @@ import { formatINR } from '../lib/currency'
 import { Link, navigate, useDocumentMeta } from '../lib/router'
 import AddressBookSection from './account/AddressBookSection'
 
+const ORDER_STATUS: Record<OrderView['status'], { label: string; tone: string }> = {
+  pending_payment: { label: 'Awaiting payment', tone: 'bg-amber-50 text-amber-800' },
+  paid: { label: 'Paid', tone: 'bg-[#8bb56e]/15 text-[#4a7333]' },
+  packed: { label: 'Packed', tone: 'bg-[#8bb56e]/15 text-[#4a7333]' },
+  shipped: { label: 'Shipped', tone: 'bg-sky-50 text-sky-800' },
+  delivered: { label: 'Delivered', tone: 'bg-[#1b261b] text-white' },
+  cancelled: { label: 'Cancelled', tone: 'bg-rose-50 text-rose-700' },
+  refunded: { label: 'Refunded', tone: 'bg-[#1b261b]/5 text-[#4a584a]' },
+}
+
 export default function AccountPage() {
   const { user, logout } = useAuth()
   const { openLogin } = useUi()
@@ -116,7 +126,7 @@ export default function AccountPage() {
         <AddressBookSection />
 
         {/* Order history */}
-        <h2 className="text-lg font-bold uppercase tracking-wide mb-2">Order History</h2>
+        <h2 id="orders" className="scroll-mt-28 text-lg font-bold uppercase tracking-wide mb-2">My Orders</h2>
                 <p className="text-xs text-[#4a584a] mb-6 max-w-2xl leading-relaxed">
           Every order placed with this account, on any device.
         </p>
@@ -139,9 +149,14 @@ export default function AccountPage() {
                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#1b261b]/10 rounded-2xl p-6 hover:border-[#8bb56e] transition-colors group"
               >
                 <div>
-                  <p className="text-sm font-bold font-mono group-hover:text-[#4a7333] transition-colors">{order.number}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-bold font-mono group-hover:text-[#4a7333] transition-colors">{order.number}</p>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider ${ORDER_STATUS[order.status].tone}`}>
+                      {ORDER_STATUS[order.status].label}
+                    </span>
+                  </div>
                   <p className="text-[11px] text-[#4a584a] mt-1">
-                    {new Date(order.placedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {new Date(order.placedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
                     {' · '}
                     {order.items.reduce((acc, i) => acc + i.quantity, 0)} items
                   </p>
@@ -151,9 +166,6 @@ export default function AccountPage() {
             ))}
           </div>
         )}
-        <p className="text-[11px] font-mono text-[#4a584a] mt-6">
-          Demo store — orders are stored in this browser only.
-        </p>
       </div>
     </div>
   )

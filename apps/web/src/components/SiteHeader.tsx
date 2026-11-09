@@ -296,7 +296,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
                   className={`py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'account' ? 'text-[#4a7333] font-bold' : 'text-[#1b261b] hover:text-[#4a7333]'
                     }`}
                 >
-                  My Account
+                  My Orders &amp; Account
                 </Link>
               )}
               {user && (
