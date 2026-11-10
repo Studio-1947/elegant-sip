@@ -4,6 +4,7 @@ import { db } from '../db/client.js'
 import { orders, payments } from '../db/schema-commerce.js'
 import { alertStaff } from './alerts.js'
 import { issueInvoice } from './invoice.js'
+import { reportPurchaseFromServer } from './meta-purchase.js'
 import { sendOrderConfirmation } from '../routes/orders.js'
 
 /**
@@ -53,6 +54,8 @@ export async function capturePayment(
   }
 
   log.info({ orderNumber: input.orderNumber }, 'order paid')
+  // Measurement only, after the payment is safely recorded; never awaited by the customer.
+  void reportPurchaseFromServer(input.orderId, log)
   return true
 }
 

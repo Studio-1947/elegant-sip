@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
 import ProductTile from './ProductTile'
 import { Link } from '../lib/router'
@@ -46,10 +46,13 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
   const sectionRef = useScrollReveal<HTMLElement>({ target: ':scope > div' })
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.15 })
 
-  // Sync when the outside query changes (e.g. arriving via a #/shop?q= link)
-  useEffect(() => {
+  // Sync when the outside query changes (e.g. arriving via a #/shop?q= link).
+  // Done during render so the list never paints once with the old query.
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery)
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery)
     setSearch(searchQuery)
-  }, [searchQuery])
+  }
 
   // Live prices and retirements land after first paint; the list is recomputed then.
   const products = useCatalogue()

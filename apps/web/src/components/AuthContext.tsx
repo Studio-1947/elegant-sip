@@ -53,26 +53,34 @@ const toUser = (u: SessionUser): User => ({
   phone: u.phone ?? null,
 })
 
+/** Who the server says is signed in; never rejects. */
+async function fetchSessionUser(): Promise<User | null> {
+  try {
+    const { user: session } = await api.auth.me()
+    return session ? toUser(session) : null
+  } catch {
+    // A network failure means "unknown", not "signed out" — but there is
+    // nothing to show either way, so treat it as anonymous.
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
-    try {
-      const { user: session } = await api.auth.me()
-      setUser(session ? toUser(session) : null)
-    } catch {
-      // A network failure means "unknown", not "signed out" — but there is
-      // nothing to show either way, so treat it as anonymous.
-      setUser(null)
-    } finally {
-      setLoading(false)
-    }
+    setUser(await fetchSessionUser())
+    setLoading(false)
   }, [])
 
+  // State is set only once /auth/me answers.
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    void fetchSessionUser().then((session) => {
+      setUser(session)
+      setLoading(false)
+    })
+  }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     const result = await api.auth.login({ email, password })

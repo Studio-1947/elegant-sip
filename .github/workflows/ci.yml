@@ -27,17 +27,29 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint --workspace @elegantsip/web
+      - run: npm run lint --workspace @elegantsip/api
       - name: Money and phone rules
         run: npm test --workspace @elegantsip/shared
       - name: Storefront components
         run: npm test --workspace @elegantsip/web
       # Known-vulnerable production dependencies (high or critical). Advisory
-      # only for now — the dependency upgrades are being done separately —
-      # so a finding shows as a warning on the run without failing it. Remove
+      # only for now — some findings are transitive with no fixed release yet —
+      # so a finding shows as a warning on the run without failing it. The
+      # counts go to the job summary so they stay visible. Remove
       # `continue-on-error` once `npm audit` is clean to make it a real gate.
       - name: Dependency audit (non-blocking)
         continue-on-error: true
-        run: npm audit --audit-level=high --omit=dev
+        run: |
+          npm audit --omit=dev --json > npm-audit.json || true
+          node -e '
+            const fs = require("fs")
+            let counts = {}
+            try { counts = JSON.parse(fs.readFileSync("npm-audit.json", "utf8")).metadata?.vulnerabilities ?? {} } catch {}
+            const line = ["critical", "high", "moderate", "low", "info"].map((level) => `${level}: ${counts[level] ?? 0}`).join(" · ")
+            console.log(`npm audit (production dependencies) — ${line}`)
+            if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### npm audit (production dependencies)\n\n${line}\n`)
+          '
+          npm audit --audit-level=high --omit=dev
 
   # The API against real Postgres and Redis. Containers rather than mocks,
   # because the things worth testing here — transactions, row locks, unique

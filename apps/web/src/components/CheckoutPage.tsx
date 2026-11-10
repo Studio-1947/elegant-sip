@@ -3,7 +3,7 @@ import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
-import { cartLines, purchaseProps, track } from '../lib/analytics'
+import { cartLines, hasAnalyticsConsent, purchaseProps, track } from '../lib/analytics'
 import { rememberPendingPurchase } from '../lib/pendingPurchase'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
 import { api, ApiClientError, type PlaceOrderResult, type SavedAddress } from '../lib/api'
@@ -71,6 +71,8 @@ export default function CheckoutPage() {
   const [orderError, setOrderError] = useState<string | null>(null)
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
   const [paying, setPaying] = useState(false)
+  /** Razorpay reported a successful payment; the server has not confirmed it yet. Never offer Pay now again. */
+  const [paymentSubmitted, setPaymentSubmitted] = useState(false)
   const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>('standard')
   const [placing, setPlacing] = useState(false)
   const [prefilled, setPrefilled] = useState(false)
@@ -233,6 +235,8 @@ export default function CheckoutPage() {
         shippingMethod,
         ...(coupon ? { couponCode: coupon } : {}),
         ...(notes ? { notes } : {}),
+        // Lets the payment confirmation report the purchase to Meta, as the pixel would.
+        ...(hasAnalyticsConsent() === true ? { adConsent: true } : {}),
       }, { idempotencyKey: attempt.idempotencyKey, ...(user ? {} : { guestAccessToken: attempt.guestAccessToken }) })
 
       if (user && saveAddress) {
@@ -295,6 +299,7 @@ export default function CheckoutPage() {
         theme: { color: '#4a7333' },
         handler: (response) => {
           succeeded = true
+          setPaymentSubmitted(true)
           void confirmPayment(placed, response)
         },
         modal: {
@@ -304,7 +309,9 @@ export default function CheckoutPage() {
             setPaymentNotice(
               lastFailure
                 ? `${lastFailure} Choose Pay now to try again.`
-                : 'Payment was cancelled. Your teas are held for a short while — choose Pay now to finish.',
+                // Closing the window doesn't prove nothing was paid: a UPI payment
+                // approved in the bank's app can still arrive a moment later.
+                : 'The payment window was closed before payment finished. Choose Pay now to try again. If you already approved the payment in your UPI or bank app, wait a minute and check View order before paying again.',
             )
           },
         },
@@ -355,6 +362,7 @@ export default function CheckoutPage() {
         paymentProvider={placedOrder?.payment.provider}
         paymentNotice={paymentNotice}
         paying={paying}
+        paymentSubmitted={paymentSubmitted}
         onPay={placedOrder ? () => void openPayment(placedOrder) : undefined}
         guestEmail={placedOrder?.guestAccessToken ? placedEmail : undefined}
       />

@@ -543,6 +543,8 @@ export const api = {
       shippingMethod?: 'standard' | 'express'
       couponCode?: string
       notes?: string
+      /** True only when the visitor accepted the cookie banner. */
+      adConsent?: boolean
     }, requestKeys: { idempotencyKey: string; guestAccessToken?: string } ) =>
       request<PlaceOrderResult>('/v1/orders', {
         method: 'POST',

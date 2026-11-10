@@ -28,13 +28,11 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
 
-      // Warn, not error. The remaining hits are deliberate "reset derived state
-      // when a prop changes" effects (e.g. clearing the selected variant when
-      // the product id changes). They are correct but worth a second look
-      // before anyone adds another — failing the build on them would just
-      // train people to disable the rule.
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/refs': 'warn',
+      // Errors: the codebase has no hits. To reset state when a prop changes,
+      // compare with the previous value during render (or use a `key`) rather
+      // than setting state in an effect.
+      'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/refs': 'error',
       'react-hooks/purity': 'warn',
     },
   },

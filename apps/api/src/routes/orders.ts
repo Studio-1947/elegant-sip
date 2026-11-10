@@ -34,6 +34,7 @@ import { env, paymentsEnabled } from '../env.js'
 import { getInvoiceView } from '../lib/invoice.js'
 import { customerRefunds } from '../lib/refunds.js'
 import { checkLowStock } from '../lib/low-stock.js'
+import { checkoutAdDetails } from '../lib/meta-purchase.js'
 import { getStoreSettings } from '../lib/settings.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -311,6 +312,8 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           shippingMethod: shippingMethodIdSchema.default('standard'),
           couponCode: z.string().trim().toUpperCase().max(32).optional(),
           notes: z.string().trim().max(500).optional(),
+          /** The customer accepted cookies; lets the payment webhook report the purchase to Meta. */
+          adConsent: z.boolean().optional(),
         }),
         headers: z
           .object({
@@ -341,7 +344,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!paymentsEnabled) {
         throw new ApiError(503, 'payments_unavailable', 'Checkout unavailable', 'Online checkout will be available soon. Please check back shortly.')
       }
-      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes } = request.body
+      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes, adConsent } = request.body
       // Guests may check out only while staff have guest checkout switched on.
       if (!request.session && !(await getStoreSettings()).guestCheckoutEnabled) {
         throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in before checking out.')
@@ -488,6 +491,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             tax: pricing.tax,
             total: pricing.total,
             notes: notes ?? null,
+            ...checkoutAdDetails(adConsent, request),
           })
           .returning()
 

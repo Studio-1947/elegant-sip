@@ -75,6 +75,9 @@ export interface ServerEventInput {
 /** Meta's own cookie values: `fb.<n>.<timestamp>.<id>`. Anything else is dropped. */
 const META_COOKIE = /^fb\.\d\.\d{10,16}\.[\w.-]{1,500}$/
 
+/** True for a value shaped like Meta's own `_fbp` / `_fbc` cookies. */
+export const isMetaCookie = (value: string) => META_COOKIE.test(value)
+
 /** The pixel builds _fbc from a `fbclid` in the URL; done here too, for when it is blocked. */
 function clickIdFrom(url: URL, now: Date): string | undefined {
   const fbclid = url.searchParams.get('fbclid')?.trim()
@@ -119,7 +122,10 @@ export type MetaCapiMode = 'off' | 'test' | 'live'
 
 export function metaCapiMode(): MetaCapiMode {
   if (!env.META_PIXEL_ID || !env.META_CAPI_ACCESS_TOKEN) return 'off'
-  return env.META_CAPI_TEST_EVENT_CODE ? 'test' : 'live'
+  if (env.META_CAPI_TEST_EVENT_CODE) return 'test'
+  // A development server takes fake payments: its events must never reach the
+  // live pixel and skew real ad results. Locally, only test events are sent.
+  return env.NODE_ENV === 'development' ? 'off' : 'live'
 }
 
 /** The latest failure, cleared by the next success. For the admin page. */

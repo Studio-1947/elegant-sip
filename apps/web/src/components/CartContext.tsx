@@ -152,7 +152,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   )
   const [couponError, setCouponError] = useState<string | null>(null)
   const [quote, setQuote] = useState<PricingQuote | null>(null)
-  const [quoting, setQuoting] = useState(false)
+  // A stored cart is quoted as soon as the provider mounts.
+  const [quoting, setQuoting] = useState(() => cart.length > 0)
 
   // Skip the write on mount: hydrating state and immediately persisting it back
   // is three redundant localStorage writes on every page load.
@@ -180,13 +181,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
    * overwrite a newer one.
    */
   const sequence = useRef(0)
+  // A new cart or coupon clears the quote (empty cart) or marks one as pending.
+  // Set during render, not in the effect, to avoid a second render pass.
+  const [quotedFor, setQuotedFor] = useState({ cart, coupon })
+  if (quotedFor.cart !== cart || quotedFor.coupon !== coupon) {
+    setQuotedFor({ cart, coupon })
+    if (cart.length === 0) setQuote(null)
+    else setQuoting(true)
+  }
   useEffect(() => {
-    if (cart.length === 0) {
-      setQuote(null)
-      return
-    }
+    if (cart.length === 0) return
     const mine = ++sequence.current
-    setQuoting(true)
     const timer = window.setTimeout(() => {
       void api.pricing
         .quote({
