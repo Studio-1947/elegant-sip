@@ -217,6 +217,21 @@ export const coupons = pgTable(
 
 /* ── Relations ────────────────────────────────────────────────────────────── */
 
+/**
+ * What the boot seed last applied, per catalogue item. The seed only rewrites
+ * an item when its definition in seed.ts changes, so edits made in the admin
+ * dashboard survive restarts and deploys that do not touch that item.
+ */
+export const seedState = pgTable('seed_state', {
+  /** e.g. "product:first-flush-whole-leaf". */
+  key: text('key').primaryKey(),
+  /** Fingerprint of the seed definition last applied. */
+  hash: text('hash').notNull(),
+  /** Pack sizes that definition listed, so a size dropped from seed.ts can be removed without touching sizes added in admin. */
+  sizes: jsonb('sizes').$type<string[]>().notNull().default([]),
+  appliedAt: timestamp('applied_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const productsRelations = relations(products, ({ many }) => ({
   variants: many(productVariants),
   reviews: many(reviews),
