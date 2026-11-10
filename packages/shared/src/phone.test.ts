@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatIndianMobile, indianMobileError, normaliseIndianMobile } from './phone.js'
+import { formatIndianMobile, indianMobileError, normaliseIndianMobile, phoneInputDigits } from './phone.js'
 
 describe('Indian mobile numbers', () => {
   it('accepts the shapes people actually type and paste', () => {
@@ -25,5 +25,17 @@ describe('Indian mobile numbers', () => {
 
   it('formats for display', () => {
     expect(formatIndianMobile('9876543210')).toBe('98765 43210')
+  })
+
+  it('keeps a phone field right while the number is typed one key at a time', () => {
+    const typed = (text: string) => [...text].reduce((field, key) => phoneInputDigits(field + key), '')
+    expect(typed('+91 98765 43210')).toBe('9876543210')
+    expect(typed('098765 43210')).toBe('9876543210')
+    expect(typed('98765 43210')).toBe('9876543210')
+    // An extra digit is kept so the error says "10-digit", rather than silently changing the number.
+    expect(typed('98765432109')).toBe('98765432109')
+    expect(indianMobileError(typed('98765432109'))).toBe('Enter a 10-digit mobile number.')
+    // Pasting or autofill gives the whole value at once.
+    expect(phoneInputDigits('+91 98765-43210')).toBe('9876543210')
   })
 })

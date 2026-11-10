@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { formatIndianMobile, indianMobileError, normaliseIndianMobile } from '@elegantsip/shared'
+import { formatIndianMobile, indianMobileError, normaliseIndianMobile, phoneInputDigits } from '@elegantsip/shared'
 import { useAuth } from './AuthContext'
 import { ApiClientError, api } from '../lib/api'
 import { EMAIL_PATTERN } from './checkout/checkoutData'
 import { track } from '../lib/analytics'
 import { useDialog } from '../lib/useDialog'
+import { cachedAuthMethods, loadAuthMethods } from '../lib/authMethods'
 
 interface LoginModalProps {
   isOpen: boolean
@@ -53,7 +54,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [submitting, setSubmitting] = useState(false)
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
-  const [whatsapp, setWhatsapp] = useState(true)
+  // WhatsApp is offered (and opened first) only when the server can send codes.
+  const [whatsappAvailable, setWhatsappAvailable] = useState(() => cachedAuthMethods()?.whatsapp ?? false)
+  const [whatsapp, setWhatsapp] = useState(whatsappAvailable)
+  /** Set once the visitor does anything, so a late answer never yanks the form away. */
+  const touched = useRef(false)
   const [phone, setPhone] = useState('')
   const [phoneError, setPhoneError] = useState<string | null>(null)
   const [challengeId, setChallengeId] = useState<string | null>(null)
@@ -66,6 +71,19 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   // Focus trap, focus restoration, Escape and scroll lock.
   const dialogRef = useDialog(isOpen, onClose)
+
+  useEffect(() => {
+    if (cachedAuthMethods()) return
+    let live = true
+    void loadAuthMethods().then((methods) => {
+      if (!live) return
+      setWhatsappAvailable(methods.whatsapp)
+      if (methods.whatsapp && !touched.current) setWhatsapp(true)
+    })
+    return () => {
+      live = false
+    }
+  }, [])
 
   // Counts down the "Resend code" wait.
   useEffect(() => {
@@ -88,6 +106,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   /** Once a field has shown an error, re-check it as the visitor fixes it. */
   const updateField = (field: Field, value: string) => {
+    touched.current = true
     const values = { name, email, password, [field]: value }
     if (field === 'name') setName(value)
     if (field === 'email') setEmail(value)
@@ -101,6 +120,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   }
 
   const switchMode = (next: 'signin' | 'signup') => {
+    touched.current = true
     setMode(next)
     setError(null)
     setFieldErrors({})
@@ -164,9 +184,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   /* ── WhatsApp ───────────────────────────────────────────────────────────── */
 
   const onPhoneChange = (value: string) => {
-    const digits = value.replace(/\D/g, '')
-    // A pasted "+91 98765 43210" or "098765 43210" becomes the 10-digit number.
-    const next = digits.length > 10 ? (normaliseIndianMobile(digits) ?? digits.slice(0, 10)) : digits
+    touched.current = true
+    // "+91 98765 43210" or "098765 43210", typed or pasted, becomes the 10-digit number.
+    const next = phoneInputDigits(value)
     setPhone(next)
     if (phoneError) setPhoneError(indianMobileError(next))
   }
@@ -352,7 +372,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               </form>
             )}
             {error && <p className="text-xs text-red-700" role="alert">{error}</p>}
-            <button onClick={() => { setWhatsapp(false); setError(null) }} className={linkButton}>Use email and password instead</button>
+            <button onClick={() => { touched.current = true; setWhatsapp(false); setError(null) }} className={linkButton}>Use email and password instead</button>
           </div>
         ) : registered ? (
           <div className="bg-[#4a7333]/8 border border-[#4a7333]/25 rounded-xl p-5 text-sm text-[#45523f] leading-relaxed">
@@ -450,11 +470,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </form>
         )}
 
-        {!registered && mode === 'signin' && !whatsapp && <button onClick={() => { setWhatsapp(true); setError(null) }} className="w-full mt-4 border border-[#4a7333]/40 text-[#4a7333] text-xs font-bold tracking-widest uppercase py-3 rounded-lg cursor-pointer">Continue with WhatsApp</button>}
+        {whatsappAvailable && !registered && mode === 'signin' && !whatsapp && <button onClick={() => { touched.current = true; setWhatsapp(true); setError(null) }} className="w-full mt-4 border border-[#4a7333]/40 text-[#4a7333] text-xs font-bold tracking-widest uppercase py-3 rounded-lg cursor-pointer">Continue with WhatsApp</button>}
 
         <p className="text-[11px] text-[#4a584a] mt-6 leading-relaxed">
-          We store your name, email and order history. Nothing is shared with anyone, and we never
-          send your address to analytics. See our{' '}
+          We use your details only to run your account and deliver your orders, and we never sell
+          them or send them to analytics. See our{' '}
           <a href="/privacy" className="text-[#4a7333] font-semibold underline underline-offset-2">Privacy Policy</a>.
         </p>
       </div>

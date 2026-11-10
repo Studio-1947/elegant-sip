@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { escapeHtml, openPrintWindow, POPUP_BLOCKED_MESSAGE, writePrintDocument } from '../lib/printWindow'
 import { useAuth } from './AuthContext'
 import { ApiClientError, api, type AdminConfig, type AdminOrder, type AdminOrderDetail, type AdminOrderStatus, type AdminReturnRequest, type LowStockVariant } from '../lib/api'
 import { formatINR } from '../lib/currency'
@@ -221,12 +222,14 @@ function ConfigCard({ label, value, ready }: { label: string; value: string; rea
 
 function OrderDetailModal({ detail, onClose, onChanged }: { detail: AdminOrderDetail; onClose: () => void; onChanged: () => void }) {
   const printSlip = () => {
-    const popup = window.open('', '_blank', 'noopener,noreferrer,width=720,height=820')
-    if (!popup) return
-    const safe = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character]!)
+    const popup = openPrintWindow()
+    if (!popup) {
+      window.alert(POPUP_BLOCKED_MESSAGE)
+      return
+    }
+    const safe = escapeHtml
     // eslint-disable-next-line no-useless-escape -- preserves a literal closing script tag in generated print HTML.
-    popup.document.write(`<!doctype html><title>Packing slip ${safe(detail.number)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#182518}h1{font-size:24px}table{border-collapse:collapse;width:100%;margin-top:20px}th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left}.muted{color:#526052;font-size:12px}</style><h1>Elegant Sip — Packing Slip</h1><p><b>${safe(detail.number)}</b><br><span class="muted">Placed ${safe(new Date(detail.placedAt).toLocaleString('en-IN'))}</span></p><h2>Deliver to</h2><p>${safe(detail.shipping.name)}<br>${safe(detail.shipping.line1)}<br>${safe(detail.shipping.city)}, ${safe(detail.shipping.state ?? '')} ${safe(detail.shipping.postalCode)}<br>${safe(detail.shipping.country)}${detail.phone ? `<br>${safe(detail.phone)}` : ''}</p><h2>Items</h2><table><thead><tr><th>Tea</th><th>Pack</th><th>Qty</th></tr></thead><tbody>${detail.items.map((item) => `<tr><td>${safe(item.productName)}</td><td>${safe(item.variantSize)}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table>${detail.notes ? `<p><b>Customer note:</b> ${safe(detail.notes)}</p>` : ''}<script>window.onload=()=>window.print()<\/script>`)
-    popup.document.close()
+    writePrintDocument(popup, `<!doctype html><title>Packing slip ${safe(detail.number)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#182518}h1{font-size:24px}table{border-collapse:collapse;width:100%;margin-top:20px}th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left}.muted{color:#526052;font-size:12px}</style><h1>Elegant Sip — Packing Slip</h1><p><b>${safe(detail.number)}</b><br><span class="muted">Placed ${safe(new Date(detail.placedAt).toLocaleString('en-IN'))}</span></p><h2>Deliver to</h2><p>${safe(detail.shipping.name)}<br>${safe(detail.shipping.line1)}<br>${safe(detail.shipping.city)}, ${safe(detail.shipping.state ?? '')} ${safe(detail.shipping.postalCode)}<br>${safe(detail.shipping.country)}${detail.phone ? `<br>${safe(detail.phone)}` : ''}</p><h2>Items</h2><table><thead><tr><th>Tea</th><th>Pack</th><th>Qty</th></tr></thead><tbody>${detail.items.map((item) => `<tr><td>${safe(item.productName)}</td><td>${safe(item.variantSize)}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table>${detail.notes ? `<p><b>Customer note:</b> ${safe(detail.notes)}</p>` : ''}<script>window.onload=()=>window.print()<\/script>`)
   }
   return <div role="dialog" aria-modal="true" aria-label={`Order ${detail.number} details`} className="fixed inset-0 z-[70] flex items-end bg-black/45 p-0 sm:items-center sm:justify-center sm:p-6">
     <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl md:p-8">

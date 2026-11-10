@@ -36,3 +36,14 @@ export function indianMobileError(input: string | null | undefined): string | nu
 
 /** "9876543210" → "98765 43210", the way the number is usually written. */
 export const formatIndianMobile = (local: string) => (local.length === 10 ? `${local.slice(0, 5)} ${local.slice(5)}` : local)
+
+/**
+ * What a phone field should hold after each keystroke or paste: digits only,
+ * at most 12 (room for a typed "91" prefix), collapsed to the 10-digit number
+ * once a +91 or 0 prefix is complete. Typing "+91 98765 43210" one key at a
+ * time must end as "9876543210", never as a truncated "9198765432".
+ */
+export function phoneInputDigits(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 12)
+  return digits.length > 10 ? (normaliseIndianMobile(digits) ?? digits) : digits
+}

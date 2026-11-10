@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import TeaDiscoveryQuizModal from './TeaDiscoveryQuizModal'
 import LoginModal from './LoginModal'
 import CartDrawer from './CartDrawer'
+import { loadAuthMethods } from '../lib/authMethods'
 
 interface UiContextType {
   isQuizOpen: boolean
@@ -38,6 +39,10 @@ export function UiProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), [])
+  // Learn early whether WhatsApp sign-in is on, so the login box opens on the right form.
+  useEffect(() => {
+    void loadAuthMethods()
+  }, [])
 
   return (
     <UiContext.Provider
@@ -45,7 +50,8 @@ export function UiProvider({ children }: { children: ReactNode }) {
     >
       {children}
       <TeaDiscoveryQuizModal isOpen={isQuizOpen} onClose={closeQuiz} />
-      <LoginModal isOpen={isLoginOpen} onClose={closeLogin} />
+      {/* Mounted only while open: a closed form keeps no email, password or code in memory. */}
+      {isLoginOpen && <LoginModal isOpen onClose={closeLogin} />}
       <CartDrawer isOpen={isCartOpen} onClose={closeCart} />
       {toast && (
         <div role="status" aria-live="polite" className="fixed bottom-5 left-1/2 z-[80] w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-full bg-[#1b261b] px-5 py-3 text-center text-xs font-medium text-white shadow-[0_12px_30px_rgba(27,38,27,0.24)]">

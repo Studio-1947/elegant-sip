@@ -333,6 +333,8 @@ export const api = {
 
   auth: {
     me: () => request<{ user: SessionUser | null }>('/v1/auth/me'),
+    /** Which sign-in methods the server can serve right now. */
+    methods: () => request<{ whatsapp: boolean }>('/v1/auth/methods'),
     register: (payload: { name: string; email: string; password: string }) =>
       post<{ ok: true }>('/v1/auth/register', payload),
     login: (payload: { email: string; password: string }) =>

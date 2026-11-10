@@ -40,20 +40,24 @@ export function analyticsProvider(): string | undefined {
 /** True when anything at all would track, so the banner must ask. */
 export const trackingConfigured = () => Boolean(analyticsProvider()) || marketingTagsConfigured()
 
-/** null = no decision yet (or storage unavailable, which counts as no consent). */
+/** The choice made on this page, for browsers that block storage. */
+let consentThisPage: boolean | null = null
+
+/** null = no decision yet. */
 export function hasAnalyticsConsent(): boolean | null {
   try {
     const stored = localStorage.getItem(CONSENT_KEY)
     if (stored === 'granted') return true
     if (stored === 'denied') return false
   } catch {
-    // Private mode or blocked storage: treat as undecided.
+    // Private mode or blocked storage: fall back to this page's choice.
   }
-  return null
+  return consentThisPage
 }
 
 export function setAnalyticsConsent(granted: boolean) {
   const wasLoaded = marketingTagsLoaded()
+  consentThisPage = granted
   try {
     localStorage.setItem(CONSENT_KEY, granted ? 'granted' : 'denied')
   } catch {
