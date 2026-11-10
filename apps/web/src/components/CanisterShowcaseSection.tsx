@@ -7,20 +7,9 @@ const EYEBROW = 'Single Origin'
 const PARAGRAPH =
   'Harvested from high-altitude estates in the mist-shrouded Darjeeling hills. Hand-plucked, gently processed, and curated to preserve the delicate, signature muscatel flavor profile in every cup.'
 
-/** Phones get a tighter version — the full paragraph is a wall of text at 390px. */
-const PARAGRAPH_SHORT =
-  'Hand-plucked in the Darjeeling hills and gently processed, so the signature muscatel character reaches your cup intact.'
-
-/** The year in three pickings — left, front, right of the fanned stack. */
-const FLUSHES = [
-  { src: '/products/second-flush.webp', season: 'Summer', position: 'left-1 -translate-y-1/2 -rotate-[7deg] origin-bottom-right', label: 'left-2' },
-  { src: '/products/whole-leaf-first-flush.webp', season: 'Spring', position: 'left-1/2 -translate-x-1/2 -translate-y-[54%] z-10', label: 'left-2' },
-  { src: '/products/third-flush.webp', season: 'Autumn', position: 'right-1 -translate-y-1/2 rotate-[7deg] origin-bottom-left', label: 'right-2' },
-]
-
 /** Only claims the site already makes elsewhere. */
 const POINTS = [
-  { label: 'Hand-plucked', icon: 'M12 21c-4.5-3-7.5-6.5-7.5-10.5A7.5 7.5 0 0112 3a7.5 7.5 0 017.5 7.5C19.5 14.5 16.5 18 12 21zm0-14v8' },
+  { label: 'Hand‑plucked', icon: 'M12 21c-4.5-3-7.5-6.5-7.5-10.5A7.5 7.5 0 0112 3a7.5 7.5 0 017.5 7.5C19.5 14.5 16.5 18 12 21zm0-14v8' },
   { label: 'Small lots', icon: 'M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m16.5 0h-16.5m16.5 0l-1.5-3h-13.5l-1.5 3M10 11.25h4' },
   { label: 'Packed to order', icon: 'M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9' },
 ]
@@ -39,33 +28,38 @@ export default function CanisterShowcaseSection() {
 
   return (
     <div className="w-full overflow-hidden">
-      {/* ── Phone: the three flushes fanned out, then the story and a way in.
-             (The canister photo shows retired packaging and is desktop/tablet-only.) ── */}
-      <div className="md:hidden px-6 pt-6 pb-14 bg-[#f9faf7]">
-        <div className="relative h-[19rem] mb-8" aria-hidden="true">
-          {FLUSHES.map((f, i) => (
-            <div
-              key={f.src}
-              className={`absolute top-1/2 w-[46%] max-w-[13rem] rounded-2xl overflow-hidden shadow-[0_18px_40px_rgba(27,38,27,0.18)] ${f.position}`}
-            >
-              <SkeletonImage src={f.src} alt="" loading="lazy" width={1600} height={1600} sizes="48vw" className="w-full aspect-[4/5] object-cover" />
-              <span className={`absolute bottom-2 ${f.label} bg-white/90 text-[#1b261b] text-[10px] font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-md`}>
-                {f.season}
-              </span>
-              {i !== 1 && <span className="absolute inset-0 bg-[#f9faf7]/10" />}
-            </div>
-          ))}
+      {/* ── Phone: the desktop photo, cropped to the hand and jar and faded into
+             the page, with the heading rising out of the fade as on desktop. ── */}
+      <div className="md:hidden pb-14 bg-[#f9faf7]">
+        {/* Heading sits top-left over the photo's pale backdrop (as on desktop);
+            the crop puts the jar right of centre so the two never collide. */}
+        <div className="relative pt-24">
+          <SkeletonImage
+            src="/tea1_1.webp"
+            alt="Elegant Sip first flush Darjeeling tea canister"
+            loading="lazy"
+            width={2560}
+            height={1440}
+            sizes="100vw"
+            className="w-full h-[20rem] object-cover object-[38%_45%]"
+          />
+          {/* Top and bottom fades melt the photo's white backdrop into the page */}
+          <div className="absolute inset-x-0 top-24 h-24 bg-gradient-to-b from-[#f9faf7] to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 -bottom-px h-28 bg-gradient-to-t from-[#f9faf7] to-transparent pointer-events-none" />
+
+          <div className="absolute top-6 left-6 right-6 z-10">
+            <span className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
+              {EYEBROW}
+            </span>
+            <Heading className="text-[#1b261b] text-4xl font-bold uppercase tracking-tight leading-[1.05]" />
+          </div>
         </div>
 
-        <span className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
-          {EYEBROW}
-        </span>
-        <Heading className="text-[#1b261b] text-4xl font-bold uppercase tracking-tight leading-[1.05] mb-4" />
-        <p className="text-[#4a584a] text-[15px] leading-relaxed mb-6">{PARAGRAPH_SHORT}</p>
+        <div className="relative mt-2 px-6">
 
         <ul className="grid grid-cols-3 gap-2 mb-7">
           {POINTS.map((point) => (
-            <li key={point.label} className="flex flex-col items-center text-center gap-2 bg-white border border-[#1b261b]/10 rounded-xl px-2 py-3">
+            <li key={point.label} className="flex flex-col items-center text-center gap-2 bg-white border border-[#1b261b]/10 rounded-xl px-1 py-3">
               <svg className="w-5 h-5 text-[#4a7333]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d={point.icon} />
               </svg>
@@ -83,6 +77,7 @@ export default function CanisterShowcaseSection() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
           </svg>
         </Link>
+        </div>
       </div>
 
       {/* ── Tablet: side-by-side, text left / jar right ── */}

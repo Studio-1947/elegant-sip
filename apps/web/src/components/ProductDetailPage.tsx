@@ -283,10 +283,10 @@ export default function ProductDetailPage({ id }: { id?: string }) {
 
             {comingSoon ? (
               <p className="inline-block bg-[#8bb56e]/10 border border-[#8bb56e]/30 rounded-lg px-4 py-2.5 text-[#4a7333] text-xs font-mono font-bold tracking-widest uppercase mb-6">
-                Coming Soon — arriving with the next harvest
+                Coming soon · next harvest
               </p>
             ) : (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-6">
+              <div className="flex flex-col items-start gap-1.5 mb-6">
                 <PriceTag price={activeVariant.price} compareAtPrice={activeVariant.compareAtPrice} size="page" />
                 <span className="text-xs font-mono text-[#4a584a]">/ {activeVariant.size} · incl. GST</span>
               </div>
@@ -295,7 +295,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
             <p className="text-sm text-[#4a584a] leading-relaxed mb-6">{product.description}</p>
             {product.longDescription && (
               <details className="mb-8 text-sm text-[#4a584a]">
-                <summary className="cursor-pointer font-medium text-[#1b261b] marker:text-[#4a7333]">More about this tea</summary>
+                <summary className="cursor-pointer py-3 -my-3 font-medium text-[#1b261b] marker:text-[#4a7333]">More about this tea</summary>
                 <p className="mt-3 leading-relaxed">{product.longDescription}</p>
               </details>
             )}
@@ -429,7 +429,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight">You May Also Love</h2>
             </div>
             {/* Phones: the same compact tiles as the shop */}
-            <div className="md:hidden relative flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 -mx-6 px-6 scroll-px-6">
+            <div className="md:hidden relative flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory no-scrollbar gap-3 -mx-6 px-6 scroll-px-6">
               {related.map((item) => (
                 <div key={item.id} className="w-[42vw] max-w-[220px] flex-shrink-0 snap-start flex">
                   <ProductTile product={item} />
@@ -451,7 +451,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       {!comingSoon && variantInStock && (
         <>
           <div
-            className={`md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-[#1b261b]/10 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-transform duration-300 ${
+            className={`md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-[#1b261b]/10 px-6 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-transform duration-300 ${
               ctaPassed ? 'translate-y-0' : 'translate-y-full'
             }`}
             aria-hidden={!ctaPassed}

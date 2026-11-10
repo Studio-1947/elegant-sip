@@ -38,7 +38,7 @@ export default function ThreePillarsSection() {
       </div>
 
       {/* Phone & tablet: horizontal card carousel */}
-      <div className="relative lg:hidden flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-6 px-6 md:-mx-12 md:px-12">
+      <div className="relative lg:hidden flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden py-2 -my-2 snap-x snap-mandatory no-scrollbar -mx-6 px-6 md:-mx-12 md:px-12">
         {PILLARS.map((pillar) => (
           <div
             key={pillar.title}

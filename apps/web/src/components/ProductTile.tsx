@@ -70,11 +70,11 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
         </Link>
 
         {comingSoon ? (
-          <span className="absolute top-2 left-2 bg-[#1b261b] text-white text-[10px] font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-md pointer-events-none">
+          <span className="absolute top-2 left-2 bg-[#1b261b] text-white text-[11px] font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-md pointer-events-none">
             Coming soon
           </span>
         ) : off !== null ? (
-          <span className="absolute top-2 left-2 bg-[#4a7333] text-white text-[10px] font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-md pointer-events-none">
+          <span className="absolute top-2 left-2 bg-[#4a7333] text-white text-[11px] font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-md pointer-events-none">
             {off}% off
           </span>
         ) : null}
@@ -99,7 +99,7 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
 
       {/* Text — fixed slots so neighbouring tiles line up */}
       <div className="flex flex-col flex-grow pt-3">
-        <span className="text-[10px] font-mono tracking-[0.12em] uppercase text-[#4a584a] mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
+        <span className="text-[11px] font-mono tracking-[0.12em] uppercase text-[#4a584a] mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
           {product.category}
         </span>
         <Link to={href} className="mb-1.5">
@@ -120,7 +120,7 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
                   {formatINR(variant.compareAtPrice)}
                 </s>
               )}
-              <span className="text-[10px] text-[#4a584a]">/ {variant.size}</span>
+              <span className="text-[11px] text-[#4a584a]">/ {variant.size}</span>
             </>
           )}
         </div>

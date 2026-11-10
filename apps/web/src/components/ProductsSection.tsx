@@ -156,13 +156,13 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
            z-index here, the grid (later in DOM order) paints over the open dropdown. */
         <div className="relative z-30 max-w-6xl mx-auto mb-6 md:mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           {/* Category chips — one swipeable row on phones, wrapping row from sm up */}
-          <div className="relative flex overflow-x-auto no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
+          <div className="relative flex overflow-x-auto overflow-y-hidden no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
             {CATEGORIES.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
                 aria-pressed={category === c}
-                className={`flex-shrink-0 whitespace-nowrap text-xs font-bold tracking-wide py-2.5 px-5 sm:px-6 rounded-full border transition-colors cursor-pointer ${category === c
+                className={`flex-shrink-0 whitespace-nowrap text-xs font-bold tracking-wide min-h-[44px] px-5 sm:px-6 rounded-full border transition-colors cursor-pointer ${category === c
                   ? 'bg-[#1b261b] border-[#1b261b] text-white'
                   : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#4a7333]'
                   }`}
@@ -196,7 +196,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
           {/* Phones: compact tiles — a swipeable shelf or a two-up grid */}
           {shelf ? (
             <div className="md:hidden">
-              <div className="relative flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 -mx-6 px-6 scroll-px-6">
+              <div className="relative flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory no-scrollbar gap-3 -mx-6 px-6 scroll-px-6">
                 {visibleProducts.map((product) => (
                   <div key={product.id} className="w-[42vw] max-w-[220px] flex-shrink-0 snap-start flex">
                     <ProductTile product={product} />

@@ -5,11 +5,12 @@ import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { useIsMobile } from '../lib/useMediaQuery'
 
+/** `sections` are the routes each item stays highlighted on (e.g. Support on FAQ and policy pages). */
 const NAV_LINKS = [
-  { to: '/shop', label: 'Shop' },
-  { to: '/journal', label: 'Journal' },
-  { to: '/about', label: 'About' },
-  { to: '/contact', label: 'Support' },
+  { to: '/shop', label: 'Shop', sections: ['shop', 'product'] },
+  { to: '/journal', label: 'Journal', sections: ['journal'] },
+  { to: '/about', label: 'About', sections: ['about', 'gardens'] },
+  { to: '/contact', label: 'Support', sections: ['contact', 'faq', 'shipping', 'privacy', 'terms'] },
 ]
 
 interface SiteHeaderProps {
@@ -119,7 +120,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
             }`}
         >
           {NAV_LINKS.map((link) => {
-            const active = routeName === link.to.slice(1)
+            const active = link.sections.includes(routeName)
             return (
               <Link
                 key={link.to}
@@ -250,7 +251,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
           >
             <nav aria-label="Primary mobile" className="px-8 py-6 flex flex-col">
               {NAV_LINKS.map((link) => {
-                const active = routeName === link.to.slice(1)
+                const active = link.sections.includes(routeName)
                 return (
                   <Link
                     key={link.to}

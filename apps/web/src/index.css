@@ -254,3 +254,10 @@ dd > a:not([class*="no-underline"]) {
   border: 1px solid rgba(27, 38, 27, 0.2);
 }
 .es-btn-secondary:hover { border-color: #1b261b; background: #f9faf7; }
+
+/* Balanced heading wraps: no single orphaned word on the last line. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}

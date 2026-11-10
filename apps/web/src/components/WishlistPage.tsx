@@ -17,8 +17,8 @@ export default function WishlistPage() {
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-32 pb-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-5xl mx-auto">
-        <Link to="/" className="text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mb-6 inline-block">
-          ← Back to Experience
+        <Link to="/shop" className="inline-flex items-center min-h-[44px] text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mb-4">
+          ← Continue shopping
         </Link>
         <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight mb-3">Your Wishlist</h1>
         <p className="text-xs text-[#4a584a] mb-12">
