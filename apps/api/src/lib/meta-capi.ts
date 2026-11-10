@@ -75,6 +75,9 @@ export interface ServerEventInput {
 /** Meta's own cookie values: `fb.<n>.<timestamp>.<id>`. Anything else is dropped. */
 const META_COOKIE = /^fb\.\d\.\d{10,16}\.[\w.-]{1,500}$/
 
+/** True for a value shaped like Meta's own `_fbp` / `_fbc` cookies. */
+export const isMetaCookie = (value: string) => META_COOKIE.test(value)
+
 /** The pixel builds _fbc from a `fbclid` in the URL; done here too, for when it is blocked. */
 function clickIdFrom(url: URL, now: Date): string | undefined {
   const fbclid = url.searchParams.get('fbclid')?.trim()

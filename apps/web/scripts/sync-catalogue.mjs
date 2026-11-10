@@ -10,10 +10,11 @@
  * prerendered HTML carries real product data for crawlers, and the sitemap can
  * be generated at build time — which is exactly what the SEO pipeline needs.
  *
- * Prices and stock can therefore be slightly stale. That is safe because
- * nothing monetary is ever decided from this file: the server re-prices every
- * cart at /v1/pricing/quote and again at /v1/orders, and returns `adjustments`
- * when a line has moved. The snapshot is for display and routing only.
+ * It is only the first paint: once a page loads, the storefront fetches live
+ * prices, stock and status (src/lib/liveCatalogue.ts), so admin changes show
+ * without a new sync. Nothing monetary is decided from this file either way:
+ * the server re-prices every cart at /v1/pricing/quote and again at /v1/orders.
+ * New products still need a sync and deploy for their prerendered page.
  *
  * If the API is unreachable the previous snapshot is kept and the script exits
  * 0, so a deploy is never blocked by the API being briefly down.

@@ -26,6 +26,9 @@ const TYPES = {
 
 const isFile = (p) => existsSync(p) && statSync(p).isFile()
 
+// Every real tea has a prerendered shell; any other /product/<slug> is a 404 (see Caddyfile).
+const PRODUCT_PATH = /^\/product\/[^/]+\/?$/
+
 createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://x').pathname)
   const candidates = [join(ROOT, pathname, 'index.html'), join(ROOT, pathname), join(ROOT, 'index.html')]
@@ -39,9 +42,10 @@ createServer((req, res) => {
       ext === '.html'
         ? 'public, max-age=0, must-revalidate'
         : 'public, max-age=31536000, immutable'
-    // A SPA-fallback hit is a real 404 for anything that isn't an app route,
-    // but the shell still renders the in-app NotFound page.
-    res.writeHead(200, {
+    // The app shell for an unknown product still renders the in-app NotFound
+    // page, but with a real 404 so crawlers do not index a soft 404.
+    const unknownProduct = file === candidates[2] && PRODUCT_PATH.test(pathname)
+    res.writeHead(unknownProduct ? 404 : 200, {
       'Content-Type': TYPES[ext] ?? 'application/octet-stream',
       'Cache-Control': cache,
     })

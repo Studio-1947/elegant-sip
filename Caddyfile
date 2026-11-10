@@ -65,8 +65,31 @@
 	# Everything else is the storefront.
 	handle {
 		root * /srv
-		try_files {path} /index.html
-		file_server
+
+		# Every real tea has a prerendered /product/<slug>/index.html. Any
+		# other product URL still gets the app shell (it renders the
+		# not-found page) but with a real 404, so search engines drop it
+		# instead of indexing a "soft 404". Nested handles are exclusive, and
+		# the rewrite lives inside them so try_files below cannot run first.
+		@unknownProduct {
+			path_regexp ^/product/[^/]+/?$
+			not file {
+				root /srv
+				try_files {path}/index.html
+			}
+		}
+		handle @unknownProduct {
+			rewrite * /index.html
+			file_server {
+				status 404
+			}
+		}
+		# A route's prerendered shell first (/shop → /shop/index.html, as
+		# public/.htaccess does), then a real file, then the app shell.
+		handle {
+			try_files {path}/index.html {path} /index.html
+			file_server
+		}
 
 		# Fingerprinted assets can be cached forever — their names change when
 		# their contents do.
@@ -74,7 +97,9 @@
 		header @immutable Cache-Control "public, max-age=31536000, immutable"
 
 		# Prerendered HTML must be revalidated, or a deploy goes unnoticed.
-		@html path *.html /
+		# Matched on the requested path (before the rewrites above), so a
+		# route like /shop counts too: anything that is not fingerprinted.
+		@html not path /assets/* *.webp *.mp4 *.woff2
 		header @html Cache-Control "public, max-age=0, must-revalidate"
 
 		header {

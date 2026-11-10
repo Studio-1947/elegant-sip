@@ -111,6 +111,12 @@ export default function PrivacyPage() {
             each event once. This also happens only after you accept, and stops when you withdraw.
           </li>
           <li>
+            If you had accepted when you check out, we keep that IP address, browser type and Meta
+            cookie ID with your order only until your payment is confirmed, so the purchase is
+            counted even if you close the page before it loads. They are deleted once it has been
+            reported.
+          </li>
+          <li>
             We never send your name, email address, phone number or delivery address to Google or
             Meta, and links from our emails (password reset, email confirmation) are cleaned before
             any page view is recorded.

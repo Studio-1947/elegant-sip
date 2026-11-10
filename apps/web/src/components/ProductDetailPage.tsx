@@ -138,14 +138,19 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                   },
                   shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' },
                 },
-                hasMerchantReturnPolicy: {
-                  '@type': 'MerchantReturnPolicy',
-                  applicableCountry: 'IN',
-                  returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-                  merchantReturnDays: 30,
-                  returnMethod: 'https://schema.org/ReturnByMail',
-                  returnFees: 'https://schema.org/FreeReturn',
-                },
+                // Only while the shop offers its guarantee, with the days staff set.
+                ...(guarantee.enabled
+                  ? {
+                    hasMerchantReturnPolicy: {
+                      '@type': 'MerchantReturnPolicy',
+                      applicableCountry: 'IN',
+                      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                      merchantReturnDays: guarantee.days,
+                      returnMethod: 'https://schema.org/ReturnByMail',
+                      returnFees: 'https://schema.org/FreeReturn',
+                    },
+                  }
+                  : {}),
               })),
             },
           }

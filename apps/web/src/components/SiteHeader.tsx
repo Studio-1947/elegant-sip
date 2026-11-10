@@ -29,10 +29,13 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
   const isMobile = useIsMobile()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // Close the mobile menu whenever the route changes
-  useEffect(() => {
+  // Close the mobile menu whenever the route changes (during render, so the
+  // new page never paints with the menu still open).
+  const [prevRoute, setPrevRoute] = useState(route)
+  if (route !== prevRoute) {
+    setPrevRoute(route)
     setMenuOpen(false)
-  }, [route])
+  }
 
   // While the menu is open: close on Escape and lock background scrolling so
   // attention stays on the menu items.

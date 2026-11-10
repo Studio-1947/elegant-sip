@@ -1,3 +1,5 @@
 # Netlify SPA fallback. Prerendered shells win because Netlify serves static
 # files before applying redirects; everything else boots the SPA.
+# Unknown product pages: the app's not-found page, with a real 404 status.
+/product/*    /index.html   404
 /*    /index.html   200

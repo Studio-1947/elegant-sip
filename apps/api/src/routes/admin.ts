@@ -1,4 +1,4 @@
-import { and, desc, eq, lte, sql } from 'drizzle-orm'
+import { and, desc, eq, isNull, lte, sql } from 'drizzle-orm'
 import type { FastifyBaseLogger } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -481,8 +481,8 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         .select({ productSlug: products.slug, productName: products.name, size: productVariants.size, sku: productVariants.sku, stock: productVariants.stock })
         .from(productVariants)
         .innerJoin(products, eq(productVariants.productId, products.id))
-        // Coming-soon teas have no stock by design; only teas on sale can run low.
-        .where(and(lte(productVariants.stock, threshold), eq(products.status, 'active')))
+        // Coming-soon and retired teas aren't on sale, so they can't run low.
+        .where(and(lte(productVariants.stock, threshold), eq(products.status, 'active'), isNull(products.archivedAt)))
         .orderBy(productVariants.stock, products.name, productVariants.size)
       return { variants }
     },

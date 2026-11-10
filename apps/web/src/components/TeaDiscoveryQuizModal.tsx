@@ -18,13 +18,19 @@ export default function TeaDiscoveryQuizModal({ isOpen, onClose }: TeaDiscoveryQ
   const closeRef = useRef<HTMLButtonElement>(null)
   const timers = useRef<number[]>([])
 
-  // Fresh quiz every time it opens; clear pending phase timers on close/unmount.
-  useEffect(() => {
+  // Fresh quiz every time it opens.
+  const [wasOpen, setWasOpen] = useState(isOpen)
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen)
     if (isOpen) {
       setPhase('question')
       setSelected(null)
       setMatch(null)
     }
+  }
+
+  // Clear pending phase timers on close/unmount.
+  useEffect(() => {
     return () => {
       timers.current.forEach((t) => window.clearTimeout(t))
       timers.current = []

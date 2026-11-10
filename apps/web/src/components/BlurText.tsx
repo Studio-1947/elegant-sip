@@ -1,4 +1,4 @@
-import { useEffect, useRef, createElement } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import gsap from 'gsap'
 import { onContentRevealed } from '../lib/contentReveal'
@@ -54,7 +54,11 @@ export default function BlurText({
 }: BlurTextProps) {
   const trailingSpace = text.endsWith(' ')
   const elements = animateBy === 'words' ? text.trim().split(' ') : text.split('')
-  const ref = useRef<HTMLElement>(null)
+  const ref = useRef<HTMLElement | null>(null)
+  // A callback ref, because one object ref cannot be typed for every `as` tag.
+  const setRef = useCallback((node: HTMLElement | null) => {
+    ref.current = node
+  }, [])
 
   useEffect(() => {
     const el = ref.current
@@ -122,5 +126,6 @@ export default function BlurText({
     )
   })
 
-  return createElement(as, { ref, className, style }, children)
+  const Tag = as
+  return <Tag ref={setRef} className={className} style={style}>{children}</Tag>
 }

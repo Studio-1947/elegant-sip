@@ -24,12 +24,14 @@ export default function ProductReviews({ productSlug, reviews, rating, onAdded }
   const [submitted, setSubmitted] = useState(false)
 
   // Reset when navigating between products (same component instance).
-  useEffect(() => {
+  const [prevSlug, setPrevSlug] = useState(productSlug)
+  if (productSlug !== prevSlug) {
+    setPrevSlug(productSlug)
     setReviewOpen(false)
     setForm({ author: '', rating: 5, text: '' })
     setError(null)
     setSubmitted(false)
-  }, [productSlug])
+  }
 
   /*
    * The author name and the "verified purchase" flag both come from the

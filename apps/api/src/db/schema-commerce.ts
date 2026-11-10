@@ -167,6 +167,9 @@ export const orders = pgTable(
     adConsent: boolean('ad_consent').notNull().default(false),
     metaFbp: text('meta_fbp'),
     metaFbc: text('meta_fbc'),
+    /** Meta needs the buyer's IP and browser for website events. Cleared once the purchase is reported. */
+    metaClientIp: text('meta_client_ip'),
+    metaClientUa: text('meta_client_ua'),
     /** Set once the server has reported this purchase to Meta, so it is reported once. */
     metaPurchaseSentAt: timestamp('meta_purchase_sent_at', { withTimezone: true }),
     trackingNumber: text('tracking_number'),

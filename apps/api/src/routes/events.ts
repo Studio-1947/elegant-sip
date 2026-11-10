@@ -1,11 +1,9 @@
-import { and, eq, inArray } from 'drizzle-orm'
 import type { FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { db } from '../db/client.js'
-import { orderItems, orders } from '../db/schema-commerce.js'
 import { env, isProduction } from '../env.js'
 import { META_EVENTS, buildServerEvent, metaCapiMode, sendMetaEvents, type MetaCustomData } from '../lib/meta-capi.js'
+import { purchaseData } from '../lib/meta-purchase.js'
 import { limit } from './auth-shared.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -21,9 +19,6 @@ import { limit } from './auth-shared.js'
  *   · events for pages outside SITE_URL are ignored in production;
  *   · the answer is always 204, whether or not anything was sent.
  * ──────────────────────────────────────────────────────────────────────────── */
-
-/** Orders whose payment has been taken. */
-const PAID = ['paid', 'packed', 'shipped', 'delivered'] as const
 
 const contentSchema = z.object({
   id: z.string().trim().min(1).max(100),
@@ -67,29 +62,6 @@ function customDataFrom(body: Body): MetaCustomData {
   }
   if (body.numItems !== undefined) data.num_items = body.numItems
   return data
-}
-
-/** The order's own figures, or null when it does not exist or is unpaid. */
-async function purchaseData(number: string): Promise<MetaCustomData | null> {
-  const [order] = await db
-    .select({ id: orders.id, total: orders.total })
-    .from(orders)
-    .where(and(eq(orders.number, number), inArray(orders.status, [...PAID])))
-    .limit(1)
-  if (!order) return null
-  const items = await db
-    .select({ slug: orderItems.productSlug, quantity: orderItems.quantity })
-    .from(orderItems)
-    .where(eq(orderItems.orderId, order.id))
-  return {
-    value: order.total / 100,
-    currency: 'INR',
-    content_ids: items.map((i) => i.slug),
-    content_type: 'product',
-    contents: items.map((i) => ({ id: i.slug, quantity: i.quantity })),
-    num_items: items.reduce((sum, i) => sum + i.quantity, 0),
-    order_id: number,
-  }
 }
 
 type RelayRequest = Pick<FastifyRequest<{ Body: Body }>, 'body' | 'ip' | 'headers' | 'cookies' | 'log'>
