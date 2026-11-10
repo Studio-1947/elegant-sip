@@ -1,5 +1,6 @@
 import { and, eq, gt, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
 import type { FastifyBaseLogger } from 'fastify'
+import { normaliseIndianMobile } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { orders, shipments, type ShipmentEvent } from '../db/schema-commerce.js'
 import { env } from '../env.js'
@@ -44,11 +45,7 @@ export function packGrams(size: string): number {
 }
 
 /** Indian mobile as 10 digits, accepting +91 / 0 prefixes and spaces. */
-export function normalisePhone(phone: string | null | undefined): string | null {
-  if (!phone) return null
-  const digits = phone.replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '')
-  return /^[6-9]\d{9}$/.test(digits) ? digits : null
-}
+export const normalisePhone = (phone: string | null | undefined): string | null => normaliseIndianMobile(phone)
 
 /** Maps a courier's free-text status onto our small set. Null = no change. */
 export function normaliseCourierStatus(raw: string | null | undefined): ShipmentStatus | null {
