@@ -3,6 +3,7 @@ import { hash, verify } from '@node-rs/argon2'
 import { and, eq, gt, isNotNull, isNull } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { indianMobileError, normaliseIndianMobile } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { otpChallenges, users } from '../db/schema-commerce.js'
 import { env } from '../env.js'
@@ -13,10 +14,10 @@ import { ARGON2, limit, PLACEHOLDER_EMAIL_DOMAIN, PLACEHOLDER_NAME, publicUserSc
 const phoneSchema = z.string().trim().max(20)
 const codeSchema = z.string().regex(/^\d{6}$/, 'Enter the 6-digit code.')
 const response = z.object({ ok: z.literal(true), challengeId: z.string().uuid().optional() })
+/** Same rule as the storefront form, so the browser and the API never disagree. */
 const normalisePhone = (input: string) => {
-  const digits = input.replace(/\D/g, '')
-  const local = digits.startsWith('91') && digits.length === 12 ? digits.slice(2) : digits
-  if (!/^[6-9]\d{9}$/.test(local)) throw ApiError.badRequest('Enter a valid Indian WhatsApp number.')
+  const local = normaliseIndianMobile(input)
+  if (!local) throw ApiError.badRequest(indianMobileError(input) ?? 'Enter a valid Indian WhatsApp number.')
   return `+91${local}`
 }
 async function sendOtp(phone: string, code: string, challengeId: string) {

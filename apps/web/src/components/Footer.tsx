@@ -1,4 +1,5 @@
 import { Link } from '../lib/router'
+import { openConsentSettings, trackingConfigured } from '../lib/analytics'
 import { useUi } from './UiContext'
 
 export default function Footer() {
@@ -100,10 +101,13 @@ export default function Footer() {
             <p className="text-white/70 md:text-[#4a584a] text-[11px] font-mono tracking-wider">
               © {year} Elegant Sip. All rights reserved. Est. 2024.
             </p>
-            <nav aria-label="Legal links" className="flex items-center gap-5 -my-3 text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
-              <Link to="/privacy" className="inline-flex items-center min-h-[44px] hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Privacy</Link>
-              <Link to="/terms" className="inline-flex items-center min-h-[44px] hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Terms</Link>
-              <Link to="/shipping" className="inline-flex items-center min-h-[44px] hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping</Link>
+            <nav aria-label="Legal links" className="flex items-center gap-4 text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
+              <Link to="/privacy" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Terms</Link>
+              <Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping</Link>
+              {trackingConfigured() && (
+                <button type="button" onClick={openConsentSettings} className="cursor-pointer hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Cookies</button>
+              )}
             </nav>
           </div>
           {/* No payment-network badges: checkout is a demo and processes no

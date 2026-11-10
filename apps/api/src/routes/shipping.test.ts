@@ -16,7 +16,7 @@ import { productVariants, products } from '../db/schema.js'
 import { orders, users } from '../db/schema-commerce.js'
 import { FakeGateway } from '../lib/gateway.js'
 import { FakeShippingProvider, __setShippingProvider } from '../lib/shipping.js'
-import { nextShipmentStatus, normaliseCourierStatus, normalisePhone, packGrams } from '../lib/fulfilment.js'
+import { nextShipmentStatus, normaliseCourierStatus, normalisePhone, packGrams, syncStaleShipments } from '../lib/fulfilment.js'
 import { redis } from '../lib/sessions.js'
 
 /* Courier booking and tracking, end to end against the fake provider. */
@@ -149,6 +149,8 @@ describe('courier shipments', () => {
     expect(shipment.courierName).toBe('Fake Air')
     expect(shipment.status).toBe('pickup_scheduled')
     expect(shipment.labelUrl).toBeTruthy()
+    // The public tracking link exists from booking, before any courier scan.
+    expect(shipment.trackingUrl).toBe(`https://track.example/${shipment.awb}`)
 
     const order = await db.query.orders.findFirst({ where: eq(orders.number, number) })
     expect(order?.status).toBe('packed')
@@ -201,6 +203,30 @@ describe('courier shipments', () => {
 
     const cancelLate = await admin('POST', `/v1/admin/orders/${number}/shipment/cancel`)
     expect(cancelLate.statusCode).toBe(409)
+  })
+
+  it('refreshes silent shipments in the background, as a safety net for missed webhooks', async () => {
+    if (!available) return
+    const number = await paidOrder('9830012345')
+    const { shipment } = (await admin('POST', `/v1/admin/orders/${number}/shipment`, {})).json()
+    FakeShippingProvider.setTracking(shipment.awb, {
+      providerStatus: 'OUT FOR DELIVERY',
+      trackingUrl: null,
+      expectedDeliveryAt: '2026-11-08T12:00:00.000Z',
+      scans: [{ at: '2026-11-08T03:00:00.000Z', status: 'Out for delivery', location: 'Darjeeling', detail: null }],
+    })
+
+    // Never synced, so it is due whatever the window.
+    expect(await syncStaleShipments(180, app.log, 10_000)).toBeGreaterThan(0)
+    const view = (await app.inject({ method: 'GET', url: `/v1/orders/${number}`, headers: { cookie } })).json()
+    expect(view.status).toBe('shipped')
+    expect(view.shipment.status).toBe('out_for_delivery')
+    expect(view.shipment.trackingUrl).toBe(`https://track.example/${shipment.awb}`)
+
+    // Just synced: not due again inside the window.
+    FakeShippingProvider.setTracking(shipment.awb, { providerStatus: 'DELIVERED', trackingUrl: null, expectedDeliveryAt: null, scans: [] })
+    await syncStaleShipments(180, app.log, 10_000)
+    expect((await db.query.orders.findFirst({ where: eq(orders.number, number) }))?.status).toBe('shipped')
   })
 
   it('cancels before pickup and lets staff rebook', async () => {

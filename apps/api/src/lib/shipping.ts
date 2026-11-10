@@ -79,6 +79,8 @@ export interface ShippingProvider {
   label(providerShipmentId: string): Promise<string | null>
   track(awb: string): Promise<TrackingResult>
   cancel(providerOrderId: string): Promise<void>
+  /** Public tracking page for an AWB, known as soon as it is assigned. */
+  publicTrackingUrl(awb: string): string | null
 }
 
 const toRupees = (paise: number) => Math.round(paise) / 100
@@ -309,6 +311,11 @@ class ShiprocketProvider implements ShippingProvider {
   async cancel(providerOrderId: string) {
     await this.call('POST', '/orders/cancel', { ids: [Number(providerOrderId)] })
   }
+
+  /** The same page Shiprocket returns as `track_url`; webhooks never include it. */
+  publicTrackingUrl(awb: string) {
+    return `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
+  }
 }
 
 /* ── Fake ─────────────────────────────────────────────────────────────────── */
@@ -352,6 +359,10 @@ export class FakeShippingProvider implements ShippingProvider {
   }
 
   async cancel() {}
+
+  publicTrackingUrl(awb: string) {
+    return `https://track.example/${encodeURIComponent(awb)}`
+  }
 
   /** Test helper: what the courier would report next. */
   static setTracking(awb: string, result: TrackingResult) {
