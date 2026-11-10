@@ -37,9 +37,15 @@ services:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      # Checked every 60 s once running, but every 2 s while starting, so the
+      # API (which waits for `healthy`) is up seconds after a reboot instead
+      # of a minute of 502s. start_interval needs Docker Engine 25+; older
+      # engines ignore it and fall back to `interval`.
       interval: 60s
       timeout: 5s
       retries: 10
+      start_period: 60s
+      start_interval: 2s
 
   redis:
     logging: *default-logging
@@ -50,9 +56,12 @@ services:
     command: ['redis-server', '--save', '', '--appendonly', 'no', '--maxmemory', '256mb', '--maxmemory-policy', 'allkeys-lru']
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
+      # Same as Postgres: fast checks while starting, slow ones afterwards.
       interval: 60s
       timeout: 5s
       retries: 10
+      start_period: 30s
+      start_interval: 2s
 
   api:
     logging: *default-logging
@@ -137,6 +146,12 @@ services:
       # overrides Caddyfile's default substitution and leaves it with no site
       # address, so Caddy exits in a restart loop.
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      # Which peers may supply the visitor's address in X-Forwarded-For (see
+      # the Caddyfile and .env.prod.example). Unset keeps `private_ranges`,
+      # right when host nginx sits in front. Set it EMPTY when Caddy faces the
+      # internet directly. `-` rather than `:-` on purpose: an empty value must
+      # reach Caddy as empty (trust nobody), not be replaced by the default.
+      CADDY_TRUSTED_PROXIES: ${CADDY_TRUSTED_PROXIES-private_ranges}
     # The defaults put Caddy straight onto the internet, which is right when
     # this stack has the server to itself. When the machine already runs a
     # reverse proxy for other projects, point these at loopback in .env
