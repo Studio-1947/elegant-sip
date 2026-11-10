@@ -1,11 +1,13 @@
 import './dev-defaults.js'
 import { buildApp } from './app.js'
-import { env } from './env.js'
+import { emailConfigIssues, env } from './env.js'
 import { sql } from './db/client.js'
 import { expirePendingOrders } from './routes/orders.js'
 import { syncStaleShipments } from './lib/fulfilment.js'
 
 const app = await buildApp()
+
+for (const issue of emailConfigIssues(env, process.env.MAIL_FROM)) app.log[issue.level](issue.message)
 
 /*
  * Hosts without a pre-deploy step do this here instead. Seeding is safe to

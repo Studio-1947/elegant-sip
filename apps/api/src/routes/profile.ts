@@ -16,7 +16,7 @@ import { sendEmail } from '../lib/email.js'
 import { env } from '../env.js'
 import {
   ARGON2,
-  emailSchema,
+  ownEmailSchema,
   passwordSchema,
   publicUserSchema,
   limit,
@@ -212,7 +212,7 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         summary: 'Change your email address',
         description:
           'Requires the current password, because whoever receives password-reset links controls the account. The new address starts unverified and is sent a confirmation link.',
-        body: z.object({ newEmail: emailSchema, currentPassword: z.string().min(1).max(200) }),
+        body: z.object({ newEmail: ownEmailSchema, currentPassword: z.string().min(1).max(200) }),
         response: {
           200: z.object({ user: publicUserSchema }),
           400: problemSchema,

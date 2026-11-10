@@ -21,6 +21,8 @@ import {
   consumeToken,
   strictLimit,
   emailSchema,
+  ownEmailSchema,
+  isPlaceholderEmail,
   issueToken,
   passwordSchema,
   publicUserSchema,
@@ -49,8 +51,8 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
           tags: ['Auth'],
           summary: 'Create an account',
           description:
-            'Always reports success, even if the address is already registered — a different response would let anyone test which addresses have accounts.',
-          body: z.object({ name: z.string().trim().min(2).max(80), email: emailSchema, password: passwordSchema }),
+            'Always reports success, even if the address is already registered — a different response would let anyone test which addresses have accounts. A registered address is emailed about the attempt instead, so both cases take the same time.',
+          body: z.object({ name: z.string().trim().min(2).max(80), email: ownEmailSchema, password: passwordSchema }),
           response: { 200: z.object({ ok: z.literal(true) }), 400: problemSchema },
         },
       },
@@ -58,10 +60,25 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         const { name, email, password } = request.body
         const existing = await db.query.users.findFirst({ where: eq(users.email, email) })
 
+        /* Both branches do the same expensive work — a hash and an email — so
+           neither the body nor the response time says which addresses have
+           accounts. The owner of a taken address hears about the attempt. */
+        const passwordHash = await hash(password, ARGON2)
         if (!existing) {
-          const passwordHash = await hash(password, ARGON2)
           const [user] = await db.insert(users).values({ name, email, passwordHash }).returning({ id: users.id })
           await sendVerificationEmail({ id: user.id, email, name })
+        } else if (!isPlaceholderEmail(existing.email)) {
+          await sendEmail({
+            to: existing.email,
+            subject: 'Your Elegant Sip account',
+            heading: 'You already have an account',
+            body: [
+              'Someone, perhaps you, just tried to create a new Elegant Sip account with this email address. It already has an account, so nothing was changed.',
+              'To get back in, sign in as usual. If you have forgotten your password, choose "Forgot your password?" on the sign-in form to set a new one.',
+              'If this was not you, you can ignore this message. Your account and password are untouched.',
+            ],
+            action: { label: 'Sign in to Elegant Sip', url: `${env.SITE_URL}/` },
+          })
         }
         // Same response either way.
         return { ok: true as const }

@@ -4,11 +4,15 @@
  * inline in a script would run too late — they have to live in a module that
  * appears first in the import list.
  *
- * Anything already set in the environment wins, so this changes nothing in CI
- * or production.
+ * Anything already set in the environment wins, and in production nothing is
+ * applied at all: a missing variable there must surface as a validation error
+ * (or the empty value it really is), never quietly become a localhost URL, a
+ * development database or silent logs.
  */
-process.env.DATABASE_URL ??= 'postgres://elegantsip:elegantsip@localhost:5432/elegantsip'
-process.env.REDIS_URL ??= 'redis://localhost:6379'
-process.env.SMTP_URL ??= 'smtp://localhost:1025'
-process.env.SITE_URL ??= 'http://localhost:5173'
-process.env.LOG_LEVEL ??= 'silent'
+if (process.env.NODE_ENV !== 'production') {
+  process.env.DATABASE_URL ??= 'postgres://elegantsip:elegantsip@localhost:5432/elegantsip'
+  process.env.REDIS_URL ??= 'redis://localhost:6379'
+  process.env.SMTP_URL ??= 'smtp://localhost:1025'
+  process.env.SITE_URL ??= 'http://localhost:5173'
+  process.env.LOG_LEVEL ??= 'silent'
+}

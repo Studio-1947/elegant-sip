@@ -30,6 +30,9 @@ const MAX_CODES_PER_10_MIN = 3
 const MAX_CODES_PER_DAY = 10
 const MAX_FAILURES_PER_DAY = 10
 const CODE_TTL_MS = 10 * 60_000
+/* Per address, on top of the per-number budget. Generous because Indian mobile
+   carriers put many customers behind one carrier-grade NAT address. */
+const IP_CODE_REQUESTS = 20
 
 const phoneSchema = z.string().trim().max(20)
 const codeSchema = z.string().regex(/^\d{6}$/, 'Enter the 6-digit code.')
@@ -173,7 +176,7 @@ export const otpRoutes: FastifyPluginAsyncZod = async (app) => {
     reply.header('Cache-Control', 'public, max-age=60')
     return { whatsapp: otpAvailable() }
   })
-  app.post('/auth/whatsapp/request', { config: limit(5, '10 minutes'), schema: { tags: ['Auth'], body: z.object({ phone: phoneSchema }), response: { 200: response } } }, async (request) => {
+  app.post('/auth/whatsapp/request', { config: limit(IP_CODE_REQUESTS, '10 minutes'), schema: { tags: ['Auth'], body: z.object({ phone: phoneSchema }), response: { 200: response } } }, async (request) => {
     const phone = normalisePhone(request.body.phone)
     const user = await db.query.users.findFirst({ where: and(eq(users.phone, phone), isNotNull(users.phoneVerifiedAt)) })
     // A new phone receives an account-creation challenge; an existing phone
@@ -200,16 +203,19 @@ export const otpRoutes: FastifyPluginAsyncZod = async (app) => {
     reply.setCookie(SESSION_COOKIE, await createSession({ userId: user.id, email: user.email, role: user.role }), sessionCookieOptions(request.hostname))
     return { user: toPublicUser(user) }
   })
-  app.post('/account/whatsapp/request', { config: limit(5, '10 minutes'), schema: { tags: ['Account'], body: z.object({ phone: phoneSchema }), response: { 200: response } } }, async (request) => {
+  app.post('/account/whatsapp/request', { config: limit(IP_CODE_REQUESTS, '10 minutes'), schema: { tags: ['Account'], body: z.object({ phone: phoneSchema }), response: { 200: response } } }, async (request) => {
     if (!request.session) throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in to continue.')
     const phone = normalisePhone(request.body.phone)
-    const existing = await db.query.users.findFirst({ where: eq(users.phone, phone) })
-    if (existing && existing.id !== request.session.userId) throw ApiError.conflict('phone_in_use', 'That WhatsApp number is already linked to another account.')
+    // No "already linked" check here: answering it before the code is proven
+    // would let any signed-in user test which numbers belong to other accounts.
     return { ok: true as const, challengeId: await issue(request.session.userId, phone, 'phone_link') }
   })
   app.post('/account/whatsapp/verify', { config: limit(10, '10 minutes'), schema: { tags: ['Account'], body: z.object({ challengeId: z.string().uuid(), code: codeSchema }), response: { 200: response } } }, async (request) => {
     if (!request.session) throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in to continue.')
     const challenge = await consume(request.body.challengeId, request.body.code, 'phone_link', request.session.userId)
+    // Only now, with control of the phone proven, is it safe to say who has it.
+    const existing = await db.query.users.findFirst({ where: eq(users.phone, challenge.phone) })
+    if (existing && existing.id !== request.session.userId) throw ApiError.conflict('phone_in_use', 'That WhatsApp number is already linked to another account.')
     await db.update(users).set({ phone: challenge.phone, phoneVerifiedAt: new Date(), updatedAt: new Date() }).where(eq(users.id, request.session.userId))
     return { ok: true as const }
   })

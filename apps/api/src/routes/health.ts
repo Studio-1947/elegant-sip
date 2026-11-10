@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { healthResponseSchema, readyResponseSchema } from '@elegantsip/shared'
 import { pingDatabase } from '../db/client.js'
 import { paymentsEnabled } from '../env.js'
+import { pingRedis } from '../lib/sessions.js'
 
 const startedAt = Date.now()
 
@@ -47,16 +48,19 @@ export const healthRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Health'],
         summary: 'Readiness probe',
-        description: 'Reports 503 when a dependency is unreachable, so a load balancer stops sending traffic.',
+        description:
+          'Checks PostgreSQL and Redis, reporting each. 503 when either is unreachable, so a load balancer stops sending traffic.',
         response: { 200: readyResponseSchema, 503: readyResponseSchema },
       },
     },
     async (_request, reply) => {
-      const database = (await pingDatabase()) ? ('up' as const) : ('down' as const)
-      const ready = database === 'up'
+      // Redis holds every session: without it nobody can sign in or check out.
+      const [dbUp, redisUp] = await Promise.all([pingDatabase(), pingRedis()])
+      const state = (up: boolean) => (up ? ('up' as const) : ('down' as const))
+      const ready = dbUp && redisUp
       return reply.status(ready ? 200 : 503).send({
         status: ready ? ('ready' as const) : ('degraded' as const),
-        checks: { database },
+        checks: { database: state(dbUp), redis: state(redisUp) },
       })
     },
   )

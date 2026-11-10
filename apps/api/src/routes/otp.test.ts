@@ -13,7 +13,7 @@ const INTERAKT_URL = vi.hoisted(() => {
 
 import { buildApp } from '../app.js'
 import { db, sql } from '../db/client.js'
-import { otpChallenges } from '../db/schema-commerce.js'
+import { otpChallenges, users } from '../db/schema-commerce.js'
 import { env } from '../env.js'
 import { redis } from '../lib/sessions.js'
 
@@ -222,5 +222,34 @@ describe('WhatsApp code verification', () => {
     // The stranger's attempt did not burn one of the owner's guesses.
     expect((await attemptsOf(challengeId!)).attempts).toBe(0)
     expect((await verify(challengeId!, code!, owner, '/v1/account/whatsapp/verify')).statusCode).toBe(200)
+  })
+})
+
+describe('Linking a WhatsApp number', () => {
+  it('only says a number belongs to someone else once the code proves control of it', async () => {
+    if (!available) return
+    const owner = await signedInCookie()
+    const other = await signedInCookie()
+    const phone = freshPhone()
+    const linked = await requestCode(phone, owner, '/v1/account/whatsapp/request')
+    expect((await verify(linked.challengeId!, linked.code!, owner, '/v1/account/whatsapp/verify')).statusCode).toBe(200)
+
+    // Asking for a code reveals nothing: it is sent like any other.
+    const { res, challengeId, code } = await requestCode(phone, other, '/v1/account/whatsapp/request')
+    expect(res.statusCode).toBe(200)
+    expect(code).toBeDefined()
+
+    // A wrong guess is still just a wrong guess.
+    expect((await verify(challengeId!, WRONG, other, '/v1/account/whatsapp/verify')).statusCode).toBe(400)
+
+    const taken = await verify(challengeId!, code!, other, '/v1/account/whatsapp/verify')
+    expect(taken.statusCode).toBe(409)
+    expect(taken.json()).toMatchObject({ type: 'phone_in_use', detail: 'That WhatsApp number is already linked to another account.' })
+
+    // The number stays with its owner.
+    const holders = await db.select({ id: users.id }).from(users).where(eq(users.phone, `+91${phone}`))
+    expect(holders).toHaveLength(1)
+    const me = await app.inject({ method: 'GET', url: '/v1/auth/me', headers: { cookie: other } })
+    expect(me.json().user.phone).toBeNull()
   })
 })
