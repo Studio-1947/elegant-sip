@@ -17,8 +17,8 @@ export default function HeroIntroSection() {
       </h2>
       <p className="text-[#4a584a] text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-light">
         Elegant Sip is more than a tea brand — it's a sensory journey from the
-        mist-covered highlands to your cup. We source the rarest single-origin
-        leaves and craft each blend with the precision of a master sommelier.
+        mist-covered highlands to your cup. We buy single-origin leaves straight
+        from the garden, and never blend across estates.
       </p>
       <div className="w-16 h-[1px] bg-[#8bb56e]/60 mx-auto mt-12" />
     </section>

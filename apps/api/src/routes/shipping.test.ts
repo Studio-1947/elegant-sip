@@ -35,10 +35,12 @@ import {
   syncStaleShipments,
 } from '../lib/fulfilment.js'
 import { redis } from '../lib/sessions.js'
+import { provideTestTea, retireTestTea } from '../test-fixtures.js'
 
 /* Courier booking and tracking, end to end against the fake provider. */
 
-const SLUG = 'first-flush-fannings'
+// A test tea of its own: staff can retire real teas at any time.
+const SLUG = 'test-shipping-tea'
 const SIZE = '100 g'
 
 let app: FastifyInstance
@@ -53,11 +55,13 @@ beforeAll(async () => {
     return
   }
   __setShippingProvider(new FakeShippingProvider())
+  await provideTestTea(SLUG)
   app = await buildApp()
   await app.ready()
 })
 
 afterAll(async () => {
+  if (available) await retireTestTea(SLUG)
   __setShippingProvider(null)
   if (app) await app.close()
   await sql.end({ timeout: 5 }).catch(() => {})
@@ -89,10 +93,12 @@ const nextAddress = () => `10.31.${Math.floor(++placedCount / 250)}.${placedCoun
 
 /** A paid order, ready to ship. */
 async function paidOrder(phone?: string) {
+  // Payment verify is rate limited per client too, so both calls share the order's address.
+  const remoteAddress = nextAddress()
   const placed = await app.inject({
     method: 'POST',
     url: '/v1/orders',
-    remoteAddress: nextAddress(),
+    remoteAddress,
     headers: { cookie, 'idempotency-key': randomUUID() },
     payload: {
       items: [{ productSlug: SLUG, variantSize: SIZE, quantity: 3 }],
@@ -115,6 +121,7 @@ async function paidOrder(phone?: string) {
   const verified = await app.inject({
     method: 'POST',
     url: `/v1/orders/${order.number}/payment/verify`,
+    remoteAddress,
     headers: { cookie },
     payload: { razorpay_order_id: response.orderId, razorpay_payment_id: response.paymentId, razorpay_signature: response.signature },
   })
@@ -306,6 +313,10 @@ describe('courier shipments', () => {
     expect((await courierWebhook(delivered)).json().status).toBe('delivered')
     expect((await courierWebhook(delivered)).json().status).toBe('duplicate')
     expect((await db.query.orders.findFirst({ where: eq(orders.number, number) }))?.status).toBe('delivered')
+    // A later delivered report (a sync, say) moves nothing and sends nothing.
+    FakeShippingProvider.setTracking(shipment.awb, { providerStatus: 'DELIVERED', trackingUrl: null, expectedDeliveryAt: null, scans: [] })
+    await admin('POST', `/v1/admin/orders/${number}/shipment/sync`)
+    expect(emailsMatching(new RegExp(`Order ${number} has been delivered`), 'buyer@example.com')).toHaveLength(1)
 
     const view = (await app.inject({ method: 'GET', url: `/v1/orders/${number}`, headers: { cookie } })).json()
     expect(view.shipment.courierName).toBe('Fake Surface')
@@ -627,5 +638,31 @@ describe('staff alerts and manual shipping', () => {
     expect(order?.trackingNumber).toBe('EK987654321IN')
     expect(order?.shippedAt?.getTime()).toBe(shippedAt!.getTime())
     expect(emailsMatching(new RegExp(`Order ${number} has shipped`))).toHaveLength(1)
+  })
+
+  it('emails the customer once when staff mark an order delivered', async () => {
+    if (!available) return
+    const number = await paidOrder('9830012345')
+    await setOrderStatus(number, { status: 'shipped', trackingCarrier: 'India Post', trackingNumber: 'EK123456789IN' })
+
+    const first = await setOrderStatus(number, { status: 'delivered' })
+    expect(first.statusCode).toBe(200)
+    // SMTP is not configured in tests, so nothing was really sent and the API says so.
+    expect(first.json().notified).toBe(false)
+    expect((await orderWithShipment(number))?.status).toBe('delivered')
+
+    expect((await setOrderStatus(number, { status: 'delivered' })).statusCode).toBe(200)
+    expect(emailsMatching(new RegExp(`Order ${number} has been delivered`), 'buyer@example.com')).toHaveLength(1)
+  })
+
+  it('keeps a manual delivered status when the delivered email fails', async () => {
+    if (!available) return
+    const other = await paidOrder('9830012345')
+    await setOrderStatus(other, { status: 'shipped', trackingNumber: 'EK000000001IN' })
+    sendEmail.mockRejectedValueOnce(new Error('SMTP down'))
+    const failed = await setOrderStatus(other, { status: 'delivered' })
+    expect(failed.statusCode).toBe(200)
+    expect(failed.json().notified).toBe(false)
+    expect((await orderWithShipment(other))?.status).toBe('delivered')
   })
 })

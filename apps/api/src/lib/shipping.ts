@@ -146,7 +146,7 @@ class ShiprocketProvider implements ShippingProvider {
       return this.call<T>(method, path, body, true)
     }
     const text = await response.text()
-    let parsed: unknown = null
+    let parsed: unknown
     try {
       parsed = text ? JSON.parse(text) : null
     } catch {

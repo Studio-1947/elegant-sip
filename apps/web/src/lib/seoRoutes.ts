@@ -39,7 +39,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/shop': {
     title: pageTitle('Buy Darjeeling Tea Online'),
     description:
-      'Shop single-origin Darjeeling first flush tea: whole leaf, broken leaf, broken mixed and fannings. Free shipping over ₹1,000, packed close to harvest.',
+      'Shop single-origin Darjeeling tea: first, second and autumn flush, Golden and Silver Needle, white and green teas. Free shipping over ₹1,000.',
     priority: 0.9,
     changefreq: 'weekly',
     image: '/shopimg.webp',
@@ -47,14 +47,14 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/about': {
     title: pageTitle('Our Story'),
     description:
-      'Elegant Sip is a Darjeeling tea brand buying direct from the garden — no auction houses, no middlemen, no blending. The garden is named on every pack.',
+      'Elegant Sip is a Darjeeling tea brand buying direct from the garden — no auction houses, no middlemen, no blending.',
     priority: 0.6,
     changefreq: 'monthly',
   },
   '/gardens': {
     title: pageTitle('The Darjeeling Gardens We Buy From'),
     description:
-      'The Darjeeling estates behind our first flush: elevation, cultivar, and the harvest windows that shape each cup. Buy direct from the garden that grew the leaf.',
+      'The Darjeeling gardens we buy from: where they sit in the hills, how high they grow, and how altitude and season shape the cup.',
     priority: 0.6,
     changefreq: 'monthly',
   },
@@ -75,7 +75,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/faq': {
     title: pageTitle('Frequently Asked Questions'),
     description:
-      'Answers about shipping, the 30-day Elegant Sip Promise, freshness, and how to brew single-origin Darjeeling tea.',
+      'Answers about shipping, returns, freshness, and how to brew single-origin Darjeeling tea.',
     priority: 0.5,
     changefreq: 'monthly',
   },
@@ -87,7 +87,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   },
   '/shipping': {
     title: pageTitle('Shipping & Returns'),
-    description: 'Shipping timelines and costs, and the 30-day Elegant Sip Promise on every pack.',
+    description: 'Shipping timelines and costs, changes and cancellations, and what happens if a parcel arrives damaged.',
     priority: 0.4,
     changefreq: 'yearly',
   },

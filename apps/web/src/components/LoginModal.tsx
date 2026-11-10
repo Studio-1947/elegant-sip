@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { formatIndianMobile, indianMobileError, normaliseIndianMobile, phoneInputDigits } from '@elegantsip/shared'
 import { useAuth } from './AuthContext'
 import { ApiClientError, api } from '../lib/api'
-import { EMAIL_PATTERN } from './checkout/checkoutData'
+import { AUTH_MAX as MAX, MIN_PASSWORD, emailError, nameError, newPasswordError } from '../lib/authRules'
 import { track } from '../lib/analytics'
 import { useDialog } from '../lib/useDialog'
 import { cachedAuthMethods, loadAuthMethods } from '../lib/authMethods'
@@ -17,9 +17,6 @@ type FieldErrors = Partial<Record<Field, string>>
 
 /** Seconds before another WhatsApp code can be requested. */
 const RESEND_SECONDS = 30
-/** Same limits the API enforces. */
-const MAX = { name: 80, email: 254, password: 200 }
-const MIN_PASSWORD = 10
 
 const inputClass = (invalid: boolean) =>
   `w-full bg-white border rounded-lg px-4 py-3 text-sm transition-colors placeholder:text-[#1b261b]/25 focus:outline-none focus:ring-2 ${
@@ -46,13 +43,6 @@ function fieldErrorsFrom(errors: Record<string, string[]> | undefined): FieldErr
   return out
 }
 
-function emailError(value: string): string | undefined {
-  const email = value.trim()
-  if (!email) return 'Enter your email address.'
-  if (!EMAIL_PATTERN.test(email)) return 'Enter a valid email address, like name@example.com.'
-  return undefined
-}
-
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [name, setName] = useState('')
@@ -60,7 +50,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [error, setError] = useState<string | null>(null)
-  const { login, loginWithWhatsApp, register } = useAuth()
+  const { login, loginWithWhatsApp, register, applyUser } = useAuth()
   const [submitting, setSubmitting] = useState(false)
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
@@ -78,6 +68,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [resendIn, setResendIn] = useState(0)
   const phoneRef = useRef<HTMLInputElement>(null)
   const codeRef = useRef<HTMLInputElement>(null)
+  // Two-step sign-in: the password was right, and a code is still needed.
+  const [mfaChallenge, setMfaChallenge] = useState<string | null>(null)
+  const [mfaCode, setMfaCode] = useState('')
+  const [mfaCodeError, setMfaCodeError] = useState<string | null>(null)
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false)
+  const mfaRef = useRef<HTMLInputElement>(null)
 
   // Focus trap, focus restoration, Escape and scroll lock.
   const dialogRef = useDialog(isOpen, onClose)
@@ -107,11 +103,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   /* ── Email and password ─────────────────────────────────────────────────── */
 
   const validateField = (field: Field, values = { name, email, password }): string | undefined => {
-    if (field === 'name') return mode === 'signup' && values.name.trim().length < 2 ? 'Enter your full name.' : undefined
+    if (field === 'name') return mode === 'signup' ? nameError(values.name) : undefined
     if (field === 'email') return emailError(values.email)
-    if (!values.password) return mode === 'signup' ? 'Choose a password.' : 'Enter your password.'
-    if (mode === 'signup' && values.password.length < MIN_PASSWORD) return `Use at least ${MIN_PASSWORD} characters.`
-    return undefined
+    if (mode === 'signup') return newPasswordError(values.password)
+    return values.password ? undefined : 'Enter your password.'
   }
 
   /** Once a field has shown an error, re-check it as the visitor fixes it. */
@@ -161,7 +156,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
            we can honestly say. */
         setRegistered(true)
       } else {
-        await login(email.trim(), password)
+        const result = await login(email.trim(), password)
+        if (result.mfaRequired) {
+          setMfaChallenge(result.challengeToken)
+          setMfaCode('')
+          setMfaCodeError(null)
+          setUseRecoveryCode(false)
+          window.setTimeout(() => mfaRef.current?.focus(), 0)
+          return
+        }
         onClose()
       }
       // Sign-ups are counted when the email is confirmed (VerifyEmailPage).
@@ -198,6 +201,47 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
          and reporting one would leak which addresses are registered. */
     }
     setResetSent(true)
+  }
+
+  /* ── Two-step sign-in ───────────────────────────────────────────────────── */
+
+  const submitMfaCode = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!mfaChallenge || submitting) return
+    const code = mfaCode.trim()
+    const problem = useRecoveryCode
+      ? code.replace(/[^a-z0-9]/gi, '').length === 10 ? null : 'Enter one of your recovery codes, like abcde-fghij.'
+      : /^\d{6}$/.test(code) ? null : 'Enter the 6-digit code from your authenticator app.'
+    if (problem) {
+      setMfaCodeError(problem)
+      mfaRef.current?.focus()
+      return
+    }
+    setMfaCodeError(null)
+    setError(null)
+    setSubmitting(true)
+    try {
+      const { user } = await api.auth.loginWithCode(mfaChallenge, code)
+      applyUser(user)
+      track('login', { method: 'email' })
+      onClose()
+    } catch (err) {
+      if (err instanceof ApiClientError && err.type === 'mfa_challenge_expired') {
+        // Back to the password, which has to be entered again.
+        setMfaChallenge(null)
+        setPassword('')
+      }
+      setError(err instanceof ApiClientError ? err.message : 'That code could not be checked. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const cancelMfa = () => {
+    setMfaChallenge(null)
+    setMfaCode('')
+    setMfaCodeError(null)
+    setError(null)
   }
 
   /* ── WhatsApp ───────────────────────────────────────────────────────────── */
@@ -306,7 +350,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </p>
 
         {/* Tabs */}
-        {!whatsapp && <div role="tablist" aria-label="Sign in or create an account" className="flex border border-[#1b261b]/15 rounded-xl p-1 mb-8">
+        {!whatsapp && !mfaChallenge && <div role="tablist" aria-label="Sign in or create an account" className="flex border border-[#1b261b]/15 rounded-xl p-1 mb-8">
           {(['signin', 'signup'] as const).map((m) => (
             <button
               key={m}
@@ -395,6 +439,53 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             {error && <p className="text-xs text-red-700" role="alert">{error}</p>}
             <button onClick={() => { touched.current = true; setWhatsapp(false); setError(null) }} className={linkButton}>Use email and password instead</button>
           </div>
+        ) : mfaChallenge ? (
+          <form onSubmit={(e) => void submitMfaCode(e)} noValidate className="space-y-4">
+            <p className="text-xs text-[#4a584a] leading-relaxed" role="status">
+              {useRecoveryCode
+                ? 'Enter one of the recovery codes you saved when you turned on two-step sign-in. Each one works once.'
+                : 'This account uses two-step sign-in. Enter the 6-digit code from your authenticator app.'}
+            </p>
+            <div>
+              <label htmlFor="auth-mfa-code" className={labelClass}>{useRecoveryCode ? 'Recovery code' : 'Authenticator code'}</label>
+              <input
+                ref={mfaRef}
+                id="auth-mfa-code"
+                value={mfaCode}
+                onChange={(e) => {
+                  const next = useRecoveryCode ? e.target.value.slice(0, 20) : e.target.value.replace(/\D/g, '').slice(0, 6)
+                  setMfaCode(next)
+                  if (mfaCodeError) setMfaCodeError(null)
+                }}
+                inputMode={useRecoveryCode ? 'text' : 'numeric'}
+                autoComplete="one-time-code"
+                autoCapitalize="none"
+                spellCheck={false}
+                maxLength={useRecoveryCode ? 20 : 6}
+                aria-invalid={Boolean(mfaCodeError)}
+                aria-describedby={mfaCodeError ? 'auth-mfa-code-error' : undefined}
+                className={`${inputClass(Boolean(mfaCodeError))} ${useRecoveryCode ? 'font-mono' : 'tracking-[0.4em]'}`}
+              />
+              <FieldError id="auth-mfa-code-error" message={mfaCodeError} />
+            </div>
+            {error && <p className="text-xs text-red-700" role="alert">{error}</p>}
+            <button type="submit" disabled={submitting} className={primaryButton}>{submitting ? 'Checking…' : 'Verify and sign in'}</button>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setUseRecoveryCode((current) => !current)
+                  setMfaCode('')
+                  setMfaCodeError(null)
+                  window.setTimeout(() => mfaRef.current?.focus(), 0)
+                }}
+                className={linkButton}
+              >
+                {useRecoveryCode ? 'Use authenticator code' : 'Use a recovery code'}
+              </button>
+              <button type="button" onClick={cancelMfa} className={linkButton}>Back</button>
+            </div>
+          </form>
         ) : registered ? (
           <div className="bg-[#4a7333]/8 border border-[#4a7333]/25 rounded-xl p-5 text-sm text-[#45523f] leading-relaxed">
             <p className="font-bold text-[#1b261b] mb-2">Check your inbox</p>
@@ -491,7 +582,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </form>
         )}
 
-        {whatsappAvailable && !registered && mode === 'signin' && !whatsapp && <button onClick={() => { touched.current = true; setWhatsapp(true); setError(null) }} className="w-full mt-4 border border-[#4a7333]/40 text-[#4a7333] text-xs font-bold tracking-widest uppercase py-3 rounded-lg cursor-pointer">Continue with WhatsApp</button>}
+        {whatsappAvailable && !registered && !mfaChallenge && mode === 'signin' && !whatsapp && <button onClick={() => { touched.current = true; setWhatsapp(true); setError(null) }} className="w-full mt-4 border border-[#4a7333]/40 text-[#4a7333] text-xs font-bold tracking-widest uppercase py-3 rounded-lg cursor-pointer">Continue with WhatsApp</button>}
 
         <p className="text-[11px] text-[#4a584a] mt-6 leading-relaxed">
           We use your details only to run your account and deliver your orders, and we never sell

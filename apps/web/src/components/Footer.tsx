@@ -110,11 +110,10 @@ export default function Footer() {
               )}
             </nav>
           </div>
-          {/* No payment-network badges: checkout is a demo and processes no
-              card, so displaying VISA/PayPal marks would claim a capability
-              the site does not have. */}
+          {/* No payment-network badges: Razorpay decides which methods are
+              offered at checkout, so logos here could promise one it hides. */}
           <p className="text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
-            To place a real order, message us on{' '}
+            Questions about an order? Message us on{' '}
             <a
               href="https://wa.me/917583995294"
               className="underline underline-offset-2 hover:text-[#a8cf8a] md:hover:text-[#5f8f42] transition-colors"

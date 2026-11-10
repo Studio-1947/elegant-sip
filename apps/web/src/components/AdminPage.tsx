@@ -5,6 +5,15 @@ import { ApiClientError, api, type AdminConfig, type AdminOrder, type AdminOrder
 import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
 import ShipmentPanel from './admin/ShipmentPanel'
+import RefundPanel from './admin/RefundPanel'
+import ProductCatalogue from './admin/ProductCatalogue'
+import RestockForm from './admin/RestockForm'
+import ReviewQueue from './admin/ReviewQueue'
+import MfaNudge from './admin/MfaNudge'
+import GardenEditor from './admin/GardenEditor'
+import StoreSettings from './admin/StoreSettings'
+import EmailOutbox from './admin/EmailOutbox'
+import AuditLog from './admin/AuditLog'
 import { formatDateTime, formatShortDate } from '../lib/dates'
 
 const filters: Array<{ value: '' | AdminOrderStatus; label: string }> = [
@@ -55,6 +64,9 @@ export default function AdminPage() {
   const [loadingDetail, setLoadingDetail] = useState<string | null>(null)
   const [returnRequests, setReturnRequests] = useState<AdminReturnRequest[]>([])
   const [lowStock, setLowStock] = useState<LowStockVariant[]>([])
+  const [stockMessage, setStockMessage] = useState('')
+  // Bumped after a restock from the low-stock list so the product list reloads too.
+  const [catalogueVersion, setCatalogueVersion] = useState(0)
 
   useDocumentMeta('Staff Operations | Elegant Sip', 'Restricted staff order operations.', { noindex: true })
 
@@ -83,6 +95,14 @@ export default function AdminPage() {
     if (user?.role === 'admin') void load(filter)
   }, [filter, load, user?.role])
 
+  const refreshLowStock = useCallback(async () => {
+    try {
+      setLowStock((await api.admin.lowStock()).variants)
+    } catch (cause) {
+      setError(cause instanceof ApiClientError ? cause.message : 'The low-stock list could not be refreshed.')
+    }
+  }, [])
+
   const update = async (order: AdminOrder, status: 'packed' | 'shipped' | 'delivered' | 'cancelled', details?: { carrier?: string; trackingNumber?: string }) => {
     setUpdating(order.number)
     setError('')
@@ -98,7 +118,9 @@ export default function AdminPage() {
         trackingNumber: details?.trackingNumber ?? item.trackingNumber,
       } : item))
       setShippingOrder(null)
-      if (result.notified) setError(`Shipment email sent to ${order.email}.`)
+      // `notified` is true only when the API actually sent the email.
+      if (result.notified) setError(`${status === 'delivered' ? 'Delivery' : 'Shipment'} email sent to ${order.email}.`)
+      if (result.refundDue) setError(`${order.number} cancelled. Its payment has not been refunded — open Details to refund it.`)
     } catch (cause) {
       setError(cause instanceof ApiClientError ? cause.message : 'The order could not be updated.')
     } finally {
@@ -162,15 +184,19 @@ export default function AdminPage() {
           <button onClick={() => void load(filter)} disabled={loading} className="rounded-full border border-[#1b261b]/20 px-5 py-2.5 text-xs font-mono uppercase tracking-wider hover:border-[#8bb56e] disabled:opacity-50">{loading ? 'Refreshing…' : 'Refresh queue'}</button>
         </div>
 
-        {config && <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <MfaNudge />
+        {config && <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <ConfigCard label="Payments" value={config.paymentsLive ? 'Razorpay live' : config.paymentProvider === 'razorpay' ? 'Razorpay test mode' : `${config.paymentProvider} not live`} ready={config.paymentsLive} />
           <ConfigCard label="Customer email" value={config.emailConfigured ? 'Configured' : 'Not configured'} ready={config.emailConfigured} />
           <ConfigCard label="GST invoice" value={config.gstinConfigured ? 'GSTIN configured' : 'GSTIN needed'} ready={config.gstinConfigured} />
           <ConfigCard label="Shipping" value={config.shippingLive ? 'Shiprocket live' : config.shippingProvider === 'fake' ? 'Shiprocket test mode' : 'Manual tracking'} ready={config.shippingLive} />
+          <ConfigCard label="Meta server events" value={config.metaServerEventsError ? `Failing: ${config.metaServerEventsError}` : config.metaServerEvents === 'live' ? 'Conversions API live' : config.metaServerEvents === 'test' ? 'Test events only' : 'Not configured'} ready={config.metaServerEvents === 'live' && !config.metaServerEventsError} />
           <ConfigCard label="Seller location" value={config.sellerState} ready />
         </div>}
+        <StoreSettings onSaved={() => void refreshLowStock()} />
 
-        {lowStock.length > 0 && <section className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5"><div className="flex flex-wrap items-baseline justify-between gap-2"><div><span className="text-[10px] font-mono uppercase tracking-[0.25em] text-amber-800">Inventory attention</span><h2 className="mt-1 text-lg font-bold uppercase tracking-tight">{lowStock.length} low-stock variant{lowStock.length === 1 ? '' : 's'}</h2></div><span className="text-xs text-amber-800">5 packs or fewer</span></div><ul className="mt-4 divide-y divide-amber-200/70">{lowStock.map((variant) => <li key={`${variant.productSlug}-${variant.size}`} className="flex items-center justify-between gap-4 py-2 text-sm"><span>{variant.productName} <span className="text-[#4a584a]">({variant.size})</span></span><b className="font-mono text-amber-800">{variant.stock} left</b></li>)}</ul></section>}
+        {lowStock.length > 0 && <section className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5"><div className="flex flex-wrap items-baseline justify-between gap-2"><div><span className="text-[10px] font-mono uppercase tracking-[0.25em] text-amber-800">Inventory attention</span><h2 className="mt-1 text-lg font-bold uppercase tracking-tight">{lowStock.length} low-stock variant{lowStock.length === 1 ? '' : 's'}</h2></div><span className="text-xs text-amber-800">At or below the low-stock threshold in Shop settings · every restock is recorded in the stock ledger</span></div>{stockMessage && <p role="status" className="mt-3 text-sm text-[#315b26]">{stockMessage}</p>}<ul className="mt-4 divide-y divide-amber-200/70">{lowStock.map((variant) => <li key={`${variant.productSlug}-${variant.size}`} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2 text-sm"><span>{variant.productName} <span className="text-[#4a584a]">({variant.size})</span></span><span className="flex flex-wrap items-center justify-end gap-3"><b className="font-mono text-amber-800">{variant.stock} left</b><RestockForm productSlug={variant.productSlug} productName={variant.productName} size={variant.size} onRestocked={(message) => { setStockMessage(message); setCatalogueVersion((v) => v + 1); void refreshLowStock() }} /></span></li>)}</ul></section>}
+        {lowStock.length === 0 && stockMessage && <p role="status" className="mb-8 rounded-xl border border-[#8bb56e]/50 bg-[#f0f7ea] px-4 py-3 text-sm text-[#315b26]">{stockMessage} Nothing is low on stock now.</p>}
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <label className="text-xs font-mono uppercase tracking-wider text-[#4a584a]">Queue filter
@@ -208,9 +234,14 @@ export default function AdminPage() {
         <section className="mt-10">
           <div className="mb-4 flex items-baseline justify-between gap-4"><div><span className="text-xs font-mono uppercase tracking-[0.25em] text-[#4a7333]">Customer care</span><h2 className="mt-1 text-xl font-bold uppercase tracking-tight">Returns & cancellations</h2></div><span className="text-xs font-mono text-[#4a584a]">{returnRequests.filter((item) => item.status === 'requested').length} awaiting review</span></div>
           <div className="overflow-hidden rounded-2xl border border-[#1b261b]/10 bg-white">
-            {returnRequests.length === 0 ? <p className="p-6 text-sm text-[#4a584a]">No customer requests yet.</p> : <div className="divide-y divide-[#1b261b]/10">{returnRequests.map((item) => <article key={item.id} className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-bold">{item.number}</span><span className="rounded-full border border-[#1b261b]/10 px-2 py-1 text-[10px] font-mono uppercase tracking-wider">{item.type}</span><span className="text-[10px] font-mono uppercase tracking-wider text-[#4a7333]">{item.status}</span></div><p className="mt-2 max-w-2xl text-sm text-[#4a584a]">{item.reason}</p><p className="mt-1 text-[10px] font-mono text-[#4a584a]">Requested {formatShortDate(item.requestedAt)}</p></div><div className="flex flex-wrap gap-2">{item.status === 'requested' && <><button onClick={() => void updateReturnRequest(item, 'approved')} disabled={updating === item.id} className="rounded-full bg-[#1b261b] px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50">Approve</button><button onClick={() => void updateReturnRequest(item, 'rejected')} disabled={updating === item.id} className="rounded-full border border-rose-200 px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-rose-700 disabled:opacity-50">Reject</button></>}{item.status === 'approved' && item.type === 'return' && <button onClick={() => void updateReturnRequest(item, 'received')} disabled={updating === item.id} className="rounded-full bg-[#4a7333] px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50">Mark received</button>}{item.status === 'approved' && item.type === 'cancellation' && <span className="max-w-[180px] text-[10px] text-[#4a584a]">Refund is pending gateway setup.</span>}</div></article>)}</div>}
+            {returnRequests.length === 0 ? <p className="p-6 text-sm text-[#4a584a]">No customer requests yet.</p> : <div className="divide-y divide-[#1b261b]/10">{returnRequests.map((item) => <article key={item.id} className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-bold">{item.number}</span><span className="rounded-full border border-[#1b261b]/10 px-2 py-1 text-[10px] font-mono uppercase tracking-wider">{item.type}</span><span className="text-[10px] font-mono uppercase tracking-wider text-[#4a7333]">{item.status}</span></div><p className="mt-2 max-w-2xl text-sm text-[#4a584a]">{item.reason}</p><p className="mt-1 text-[10px] font-mono text-[#4a584a]">Requested {formatShortDate(item.requestedAt)}</p></div><div className="flex flex-wrap gap-2">{item.status === 'requested' && <><button onClick={() => void updateReturnRequest(item, 'approved')} disabled={updating === item.id} className="rounded-full bg-[#1b261b] px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50">Approve</button><button onClick={() => void updateReturnRequest(item, 'rejected')} disabled={updating === item.id} className="rounded-full border border-rose-200 px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-rose-700 disabled:opacity-50">Reject</button></>}{item.status === 'approved' && item.type === 'return' && <button onClick={() => void updateReturnRequest(item, 'received')} disabled={updating === item.id} className="rounded-full bg-[#4a7333] px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50">Mark received</button>}{item.status === 'approved' && item.type === 'cancellation' && <span className="max-w-[180px] text-[10px] text-[#4a584a]">Refund it from the order’s Details.</span>}</div></article>)}</div>}
           </div>
         </section>
+        <ReviewQueue />
+        <ProductCatalogue version={catalogueVersion} onStockChanged={() => { setStockMessage(''); void refreshLowStock() }} />
+        <GardenEditor />
+        <EmailOutbox />
+        <AuditLog />
       </div>
       {detail && <OrderDetailModal detail={detail} onClose={() => setDetail(null)} onChanged={() => void load(filter)} />}
     </div>
@@ -218,7 +249,7 @@ export default function AdminPage() {
 }
 
 function ConfigCard({ label, value, ready }: { label: string; value: string; ready: boolean }) {
-  return <div className="rounded-xl border border-[#1b261b]/10 bg-white p-4"><p className="text-[10px] font-mono uppercase tracking-widest text-[#4a584a]">{label}</p><p className={`mt-2 text-sm font-bold ${ready ? 'text-[#315b26]' : 'text-amber-700'}`}>{value}</p></div>
+  return <div className="rounded-xl border border-[#1b261b]/10 bg-white p-4"><p className="text-[10px] font-mono uppercase tracking-widest text-[#4a584a]">{label}</p><p className={`mt-2 text-sm font-bold break-words ${ready ? 'text-[#315b26]' : 'text-amber-700'}`}>{value}</p></div>
 }
 
 function OrderDetailModal({ detail, onClose, onChanged }: { detail: AdminOrderDetail; onClose: () => void; onChanged: () => void }) {
@@ -239,6 +270,7 @@ function OrderDetailModal({ detail, onClose, onChanged }: { detail: AdminOrderDe
       <section className="mt-6"><h3 className="text-xs font-bold uppercase tracking-wider">Pack list</h3><ul className="mt-2 divide-y divide-[#1b261b]/10 border-y border-[#1b261b]/10">{detail.items.map((item, index) => <li key={`${item.productName}-${index}`} className="flex justify-between gap-4 py-3 text-sm"><span>{item.productName} <span className="text-[#4a584a]">({item.variantSize})</span></span><b>×{item.quantity}</b></li>)}</ul></section>
       {detail.notes && <p className="mt-5 rounded-lg bg-[#f9faf7] p-3 text-sm text-[#4a584a]"><b>Customer note:</b> {detail.notes}</p>}
       <ShipmentPanel orderNumber={detail.number} orderStatus={detail.status} onChanged={onChanged} />
+      <RefundPanel orderNumber={detail.number} onChanged={onChanged} />
       <button onClick={printSlip} className="mt-6 rounded-lg bg-[#1b261b] px-5 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#4a7333]">Print packing slip</button>
     </div>
   </div>

@@ -1,10 +1,11 @@
+import { randomInt } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { COUPONS_ENABLED, problemSchema, reviewSchema, slugSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { products, reviews } from '../db/schema.js'
-import { newsletterSubscribers, users, wishlistItems } from '../db/schema-commerce.js'
+import { contactMessages, newsletterSubscribers, users, wishlistItems } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import { sendEmail } from '../lib/email.js'
 import { hasPurchased } from './orders.js'
@@ -187,32 +188,64 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Account'],
         summary: 'Send a message',
-        description:
-          'Delivers to the shop inbox. `delivered` reports whether the message actually went out — the UI must not claim it was sent when this is false.',
+        description: [
+          'Stores the message under a reference the customer can quote (e.g. `ES-C-7K3P9Q`), then emails it to the shop inbox.',
+          '`delivered` reports whether the email actually went out — the UI must not claim it was sent when this is false.',
+          '`retrying` is true when the mail server refused it and it is queued for automatic retries.',
+        ].join('\n'),
         body: z.object({
           name: z.string().trim().min(2).max(80),
           email: z.string().trim().toLowerCase().email(),
           subject: z.string().trim().min(2).max(120),
           message: z.string().trim().min(10).max(4000),
         }),
-        response: { 200: z.object({ delivered: z.boolean() }) },
+        response: { 200: z.object({ delivered: z.boolean(), retrying: z.boolean(), reference: z.string() }) },
       },
     },
     async (request) => {
       const { name, email, subject, message } = request.body
+      const reference = await storeContactMessage({ userId: request.session?.userId ?? null, name, email, subject, message })
       const result = await sendEmail({
+        kind: 'contact',
         to: env.CONTACT_INBOX,
         // Hitting Reply in the shop inbox answers the customer, not the shop itself.
         replyTo: email,
-        subject: `[${subject}] from ${name}`,
+        subject: `[${reference}] ${subject} — from ${name}`,
         heading: 'New message from the site',
         body: [message],
         facts: [
+          ['Reference', reference],
           ['From', name],
           ['Reply to', email],
         ],
       })
-      return { delivered: result.delivered }
+      return { delivered: result.delivered, retrying: result.queued === true, reference }
     },
   )
+}
+
+/* No 0/O, 1/I/L or 5/S, so a reference read out over the phone survives. */
+const REFERENCE_ALPHABET = '2346789ABCDEFGHJKMNPQRTUVWXYZ'
+
+export function contactReference(): string {
+  let code = ''
+  for (let i = 0; i < 6; i++) code += REFERENCE_ALPHABET[randomInt(REFERENCE_ALPHABET.length)]
+  return `ES-C-${code}`
+}
+
+const isUniqueViolation = (error: unknown) =>
+  ((error as { code?: unknown }).code ?? (error as { cause?: { code?: unknown } }).cause?.code) === '23505'
+
+/** Saved before any email is attempted, so the message survives a mail outage. */
+async function storeContactMessage(values: Omit<typeof contactMessages.$inferInsert, 'reference'>): Promise<string> {
+  for (let attempt = 0; ; attempt++) {
+    const reference = contactReference()
+    try {
+      await db.insert(contactMessages).values({ ...values, reference })
+      return reference
+    } catch (error) {
+      // 29^6 ≈ 600 million codes: a clash is rare and two in a row rarer still.
+      if (!isUniqueViolation(error) || attempt >= 4) throw error
+    }
+  }
 }

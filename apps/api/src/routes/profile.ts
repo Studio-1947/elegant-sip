@@ -1,10 +1,10 @@
 import { hash, verify } from '@node-rs/argon2'
-import { eq, ne, and, desc } from 'drizzle-orm'
+import { eq, ne, and, desc, isNull } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { problemSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
-import { savedAddresses, users } from '../db/schema-commerce.js'
+import { authTokens, savedAddresses, users } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import {
   SESSION_COOKIE,
@@ -16,6 +16,7 @@ import { sendEmail } from '../lib/email.js'
 import { env } from '../env.js'
 import {
   ARGON2,
+  isPlaceholderEmail,
   ownEmailSchema,
   passwordSchema,
   publicUserSchema,
@@ -39,7 +40,7 @@ import {
  * address what happened. A stolen session alone is then not enough.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-function requireSession(session: { userId: string } | null) {
+export function requireSession(session: { userId: string } | null) {
   if (!session) {
     throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in to continue.')
   }
@@ -47,7 +48,7 @@ function requireSession(session: { userId: string } | null) {
 }
 
 /** Loads the signed-in user, or fails if the session outlived the account. */
-async function currentUser(userId: string) {
+export async function currentUser(userId: string) {
   const user = await db.query.users.findFirst({ where: eq(users.id, userId) })
   if (!user) {
     throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in again to continue.')
@@ -56,8 +57,8 @@ async function currentUser(userId: string) {
 }
 
 /** Rejects unless the supplied password is the account's current one. */
-async function assertPassword(digest: string, password: string) {
-  let ok = false
+export async function assertPassword(digest: string, password: string) {
+  let ok: boolean
   try {
     ok = await verify(digest, password)
   } catch {
@@ -71,6 +72,18 @@ async function assertPassword(digest: string, password: string) {
       'That is not your current password.',
     )
   }
+}
+
+/**
+ * Confirmation links belong to the account, not to an address. Without this, a
+ * link sent to the old address would confirm whatever new address replaced it —
+ * and confirming an address now also claims its guest orders.
+ */
+export async function revokeEmailVerifications(userId: string) {
+  await db
+    .update(authTokens)
+    .set({ consumedAt: new Date() })
+    .where(and(eq(authTokens.userId, userId), eq(authTokens.purpose, 'email_verification'), isNull(authTokens.consumedAt)))
 }
 
 export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
@@ -156,10 +169,10 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Account'],
         summary: 'Change your password',
         description:
-          'Signs out every other device and issues this one a fresh session, so a stolen session cannot survive the change that was meant to defeat it.',
+          'Signs out every other device and issues this one a fresh session, so a stolen session cannot survive the change that was meant to defeat it. `delivered` says whether the notice to the account address went out.',
         body: z.object({ currentPassword: z.string().min(1).max(200), newPassword: passwordSchema }),
         response: {
-          200: z.object({ ok: z.literal(true) }),
+          200: z.object({ ok: z.literal(true), delivered: z.boolean() }),
           400: problemSchema,
           401: problemSchema,
         },
@@ -187,7 +200,7 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
       reply.setCookie(SESSION_COOKIE, token, sessionCookieOptions(request.hostname))
 
       // Told, not asked: if this was not them, they need to know immediately.
-      await sendEmail({
+      const { delivered } = await sendEmail({
         to: user.email,
         subject: 'Your Elegant Sip password was changed',
         heading: 'Password changed',
@@ -199,7 +212,7 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         action: { label: 'Go to my account', url: `${env.SITE_URL}/account` },
       })
 
-      return { ok: true as const }
+      return { ok: true as const, delivered }
     },
   )
 
@@ -211,10 +224,10 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Account'],
         summary: 'Change your email address',
         description:
-          'Requires the current password, because whoever receives password-reset links controls the account. The new address starts unverified and is sent a confirmation link.',
+          'Requires the current password, because whoever receives password-reset links controls the account. The new address starts unverified and is sent a confirmation link; `delivered` says whether that email went out.',
         body: z.object({ newEmail: ownEmailSchema, currentPassword: z.string().min(1).max(200) }),
         response: {
-          200: z.object({ user: publicUserSchema }),
+          200: z.object({ user: publicUserSchema, delivered: z.boolean() }),
           400: problemSchema,
           401: problemSchema,
           409: problemSchema,
@@ -257,7 +270,8 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         .where(eq(users.id, user.id))
         .returning()
 
-      await sendVerificationEmail({ id: user.id, email: newEmail, name: user.name })
+      await revokeEmailVerifications(user.id)
+      const { delivered } = await sendVerificationEmail({ id: user.id, email: newEmail, name: user.name })
 
       /* The old address is told too — it is the only place a hijack is visible
          to the real owner once the new address is under someone else's control. */
@@ -272,7 +286,7 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         ],
       })
 
-      return { user: toPublicUser(updated) }
+      return { user: toPublicUser(updated), delivered }
     },
   )
 
@@ -284,17 +298,16 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Account'],
         summary: 'Send the confirmation email again',
         description:
-          'For when the first one did not arrive. Reports success even when the address is already confirmed, so the response never becomes a way to probe account state.',
-        response: { 200: z.object({ ok: z.literal(true) }), 401: problemSchema },
+          'For when the first one did not arrive. `delivered` is false when nothing went out — the mail server failed, or the address is already confirmed (or is a WhatsApp stand-in) so there was nothing to send.',
+        response: { 200: z.object({ ok: z.literal(true), delivered: z.boolean() }), 401: problemSchema },
       },
     },
     async (request) => {
       const session = requireSession(request.session)
       const user = await currentUser(session.userId)
-      if (user.emailVerifiedAt === null) {
-        await sendVerificationEmail({ id: user.id, email: user.email, name: user.name })
-      }
-      return { ok: true as const }
+      if (user.emailVerifiedAt !== null || isPlaceholderEmail(user.email)) return { ok: true as const, delivered: false }
+      const { delivered } = await sendVerificationEmail({ id: user.id, email: user.email, name: user.name })
+      return { ok: true as const, delivered }
     },
   )
 

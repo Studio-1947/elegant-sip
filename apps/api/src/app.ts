@@ -30,6 +30,7 @@ import { pricingRoutes } from './routes/pricing.js'
 import { otpRoutes } from './routes/otp.js'
 import { pincodeRoutes } from './routes/pincode.js'
 import { cspReportRoutes } from './routes/csp.js'
+import { eventRoutes } from './routes/events.js'
 
 function hasPinoPretty(): boolean {
   try {
@@ -152,7 +153,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         { name: 'Admin', description: 'Shop operations. Every route requires the admin role.' },
         { name: 'Pricing', description: 'Server-authoritative money. The client displays; it never calculates.' },
         { name: 'Locations', description: 'Postal locality suggestions for delivery checkout.' },
-        { name: 'Reports', description: 'Reports browsers send on their own, such as CSP violations.' },
+        { name: 'Reports', description: 'Reports browsers send, such as CSP violations and consented ad-measurement events.' },
       ],
     },
     transform: jsonSchemaTransform,
@@ -181,6 +182,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(adminRoutes, { prefix: '/v1' })
   // Caddy's Content-Security-Policy names this exact path: /api/v1/csp-report.
   await app.register(cspReportRoutes, { prefix: '/v1' })
+  await app.register(eventRoutes, { prefix: '/v1' })
 
   return app
 }

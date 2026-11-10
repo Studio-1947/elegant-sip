@@ -15,6 +15,8 @@ import {
   sessionCookieOptions,
 } from '../lib/sessions.js'
 import { sendEmail } from '../lib/email.js'
+import { claimGuestOrders } from '../lib/guest-orders.js'
+import { createLoginChallenge } from '../lib/mfa.js'
 import { env } from '../env.js'
 import {
   ARGON2,
@@ -29,6 +31,7 @@ import {
   sendVerificationEmail,
   toPublicUser,
 } from './auth-shared.js'
+import { mfaRoutes } from './mfa.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Identity.
@@ -40,9 +43,13 @@ import {
  *    address exists. Both always report success — otherwise the endpoint is an
  *    account-enumeration oracle.
  *  · Changing a password destroys every existing session for that user.
+ *  · An account with two-step sign-in gets no session from its password
+ *    alone; /auth/login/mfa (mfa.ts) finishes the job.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export const authRoutes: FastifyPluginAsyncZod = async (app) => {
+  await app.register(mfaRoutes)
+
   app.post(
       '/auth/register',
       {
@@ -92,8 +99,16 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
           tags: ['Auth'],
           summary: 'Sign in',
+          description:
+            'For an account with two-step sign-in, a correct password answers `mfaRequired` with a five-minute challenge token instead of a session; finish at /auth/login/mfa.',
           body: z.object({ email: emailSchema, password: z.string().min(1).max(200) }),
-          response: { 200: z.object({ user: publicUserSchema }), 401: problemSchema },
+          response: {
+            200: z.union([
+              z.object({ user: publicUserSchema }),
+              z.object({ mfaRequired: z.literal(true), challengeToken: z.string() }),
+            ]),
+            401: problemSchema,
+          },
         },
       },
       async (request, reply) => {
@@ -103,7 +118,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         /* Hash even when the user does not exist, so response timing does not
            reveal which addresses are registered. */
         const digest = user?.passwordHash ?? '$argon2id$v=19$m=19456,t=2,p=1$c29tZXNhbHR2YWx1ZQ$0000000000000000000000000000000000000000000'
-        let ok = false
+        let ok: boolean
         try {
           ok = await verify(digest, password)
         } catch {
@@ -112,6 +127,10 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
         if (!user || !ok) {
           throw new ApiError(401, 'invalid_credentials', 'Sign-in failed', 'That email and password do not match.')
+        }
+
+        if (user.mfaEnabledAt) {
+          return { mfaRequired: true as const, challengeToken: await createLoginChallenge(user.id) }
         }
 
         const token = await createSession({ userId: user.id, email: user.email, role: user.role })
@@ -181,6 +200,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Auth'],
         summary: 'Confirm an email address',
+        description: 'Also moves any guest orders placed with this address into the account.',
         body: z.object({ token: z.string().min(1) }),
         response: { 200: z.object({ ok: z.literal(true) }), 400: problemSchema },
       },
@@ -190,7 +210,15 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!userId) {
         throw ApiError.badRequest('That confirmation link has expired or has already been used.')
       }
-      await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, userId))
+      await db.transaction(async (tx) => {
+        const [user] = await tx
+          .update(users)
+          .set({ emailVerifiedAt: new Date() })
+          .where(eq(users.id, userId))
+          .returning({ id: users.id, email: users.email })
+        // Ownership of the address is now proven, so its guest orders are this account's.
+        if (user && !isPlaceholderEmail(user.email)) await claimGuestOrders(tx, user.id, user.email)
+      })
       return { ok: true as const }
     },
   )

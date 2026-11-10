@@ -83,6 +83,13 @@ const envSchema = z.object({
   // and forwards only Aangan-namespaced status events to this internal recipient.
   AANGAN_INTERAKT_WEBHOOK_URL: blankAsUnset(z.string().url()),
 
+  /*
+   * Encrypts staff TOTP secrets at rest (lib/mfa.ts). 64 hex characters
+   * (`openssl rand -hex 32`). Unset: two-step sign-in cannot be turned on, and
+   * staff who already use it can sign in only with a recovery code.
+   */
+  MFA_ENCRYPTION_KEY: blankAsUnset(z.string().trim().regex(/^[0-9a-fA-F]{64}$/, 'must be 64 hex characters (openssl rand -hex 32)')),
+
   /* Phase 03+. Optional now so phases 00–02 run without payment credentials,
      but see assertPaymentsConfigured() — the code that needs them refuses to
      operate rather than half-working. */
@@ -125,6 +132,18 @@ const envSchema = z.object({
   WATCHDOG_MINUTES: z.coerce.number().int().min(0).max(24 * 60).default(30),
   DISK_ALERT_PERCENT: z.coerce.number().min(1).max(90).default(15),
   OPS_STATUS_DIR: blankAsUnset(z.string()),
+
+  /*
+   * Meta Conversions API (lib/meta-capi.ts). The browser's Meta Pixel events
+   * are also sent from this server, so ad-blockers do not hide them. Without
+   * the access token nothing is sent. The pixel ID must match the storefront's
+   * VITE_META_PIXEL_ID, or Meta cannot pair the two copies of each event.
+   */
+  META_PIXEL_ID: z.string().trim().regex(/^\d*$/, 'must be the numeric pixel (dataset) ID').default('1702510334659568'),
+  META_CAPI_ACCESS_TOKEN: blankAsUnset(z.string().trim().min(20)),
+  /** From Events Manager → Test events. Set only while testing; such events never count. */
+  META_CAPI_TEST_EVENT_CODE: blankAsUnset(z.string().trim().max(64)),
+  META_GRAPH_API_VERSION: z.string().trim().regex(/^v\d+\.\d+$/, 'like v24.0').default('v24.0'),
 })
 
 export type Env = z.infer<typeof envSchema>

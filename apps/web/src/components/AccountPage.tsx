@@ -9,6 +9,7 @@ import { indianMobileError, normaliseIndianMobile, phoneInputDigits } from '@ele
 import { isShipmentProblem, shipmentSummary } from '../lib/shipment'
 import { Link, navigate, useDocumentMeta } from '../lib/router'
 import AddressBookSection from './account/AddressBookSection'
+import AccountSettingsSection from './account/AccountSettingsSection'
 import { formatDate } from '../lib/dates'
 
 const ORDER_STATUS: Record<OrderView['status'], { label: string; tone: string }> = {
@@ -22,7 +23,7 @@ const ORDER_STATUS: Record<OrderView['status'], { label: string; tone: string }>
 }
 
 export default function AccountPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, refresh } = useAuth()
   const { openLogin } = useUi()
   const { wishlist, addToCart } = useCart()
   const [orders, setOrders] = useState<OrderView[]>([])
@@ -32,6 +33,9 @@ export default function AccountPage() {
   const [phoneCode, setPhoneCode] = useState('')
   const [phoneMessage, setPhoneMessage] = useState<string | null>(null)
   const [phoneBusy, setPhoneBusy] = useState(false)
+  const [signedOutEverywhere, setSignedOutEverywhere] = useState(false)
+  // The notice belongs to that sign-out only; a later sign-in clears it.
+  if (user && signedOutEverywhere) setSignedOutEverywhere(false)
 
   useEffect(() => {
     if (!user) {
@@ -68,7 +72,7 @@ export default function AccountPage() {
   const verifyWhatsAppLink = async () => {
     if (!phoneChallenge) return
     setPhoneMessage(null); setPhoneBusy(true)
-    try { await api.account.verifyWhatsApp(phoneChallenge, phoneCode); setPhoneMessage('WhatsApp is linked. You can now sign in with a code.'); setPhoneChallenge(null); setPhoneCode('') }
+    try { await api.account.verifyWhatsApp(phoneChallenge, phoneCode); setPhoneMessage('WhatsApp is linked. You can now sign in with a code.'); setPhoneChallenge(null); setPhoneCode(''); void refresh() }
     catch (err) { setPhoneMessage(err instanceof ApiClientError ? err.message : 'Could not verify that code.') } finally { setPhoneBusy(false) }
   }
 
@@ -78,6 +82,11 @@ export default function AccountPage() {
         <div className="max-w-md mx-auto text-center bg-white border border-[#1b261b]/10 rounded-3xl p-10 md:p-14 shadow-[0_12px_40px_rgba(27,38,27,0.04)]">
           <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">My Account</span>
           <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">Welcome back</h1>
+          {signedOutEverywhere && (
+            <p role="status" className="mb-6 rounded-lg border border-[#8bb56e]/30 bg-[#8bb56e]/5 px-4 py-3 text-xs text-[#4a584a]">
+              You have been signed out on every device, including this one.
+            </p>
+          )}
           <p className="text-sm text-[#4a584a] leading-relaxed mb-8">
             Sign in to see your order history, wishlist, and saved checkout details.
           </p>
@@ -176,6 +185,8 @@ export default function AccountPage() {
             ))}
           </div>
         )}
+
+        <AccountSettingsSection onSignedOutEverywhere={() => setSignedOutEverywhere(true)} />
       </div>
     </div>
   )

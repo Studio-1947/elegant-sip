@@ -6,10 +6,12 @@ vi.mock('./tags', () => ({
   marketingTagsConfigured: () => true,
   marketingTagsLoaded: () => true,
   metaTrack: vi.fn(),
+  metaServerEvent: vi.fn(),
+  newMetaEventId: () => 'evt-test-1',
 }))
 
 import { clearTrackingCookies, hasAnalyticsConsent, purchaseProps, readConsent, setAnalyticsConsent, track } from './analytics'
-import { loadMarketingTags, metaTrack } from './tags'
+import { loadMarketingTags, metaServerEvent, metaTrack } from './tags'
 
 const dataLayer = () => (window as { dataLayer?: unknown[] }).dataLayer ?? []
 const lastEvent = () => dataLayer()[dataLayer().length - 1] as Record<string, unknown>
@@ -32,6 +34,7 @@ describe('consent', () => {
   it('sends nothing before the visitor accepts', () => {
     track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
     expect(metaTrack).not.toHaveBeenCalled()
+    expect(metaServerEvent).not.toHaveBeenCalled()
     expect(dataLayer()).toHaveLength(0)
   })
 
@@ -93,7 +96,7 @@ describe('events after Accept', () => {
         items: [{ item_id: 'first-flush', item_name: 'First Flush', item_variant: '100 g', quantity: 2, price: 861 }],
       },
     })
-    expect(metaTrack).toHaveBeenCalledWith('AddToCart', expect.objectContaining({ value: 1722, currency: 'INR', content_ids: ['first-flush'] }))
+    expect(metaTrack).toHaveBeenCalledWith('AddToCart', expect.objectContaining({ value: 1722, currency: 'INR', content_ids: ['first-flush'] }), 'evt-test-1')
   })
 
   it('sends a purchase with its order number, every line and the unit count', () => {
@@ -115,9 +118,38 @@ describe('events after Accept', () => {
   it('maps the payment step and sign-up to the standard names', () => {
     track('add_payment_info', { value: 86_100, lines: [{ id: 'first-flush', quantity: 1, price: 86_100 }] })
     expect(lastEvent().event).toBe('add_payment_info')
-    expect(metaTrack).toHaveBeenCalledWith('AddPaymentInfo', expect.objectContaining({ value: 861 }))
+    expect(metaTrack).toHaveBeenCalledWith('AddPaymentInfo', expect.objectContaining({ value: 861 }), 'evt-test-1')
     track('signup', { method: 'email' })
     expect(lastEvent()).toEqual({ event: 'sign_up', method: 'email' })
-    expect(metaTrack).toHaveBeenCalledWith('CompleteRegistration', {})
+    expect(metaTrack).toHaveBeenCalledWith('CompleteRegistration', {}, 'evt-test-1')
+  })
+})
+
+describe('Meta server events (Conversions API)', () => {
+  beforeEach(() => setAnalyticsConsent(true))
+
+  it('sends the server copy with the same event ID as the pixel', () => {
+    track('add_to_cart', { product: 'first-flush', quantity: 2, value: 172_200 })
+    expect(metaServerEvent).toHaveBeenCalledWith('AddToCart', 'evt-test-1', {
+      value: 1722,
+      contents: [{ id: 'first-flush', quantity: 2 }],
+    })
+  })
+
+  it('gives a purchase its order number and the order-based ID', () => {
+    track('purchase', purchaseProps({
+      number: 'ES-9',
+      total: 86_100,
+      items: [{ productSlug: 'first-flush', productName: 'First Flush', variantSize: '100 g', quantity: 1, unitPrice: 86_100 }],
+    }))
+    expect(metaTrack).toHaveBeenCalledWith('Purchase', expect.objectContaining({ value: 861 }), 'purchase-ES-9')
+    expect(metaServerEvent).toHaveBeenCalledWith('Purchase', 'purchase-ES-9', expect.objectContaining({ order: 'ES-9', numItems: 1 }))
+  })
+
+  it('leaves events Meta has no name for out of it entirely', () => {
+    track('wishlist_toggle', { product: 'first-flush' })
+    track('remove_from_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
+    expect(metaTrack).not.toHaveBeenCalled()
+    expect(metaServerEvent).not.toHaveBeenCalled()
   })
 })

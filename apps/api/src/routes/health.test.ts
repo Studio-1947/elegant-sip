@@ -10,8 +10,9 @@ vi.mock('../db/client.js', async (importOriginal) => {
 })
 
 import { buildApp } from '../app.js'
-import { sql } from '../db/client.js'
+import { db, sql } from '../db/client.js'
 import { redis } from '../lib/sessions.js'
+import { invalidateStoreSettings } from '../lib/settings.js'
 
 /* Readiness reports each dependency, and is unready when any one is down. */
 
@@ -71,5 +72,30 @@ describe('GET /ready', () => {
     const res = await ready()
     expect(res.statusCode).toBe(503)
     expect(res.json()).toEqual({ status: 'degraded', checks: { database: 'down', redis: 'up' } })
+  })
+})
+
+describe('GET /storefront-status', () => {
+  it('reports payments, guest checkout and the guarantee', async () => {
+    if (!available) return
+    const res = await app.inject({ method: 'GET', url: '/storefront-status' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({
+      paymentsAvailable: expect.any(Boolean),
+      guestCheckout: expect.any(Boolean),
+      guarantee: { enabled: expect.any(Boolean), days: expect.any(Number) },
+    })
+  })
+
+  it('still answers, with the safe defaults, when the settings cannot be read', async () => {
+    if (!available) return
+    invalidateStoreSettings()
+    vi.spyOn(db, 'select').mockImplementationOnce(() => {
+      throw new Error('connection refused')
+    })
+    const res = await app.inject({ method: 'GET', url: '/storefront-status' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ guestCheckout: false, guarantee: { enabled: true, days: 30 } })
+    invalidateStoreSettings()
   })
 })

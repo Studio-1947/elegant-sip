@@ -68,6 +68,12 @@ export const products = pgTable(
     } | null>(),
     /** Catalogue order for the shop grid — deliberately not alphabetical. */
     sortOrder: integer('sort_order').notNull().default(0),
+    /**
+     * Retired from the shop: not listed and cannot be ordered. Kept apart from
+     * `status` so a retired tea comes back exactly as it was. Old orders keep
+     * their own snapshot of the product either way.
+     */
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -94,6 +100,8 @@ export const productVariants = pgTable(
     compareAtPrice: integer('compare_at_price'),
     stock: integer('stock').notNull().default(0),
     sortOrder: integer('sort_order').notNull().default(0),
+    /** When staff were last emailed that this pack ran low; cleared once restocked above the threshold. */
+    lowStockAlertedAt: timestamp('low_stock_alerted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

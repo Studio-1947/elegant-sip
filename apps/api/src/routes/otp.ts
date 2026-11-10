@@ -3,13 +3,14 @@ import { hash, verify } from '@node-rs/argon2'
 import { and, eq, gt, isNotNull, isNull, lt, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { indianMobileError, normaliseIndianMobile } from '@elegantsip/shared'
+import { indianMobileError, normaliseIndianMobile, problemSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { otpChallenges, users } from '../db/schema-commerce.js'
 import { env } from '../env.js'
 import { ApiError } from '../lib/problem.js'
 import { SESSION_COOKIE, createSession, sessionCookieOptions } from '../lib/sessions.js'
-import { ARGON2, limit, PLACEHOLDER_EMAIL_DOMAIN, PLACEHOLDER_NAME, publicUserSchema, toPublicUser } from './auth-shared.js'
+import { ARGON2, isPlaceholderEmail, limit, ownEmailSchema, passwordSchema, PLACEHOLDER_EMAIL_DOMAIN, PLACEHOLDER_NAME, publicUserSchema, sendVerificationEmail, toPublicUser } from './auth-shared.js'
+import { revokeEmailVerifications } from './profile.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * The per-IP limits on these routes stop one machine, not one attacker: many
@@ -200,6 +201,12 @@ export const otpRoutes: FastifyPluginAsyncZod = async (app) => {
       user = created
     }
     if (!user) throw invalidCode()
+    /* A WhatsApp code must not be a way round the authenticator app. Refusing
+       is simpler and as safe as chaining a second step onto WhatsApp sign-in;
+       staff with two-step sign-in use email and password. */
+    if (user.mfaEnabledAt) {
+      throw new ApiError(403, 'mfa_required', 'Use email sign-in', 'This account uses two-step sign-in. Sign in with your email, password and authenticator code instead.')
+    }
     reply.setCookie(SESSION_COOKIE, await createSession({ userId: user.id, email: user.email, role: user.role }), sessionCookieOptions(request.hostname))
     return { user: toPublicUser(user) }
   })
@@ -219,4 +226,49 @@ export const otpRoutes: FastifyPluginAsyncZod = async (app) => {
     await db.update(users).set({ phone: challenge.phone, phoneVerifiedAt: new Date(), updatedAt: new Date() }).where(eq(users.id, request.session.userId))
     return { ok: true as const }
   })
+
+  /*
+   * WhatsApp-only accounts (stand-in email, a password nobody knows) adding
+   * their first real email and password. The session alone is not enough —
+   * these become the credentials for password resets — so a fresh code to the
+   * account's own verified number is required too. It reuses the `phone_link`
+   * purpose, which already means "this signed-in account proves this phone",
+   * rather than adding an enum value (a migration): the challenge is bound to
+   * the account by `consume`, and the number must be the one on the account.
+   */
+  app.post('/account/credentials/request', { config: limit(IP_CODE_REQUESTS, '10 minutes'), schema: { tags: ['Account'], summary: 'Send a WhatsApp code before adding an email and password', response: { 200: response, 400: problemSchema, 401: problemSchema, 409: problemSchema, 429: problemSchema, 503: problemSchema } } }, async (request) => {
+    const user = await whatsappOnlyUser(request.session)
+    return { ok: true as const, challengeId: await issue(user.id, user.phone, 'phone_link') }
+  })
+  app.post('/account/credentials', { config: limit(10, '10 minutes'), schema: { tags: ['Account'], summary: 'Add an email and password to a WhatsApp-only account', description: 'Needs the code from /account/credentials/request. The address starts unconfirmed and is sent a confirmation link; `delivered` says whether that email went out.', body: z.object({ challengeId: z.string().uuid(), code: codeSchema, email: ownEmailSchema, password: passwordSchema }), response: { 200: z.object({ user: publicUserSchema, delivered: z.boolean() }), 400: problemSchema, 401: problemSchema, 409: problemSchema, 429: problemSchema } } }, async (request) => {
+    const user = await whatsappOnlyUser(request.session)
+    const challenge = await consume(request.body.challengeId, request.body.code, 'phone_link', user.id)
+    if (challenge.phone !== user.phone) throw invalidCode()
+    // Only after the code, as on the email-change route: the caller has proved who they are.
+    const taken = await db.query.users.findFirst({ where: eq(users.email, request.body.email) })
+    if (taken) throw ApiError.conflict('email_taken', 'That email address is already in use on another account.')
+    const passwordHash = await hash(request.body.password, ARGON2)
+    // Conditional on the stand-in still being there, so two racing requests cannot both set credentials.
+    const [updated] = await db
+      .update(users)
+      .set({ email: request.body.email, emailVerifiedAt: null, passwordHash, updatedAt: new Date() })
+      .where(and(eq(users.id, user.id), eq(users.email, user.email)))
+      .returning()
+    if (!updated) throw ApiError.conflict('credentials_exist', 'This account already has an email address. Reload the page to see it.')
+    await revokeEmailVerifications(user.id)
+    const { delivered } = await sendVerificationEmail({ id: updated.id, email: updated.email, name: updated.name })
+    return { user: toPublicUser(updated), delivered }
+  })
+}
+
+/** The signed-in account, if it is still WhatsApp-only and has a verified number to send to. */
+async function whatsappOnlyUser(session: { userId: string } | null) {
+  if (!session) throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in to continue.')
+  const user = await db.query.users.findFirst({ where: eq(users.id, session.userId) })
+  if (!user) throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in again to continue.')
+  if (!isPlaceholderEmail(user.email)) {
+    throw ApiError.conflict('credentials_exist', 'This account already has an email address. Change it from your account settings instead.')
+  }
+  if (!user.phone || !user.phoneVerifiedAt) throw ApiError.badRequest('This account has no verified WhatsApp number to send a code to.')
+  return { ...user, phone: user.phone }
 }

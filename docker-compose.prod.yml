@@ -110,6 +110,8 @@ services:
       INTERAKT_OTP_TEMPLATE: ${INTERAKT_OTP_TEMPLATE:-elegant_sip_otp}
       INTERAKT_OTP_TEMPLATE_LANGUAGE: ${INTERAKT_OTP_TEMPLATE_LANGUAGE:-en}
       INTERAKT_WEBHOOK_SECRET: ${INTERAKT_WEBHOOK_SECRET:-}
+      # Encrypts staff authenticator secrets. Two-step sign-in cannot be turned on without it.
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:-}
       AANGAN_INTERAKT_WEBHOOK_URL: ${AANGAN_INTERAKT_WEBHOOK_URL:-}
       API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
       SELLER_GSTIN: ${SELLER_GSTIN:-}
@@ -132,6 +134,12 @@ services:
       OPS_STATUS_DIR: /ops-status
       WATCHDOG_MINUTES: ${WATCHDOG_MINUTES:-30}
       DISK_ALERT_PERCENT: ${DISK_ALERT_PERCENT:-15}
+      # Meta Conversions API: server-side copies of the pixel's events. Off
+      # until META_CAPI_ACCESS_TOKEN is set in .env.
+      META_PIXEL_ID: ${META_PIXEL_ID:-1702510334659568}
+      META_CAPI_ACCESS_TOKEN: ${META_CAPI_ACCESS_TOKEN:-}
+      META_CAPI_TEST_EVENT_CODE: ${META_CAPI_TEST_EVENT_CODE:-}
+      META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-v24.0}
     volumes:
       - ops-status:/ops-status:ro
     expose:

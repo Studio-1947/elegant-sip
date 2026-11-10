@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer'
 import { env } from '../env.js'
+import { db } from '../db/client.js'
+import { emailOutbox } from '../db/schema-commerce.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Transactional email.
@@ -12,6 +14,10 @@ import { env } from '../env.js'
  * once `sendEmail` has actually resolved. When SMTP_URL is unset the transport
  * logs instead of sending and reports `delivered: false`, so callers can tell
  * the difference between "sent" and "would have sent".
+ *
+ * When SMTP is configured but a send fails, the rendered message is kept in
+ * `email_outbox` and retried by the worker in email-outbox.ts. The caller still
+ * hears `delivered: false`: "not sent yet" is the truth at that moment.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 const transport = env.SMTP_URL ? nodemailer.createTransport(env.SMTP_URL) : null
@@ -33,6 +39,8 @@ export interface EmailMessage {
   footnote?: string
   /** Where a reply should go, e.g. the customer who used the contact form. */
   replyTo?: string
+  /** Label for logs and the admin outbox, e.g. "contact". Inferred when omitted. */
+  kind?: string
 }
 
 const BRAND = '#1b261b'
@@ -108,13 +116,81 @@ function render(message: EmailMessage): { html: string; text: string } {
 export interface SendResult {
   delivered: boolean
   messageId?: string
+  /** True when a failed send was kept in the outbox for another try. */
+  queued?: boolean
+}
+
+/** A message ready for the wire, as the outbox stores it. */
+export interface RenderedEmail {
+  to: string
+  subject: string
+  html: string
+  text: string
+  replyTo: string | null
+}
+
+/**
+ * Messages carrying a sign-in, verification or reset link. They are retried,
+ * but only briefly: an old link is worth less than the customer asking again,
+ * and the stored copy of it should not outlive its use.
+ */
+export const ONE_TIME_KIND = 'one_time_link'
+export const ONE_TIME_MAX_AGE_MS = 60 * 60_000
+
+function classify(message: EmailMessage): string {
+  if (message.action && /[?&](token|code)=/.test(message.action.url)) return ONE_TIME_KIND
+  if (message.kind) return message.kind
+  return message.subject.startsWith('[Staff]') ? 'staff_alert' : 'general'
+}
+
+/** True when SMTP is configured, i.e. when there is anything to retry with. */
+export const emailTransportConfigured = transport !== null
+
+/** One SMTP attempt. Throws on failure; the outbox worker records why. */
+export async function deliver(email: RenderedEmail): Promise<string> {
+  if (!transport) throw new Error('SMTP_URL is not configured')
+  const info = await transport.sendMail({
+    from: env.MAIL_FROM,
+    to: email.to,
+    ...(email.replyTo ? { replyTo: email.replyTo } : {}),
+    subject: email.subject,
+    text: email.text,
+    html: email.html,
+  })
+  return info.messageId
+}
+
+/** A short, log-safe reason. SMTP errors do not carry credentials, but are capped anyway. */
+export function describeError(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error)
+  return text.slice(0, 500)
+}
+
+/** First retry in a minute; see RETRY_DELAYS_MINUTES in email-outbox.ts. */
+async function keepForRetry(kind: string, email: RenderedEmail, error: unknown): Promise<boolean> {
+  try {
+    await db.insert(emailOutbox).values({
+      kind,
+      ...email,
+      attempts: 1,
+      nextAttemptAt: new Date(Date.now() + 60_000),
+      lastError: describeError(error),
+    })
+    return true
+  } catch (storeError) {
+    console.error('[email] could not keep failed message for retry', { subject: email.subject, error: storeError })
+    return false
+  }
 }
 
 /**
  * Never throws. A failed confirmation email must not roll back a paid order —
  * it is logged and reported as undelivered so the caller can decide.
+ *
+ * `retry: false` skips the outbox. Alerts about the outbox itself use it, so a
+ * mail outage cannot feed on its own failure notices.
  */
-export async function sendEmail(message: EmailMessage): Promise<SendResult> {
+export async function sendEmail(message: EmailMessage, options: { retry?: boolean } = {}): Promise<SendResult> {
   const { html, text } = render(message)
 
   if (message.to.toLowerCase().endsWith('.invalid')) {
@@ -127,18 +203,12 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
     return { delivered: false }
   }
 
+  const email: RenderedEmail = { to: message.to, subject: message.subject, html, text, replyTo: message.replyTo ?? null }
   try {
-    const info = await transport.sendMail({
-      from: env.MAIL_FROM,
-      to: message.to,
-      ...(message.replyTo ? { replyTo: message.replyTo } : {}),
-      subject: message.subject,
-      text,
-      html,
-    })
-    return { delivered: true, messageId: info.messageId }
+    return { delivered: true, messageId: await deliver(email) }
   } catch (error) {
     console.error('[email] send failed', { to: message.to, subject: message.subject, error })
-    return { delivered: false }
+    if (options.retry === false) return { delivered: false }
+    return { delivered: false, queued: await keepForRetry(classify(message), email, error) }
   }
 }

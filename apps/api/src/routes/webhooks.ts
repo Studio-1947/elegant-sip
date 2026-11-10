@@ -9,6 +9,7 @@ import { parseProviderDate } from '../lib/shipping.js'
 import { env, isProduction } from '../env.js'
 import { getGateway } from '../lib/gateway.js'
 import { capturePayment, recordCaptureOnClosedOrder } from '../lib/capture.js'
+import { reconcileRefundEvent } from '../lib/refunds.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Payment webhooks.
@@ -111,6 +112,12 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
           .set({ processedAt: new Date(), error: error ?? null })
           .where(eq(webhookEvents.id, eventRowId))
         return reply.send({ received: true as const, status })
+      }
+
+      // refund.processed / refund.failed: settle the refund row by its gateway id.
+      if (parsed.refund) {
+        const outcome = await reconcileRefundEvent(parsed.eventType, parsed.refund, request.log)
+        return finish(outcome.status, outcome.error)
       }
 
       if (!parsed.payment) return finish('ignored_no_payment')

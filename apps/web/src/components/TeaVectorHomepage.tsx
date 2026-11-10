@@ -8,6 +8,7 @@ import { useRoute, parseRoute, getRoute } from '../lib/router'
 import { useIsCompact } from '../lib/useMediaQuery'
 import { getVideoProgress } from '../lib/videoLoading'
 import { setLenis } from '../lib/scroll'
+import { useLiveCatalogue } from '../lib/liveCatalogue'
 
 // Non-home routes are code-split: each loads on demand with a skeleton page
 // as the Suspense fallback. The home experience stays in the main bundle.
@@ -38,6 +39,8 @@ export default function TeaVectorHomepage() {
   const route = useRoute()
   const { name: routeName, id: routeId } = parseRoute(route)
   const isHome = routeName === 'home'
+  // Live prices, stock and retirements: re-renders the page tree when they land.
+  useLiveCatalogue()
 
   const [loadingPercentage, setLoadingPercentage] = useState(0)
   const [loading, setLoading] = useState(true)

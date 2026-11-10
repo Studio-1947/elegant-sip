@@ -55,5 +55,6 @@ export function toProductDto(row: ProductRow): Product {
     flavorProfile: row.flavorProfile ?? null,
     brewingGuide: row.brewingGuide ?? null,
     rating: { average, count },
+    archivedAt: row.archivedAt?.toISOString() ?? null,
   }
 }

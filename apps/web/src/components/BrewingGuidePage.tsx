@@ -8,7 +8,7 @@ import { useScrollReveal } from '../lib/useScrollReveal'
 const GOLDEN_RULES = [
   {
     title: 'Temperature is everything',
-    text: 'Ninety percent of disappointing tea is a temperature problem. First flush needs cooler water — a rolling boil scorches its muscatel aromatics into bitterness. The broken grades and fannings need the heat to open up.',
+    text: 'Ninety percent of disappointing tea is a temperature problem. White and green teas want about 80 °C, and first flush about 90 °C — a rolling boil scorches their aromatics into bitterness. Second and autumn flush take 95 °C.',
   },
   {
     title: 'Time with intention',
@@ -54,31 +54,31 @@ export default function BrewingGuidePage() {
           '@type': 'HowToStep',
           position: 1,
           name: 'Measure the leaf',
-          text: 'Use one teaspoon of leaf per 8 oz (240 ml) of water. Measure rather than estimate — leaf volume varies enormously between whole leaf and fannings.',
+          text: 'Use one teaspoon of leaf per 240 ml cup of water, and two for bulky white teas such as Silver Needle. Measure rather than estimate — whole leaves and buds take up far more room than they weigh.',
         },
         {
           '@type': 'HowToStep',
           position: 2,
           name: 'Heat the water to the right temperature',
-          text: 'Whole-leaf first flush wants about 90 °C, not a rolling boil. Broken leaf takes 95 °C, and broken mixed or fannings take a full 100 °C boil.',
+          text: 'White and green teas want about 80 °C (85 °C for pan-roasted), first flush and Golden Needle about 90 °C, and second and autumn flush 95 °C. Let boiled water rest a few minutes to cool.',
         },
         {
           '@type': 'HowToStep',
           position: 3,
           name: 'Steep to the clock',
-          text: 'Whole leaf steeps 3–4 minutes; broken leaf 2–3; fannings 2–3. Over-steeping does not make tea stronger, it makes it astringent.',
+          text: 'Black teas steep 3–4 minutes, green teas 2–3, and white teas 3–5. Over-steeping does not make tea stronger, it makes it astringent.',
         },
         {
           '@type': 'HowToStep',
           position: 4,
           name: 'Taste before adding anything',
-          text: 'Drink first flush plain — milk buries the muscatel character that makes it worth buying. Save milk for the broken mixed and fannings.',
+          text: 'Drink first flush, white and green teas plain — milk buries the character that makes them worth buying. Second flush, autumn flush and Golden Needle can take a splash of milk.',
         },
         {
           '@type': 'HowToStep',
           position: 5,
           name: 'Re-steep the leaf',
-          text: 'Whole leaf gives 2–3 steepings and broken leaf about 2. Add roughly 30 seconds to each subsequent steep.',
+          text: 'Black teas give 2–3 steepings, green teas about 3, and white teas 3–4. Add roughly 30 seconds to each subsequent steep.',
         },
       ],
     },

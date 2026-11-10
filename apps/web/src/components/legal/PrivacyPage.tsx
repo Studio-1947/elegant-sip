@@ -31,7 +31,7 @@ const PROVIDER_ROWS: [string, string][] = [
   ['Our email delivery provider', 'Sends order, delivery and account emails. Receives your email address and the message'],
   ['Interakt and WhatsApp (Meta), only if you sign in with WhatsApp', 'Send your sign-in code. Receive your WhatsApp number and the code'],
   ['Hostinger', 'Hosts our server and database'],
-  ['Google (Tag Manager) and Meta (Pixel), only after you accept cookies', 'Measure visits and ad performance. Receive the events in section 4, never your name, email, phone or address'],
+  ['Google (Tag Manager) and Meta (Pixel and Conversions API), only after you accept cookies', 'Measure visits and ad performance. Receive the events in section 4, never your name, email, phone or address'],
 ]
 
 export default function PrivacyPage() {
@@ -102,6 +102,13 @@ export default function PrivacyPage() {
             the products you view or add to your cart (product, quantity and price), checkout steps,
             and, when you buy, the order value and number of items. Like any website request, they
             also see your IP address and browser type.
+          </li>
+          <li>
+            Meta receives these same events a second time from our server (Meta's{' '}
+            <strong className="text-[#1b261b]">Conversions API</strong>), together with your IP
+            address, browser type and the ID in Meta's own cookie, so that ad results are still
+            counted when a browser blocks Meta's script. Meta matches the two copies and counts
+            each event once. This also happens only after you accept, and stops when you withdraw.
           </li>
           <li>
             We never send your name, email address, phone number or delivery address to Google or

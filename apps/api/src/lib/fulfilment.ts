@@ -508,21 +508,27 @@ export async function applyTracking(
         .where(and(eq(orders.id, current.orderId), inArray(orders.status, ['paid', 'packed'])))
         .returning()
     }
+    let delivered: OrderRow | undefined
     if (status === 'delivered') {
-      await tx
+      // Returns a row only for the report that moves the order, so repeats send nothing.
+      ;[delivered] = await tx
         .update(orders)
         .set({ status: 'delivered' })
         .where(and(eq(orders.id, current.orderId), inArray(orders.status, ['paid', 'packed', 'shipped'])))
+        .returning()
     }
-    return { updated, shipped, previousStatus: current.status, orderNumber: order?.number ?? '' }
+    return { updated, shipped, delivered, previousStatus: current.status, orderNumber: order?.number ?? '' }
   })
 
   // Emails only once the transaction has committed.
-  const { updated, shipped, orderNumber } = result
+  const { updated, shipped, delivered, orderNumber } = result
   if (shipped && updated.awb) {
     await sendShippedEmail(shipped, updated.courierName, updated.awb, updated.trackingUrl).catch((err) =>
       log.error({ err, orderNumber: shipped.number }, 'shipped email failed'),
     )
+  }
+  if (delivered) {
+    await sendDeliveredEmail(delivered).catch((err) => log.error({ err, orderNumber: delivered.number }, 'delivered email failed'))
   }
   if (updated.status !== result.previousStatus && NEEDS_ATTENTION.includes(updated.status as ShipmentStatus)) {
     const rto = updated.status === 'rto'
@@ -710,5 +716,28 @@ export async function sendShippedEmail(
       ...(trackingUrl ? ([['Track online', trackingUrl]] as [string, string][]) : []),
     ],
     action: { label: 'Track your order', url: `${env.SITE_URL}/order/${encodeURIComponent(order.number)}` },
+  })
+}
+
+/**
+ * The customer's "delivered" message. Sent once, on the move to delivered,
+ * whether the courier reported it or staff marked it. It says the order was
+ * marked delivered rather than that it reached them, and asks them to reply
+ * if it did not.
+ */
+export async function sendDeliveredEmail(order: Pick<OrderRow, 'email' | 'number' | 'shippingName'>) {
+  return sendEmail({
+    to: order.email,
+    subject: `Order ${order.number} has been delivered`,
+    heading: 'Delivered',
+    body: [
+      `${order.shippingName}, your order has been marked as delivered.`,
+      'Keep the tea sealed, cool and away from light, and it will stay fresh for months.',
+    ],
+    facts: [['Order', order.number]],
+    action: { label: 'View your order', url: `${env.SITE_URL}/order/${encodeURIComponent(order.number)}` },
+    footnote: 'If it has not reached you, reply to this email and we will look into it.',
+    // Replies reach a person, not the sending address.
+    replyTo: env.CONTACT_INBOX,
   })
 }
