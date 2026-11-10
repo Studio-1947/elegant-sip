@@ -43,7 +43,7 @@ const PRODUCTS = [
     },
     flavorProfile: { strength: 2, astringency: 2, sweetness: 4, floral: 5, caffeine: 3 },
     brewingGuide: {
-      temperature: '194°F / 90°C',
+      temperature: '90°C / 194°F',
       time: '3–4 minutes',
       steeps: '2–3',
       leafAmount: '1 tsp per 8 oz',
@@ -78,7 +78,7 @@ const PRODUCTS = [
     },
     flavorProfile: { strength: 3, astringency: 3, sweetness: 3, floral: 3, caffeine: 4 },
     brewingGuide: {
-      temperature: '203°F / 95°C',
+      temperature: '95°C / 203°F',
       time: '2–3 minutes',
       steeps: '2',
       leafAmount: '1 tsp per 8 oz',
@@ -113,7 +113,7 @@ const PRODUCTS = [
     },
     flavorProfile: { strength: 4, astringency: 3, sweetness: 3, floral: 2, caffeine: 4 },
     brewingGuide: {
-      temperature: '212°F / 100°C',
+      temperature: '100°C / 212°F',
       time: '3–4 minutes',
       steeps: '2',
       leafAmount: '1 tsp per 8 oz',
@@ -148,7 +148,7 @@ const PRODUCTS = [
     },
     flavorProfile: { strength: 5, astringency: 4, sweetness: 2, floral: 1, caffeine: 5 },
     brewingGuide: {
-      temperature: '212°F / 100°C',
+      temperature: '100°C / 212°F',
       time: '2–3 minutes',
       steeps: '1–2',
       leafAmount: '1 tsp per 8 oz',

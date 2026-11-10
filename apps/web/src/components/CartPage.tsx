@@ -56,8 +56,8 @@ export default function CartPage() {
       {/* Back button & Header */}
       <div className="max-w-6xl mx-auto mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <Link to="/" className="group flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mb-4">
-            <span className="transition-transform duration-300 group-hover:-translate-x-1">←</span> Back to Experience
+          <Link to="/shop" className="group inline-flex items-center gap-2 min-h-[44px] text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mb-2">
+            <span className="transition-transform duration-300 group-hover:-translate-x-1">←</span> Continue shopping
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight">Your Cart</h1>
         </div>
@@ -104,13 +104,13 @@ export default function CartPage() {
                 {/* Details */}
                 <div className="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <Link to={`/product/${item.productSlug}`} className="hover:text-[#4a7333] transition-colors">
+                    <Link to={`/product/${item.productSlug}`} className="inline-block py-2.5 -my-2.5 hover:text-[#4a7333] transition-colors">
                       <h3 className="text-base md:text-lg font-bold">{item.name}</h3>
                     </Link>
                     <p className="text-xs text-[#4a584a] mt-1">{item.size} · {formatINR(item.price)} each</p>
                     <button
                       onClick={() => handleRemove(item.productSlug, item.size)}
-                      className="text-xs font-mono tracking-wider text-red-600 hover:text-red-700 transition-colors mt-3 block cursor-pointer"
+                      className="text-xs font-mono tracking-wider text-[#4a584a] underline underline-offset-2 hover:text-red-700 transition-colors mt-1 -ml-2 px-2 min-h-[44px] inline-flex items-center cursor-pointer"
                     >
                       Remove
                     </button>
@@ -118,18 +118,18 @@ export default function CartPage() {
 
                   {/* Quantity & Price */}
                   <div className="flex items-center gap-6 justify-between md:justify-end">
-                    <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-3 py-1.5 w-24 bg-[#f9faf7]">
+                    <div className="flex items-center h-11 border border-[#1b261b]/20 rounded-xl bg-[#f9faf7]">
                       <button
                         onClick={() => updateQuantity(item.productSlug, item.size, item.quantity - 1)}
-                        className="text-[#1b261b] hover:text-[#4a7333] font-bold text-sm leading-none transition-colors"
+                        className="w-11 h-full flex items-center justify-center text-[#1b261b] hover:text-[#4a7333] font-bold text-base leading-none transition-colors cursor-pointer"
                         aria-label={`Decrease quantity of ${item.name}`}
                       >
                         −
                       </button>
-                      <span className="text-[#1b261b] font-mono text-xs font-semibold select-none">{item.quantity}</span>
+                      <span className="w-7 text-center text-[#1b261b] font-mono text-sm font-semibold select-none">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.productSlug, item.size, item.quantity + 1)}
-                        className="text-[#1b261b] hover:text-[#4a7333] font-bold text-sm leading-none transition-colors"
+                        className="w-11 h-full flex items-center justify-center text-[#1b261b] hover:text-[#4a7333] font-bold text-base leading-none transition-colors cursor-pointer"
                         aria-label={`Increase quantity of ${item.name}`}
                       >
                         +

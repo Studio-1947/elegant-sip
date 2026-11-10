@@ -8,10 +8,14 @@ export default function ProductInfoCards({ product, garden }: { product: Product
 
   // Track count follows the cards that actually render, so a product with only
   // a brewing guide doesn't leave two empty columns.
-  const columns = cards === 1 ? 'md:grid-cols-1 md:max-w-md' : cards === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'
+  const columns = cards === 1 ? 'md:grid-cols-1' : cards === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'
+
+  // A lone brewing card spans the row and lays its facts out side by side,
+  // instead of a narrow card stranded beside empty space on wide screens.
+  const wide = cards === 1
 
   return (
-    <div className={`grid grid-cols-1 ${columns} gap-6 mb-24`}>
+    <div className={`grid grid-cols-1 ${columns} gap-6 mb-16 md:mb-24`}>
       {product.origin && (
         <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-6">
           <span className="text-[#4a7333] text-[11px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-2 mb-4">Tea Origin</span>
@@ -77,16 +81,16 @@ export default function ProductInfoCards({ product, garden }: { product: Product
       {product.brewingGuide && (
         <div className="bg-white border border-[#1b261b]/10 rounded-2xl p-6">
           <span className="text-[#4a7333] text-[11px] font-mono tracking-wider uppercase block border-b border-[#1b261b]/10 pb-2 mb-4">Brewing Guide</span>
-          <dl className="space-y-2 text-xs">
+          <dl className={wide ? 'space-y-2 md:space-y-0 md:grid md:grid-cols-4 md:gap-6 text-xs md:text-sm' : 'space-y-2 text-xs'}>
             {[
               ['Temperature', product.brewingGuide.temperature],
               ['Steep time', product.brewingGuide.time],
               ['Steeps', product.brewingGuide.steeps],
               ['Leaf', product.brewingGuide.leafAmount],
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between gap-4">
+              <div key={label} className={wide ? 'flex justify-between gap-4 md:flex-col md:gap-1' : 'flex justify-between gap-4'}>
                 <dt className="text-[#4a584a]">{label}</dt>
-                <dd className="font-medium text-right">{value}</dd>
+                <dd className={wide ? 'font-medium text-right md:text-left' : 'font-medium text-right'}>{value}</dd>
               </div>
             ))}
           </dl>

@@ -26,7 +26,7 @@ export default function PackageShowcaseSection() {
             </div>
             <Link
               to="/shop"
-              className="bg-white text-[#1b261b] text-[11px] font-mono font-bold tracking-widest uppercase py-2.5 px-5 rounded-full flex-shrink-0"
+              className="bg-white text-[#1b261b] text-[11px] font-mono font-bold tracking-widest uppercase min-h-[44px] inline-flex items-center px-5 rounded-full flex-shrink-0"
             >
               Explore
             </Link>
