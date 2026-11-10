@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
+import ProductTile from './ProductTile'
+import { Link } from '../lib/router'
 import { PRODUCTS } from '../data/products'
 import { useUi } from './UiContext'
 import SelectDropdown from './SelectDropdown'
@@ -24,15 +26,22 @@ interface ProductsSectionProps {
   headingLevel?: 'h1' | 'h2'
   showFilters?: boolean
   searchQuery?: string
+  /**
+   * Phone layout. 'shelf' (homepage) is one swipeable row of compact tiles with
+   * a link to the full shop; 'grid' (/shop) shows every tea two to a row.
+   * Tablet and desktop always use the full card grid.
+   */
+  mobileLayout?: 'shelf' | 'grid'
 }
 
-export default function ProductsSection({ showHeading = true, headingLevel = 'h2', showFilters = false, searchQuery = '' }: ProductsSectionProps) {
+export default function ProductsSection({ showHeading = true, headingLevel = 'h2', showFilters = false, searchQuery = '', mobileLayout = 'shelf' }: ProductsSectionProps) {
   const { openQuiz } = useUi()
   // Keep heading levels sequential below the section heading (no h1 → h3 skip).
   const SubHeading = headingLevel === 'h1' ? 'h2' : 'h3'
   const [category, setCategory] = useState('All')
   const [sort, setSort] = useState<SortValue>('featured')
   const [search, setSearch] = useState(searchQuery)
+  const shelf = mobileLayout === 'shelf'
   const sectionRef = useScrollReveal<HTMLElement>({ target: ':scope > div' })
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.15 })
 
@@ -60,11 +69,11 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
   }, [category, sort, search])
 
   return (
-    <section ref={sectionRef} className="px-6 md:px-12 lg:px-16 py-32 max-w-[1400px] mx-auto bg-[#f9faf7]">
+    <section ref={sectionRef} className="px-6 md:px-12 lg:px-16 py-16 md:py-32 max-w-[1400px] mx-auto bg-[#f9faf7]">
       {showHeading && (
-        <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
-          <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Single-Origin Darjeeling</span>
-          <BlurText as={headingLevel} text="Our Collections" delay={120} className="justify-center text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-6" />
+        <div className={`${shelf ? 'text-left md:text-center' : 'text-center'} max-w-2xl mx-auto mb-6 md:mb-16`}>
+          <span className="text-[#4a7333] text-[11px] md:text-xs font-mono tracking-[0.3em] uppercase block mb-3 md:mb-4">Single-Origin Darjeeling</span>
+          <BlurText as={headingLevel} text="Our Collections" delay={120} className={`${shelf ? 'justify-start md:justify-center' : 'justify-center'} text-[#1b261b] text-3xl md:text-4xl lg:text-5xl font-sans font-bold tracking-tight mb-3 md:mb-6`} />
           <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
             Hand-selected whole leaf teas sourced directly from estate gardens
             <span className="hidden md:inline"> and packaged to preserve complex terroir and freshness</span>.
@@ -72,8 +81,27 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
         </div>
       )}
 
-      {/* Taste Matcher teaser */}
-      <div className="max-w-6xl mx-auto mb-10 flex flex-row items-center justify-between gap-4 bg-[#8bb56e]/10 md:bg-white border border-[#8bb56e]/20 md:border-[#1b261b]/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 shadow-[0_4px_20px_rgba(27,38,27,0.03)]">
+      {/* Taste Matcher — one tappable row on phones */}
+      <button
+        onClick={openQuiz}
+        className="md:hidden w-full mb-6 flex items-center gap-3 text-left bg-[#8bb56e]/10 border border-[#8bb56e]/25 rounded-2xl px-4 py-3 cursor-pointer active:scale-[0.99] transition-transform"
+      >
+        <span className="bg-[#8bb56e]/20 p-2 rounded-full text-[#4a7333] flex-shrink-0" aria-hidden="true">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+        </span>
+        <span className="flex-grow min-w-0">
+          <span className="block text-[13px] font-bold text-[#1b261b] leading-tight">Not sure where to begin?</span>
+          <span className="block text-[11px] text-[#4a584a] mt-0.5">Find your tea in 10 seconds</span>
+        </span>
+        <svg className="w-4 h-4 text-[#4a7333] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        </svg>
+      </button>
+
+      {/* Taste Matcher teaser (tablet/desktop) */}
+      <div className="hidden md:flex max-w-6xl mx-auto mb-10 flex-row items-center justify-between gap-4 bg-[#8bb56e]/10 md:bg-white border border-[#8bb56e]/20 md:border-[#1b261b]/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 shadow-[0_4px_20px_rgba(27,38,27,0.03)]">
         <div className="flex items-center gap-3">
           <div className="bg-[#8bb56e]/20 md:bg-[#8bb56e]/10 p-2.5 rounded-full md:rounded-lg text-[#4a7333] flex-shrink-0">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -126,7 +154,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
         /* relative z-30: the scroll-reveal leaves an inline transform on this bar
            and on the grid below, making both stacking contexts — without a higher
            z-index here, the grid (later in DOM order) paints over the open dropdown. */
-        <div className="relative z-30 max-w-6xl mx-auto mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="relative z-30 max-w-6xl mx-auto mb-6 md:mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           {/* Category chips — one swipeable row on phones, wrapping row from sm up */}
           <div className="relative flex overflow-x-auto no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
             {CATEGORIES.map((c) => (
@@ -143,13 +171,19 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
               </button>
             ))}
           </div>
-          <SelectDropdown
-            value={sort}
-            options={SORT_OPTIONS}
-            onChange={(v) => setSort(v as SortValue)}
-            ariaLabel="Sort products"
-            className="w-full sm:w-auto flex-shrink-0"
-          />
+          {/* Phones: result count beside a compact sort. The wrapper dissolves from sm up. */}
+          <div className="flex items-center justify-between gap-3 sm:contents">
+            <span className="sm:hidden text-xs text-[#4a584a]" aria-live="polite">
+              {visibleProducts.length} {visibleProducts.length === 1 ? 'tea' : 'teas'}
+            </span>
+            <SelectDropdown
+              value={sort}
+              options={SORT_OPTIONS}
+              onChange={(v) => setSort(v as SortValue)}
+              ariaLabel="Sort products"
+              className="w-auto flex-shrink-0"
+            />
+          </div>
         </div>
       )}
 
@@ -158,16 +192,49 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
           No teas match your search. Try a different word — or take the Taste Matcher above.
         </p>
       ) : (
-        <div
-          ref={gridRef}
-          className="relative flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 -mx-6 px-6 md:mx-auto md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 lg:gap-10 max-w-6xl"
-        >
-          {visibleProducts.map((product) => (
-            <div key={product.id} className="min-w-[80vw] sm:min-w-[46vw] md:min-w-0 snap-center flex">
-              <ProductCard product={product} />
+        <>
+          {/* Phones: compact tiles — a swipeable shelf or a two-up grid */}
+          {shelf ? (
+            <div className="md:hidden">
+              <div className="relative flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 -mx-6 px-6 scroll-px-6">
+                {visibleProducts.map((product) => (
+                  <div key={product.id} className="w-[42vw] max-w-[220px] flex-shrink-0 snap-start flex">
+                    <ProductTile product={product} />
+                  </div>
+                ))}
+              </div>
+              <Link
+                to="/shop"
+                className="mt-6 flex items-center justify-center gap-2 w-full h-12 rounded-xl border border-[#1b261b]/20 text-[#1b261b] text-xs font-bold tracking-widest uppercase active:scale-[0.99] transition-transform"
+              >
+                View all {visibleProducts.length} teas
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="md:hidden grid grid-cols-2 gap-x-3 gap-y-8">
+              {visibleProducts.map((product) => (
+                <div key={product.id} className="flex">
+                  <ProductTile product={product} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Tablet and desktop: the full card grid */}
+          <div
+            ref={gridRef}
+            className="relative hidden md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 lg:gap-10 max-w-6xl mx-auto"
+          >
+            {visibleProducts.map((product) => (
+              <div key={product.id} className="flex">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </section>
   )

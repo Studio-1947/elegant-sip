@@ -1,5 +1,5 @@
 import ProductGallery from './ProductGallery'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getProduct, getDefaultVariant, getGardenForProduct, getProductImages, PRODUCTS } from '../data/products'
 import { api, type ReviewView } from '../lib/api'
 import { Link, navigate, useDocumentMeta, useJsonLd } from '../lib/router'
@@ -11,6 +11,7 @@ import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from '../lib/pricing'
 import { BRAND, absoluteUrl } from '../lib/site'
 import { productRouteMeta } from '../lib/seoRoutes'
 import ProductCard from './ProductCard'
+import ProductTile from './ProductTile'
 import ProductInfoCards from './ProductInfoCards'
 import ProductReviews from './ProductReviews'
 import { useUi } from './UiContext'
@@ -25,6 +26,21 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const [rating, setRating] = useState({ average: 0, count: 0 })
   const { addToCart } = useCart()
   const { showToast } = useUi()
+
+  // Phones: once the main buttons scroll out of view, a buy bar docks at the
+  // bottom of the screen, in the thumb zone, so buying never needs a scroll back.
+  // Only shown after the buttons have been seen and passed (not before reaching them).
+  const ctaRef = useRef<HTMLDivElement>(null)
+  const [ctaPassed, setCtaPassed] = useState(false)
+  useEffect(() => {
+    const el = ctaRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => {
+      setCtaPassed(!entry.isIntersecting && entry.boundingClientRect.top < 0)
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [id])
 
   // Reset per-product state when navigating between products (same component instance)
   useEffect(() => {
@@ -325,21 +341,27 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               </p>
             )}
 
-            {/* Qty + CTA */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+            {/* Qty + CTAs.
+                - Quantity sits beside Add to cart (proximity: it modifies that action).
+                - Both actions share one 56px height and radius; Add to cart is the
+                  single filled button (hierarchy), Buy now the outlined alternative.
+                - Every target is at least 44px (Fitts). */}
+            <div ref={ctaRef} className="grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] gap-3 mb-8">
               {!comingSoon && (
-                <div className="flex items-center justify-between border border-[#1b261b]/20 rounded-lg px-4 py-3 sm:w-32 bg-white">
+                <div className="flex items-center h-14 border border-[#1b261b]/20 rounded-xl bg-white" role="group" aria-label="Quantity">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="text-[#1b261b] hover:text-[#4a7333] font-bold text-lg leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center -my-2"
+                    disabled={quantity <= 1}
+                    className="w-11 h-full flex items-center justify-center text-lg font-bold text-[#1b261b] hover:text-[#4a7333] disabled:text-[#1b261b]/25 transition-colors cursor-pointer disabled:cursor-not-allowed"
                     aria-label="Decrease quantity"
                   >
                     −
                   </button>
-                  <span className="font-mono text-sm font-semibold select-none">{quantity}</span>
+                  <span className="w-8 text-center font-mono text-sm font-semibold select-none" aria-live="polite">{quantity}</span>
                   <button
                     onClick={() => setQuantity((q) => Math.min(q + 1, activeVariant.stock))}
-                    className="text-[#1b261b] hover:text-[#4a7333] font-bold text-lg leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center -my-2"
+                    disabled={quantity >= activeVariant.stock}
+                    className="w-11 h-full flex items-center justify-center text-lg font-bold text-[#1b261b] hover:text-[#4a7333] disabled:text-[#1b261b]/25 transition-colors cursor-pointer disabled:cursor-not-allowed"
                     aria-label="Increase quantity"
                   >
                     +
@@ -349,18 +371,20 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               <button
                 onClick={handleAddToCart}
                 disabled={isAdding || !variantInStock || comingSoon}
-                className={`flex-grow text-xs font-bold tracking-widest uppercase py-4 px-8 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${!variantInStock || comingSoon
+                className={`${comingSoon ? 'col-span-2 sm:col-span-3' : ''} h-14 px-5 rounded-xl text-xs font-bold tracking-wider uppercase whitespace-nowrap transition-all duration-300 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 ${!variantInStock || comingSoon
                     ? 'bg-[#1b261b]/10 text-[#4a584a] cursor-not-allowed'
                     : isAdded ? 'bg-[#8bb56e] text-white' : isAdding ? 'bg-[#1b261b]/50 text-white/50 cursor-wait' : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
                   }`}
               >
-                {comingSoon ? 'Coming Soon' : !variantInStock ? 'Sold Out' : isAdding ? 'Adding...' : isAdded ? 'Go to Cart' : `Add to Cart • ${formatINR(activeVariant.price * quantity)}`}
+                {comingSoon ? 'Coming soon' : !variantInStock ? 'Sold out' : isAdding ? 'Adding…' : isAdded ? 'Go to cart' : (
+                  'Add to cart'
+                )}
               </button>
               {!comingSoon && variantInStock && (
                 <button
                   onClick={handleBuyNow}
                   disabled={isAdding}
-                  className="border border-[#1b261b]/25 px-7 text-xs font-bold tracking-widest uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] disabled:opacity-50"
+                  className="col-span-2 sm:col-span-1 h-14 px-6 rounded-xl border-[1.5px] border-[#1b261b] text-[#1b261b] text-xs font-bold tracking-wider uppercase whitespace-nowrap transition-colors hover:bg-[#1b261b] hover:text-white active:scale-[0.98] cursor-pointer disabled:opacity-50"
                 >
                   Buy now
                 </button>
@@ -404,9 +428,17 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-2">Continue the Journey</span>
               <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight">You May Also Love</h2>
             </div>
-            <div className="relative flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 -mx-6 px-6 md:mx-0 md:px-0 md:grid md:grid-cols-3 md:gap-8">
+            {/* Phones: the same compact tiles as the shop */}
+            <div className="md:hidden relative flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 -mx-6 px-6 scroll-px-6">
               {related.map((item) => (
-                <div key={item.id} className="min-w-[80vw] sm:min-w-[46vw] md:min-w-0 snap-center flex">
+                <div key={item.id} className="w-[42vw] max-w-[220px] flex-shrink-0 snap-start flex">
+                  <ProductTile product={item} />
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:grid md:grid-cols-3 md:gap-8">
+              {related.map((item) => (
+                <div key={item.id} className="flex">
                   <ProductCard product={item} />
                 </div>
               ))}
@@ -414,6 +446,43 @@ export default function ProductDetailPage({ id }: { id?: string }) {
           </div>
         )}
       </div>
+
+      {/* Phone buy bar — docks in the thumb zone once the main buttons scroll away */}
+      {!comingSoon && variantInStock && (
+        <>
+          <div
+            className={`md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-[#1b261b]/10 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-transform duration-300 ${
+              ctaPassed ? 'translate-y-0' : 'translate-y-full'
+            }`}
+            aria-hidden={!ctaPassed}
+            inert={!ctaPassed}
+          >
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-grow">
+                <p className="text-[13px] font-bold text-[#1b261b] truncate">{product.name}</p>
+                <p className="text-xs text-[#4a584a]">
+                  <span className="font-bold text-[#1b261b]">{formatINR(activeVariant.price)}</span>
+                  {activeVariant.compareAtPrice && activeVariant.compareAtPrice > activeVariant.price && (
+                    <s className="ml-1.5 opacity-70">{formatINR(activeVariant.compareAtPrice)}</s>
+                  )}
+                  <span className="ml-1.5">/ {activeVariant.size}</span>
+                </p>
+              </div>
+              <button
+                onClick={handleAddToCart}
+                disabled={isAdding}
+                className={`h-12 px-5 rounded-xl text-xs font-bold tracking-wider uppercase whitespace-nowrap active:scale-[0.98] transition-colors cursor-pointer ${
+                  isAdded ? 'bg-[#8bb56e] text-white' : 'bg-[#1b261b] text-white'
+                }`}
+              >
+                {isAdding ? 'Adding…' : isAdded ? 'Go to cart' : 'Add to cart'}
+              </button>
+            </div>
+          </div>
+          {/* Keeps the footer's last line clear of the bar */}
+          <div className="md:hidden h-16" aria-hidden="true" />
+        </>
+      )}
     </div>
   )
 }
