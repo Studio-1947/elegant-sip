@@ -1,4 +1,5 @@
 import { Link } from '../lib/router'
+import { openConsentSettings, trackingConfigured } from '../lib/analytics'
 import { useUi } from './UiContext'
 
 export default function Footer() {
@@ -104,6 +105,9 @@ export default function Footer() {
               <Link to="/privacy" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Privacy</Link>
               <Link to="/terms" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Terms</Link>
               <Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping</Link>
+              {trackingConfigured() && (
+                <button type="button" onClick={openConsentSettings} className="cursor-pointer hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Cookies</button>
+              )}
             </nav>
           </div>
           {/* No payment-network badges: checkout is a demo and processes no

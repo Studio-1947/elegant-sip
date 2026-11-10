@@ -108,6 +108,11 @@ const envSchema = z.object({
   SHIP_PACKAGE_BREADTH_CM: z.coerce.number().positive().default(15),
   SHIP_PACKAGE_HEIGHT_CM: z.coerce.number().positive().default(10),
   SHIP_PACKAGING_WEIGHT_GRAMS: z.coerce.number().int().min(0).default(150),
+  /**
+   * Refreshes courier tracking for open shipments that have been silent this
+   * long — a safety net for missed webhooks. 0 turns it off.
+   */
+  SHIPMENT_SYNC_MINUTES: z.coerce.number().int().min(0).max(24 * 60).default(180),
 })
 
 export type Env = z.infer<typeof envSchema>

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, gt, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
 import type { FastifyBaseLogger } from 'fastify'
 import { db } from '../db/client.js'
 import { orders, shipments, type ShipmentEvent } from '../db/schema-commerce.js'
@@ -274,7 +274,12 @@ export async function bookShipment(
   if (!row.awb) {
     try {
       const assigned = await provider.assignAwb(row.providerShipmentId!, options.courierId)
-      row = await updateShipment(row.id, { ...assigned, status: 'awb_assigned', lastError: null })
+      row = await updateShipment(row.id, {
+        ...assigned,
+        trackingUrl: provider.publicTrackingUrl(assigned.awb),
+        status: 'awb_assigned',
+        lastError: null,
+      })
       await db
         .update(orders)
         .set({ trackingNumber: assigned.awb, trackingCarrier: assigned.courierName, ...(order.status === 'paid' ? { status: 'packed' } : {}) })
@@ -331,10 +336,13 @@ export async function applyTracking(
 
   const status = nextShipmentStatus(row.status, normalised)
   const stale = normalised !== null && status !== normalised
+  // Shipments booked before the link was saved at booking time still get one.
+  const provider = getShippingProvider()
+  const fallbackUrl = row.awb && provider?.name === row.provider ? provider.publicTrackingUrl(row.awb) : null
   const updated = await updateShipment(row.id, {
     status,
     providerStatus: stale ? row.providerStatus : (update.providerStatus ?? row.providerStatus),
-    trackingUrl: update.trackingUrl ?? row.trackingUrl,
+    trackingUrl: update.trackingUrl ?? row.trackingUrl ?? fallbackUrl,
     expectedDeliveryAt: update.expectedDeliveryAt ? new Date(update.expectedDeliveryAt) : row.expectedDeliveryAt,
     deliveredAt: status === 'delivered' ? (row.deliveredAt ?? new Date()) : row.deliveredAt,
     events: merged,
@@ -374,6 +382,44 @@ export async function syncShipment(orderNumber: string, log: FastifyBaseLogger):
     throw providerFailure(err)
   }
   return toShipmentView(await applyTracking(order.shipment, result, log))
+}
+
+/** Parcels that can still change. Delivered and cancelled ones are final. */
+const OPEN_STATUSES: ShipmentStatus[] = ['awb_assigned', 'pickup_scheduled', 'in_transit', 'out_for_delivery', 'exception', 'rto']
+
+/**
+ * Background safety net for missed webhooks: refreshes open shipments that
+ * have not heard from the courier for `staleMinutes`. Webhook updates also set
+ * `lastSyncedAt`, so a healthy webhook means this rarely calls the courier.
+ */
+export async function syncStaleShipments(staleMinutes: number, log: FastifyBaseLogger, limit = 50): Promise<number> {
+  const provider = getShippingProvider()
+  if (!provider) return 0
+  const now = Date.now()
+  const rows = await db.query.shipments.findMany({
+    where: and(
+      eq(shipments.provider, provider.name),
+      inArray(shipments.status, OPEN_STATUSES),
+      isNotNull(shipments.awb),
+      // Stop chasing parcels after 30 days; anything that old needs a person.
+      gt(shipments.createdAt, new Date(now - 30 * 24 * 60 * 60 * 1000)),
+      or(isNull(shipments.lastSyncedAt), lt(shipments.lastSyncedAt, new Date(now - staleMinutes * 60_000))),
+    ),
+    // Never-synced parcels first, then the longest-silent ones.
+    orderBy: sql`${shipments.lastSyncedAt} asc nulls first`,
+    limit,
+  })
+  let synced = 0
+  for (const row of rows) {
+    try {
+      await applyTracking(row, await provider.track(row.awb!), log)
+      synced += 1
+    } catch (err) {
+      // One bad AWB must not stop the rest; the next run retries it.
+      log.warn({ err, awb: row.awb }, 'background shipment sync failed')
+    }
+  }
+  return synced
 }
 
 export async function cancelShipment(orderNumber: string, log: FastifyBaseLogger): Promise<ShipmentView> {
@@ -417,5 +463,6 @@ export async function sendShippedEmail(
       ['Tracking', tracking],
       ...(trackingUrl ? ([['Track online', trackingUrl]] as [string, string][]) : []),
     ],
+    action: { label: 'Track your order', url: `${env.SITE_URL}/order/${encodeURIComponent(order.number)}` },
   })
 }

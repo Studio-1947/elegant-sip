@@ -1,4 +1,5 @@
 import { Link, useDocumentMeta } from '../../lib/router'
+import { openConsentSettings, trackingConfigured } from '../../lib/analytics'
 import { CONTACT_EMAIL, ContactList, DataTable, LegalLayout, listClass, OnceLaunched, Section, StatusCallout } from './shared'
 
 const LOCAL_DATA_ROWS: [string, string][] = [
@@ -29,7 +30,7 @@ export default function PrivacyPage() {
     'What Elegant Sip stores, where it is stored, and what we never send to third parties.',
   )
   return (
-    <LegalLayout label="Legal" title="Privacy Policy" updated="August 19, 2026">
+    <LegalLayout label="Legal" title="Privacy Policy" updated="November 10, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
         <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our").
         Elegant Sip (elegantsip.in) is a Darjeeling tea storefront. This policy explains what
@@ -123,15 +124,38 @@ export default function PrivacyPage() {
 
       <Section title="4. Cookies & analytics">
         <ul className={listClass}>
-          <li>The site does not run analytics by default.</li>
           <li>
-            If we enable an analytics provider (Plausible or Google Analytics), tracking events
-            only begin <strong className="text-[#1b261b]">after you accept</strong> via the consent
-            banner. You can decline, and the site will function normally.
+            We use <strong className="text-[#1b261b]">Google Tag Manager</strong> and the{' '}
+            <strong className="text-[#1b261b]">Meta Pixel</strong> to measure visits and to see which
+            of our ads lead to purchases. Neither loads until you{' '}
+            <strong className="text-[#1b261b]">accept</strong> the cookie banner. If you decline or
+            don't choose, nothing is sent to Google or Meta and the site works the same.
           </li>
-          <li>We never send your email address or other personal identifiers to analytics tools.</li>
-          <li>Declining or clearing consent stops tracking going forward.</li>
+          <li>
+            Once you accept, Google and Meta set their own cookies and receive: the pages you view,
+            the products you view or add to your cart (product, quantity and price), checkout steps,
+            and, when you buy, the order value and number of items. Like any website request, they
+            also see your IP address and browser type.
+          </li>
+          <li>
+            We never send your name, email address, phone number or delivery address to Google or
+            Meta.
+          </li>
+          <li>
+            You can change your choice at any time with the{' '}
+            <strong className="text-[#1b261b]">Cookies</strong> link in the footer or the button
+            below. Withdrawing consent stops tracking from that moment.
+          </li>
         </ul>
+        {trackingConfigured() && (
+          <button
+            type="button"
+            onClick={openConsentSettings}
+            className="mt-4 rounded-lg border border-[#1b261b]/20 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] cursor-pointer"
+          >
+            Cookie preferences
+          </button>
+        )}
       </Section>
 
       <Section title="5. Third parties">
@@ -149,8 +173,9 @@ export default function PrivacyPage() {
             configured, and only for the email you submit.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Analytics provider</strong> (Plausible or GA4)
-            only if enabled, and only after consent.
+            <strong className="text-[#1b261b]">Google</strong> (Tag Manager) and{' '}
+            <strong className="text-[#1b261b]">Meta</strong> (Pixel), only after you accept the
+            cookie banner, and only the browsing and purchase events described in section 4.
           </li>
           <li>
             <OnceLaunched /> Once real checkout launches, a payment processor (e.g.,
@@ -158,8 +183,9 @@ export default function PrivacyPage() {
             delivery details necessary to fulfill your purchase. We'll name them here once selected.
           </li>
           <li>
-            We do not share, sell, or rent data to advertisers or data brokers — now or after the
-            backend launches.
+            We do not sell or rent your personal data to advertisers or data brokers. The only
+            advertising platforms that receive anything are Google and Meta, with your consent, as
+            described in section 4.
           </li>
         </ul>
       </Section>
@@ -184,8 +210,8 @@ export default function PrivacyPage() {
             site data for elegantsip.in.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Opt out of analytics:</strong> decline or withdraw
-            consent via the consent banner.
+            <strong className="text-[#1b261b]">Opt out of analytics and ad measurement:</strong>{' '}
+            decline the cookie banner, or withdraw consent later with the Cookies link in the footer.
           </li>
           <li>
             <strong className="text-[#1b261b]">Opt out of the newsletter:</strong> contact us to be

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { api, type OrderView } from '../lib/api'
 import { ApiClientError } from '../lib/api'
 import { formatINR } from '../lib/currency'
+import { isShipmentProblem, shipmentSummary } from '../lib/shipment'
 import { Link, navigate, useDocumentMeta } from '../lib/router'
 import AddressBookSection from './account/AddressBookSection'
 
@@ -160,6 +161,11 @@ export default function AccountPage() {
                     {' · '}
                     {order.items.reduce((acc, i) => acc + i.quantity, 0)} items
                   </p>
+                  {shipmentSummary(order) && (
+                    <p className={`mt-1.5 text-[11px] font-semibold ${order.shipment && isShipmentProblem(order.shipment.status) ? 'text-amber-800' : 'text-[#4a7333]'}`}>
+                      {shipmentSummary(order)}
+                    </p>
+                  )}
                 </div>
                 <span className="text-sm font-bold font-mono">{formatINR(order.total)}</span>
               </Link>
