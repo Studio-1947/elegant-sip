@@ -27,8 +27,10 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint --workspace @elegantsip/web
-      - name: Money rules
+      - name: Money and phone rules
         run: npm test --workspace @elegantsip/shared
+      - name: Storefront components
+        run: npm test --workspace @elegantsip/web
 
   # The API against real Postgres and Redis. Containers rather than mocks,
   # because the things worth testing here — transactions, row locks, unique
