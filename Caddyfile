@@ -37,6 +37,11 @@
 	# unchanged and know nothing about the prefix.
 	handle_path /api/* {
 		reverse_proxy api:4000 {
+			# A deploy replaces the API container, which takes a few seconds to
+			# boot and migrate. Hold requests until it answers instead of
+			# returning 502 to whoever is shopping at that moment.
+			lb_try_duration 30s
+			lb_try_interval 250ms
 			# One address, already resolved above. The API trusts this header,
 			# so it must never carry a value the visitor supplied.
 			header_up X-Forwarded-For {client_ip}
