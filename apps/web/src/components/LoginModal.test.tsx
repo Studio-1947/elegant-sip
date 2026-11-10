@@ -3,10 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 const api = vi.hoisted(() => ({
-  auth: { methods: vi.fn(), requestWhatsApp: vi.fn(), forgotPassword: vi.fn() },
+  auth: { methods: vi.fn(), requestWhatsApp: vi.fn(), forgotPassword: vi.fn(), loginWithCode: vi.fn() },
 }))
 vi.mock('../lib/api', async (importOriginal) => ({ ...(await importOriginal<typeof import('../lib/api')>()), api }))
-const auth = vi.hoisted(() => ({ login: vi.fn(), loginWithWhatsApp: vi.fn(), register: vi.fn() }))
+const auth = vi.hoisted(() => ({ login: vi.fn(), loginWithWhatsApp: vi.fn(), register: vi.fn(), applyUser: vi.fn() }))
 vi.mock('./AuthContext', () => ({ useAuth: () => auth }))
 vi.mock('../lib/analytics', () => ({ track: vi.fn() }))
 vi.mock('./TeaDiscoveryQuizModal', () => ({ default: () => null }))
@@ -125,7 +125,7 @@ describe('login box: email and password', () => {
 
   it('signs in with valid details', async () => {
     whatsappOn(false)
-    auth.login.mockResolvedValue(undefined)
+    auth.login.mockResolvedValue({ user: { id: 'u1', email: 'asha@example.com', name: 'Asha', role: 'customer', emailVerified: true } })
     const user = userEvent.setup()
     renderModal()
     await user.type(screen.getByLabelText('Email'), ' asha@example.com ')
@@ -192,5 +192,64 @@ describe('login box: shared computers', () => {
     await user.click(screen.getByRole('button', { name: 'open login' }))
     expect((screen.getByLabelText('Email') as HTMLInputElement).value).toBe('')
     expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('')
+  })
+})
+
+describe('login box: two-step sign-in', () => {
+  const signInTo = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.type(screen.getByLabelText('Email'), 'staff@example.com')
+    await user.type(screen.getByLabelText('Password'), 'correct-horse-battery')
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
+  }
+
+  it('asks for the authenticator code after the password, then signs in', async () => {
+    whatsappOn(false)
+    auth.login.mockResolvedValue({ mfaRequired: true, challengeToken: 'challenge-token-123' })
+    const session = { id: 'u1', email: 'staff@example.com', name: 'Staff', role: 'admin', emailVerified: true }
+    api.auth.loginWithCode.mockResolvedValue({ user: session })
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(<LoginModal isOpen onClose={onClose} />)
+    await signInTo(user)
+
+    const code = await screen.findByLabelText('Authenticator code')
+    expect(onClose).not.toHaveBeenCalled()
+    await user.type(code, '12a34')
+    await user.click(screen.getByRole('button', { name: 'Verify and sign in' }))
+    expect(await screen.findByText('Enter the 6-digit code from your authenticator app.')).toBeTruthy()
+    expect(api.auth.loginWithCode).not.toHaveBeenCalled()
+
+    await user.type(code, '56')
+    await user.click(screen.getByRole('button', { name: 'Verify and sign in' }))
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+    expect(api.auth.loginWithCode).toHaveBeenCalledWith('challenge-token-123', '123456')
+    expect(auth.applyUser).toHaveBeenCalledWith(session)
+  })
+
+  it('accepts a recovery code instead', async () => {
+    whatsappOn(false)
+    auth.login.mockResolvedValue({ mfaRequired: true, challengeToken: 'challenge-token-123' })
+    api.auth.loginWithCode.mockResolvedValue({ user: { id: 'u1', email: 'staff@example.com', name: 'Staff', role: 'admin', emailVerified: true } })
+    const user = userEvent.setup()
+    renderModal()
+    await signInTo(user)
+    await user.click(await screen.findByRole('button', { name: 'Use a recovery code' }))
+    await user.type(screen.getByLabelText('Recovery code'), 'abcde-fghij')
+    await user.click(screen.getByRole('button', { name: 'Verify and sign in' }))
+    await waitFor(() => expect(api.auth.loginWithCode).toHaveBeenCalledWith('challenge-token-123', 'abcde-fghij'))
+  })
+
+  it('goes back to the password when the challenge has expired', async () => {
+    whatsappOn(false)
+    auth.login.mockResolvedValue({ mfaRequired: true, challengeToken: 'challenge-token-123' })
+    api.auth.loginWithCode.mockRejectedValue(new ApiClientError(400, 'mfa_challenge_expired', 'That sign-in has expired. Enter your email and password again.'))
+    const user = userEvent.setup()
+    renderModal()
+    await signInTo(user)
+    await user.type(await screen.findByLabelText('Authenticator code'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Verify and sign in' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('That sign-in has expired. Enter your email and password again.')
+    expect(screen.getByLabelText('Password')).toBeTruthy()
+    expect(screen.queryByLabelText('Authenticator code')).toBeNull()
   })
 })

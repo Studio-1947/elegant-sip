@@ -76,7 +76,7 @@ export async function recordCaptureOnClosedOrder(
   )
   await alertStaff({
     subject: `Refund required for order ${input.orderNumber}`,
-    body: ['A payment was captured for an order that had already been cancelled. Refund it from the Razorpay dashboard.'],
+    body: ['A payment was captured for an order that had already been cancelled. Refund it from the order’s Details on the staff page.'],
     facts: [
       ['Order', input.orderNumber],
       ['Payment', input.paymentId],

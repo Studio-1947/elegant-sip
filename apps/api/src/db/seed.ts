@@ -164,6 +164,10 @@ const PRODUCTS = [
   // second-flush and autumn-flush moved to seed-new-range.ts (Nov 2026, with pack photos).
 ]
 
+/*
+ * Defaults for a new install only: once a garden exists, its copy and product
+ * links belong to the admin garden editor (see seedGardens).
+ */
 const GARDENS = [
   {
     slug: 'gopaldhara',
@@ -174,7 +178,6 @@ const GARDENS = [
     story: [
       'Gopaldhara sits in the Rungbong Valley above Mirik, and its upper sections are among the highest planted land in Darjeeling — rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.',
       'The first flush is a narrow window. After winter dormancy the bushes push a small quantity of tender two-leaves-and-a-bud, and the pluck runs for a few weeks in late February through April. That leaf is withered long and fired light, which is why a first flush brews pale gold rather than red, and why it should never meet milk.',
-      "Our whole leaf and broken leaf grades come from this valley. The same day's pluck is sorted into grades rather than blended across gardens, so a broken leaf here is not a lesser tea — it is the same leaf, cut for a faster, stronger cup.",
     ],
   },
   {
@@ -185,8 +188,8 @@ const GARDENS = [
     imageSrc: '/harvest.webp',
     story: [
       'Rohini lies lower down the hill, on the slopes below Kurseong where the Darjeeling foothills warm earlier in the season. Lower elevation means the bushes wake sooner, so Rohini is often among the first gardens in the district to send out a first flush at all.',
-      'A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet. That suits the broken mixed and fannings grades, which are built for strength: a fast brew, a full colour, and enough backbone to take milk or become masala chai.',
-      'Nothing here is blended with leaf from outside the district. The grade changes; the garden and the harvest do not.',
+      'A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet.',
+      'Nothing here is blended with leaf from outside the district.',
     ],
   },
 ]
@@ -232,6 +235,19 @@ const JOURNAL = [
 
 export type ProductSeed = (typeof PRODUCTS)[number] | (typeof NEW_RANGE)[number]
 
+/**
+ * Grades retired in Nov 2026. Their definitions stay so old links, orders and
+ * reviews still resolve, but a fresh database starts with them retired, as
+ * migration 0015 did for existing ones. Staff can bring one back from the
+ * dashboard; the seed never touches `archived_at` on an existing row.
+ */
+const RETIRED_ON_INSERT = new Set([
+  'first-flush-whole-leaf',
+  'first-flush-broken-leaf',
+  'first-flush-broken-mixed',
+  'first-flush-fannings',
+])
+
 /** Fingerprint of everything the seed would write for a product, except stock (never overwritten). */
 function productFingerprint(p: ProductSeed, sortOrder: number): string {
   const variants = p.variants.map((v) => {
@@ -276,7 +292,8 @@ export async function seedProducts(definitions: readonly ProductSeed[], gardenId
     } else {
       const [row] = await db
         .insert(products)
-        .values({ ...fields, sortOrder: i })
+        .values({ ...fields, sortOrder: i, archivedAt: RETIRED_ON_INSERT.has(p.slug) ? new Date() : null })
+        // archivedAt is deliberately absent from `set`: retiring is a staff decision the seed must not undo.
         .onConflictDoUpdate({
           target: products.slug,
           set: {
@@ -331,26 +348,57 @@ export async function seedProducts(definitions: readonly ProductSeed[], gardenId
     }
 
     if (garden && productId) {
+      // Linked once per garden named here, so a link staff removed in the
+      // garden editor is not re-added on the next boot.
+      const linkKey = `garden-link:${p.slug}`
+      const linked = await db.query.seedState.findFirst({ where: eq(seedState.key, linkKey) })
       const gardenId = gardenIds.get(garden)
-      if (gardenId) await db.insert(gardenProducts).values({ gardenId, productId }).onConflictDoNothing()
+      if (gardenId && linked?.hash !== garden) {
+        await db.insert(gardenProducts).values({ gardenId, productId }).onConflictDoNothing()
+        await db
+          .insert(seedState)
+          .values({ key: linkKey, hash: garden })
+          .onConflictDoUpdate({ target: seedState.key, set: { hash: garden, appliedAt: new Date() } })
+      }
     }
   }
   return { applied, variantCount }
 }
 
+export type GardenSeed = (typeof GARDENS)[number]
+
+/**
+ * Gardens are edited, and can be deleted, in the admin dashboard, so the seed
+ * only creates a garden it has never created before and never rewrites one.
+ * The seed_state row is what stops a garden staff deleted from coming back.
+ */
+export async function seedGardens(definitions: readonly GardenSeed[]) {
+  const gardenIds = new Map<string, string>()
+  let created = 0
+  for (const [i, g] of definitions.entries()) {
+    const key = `garden:${g.slug}`
+    const state = await db.query.seedState.findFirst({ where: eq(seedState.key, key) })
+    let row = await db.query.gardens.findFirst({ where: eq(gardens.slug, g.slug), columns: { id: true } })
+    if (!row && !state) {
+      const [inserted] = await db
+        .insert(gardens)
+        .values({ ...g, sortOrder: i })
+        .onConflictDoNothing()
+        .returning({ id: gardens.id })
+      row = inserted
+      if (inserted) created += 1
+    }
+    if (!state) await db.insert(seedState).values({ key, hash: 'created' }).onConflictDoNothing()
+    if (row) gardenIds.set(g.slug, row.id)
+  }
+  return { gardenIds, created }
+}
+
 export async function seed() {
   console.log('seeding…')
 
-  const gardenIds = new Map<string, string>()
-  for (const [i, g] of GARDENS.entries()) {
-    const [row] = await db
-      .insert(gardens)
-      .values({ ...g, sortOrder: i })
-      .onConflictDoUpdate({ target: gardens.slug, set: { name: g.name, region: g.region, story: g.story, imageSrc: g.imageSrc } })
-      .returning({ id: gardens.id })
-    gardenIds.set(g.slug, row.id)
-  }
-  console.log(`  gardens      ${GARDENS.length}`)
+  const { gardenIds, created } = await seedGardens(GARDENS)
+  console.log(`  gardens      ${GARDENS.length} (${created} new)`)
 
   const ALL_PRODUCTS = [...PRODUCTS, ...NEW_RANGE]
   const { applied, variantCount } = await seedProducts(ALL_PRODUCTS, gardenIds)

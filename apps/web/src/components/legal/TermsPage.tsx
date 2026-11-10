@@ -1,7 +1,9 @@
 import { useDocumentMeta } from '../../lib/router'
+import { useStoreSettings } from '../../lib/storeSettings'
 import { ContactList, LegalLayout, listClass, Section } from './shared'
 
 export default function TermsPage() {
+  const { guarantee } = useStoreSettings()
   useDocumentMeta(
     'Terms & Conditions | Elegant Sip',
     'The terms that govern use of the Elegant Sip site and any order placed through it.',
@@ -85,31 +87,36 @@ export default function TermsPage() {
       </Section>
 
       <Section title="4. Returns, refunds & cancellations">
-        <p>
-          <strong className="text-[#1b261b]">The Elegant Sip Promise.</strong> If a tea does not
-          live up to your expectations, tell us within{' '}
-          <strong className="text-[#1b261b]">30 days of delivery</strong> and we will replace it or
-          refund it. You do not need to return the tea, provide a reason, or complete a form. This
-          is a binding commitment, not marketing copy — it is stated here precisely because it is
-          promised elsewhere on this site.
-        </p>
+        {/* The promise is a shop setting; without it this section is the plain policy below. */}
+        {guarantee.enabled && (
+          <p>
+            <strong className="text-[#1b261b]">The Elegant Sip Promise.</strong> If a tea does not
+            live up to your expectations, tell us within{' '}
+            <strong className="text-[#1b261b]">{guarantee.days} days of delivery</strong> and we will replace it or
+            refund it. You do not need to return the tea, provide a reason, or complete a form. This
+            is a binding commitment, not marketing copy — it is stated here precisely because it is
+            promised elsewhere on this site.
+          </p>
+        )}
         <ul className={listClass}>
-          <li>
-            To claim, email us from the address on the order and tell us which tea and why. We may
-            ask for a photo where a pack arrived damaged, but never as a condition of the promise.
-          </li>
+          {guarantee.enabled && (
+            <li>
+              To claim, email us from the address on the order and tell us which tea and why. We may
+              ask for a photo where a pack arrived damaged, but never as a condition of the promise.
+            </li>
+          )}
           <li>
             Refunds are issued to the original payment method. We aim to process them within 7
-            business days of approving the claim.
+            business days of approving the {guarantee.enabled ? 'claim' : 'refund'}.
           </li>
           <li>
             Orders can be changed or cancelled free of charge any time before they are handed to
             the carrier.
           </li>
           <li>
-            This promise is offered per customer in good faith. We reserve the right to decline
-            repeated claims that indicate abuse rather than genuine dissatisfaction, and nothing
-            here limits your statutory rights under Indian consumer law.
+            {guarantee.enabled
+              ? 'This promise is offered per customer in good faith. We reserve the right to decline repeated claims that indicate abuse rather than genuine dissatisfaction, and nothing here limits your statutory rights under Indian consumer law.'
+              : 'Nothing here limits your statutory rights under Indian consumer law.'}
           </li>
         </ul>
       </Section>

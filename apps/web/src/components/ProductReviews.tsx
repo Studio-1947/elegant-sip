@@ -137,7 +137,7 @@ export default function ProductReviews({ productSlug, reviews, rating, onAdded }
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-[11px] font-mono text-[#4a584a]">
-              Demo store: reviews are saved in this browser. "Verified purchase" appears only if you've ordered this tea here.
+              Reviews appear once we've checked them. "Verified" is added only if you've bought this tea here.
             </p>
             <button
               type="submit"

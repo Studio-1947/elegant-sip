@@ -1,10 +1,13 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Catalogue — read from the build-time snapshot in catalogue.json.
+ * Catalogue — the build-time snapshot in catalogue.json, refreshed at runtime.
  *
- * The snapshot is pulled from the API by `npm run catalogue:sync`. This module
- * keeps the same export surface the components already use, so the source of
- * the data changed without the shop, product pages or SEO pipeline changing
- * with it.
+ * The snapshot is pulled from the API by `npm run catalogue:sync`. It paints
+ * the first frame and feeds the SEO prerender. Once the app is running,
+ * `applyLiveCatalogue` overlays the live prices, stock and status and drops
+ * retired teas, so a change staff make in the dashboard shows without a
+ * deploy. PRODUCTS is updated in place, so every consumer keeps working with
+ * the same export surface; components that cache derived lists subscribe to
+ * `useCatalogue()` (lib/liveCatalogue.ts) to recompute.
  *
  * MONEY IS PAISE HERE. The API speaks paise, so the snapshot does too, and
  * `formatINR` renders paise. Nothing in the storefront decides what a customer
@@ -22,21 +25,53 @@ export type JournalArticle = JournalPost
 
 export const CATALOGUE_SYNCED_AT: string = snapshot.syncedAt
 
-/**
- * Products temporarily taken off the storefront (Nov 2026, while the new range
- * launches). They stay in the API and the snapshot; empty this list to bring
- * them back.
- */
-const HIDDEN_PRODUCT_SLUGS = new Set([
-  'first-flush-whole-leaf',
-  'first-flush-broken-leaf',
-  'first-flush-broken-mixed',
-  'first-flush-fannings',
-])
+/** Every product in the snapshot, retired ones included, so a tea brought back live keeps its full record. */
+const SNAPSHOT_PRODUCTS = snapshot.products as Product[]
 
-export const PRODUCTS: Product[] = (snapshot.products as Product[]).filter(
-  (p) => !HIDDEN_PRODUCT_SLUGS.has(p.slug),
-)
+/** What the shop shows. Teas retired in the dashboard carry `archivedAt` and are left out. */
+export const PRODUCTS: Product[] = SNAPSHOT_PRODUCTS.filter((p) => !p.archivedAt)
+
+/* ── Live refresh ─────────────────────────────────────────────────────────── */
+
+let current: readonly Product[] = [...PRODUCTS]
+const listeners = new Set<() => void>()
+
+/** The shop list as a new array each time live data is applied; for `useSyncExternalStore`. */
+export const getCatalogueSnapshot = (): readonly Product[] => current
+
+export function subscribeCatalogue(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+/**
+ * Overlay the live catalogue (GET /v1/products) onto the snapshot, in place.
+ *
+ * Live order wins, teas missing from the live list (retired) drop out, and a
+ * tea added since the last sync appears. For known teas only the fields staff
+ * change day to day are taken: status, prices, stock and pack sizes. Display
+ * only — the server re-prices every cart regardless.
+ */
+export function applyLiveCatalogue(live: readonly Product[]): void {
+  const known = new Map(SNAPSHOT_PRODUCTS.map((p) => [p.slug, p]))
+  const next = live
+    .filter((fresh) => !fresh.archivedAt)
+    .map((fresh) => {
+      const shown = known.get(fresh.slug)
+      if (!shown) return fresh
+      shown.status = fresh.status
+      shown.fromPrice = fresh.fromPrice
+      shown.archivedAt = null
+      shown.variants = fresh.variants.map((v) => {
+        const same = shown.variants.find((old) => old.size === v.size)
+        return same ? Object.assign(same, { price: v.price, compareAtPrice: v.compareAtPrice, stock: v.stock }) : v
+      })
+      return shown
+    })
+  PRODUCTS.splice(0, PRODUCTS.length, ...next)
+  current = [...PRODUCTS]
+  listeners.forEach((listener) => listener())
+}
 
 /** Extra photos beyond `imageSrc`, in display order. Not in the API yet. */
 const EXTRA_IMAGES: Record<string, string[]> = {

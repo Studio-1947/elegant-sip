@@ -5,6 +5,8 @@ import { sql } from './db/client.js'
 import { expirePendingOrders } from './routes/orders.js'
 import { syncStaleShipments } from './lib/fulfilment.js'
 import { startWatchdog } from './lib/watchdog.js'
+import { emailTransportConfigured } from './lib/email.js'
+import { startEmailOutboxWorker } from './lib/email-outbox.js'
 
 const app = await buildApp()
 
@@ -73,6 +75,9 @@ try {
     const shipmentTimer = setInterval(() => void syncShipments(), interval)
     shipmentTimer.unref()
   }
+
+  // Without SMTP nothing is ever queued (sendEmail only logs), so there is nothing to retry.
+  if (emailTransportConfigured) startEmailOutboxWorker(app.log).unref()
 
   if (env.NODE_ENV === 'production' && env.WATCHDOG_MINUTES > 0) {
     startWatchdog({

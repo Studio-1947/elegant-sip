@@ -9,7 +9,13 @@
  * that tag off entirely:
  *   VITE_GTM_ID=GTM-XXXXXXX
  *   VITE_META_PIXEL_ID=1234567890
+ *
+ * Every Meta event is also posted to our own API, which forwards it to Meta's
+ * Conversions API with the same event ID (apps/api/src/routes/events.ts).
+ * Meta keeps one copy, and the event still arrives when the pixel is blocked.
  * ──────────────────────────────────────────────────────────────────────────── */
+
+import { beacon } from './api'
 
 type Fbq = ((...args: unknown[]) => void) & {
   callMethod?: (...args: unknown[]) => void
@@ -102,4 +108,29 @@ export function metaTrack(event: string, data: Record<string, unknown>, eventId?
   if (!loaded || !META_PIXEL_ID || !w.fbq) return
   if (eventId) w.fbq('track', event, data, { eventID: eventId })
   else w.fbq('track', event, data)
+}
+
+/** What the server copy of an event carries. Money in rupees, like the pixel's. */
+export interface MetaServerPayload {
+  value?: number
+  contents?: { id: string; quantity: number }[]
+  numItems?: number
+  /** Order number, for Purchase: the server reads the value and items from the order. */
+  order?: string
+}
+
+/** Sends the server-side copy of a pixel event. Call only with the visitor's consent. */
+export function metaServerEvent(event: string, eventId: string, payload: MetaServerPayload = {}) {
+  if (!META_PIXEL_ID || typeof window === 'undefined') return
+  beacon('/v1/events/meta', { event, eventId, url: window.location.href, ...payload })
+}
+
+/** A fresh ID shared by the pixel and server copies of one event. */
+export function newMetaEventId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  } catch {
+    // Not a secure context.
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
 }

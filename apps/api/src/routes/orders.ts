@@ -32,6 +32,9 @@ import { capturePayment } from '../lib/capture.js'
 import { sendEmail } from '../lib/email.js'
 import { env, paymentsEnabled } from '../env.js'
 import { getInvoiceView } from '../lib/invoice.js'
+import { customerRefunds } from '../lib/refunds.js'
+import { checkLowStock } from '../lib/low-stock.js'
+import { getStoreSettings } from '../lib/settings.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Orders.
@@ -120,6 +123,10 @@ const orderDto = z.object({
       events: z.array(z.object({ at: z.string(), status: z.string(), location: z.string().nullable() })),
     })
     .nullable(),
+  /** Single-order view only. `requested` is asked of the gateway, not yet confirmed; failed attempts are not shown. */
+  refunds: z
+    .array(z.object({ amount: paiseSchema, status: z.enum(['requested', 'processed']), requestedAt: z.iso.datetime(), processedAt: z.iso.datetime().nullable() }))
+    .optional(),
 })
 
 /**
@@ -335,8 +342,11 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         throw new ApiError(503, 'payments_unavailable', 'Checkout unavailable', 'Online checkout will be available soon. Please check back shortly.')
       }
       const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes } = request.body
-      if (!request.session) throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in before checking out.')
-      const userId = request.session.userId
+      // Guests may check out only while staff have guest checkout switched on.
+      if (!request.session && !(await getStoreSettings()).guestCheckoutEnabled) {
+        throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in before checking out.')
+      }
+      const userId = request.session?.userId ?? null
       const idempotencyKey = request.headers['idempotency-key']
       const guestTokenHeader = request.headers['x-guest-access-token']
       const suppliedGuestAccessToken = typeof guestTokenHeader === 'string' ? guestTokenHeader : undefined
@@ -345,8 +355,10 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         if (prior) return prior
       }
 
-      const guestAccessToken = null
-      const guestAccessTokenHash = null
+      /* A guest reads the order back with this token, never by order number
+         alone. A retry reuses the browser's token so the same link keeps working. */
+      const guestAccessToken = userId ? null : suppliedGuestAccessToken ?? randomBytes(32).toString('base64url')
+      const guestAccessTokenHash = guestAccessToken ? createHash('sha256').update(guestAccessToken).digest('hex') : null
 
       const result = await db.transaction(async (tx) => {
         /* Lock the variant rows before reading stock. Ordered by id so two
@@ -365,6 +377,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             name: products.name,
             imageSrc: products.imageSrc,
             status: products.status,
+            archivedAt: products.archivedAt,
           })
           .from(productVariants)
           .innerJoin(products, eq(productVariants.productId, products.id))
@@ -390,6 +403,9 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             throw ApiError.badRequest(
               `"${line.productSlug}" (${line.variantSize}) is no longer available. Please review your cart.`,
             )
+          }
+          if (v.archivedAt) {
+            throw ApiError.conflict('product_retired', `${v.name} is no longer sold. Please remove it from your cart.`)
           }
           if (v.status === 'coming-soon') {
             throw ApiError.badRequest(`${v.name} has not been released yet and cannot be ordered.`)
@@ -534,6 +550,8 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
 
         return { order, items: priced, gatewayOrder, provider: gateway.name }
       })
+      // After commit, and not awaited: a staff email must not slow a checkout.
+      void checkLowStock(result.items.map((l) => l.variantId), { log: request.log })
 
       const dto = toOrderDto({
         ...result.order,
@@ -604,7 +622,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         // Do not confirm whether a guessed number exists.
         throw ApiError.notFound('That order')
       }
-      return toOrderDto(row)
+      return { ...toOrderDto(row), refunds: await customerRefunds(row.id) }
     },
   )
 

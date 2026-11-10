@@ -4,6 +4,7 @@ import { healthResponseSchema, readyResponseSchema } from '@elegantsip/shared'
 import { pingDatabase } from '../db/client.js'
 import { paymentsEnabled } from '../env.js'
 import { pingRedis } from '../lib/sessions.js'
+import { getStoreSettings } from '../lib/settings.js'
 
 const startedAt = Date.now()
 
@@ -14,10 +15,26 @@ export const healthRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Health'],
         summary: 'Public storefront capability status',
-        response: { 200: z.object({ paymentsAvailable: z.boolean() }) },
+        description:
+          'What the storefront may offer right now: online payment, guest checkout and the satisfaction guarantee. Never fails on a settings read; it falls back to the defaults (no guest checkout, a 30-day guarantee).',
+        response: {
+          200: z.object({
+            paymentsAvailable: z.boolean(),
+            guestCheckout: z.boolean(),
+            guarantee: z.object({ enabled: z.boolean(), days: z.number().int() }),
+          }),
+        },
       },
     },
-    async () => ({ paymentsAvailable: paymentsEnabled }),
+    async () => {
+      // Cached and never throws, so this stays as cheap as the payment flag.
+      const settings = await getStoreSettings()
+      return {
+        paymentsAvailable: paymentsEnabled,
+        guestCheckout: settings.guestCheckoutEnabled,
+        guarantee: { enabled: settings.guaranteeEnabled, days: settings.guaranteeDays },
+      }
+    },
   )
   /*
    * Liveness: is the process up? Deliberately checks NO dependencies — if the

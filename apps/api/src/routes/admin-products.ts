@@ -6,6 +6,7 @@ import { db } from '../db/client.js'
 import { gardenProducts, gardens, productVariants, products } from '../db/schema.js'
 import { stockLedger } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
+import { adminCatalogueRoutes } from './admin-catalogue.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Admin — the catalogue.
@@ -44,6 +45,9 @@ const skuFor = (slug: string, size: string) =>
   `${slug}--${size.split(' · ')[0].toLowerCase().replace(/\s+/g, '-')}`
 
 export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
+  // The staff list, retire/restore and offers; registered here so they sit inside the admin hook too.
+  await app.register(adminCatalogueRoutes)
+
   app.post(
     '/admin/products',
     {
@@ -164,7 +168,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Admin'],
         summary: 'Edit a product',
         description:
-          'Partial update — omitted fields are left alone. Editing a product never alters a past order: order lines carry a price snapshot taken at purchase.',
+          'Partial update — omitted fields are left alone. Editing a product never alters a past order: order lines carry a price snapshot taken at purchase. `archived: true` retires the tea (off the shop, cannot be ordered); `false` brings it back exactly as it was.',
         params: z.object({ slug: slugSchema }),
         body: z.object({
           name: z.string().trim().min(2).max(120).optional(),
@@ -180,6 +184,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
           flavorProfile: flavorSchema.nullable().optional(),
           brewingGuide: brewingSchema.nullable().optional(),
           sortOrder: z.number().int().min(0).optional(),
+          archived: z.boolean().optional().describe('Retire (true) or bring back (false)'),
         }),
         response: { 200: z.object({ ok: z.literal(true) }), 400: problemSchema, 404: problemSchema },
       },
@@ -188,9 +193,15 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
       if (Object.keys(request.body).length === 0) {
         throw ApiError.badRequest('Send at least one field to change.')
       }
+      const { archived, ...fields } = request.body
       const rows = await db
         .update(products)
-        .set({ ...request.body, updatedAt: new Date() })
+        .set({
+          ...fields,
+          // Retiring twice keeps the first date.
+          ...(archived === undefined ? {} : { archivedAt: archived ? sql`COALESCE(${products.archivedAt}, now())` : null }),
+          updatedAt: new Date(),
+        })
         .where(eq(products.slug, request.params.slug))
         .returning({ id: products.id })
       if (rows.length === 0) throw ApiError.notFound(`Product "${request.params.slug}"`)
@@ -267,13 +278,14 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         }),
         response: {
           200: z.object({ slug: slugSchema, size: z.string(), price: paiseSchema, compareAtPrice: paiseSchema.nullable() }),
+          400: problemSchema,
           404: problemSchema,
         },
       },
     },
     async (request) => {
       const variant = await db
-        .select({ id: productVariants.id, size: productVariants.size })
+        .select({ id: productVariants.id, size: productVariants.size, compareAtPrice: productVariants.compareAtPrice })
         .from(productVariants)
         .innerJoin(products, eq(productVariants.productId, products.id))
         .where(eq(products.slug, request.params.slug))
@@ -281,6 +293,11 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
 
       if (!variant) {
         throw ApiError.notFound(`Variant "${request.params.size}" of "${request.params.slug}"`)
+      }
+      // The database refuses this too; checking first gives staff a reason instead of a 500.
+      const compareAt = request.body.compareAtPrice !== undefined ? request.body.compareAtPrice : variant.compareAtPrice
+      if (compareAt !== null && compareAt <= request.body.price) {
+        throw ApiError.badRequest('The struck-out price must be higher than the selling price. Clear it to end the offer.')
       }
 
       const [updated] = await db

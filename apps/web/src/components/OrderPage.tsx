@@ -339,6 +339,16 @@ export default function OrderPage({ id }: { id?: string }) {
             {!taxAddedOnTop && order.tax > 0 && (
               <div className="flex justify-between text-[#4a584a]"><span>Includes GST</span><span className="font-mono">{formatINR(order.tax)}</span></div>
             )}
+            {/* Processed refunds, and ones asked for but not yet confirmed by the payment gateway. */}
+            {order.refunds?.map((refund, index) => (
+              <div key={`${refund.requestedAt}-${index}`} className="flex justify-between text-[#4a7333]">
+                <span>{refund.status === 'processed' && refund.processedAt ? `Refunded ${formatShortDate(refund.processedAt)}` : `Refund requested ${formatShortDate(refund.requestedAt)}`}</span>
+                <span className="font-mono">−{formatINR(refund.amount)}</span>
+              </div>
+            ))}
+            {order.refunds?.some((refund) => refund.status === 'processed') && (
+              <p className="pt-1 text-[11px] leading-relaxed text-[#4a584a]">Refunds go back to the account or card you paid with. Banks usually take 5–7 working days to show them.</p>
+            )}
           </div>
         </div>
 
@@ -382,7 +392,7 @@ function timelineFor(order: OrderView) {
   const shipped = ['shipped', 'delivered'].includes(order.status)
   const delivered = order.status === 'delivered'
   if (order.status === 'cancelled') return [{ label: 'Order placed', complete: true, date: order.placedAt }, { label: 'Cancelled', complete: true, date: order.cancelledAt, detail: 'This order was cancelled.' }]
-  if (order.status === 'refunded') return [{ label: 'Order placed', complete: true, date: order.placedAt }, { label: 'Refunded', complete: true, date: null, detail: 'Your refund has been processed.' }]
+  if (order.status === 'refunded') return [{ label: 'Order placed', complete: true, date: order.placedAt }, { label: 'Refunded', complete: true, date: [...(order.refunds ?? [])].reverse().find((refund) => refund.processedAt)?.processedAt ?? null, detail: 'Your refund has been processed.' }]
   return [
     { label: 'Order placed', complete: true, date: order.placedAt, detail: '' },
     { label: 'Payment confirmed', complete: paid, date: order.paidAt, detail: paid ? 'Payment confirmed.' : 'Awaiting secure payment confirmation.' },

@@ -1,18 +1,28 @@
-import { desc, eq, lte, sql } from 'drizzle-orm'
+import { and, desc, eq, lte, sql } from 'drizzle-orm'
 import type { FastifyBaseLogger } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { paiseSchema, problemSchema, slugSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
-import { productVariants, products, reviews } from '../db/schema.js'
+import { productVariants, products } from '../db/schema.js'
 import { adminAuditEvents, orders, returnRequests, shipments, stockLedger, users } from '../db/schema-commerce.js'
 import { releaseOrderHoldings } from './orders.js'
 import { ApiError } from '../lib/problem.js'
 import { adminProductRoutes } from './admin-products.js'
+import { adminReviewRoutes } from './admin-reviews.js'
 import { adminShippingRoutes } from './admin-shipping.js'
+import { adminOutboxRoutes } from './admin-outbox.js'
+import { adminAuditRoutes } from './admin-audit.js'
+import { checkLowStock } from '../lib/low-stock.js'
+import { adminGardenRoutes } from './admin-gardens.js'
+import { adminSettingsRoutes } from './admin-settings.js'
+import { adminRefundRoutes } from './admin-refunds.js'
+import { capturedPayment, refundTotals } from '../lib/refunds.js'
+import { getStoreSettings } from '../lib/settings.js'
 import { getInvoiceView } from '../lib/invoice.js'
-import { cancelOrderWithShipment, sendShippedEmail } from '../lib/fulfilment.js'
+import { cancelOrderWithShipment, sendDeliveredEmail, sendShippedEmail } from '../lib/fulfilment.js'
 import { env } from '../env.js'
+import { metaCapiLastError, metaCapiMode } from '../lib/meta-capi.js'
 
 /** The status changes staff may make by hand. Anything else is a 409. */
 const STAFF_TRANSITIONS: Record<string, readonly string[]> = {
@@ -21,6 +31,8 @@ const STAFF_TRANSITIONS: Record<string, readonly string[]> = {
   packed: ['shipped', 'cancelled'],
   // Cancelling a shipped order is only for a parcel coming back (rto); see the PATCH handler.
   shipped: ['delivered', 'cancelled'],
+  // Only a fully refunded order that never shipped; it keeps its refunded status (see cancelOrderAndRelease).
+  refunded: ['cancelled'],
 }
 
 /**
@@ -35,9 +47,19 @@ async function cancelOrderAndRelease(
   log: FastifyBaseLogger,
 ): Promise<boolean> {
   return cancelOrderWithShipment(order.id, order.number, log, async (tx) => {
-    const [locked] = await tx.select({ status: orders.status }).from(orders).where(eq(orders.id, order.id)).for('update')
+    const [locked] = await tx
+      .select({ status: orders.status, cancelledAt: orders.cancelledAt, shippedAt: orders.shippedAt })
+      .from(orders)
+      .where(eq(orders.id, order.id))
+      .for('update')
     if (!locked || !fromStatuses.includes(locked.status)) return false
-    await tx.update(orders).set({ status: 'cancelled', cancelledAt: new Date() }).where(eq(orders.id, order.id))
+    /* A refunded order stays `refunded`; cancelledAt records that it is not
+       being sent. One cancelled before its refund has already released its stock. */
+    if (locked.status === 'refunded' && (locked.cancelledAt || locked.shippedAt)) return false
+    await tx
+      .update(orders)
+      .set({ status: locked.status === 'refunded' ? 'refunded' : 'cancelled', cancelledAt: new Date() })
+      .where(eq(orders.id, order.id))
     await releaseOrderHoldings(tx, order.id, note)
     return true
   })
@@ -46,9 +68,9 @@ async function cancelOrderAndRelease(
 /* ────────────────────────────────────────────────────────────────────────────
  * Admin.
  *
- * API-only by design: Swagger UI is the interface. Enough to actually run a
- * six-product shop — adjust stock, work the order queue, publish reviews —
- * without the cost of building and securing a separate admin application.
+ * What the storefront's staff page (/admin, AdminPage.tsx) calls to run the
+ * shop: the order queue, stock, prices, review moderation. It is part of the
+ * storefront rather than a separate admin application to build and secure.
  *
  * Every route in this plugin is behind requireAdmin via a hook, so a new route
  * added here cannot accidentally ship unauthenticated.
@@ -85,7 +107,13 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
   /* Catalogue management lives in its own module (300-line rule) but registers
      here, inside the auth hook above. */
   await app.register(adminProductRoutes)
+  await app.register(adminReviewRoutes)
   await app.register(adminShippingRoutes)
+  await app.register(adminOutboxRoutes)
+  await app.register(adminAuditRoutes)
+  await app.register(adminGardenRoutes)
+  await app.register(adminSettingsRoutes)
+  await app.register(adminRefundRoutes)
 
   app.get(
     '/admin/orders',
@@ -180,8 +208,8 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!allowed) throw ApiError.conflict('invalid_return_transition', `Cannot change a ${item.status} request to ${status}.`)
       let restocked = false
       /* Approving a cancellation cancels the order and returns its stock. Once
-         the parcel has left, it can only come back as a return. Any refund is
-         issued from the Razorpay dashboard. */
+         the parcel has left, it can only come back as a return. The refund is
+         a separate staff action on the order (POST /admin/orders/:number/refunds). */
       if (item.type === 'cancellation' && status === 'approved') {
         if (!['paid', 'packed'].includes(item.order.status)) {
           throw ApiError.conflict(
@@ -205,6 +233,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
           restocked = true
         }
       })
+      if (restocked) await checkLowStock(item.order.items.flatMap((line) => (line.variantId ? [line.variantId] : [])), { log: request.log })
       return { ok: true as const, restocked }
     },
   )
@@ -264,14 +293,19 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Admin'],
         summary: 'Advance an order',
         description:
-          'Setting status to `shipped` with a tracking number emails the customer. Nothing is emailed unless the tracking details are actually present — the message would otherwise promise information it does not carry.',
+          'Setting status to `shipped` with a tracking number emails the customer. Nothing is emailed unless the tracking details are actually present — the message would otherwise promise information it does not carry. The first move to `delivered` emails the customer too. `notified` is true only when an email was actually sent.',
         params: z.object({ number: z.string().min(3).max(40) }),
         body: z.object({
           status: z.enum(['packed', 'shipped', 'delivered', 'cancelled']).optional(),
           trackingCarrier: z.string().trim().max(60).optional(),
           trackingNumber: z.string().trim().max(60).optional(),
         }),
-        response: { 200: z.object({ ok: z.literal(true), notified: z.boolean() }), 404: problemSchema, 409: problemSchema },
+        response: {
+          // refundDue: a cancelled order whose captured payment is not yet fully refunded.
+          200: z.object({ ok: z.literal(true), notified: z.boolean(), refundDue: z.boolean().optional() }),
+          404: problemSchema,
+          409: problemSchema,
+        },
       },
     },
     async (request) => {
@@ -287,9 +321,15 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       }
 
       /* Cancelling returns the held stock and coupon use in the same
-         transaction. A paid order's refund is issued from the Razorpay
-         dashboard. */
+         transaction. It does not refund: `refundDue` tells staff the payment
+         still has to be refunded from the order (POST …/refunds). */
       if (status === 'cancelled' && order.status !== 'cancelled') {
+        if (order.status === 'refunded' && (order.cancelledAt || order.shippedAt)) {
+          throw ApiError.conflict(
+            'invalid_status_change',
+            order.cancelledAt ? 'This order is already cancelled.' : 'This order has shipped. Handle the parcel as a return instead.',
+          )
+        }
         // A shipped order can only be cancelled once its parcel is on its way back.
         if (order.status === 'shipped') {
           const shipment = await db.query.shipments.findFirst({ where: eq(shipments.orderId, order.id), columns: { status: true } })
@@ -302,15 +342,16 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         }
         const cancelled = await cancelOrderAndRelease(order, [order.status], 'Cancelled by staff', request.log)
         if (!cancelled) throw ApiError.conflict('order_changed', 'The order changed while you were updating it. Reload and try again.')
-        if (order.status !== 'pending_payment') {
-          request.log.warn({ orderNumber: order.number }, 'paid order cancelled by staff: refund it in the gateway dashboard')
-        }
-        return { ok: true as const, notified: false }
+        const payment = await capturedPayment(order.id)
+        const refundDue = payment ? (await refundTotals(payment.id, payment.amount)).refundable > 0 : false
+        if (refundDue) request.log.info({ orderNumber: order.number }, 'paid order cancelled by staff; refund still due')
+        return { ok: true as const, notified: false, refundDue }
       }
 
       // Only the first move to shipped stamps shippedAt and emails; correcting tracking later does neither.
-      const firstShip = status === 'shipped' && order.status !== 'shipped'
-      await db
+      const changing = Boolean(status) && status !== order.status
+      const firstShip = status === 'shipped' && changing
+      const updated = await db
         .update(orders)
         .set({
           ...(status ? { status } : {}),
@@ -319,13 +360,25 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
           ...(firstShip ? { shippedAt: new Date() } : {}),
           ...(status === 'cancelled' ? { cancelledAt: new Date() } : {}),
         })
-        .where(eq(orders.id, order.id))
+        /* A status change applies only if nobody else (staff or a courier
+           update) moved the order meanwhile, so its email goes out once. */
+        .where(changing ? and(eq(orders.id, order.id), eq(orders.status, order.status)) : eq(orders.id, order.id))
+        .returning({ id: orders.id })
+      if (updated.length === 0) throw ApiError.conflict('order_changed', 'The order changed while you were updating it. Reload and try again.')
 
       let notified = false
       const carrier = trackingCarrier ?? order.trackingCarrier
       const tracking = trackingNumber ?? order.trackingNumber
       if (firstShip && tracking) {
         const result = await sendShippedEmail(order, carrier, tracking)
+        notified = result.delivered
+      }
+      if (status === 'delivered' && changing) {
+        // sendEmail never throws, but the status has already changed either way.
+        const result = await sendDeliveredEmail(order).catch((err) => {
+          request.log.error({ err, orderNumber: order.number }, 'delivered email failed')
+          return { delivered: false }
+        })
         notified = result.delivered
       }
 
@@ -405,6 +458,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         })
         return rows
       })
+      await checkLowStock([variant.id], { log: request.log })
 
       return { productSlug, variantSize, stock: updated.stock }
     },
@@ -415,41 +469,22 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       schema: {
         tags: ['Admin'],
-        summary: 'Low-stock variants for the staff dashboard',
-        querystring: z.object({ threshold: z.coerce.number().int().min(0).max(1000).default(5) }),
+        summary: 'Low-stock variants of teas on sale, for the staff dashboard',
+        description: 'Without `threshold`, uses the low-stock threshold from the shop settings.',
+        querystring: z.object({ threshold: z.coerce.number().int().min(0).max(1000).optional() }),
         response: { 200: z.object({ variants: z.array(z.object({ productSlug: slugSchema, productName: z.string(), size: z.string(), sku: z.string(), stock: z.number().int() })) }) },
       },
     },
     async (request) => {
+      const threshold = request.query.threshold ?? (await getStoreSettings()).lowStockThreshold
       const variants = await db
         .select({ productSlug: products.slug, productName: products.name, size: productVariants.size, sku: productVariants.sku, stock: productVariants.stock })
         .from(productVariants)
         .innerJoin(products, eq(productVariants.productId, products.id))
-        .where(lte(productVariants.stock, request.query.threshold))
+        // Coming-soon teas have no stock by design; only teas on sale can run low.
+        .where(and(lte(productVariants.stock, threshold), eq(products.status, 'active')))
         .orderBy(productVariants.stock, products.name, productVariants.size)
       return { variants }
-    },
-  )
-
-  app.patch(
-    '/admin/reviews/:id',
-    {
-      schema: {
-        tags: ['Admin'],
-        summary: 'Publish or unpublish a review',
-        params: z.object({ id: z.string().uuid() }),
-        body: z.object({ published: z.boolean() }),
-        response: { 200: z.object({ ok: z.literal(true) }), 404: problemSchema },
-      },
-    },
-    async (request) => {
-      const rows = await db
-        .update(reviews)
-        .set({ publishedAt: request.body.published ? new Date() : null })
-        .where(eq(reviews.id, request.params.id))
-        .returning({ id: reviews.id })
-      if (rows.length === 0) throw ApiError.notFound('That review')
-      return { ok: true as const }
     },
   )
 
@@ -470,6 +505,10 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
             sellerState: z.string(),
             shippingProvider: z.string(),
             shippingLive: z.boolean(),
+            /** Meta Conversions API: off (no token), test (test event code set) or live. */
+            metaServerEvents: z.enum(['off', 'test', 'live']),
+            /** The latest delivery failure since the API started, cleared by the next success. */
+            metaServerEventsError: z.string().nullable(),
           }),
         },
       },
@@ -483,6 +522,8 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       sellerState: env.SELLER_STATE,
       shippingProvider: env.SHIPPING_PROVIDER,
       shippingLive: env.SHIPPING_PROVIDER === 'shiprocket',
+      metaServerEvents: metaCapiMode(),
+      metaServerEventsError: metaCapiLastError()?.message ?? null,
     }),
   )
 }

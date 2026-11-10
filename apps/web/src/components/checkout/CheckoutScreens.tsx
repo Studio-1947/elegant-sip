@@ -19,6 +19,7 @@ export function OrderConfirmedScreen({
   paymentNotice,
   paying = false,
   onPay,
+  guestEmail,
 }: {
   orderNumber: string
   order: OrderView | null
@@ -26,6 +27,8 @@ export function OrderConfirmedScreen({
   paymentNotice?: string | null
   paying?: boolean
   onPay?: () => void
+  /** Set for a guest order, whose page opens only in this browser tab. */
+  guestEmail?: string
 }) {
   const awaitingPayment = order?.status === 'pending_payment' || order === null
 
@@ -77,6 +80,13 @@ export function OrderConfirmedScreen({
         {awaitingPayment && paymentNotice && (
           <p role="alert" className="text-[11px] text-red-800 leading-relaxed mb-8 border border-red-700/30 bg-red-50 rounded-lg px-4 py-3">
             {paymentNotice}
+          </p>
+        )}
+
+        {guestEmail !== undefined && (
+          <p className="text-[11px] text-[#4a584a] leading-relaxed mb-8 border border-[#1b261b]/10 bg-[#f9faf7] rounded-lg px-4 py-3">
+            Your order page opens only in this browser tab, so note your order number. To see it later
+            from anywhere, create an account{guestEmail ? <> with <span className="font-semibold text-[#1b261b]">{guestEmail}</span></> : ' with the same email'}.
           </p>
         )}
 

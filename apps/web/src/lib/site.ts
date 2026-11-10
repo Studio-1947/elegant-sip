@@ -17,7 +17,7 @@ export const TITLE_SEP = '|'
 export const DEFAULT_TITLE = 'Single-Origin Darjeeling Tea | Elegant Sip'
 
 export const DEFAULT_DESCRIPTION =
-  'Buy single-origin Darjeeling first flush tea online in India. Whole leaf, broken leaf and fannings, packed close to harvest and shipped direct from the garden.'
+  'Buy single-origin Darjeeling tea online in India: first, second and autumn flush, Golden and Silver Needle, white and green teas. Packed close to harvest and shipped direct.'
 
 /** 1200×630 social card. */
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.webp`

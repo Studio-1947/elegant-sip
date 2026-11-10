@@ -14,7 +14,9 @@ import ProductCard from './ProductCard'
 import ProductTile from './ProductTile'
 import ProductInfoCards from './ProductInfoCards'
 import ProductReviews from './ProductReviews'
+import ProductGardenLine from './ProductGardenLine'
 import { useUi } from './UiContext'
+import { useStoreSettings } from '../lib/storeSettings'
 
 export default function ProductDetailPage({ id }: { id?: string }) {
   const product = getProduct(id)
@@ -26,6 +28,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const [rating, setRating] = useState({ average: 0, count: 0 })
   const { addToCart } = useCart()
   const { showToast } = useUi()
+  const { guarantee } = useStoreSettings()
 
   // Phones: once the main buttons scroll out of view, a buy bar docks at the
   // bottom of the screen, in the thumb zone, so buying never needs a scroll back.
@@ -274,6 +277,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               {product.category}
             </span>
             <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight leading-[1.05] mb-4">{product.name}</h1>
+            <ProductGardenLine productSlug={product.slug} />
 
             {/* Rating */}
             {rating.count > 0 && (
@@ -404,9 +408,11 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               <li className="flex items-center gap-2">
                 <span className="text-[#4a7333]">✓</span> Free shipping on orders of {formatINR(FREE_SHIPPING_THRESHOLD)} or more
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-[#4a7333]">✓</span> The Elegant Sip Promise  30-day satisfaction guarantee
-              </li>
+              {guarantee.enabled && (
+                <li className="flex items-center gap-2">
+                  <span className="text-[#4a7333]">✓</span> The Elegant Sip Promise — {guarantee.days}-day satisfaction guarantee
+                </li>
+              )}
               <li className="flex items-center gap-2">
                 <span className="text-[#4a7333]">✓</span> Packed within weeks of harvest, dated on every pack
               </li>

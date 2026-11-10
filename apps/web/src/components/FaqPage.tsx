@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { FAQS } from '../data/products'
+import { faqsFor } from '../data/products'
 import { useDocumentMeta, useJsonLd } from '../lib/router'
 import { ROUTE_META } from '../lib/seoRoutes'
+import { useStoreSettings } from '../lib/storeSettings'
 
 export default function FaqPage() {
+  const faqs = faqsFor(useStoreSettings().guarantee)
   // Accordion: exactly one question open at a time (clicking it again closes it).
-  const [openQuestion, setOpenQuestion] = useState<string | null>(FAQS[0]?.question ?? null)
+  const [openQuestion, setOpenQuestion] = useState<string | null>(faqs[0]?.question ?? null)
   useDocumentMeta(
     ROUTE_META['/faq'].title,
     ROUTE_META['/faq'].description,
@@ -14,14 +16,14 @@ export default function FaqPage() {
   useJsonLd({
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: FAQS.map((f) => ({
+    mainEntity: faqs.map((f) => ({
       '@type': 'Question',
       name: f.question,
       acceptedAnswer: { '@type': 'Answer', text: f.answer },
     })),
   })
 
-  const categories = Array.from(new Set(FAQS.map((f) => f.category)))
+  const categories = Array.from(new Set(faqs.map((f) => f.category)))
 
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-32 pb-24 px-6 md:px-12 lg:px-24">
@@ -40,7 +42,7 @@ export default function FaqPage() {
                 {category}
               </h2>
               <div className="space-y-3">
-                {FAQS.filter((f) => f.category === category).map((faq, i) => {
+                {faqs.filter((f) => f.category === category).map((faq, i) => {
                   const isOpen = openQuestion === faq.question
                   const panelId = `faq-${category}-${i}`.replace(/\s+/g, '-').toLowerCase()
                   return (

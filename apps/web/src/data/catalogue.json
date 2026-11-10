@@ -69,7 +69,8 @@
       "rating": {
         "average": 0,
         "count": 0
-      }
+      },
+      "archivedAt": "2026-11-10T00:00:00.000Z"
     },
     {
       "id": "3e701769-ff21-4096-9c5d-baeb4dc9b1e5",
@@ -138,7 +139,8 @@
       "rating": {
         "average": 0,
         "count": 0
-      }
+      },
+      "archivedAt": "2026-11-10T00:00:00.000Z"
     },
     {
       "id": "1f0d3402-9b6f-46fa-b70f-11b7167920d6",
@@ -207,7 +209,8 @@
       "rating": {
         "average": 0,
         "count": 0
-      }
+      },
+      "archivedAt": "2026-11-10T00:00:00.000Z"
     },
     {
       "id": "02199964-6faa-4368-87c5-677e60c47e6d",
@@ -276,7 +279,8 @@
       "rating": {
         "average": 0,
         "count": 0
-      }
+      },
+      "archivedAt": "2026-11-10T00:00:00.000Z"
     },
     {
       "id": "22fd6bce-ce44-4b86-b156-1e627c072a34",
@@ -763,13 +767,9 @@
       "imageSrc": "/gopal-1024.webp",
       "story": [
         "Gopaldhara sits in the Rungbong Valley above Mirik, and its upper sections are among the highest planted land in Darjeeling — rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.",
-        "The first flush is a narrow window. After winter dormancy the bushes push a small quantity of tender two-leaves-and-a-bud, and the pluck runs for a few weeks in late February through April. That leaf is withered long and fired light, which is why a first flush brews pale gold rather than red, and why it should never meet milk.",
-        "Our whole leaf and broken leaf grades come from this valley. The same day's pluck is sorted into grades rather than blended across gardens, so a broken leaf here is not a lesser tea — it is the same leaf, cut for a faster, stronger cup."
+        "The first flush is a narrow window. After winter dormancy the bushes push a small quantity of tender two-leaves-and-a-bud, and the pluck runs for a few weeks in late February through April. That leaf is withered long and fired light, which is why a first flush brews pale gold rather than red, and why it should never meet milk."
       ],
-      "productSlugs": [
-        "first-flush-whole-leaf",
-        "first-flush-broken-leaf"
-      ]
+      "productSlugs": []
     },
     {
       "id": "23df1ead-53de-4bb7-bc3c-0fe143f71d24",
@@ -780,13 +780,10 @@
       "imageSrc": "/harvest.webp",
       "story": [
         "Rohini lies lower down the hill, on the slopes below Kurseong where the Darjeeling foothills warm earlier in the season. Lower elevation means the bushes wake sooner, so Rohini is often among the first gardens in the district to send out a first flush at all.",
-        "A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet. That suits the broken mixed and fannings grades, which are built for strength: a fast brew, a full colour, and enough backbone to take milk or become masala chai.",
-        "Nothing here is blended with leaf from outside the district. The grade changes; the garden and the harvest do not."
+        "A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet.",
+        "Nothing here is blended with leaf from outside the district."
       ],
-      "productSlugs": [
-        "first-flush-broken-mixed",
-        "first-flush-fannings"
-      ]
+      "productSlugs": []
     }
   ],
   "journal": [

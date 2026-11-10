@@ -2396,6 +2396,100 @@
         }
       }
     },
+    "/v1/reviews/recent": {
+      "get": {
+        "summary": "The latest published reviews, across all teas",
+        "tags": [
+          "Catalogue"
+        ],
+        "description": "For the homepage. Newest first at every rating — never filtered to the flattering ones. Empty until staff publish a review.",
+        "parameters": [
+          {
+            "schema": {
+              "default": 6,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reviews": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "author": {
+                            "type": "string"
+                          },
+                          "rating": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 5
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "verified": {
+                            "type": "boolean",
+                            "description": "True only when a paid order from this customer contains the product"
+                          },
+                          "productSlug": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80,
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                            "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+                          },
+                          "productName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "author",
+                          "rating",
+                          "text",
+                          "publishedAt",
+                          "verified",
+                          "productSlug",
+                          "productName"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "reviews"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/gardens": {
       "get": {
         "summary": "List the gardens",
@@ -8924,6 +9018,415 @@
               }
             }
           },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/reviews": {
+      "get": {
+        "summary": "Reviews to moderate",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Newest first. `pending` (the default) is reviews not yet published. `verified` is derived from paid orders, never from the customer.",
+        "parameters": [
+          {
+            "schema": {
+              "default": "pending",
+              "type": "string",
+              "enum": [
+                "pending",
+                "published",
+                "all"
+              ]
+            },
+            "in": "query",
+            "name": "status",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reviews": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "productSlug": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80,
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                            "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+                          },
+                          "productName": {
+                            "type": "string"
+                          },
+                          "authorName": {
+                            "type": "string"
+                          },
+                          "rating": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 5
+                          },
+                          "body": {
+                            "type": "string"
+                          },
+                          "verified": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "publishedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productSlug",
+                          "productName",
+                          "authorName",
+                          "rating",
+                          "body",
+                          "verified",
+                          "createdAt",
+                          "publishedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "reviews",
+                    "hasMore"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/reviews/{id}": {
+      "patch": {
+        "summary": "Publish or unpublish a review",
+        "tags": [
+          "Admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "published": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "published"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "404": {
             "description": "Default Response",
             "content": {
@@ -11353,7 +11856,7 @@
         "tags": [
           "Admin"
         ],
-        "description": "Setting status to `shipped` with a tracking number emails the customer. Nothing is emailed unless the tracking details are actually present — the message would otherwise promise information it does not carry.",
+        "description": "Setting status to `shipped` with a tracking number emails the customer. Nothing is emailed unless the tracking details are actually present — the message would otherwise promise information it does not carry. The first move to `delivered` emails the customer too. `notified` is true only when an email was actually sent.",
         "requestBody": {
           "required": true,
           "content": {
@@ -11813,7 +12316,7 @@
     },
     "/v1/admin/stock/low": {
       "get": {
-        "summary": "Low-stock variants for the staff dashboard",
+        "summary": "Low-stock variants of teas on sale, for the staff dashboard",
         "tags": [
           "Admin"
         ],
@@ -11887,121 +12390,6 @@
         }
       }
     },
-    "/v1/admin/reviews/{id}": {
-      "patch": {
-        "summary": "Publish or unpublish a review",
-        "tags": [
-          "Admin"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "published": {
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "published"
-                ]
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ]
-                    }
-                  },
-                  "required": [
-                    "ok"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
-                    },
-                    "title": {
-                      "type": "string",
-                      "description": "Short human-readable summary"
-                    },
-                    "status": {
-                      "type": "integer",
-                      "minimum": 400,
-                      "maximum": 599
-                    },
-                    "detail": {
-                      "type": "string",
-                      "description": "What went wrong and what to do about it — displayable as-is"
-                    },
-                    "errors": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "requestId": {
-                      "type": "string",
-                      "description": "Correlates this response with the server logs"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status",
-                    "detail",
-                    "requestId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/admin/config": {
       "get": {
         "summary": "What this deployment can actually do",
@@ -12037,6 +12425,20 @@
                     },
                     "shippingLive": {
                       "type": "boolean"
+                    },
+                    "metaServerEvents": {
+                      "type": "string",
+                      "enum": [
+                        "off",
+                        "test",
+                        "live"
+                      ]
+                    },
+                    "metaServerEventsError": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -12046,7 +12448,9 @@
                     "gstinConfigured",
                     "sellerState",
                     "shippingProvider",
-                    "shippingLive"
+                    "shippingLive",
+                    "metaServerEvents",
+                    "metaServerEventsError"
                   ],
                   "additionalProperties": false
                 }
@@ -12063,6 +12467,98 @@
           "Reports"
         ],
         "description": "Sent by browsers, not called by the storefront. Accepts `application/csp-report`\n(report-uri) and `application/reports+json` (Reporting API). Always 204; bodies\nover 16 KB are rejected with 413.",
+        "responses": {
+          "204": {
+            "description": "Received"
+          }
+        }
+      }
+    },
+    "/v1/events/meta": {
+      "post": {
+        "summary": "Relay a Meta Pixel event to the Conversions API",
+        "tags": [
+          "Reports"
+        ],
+        "description": "Called by the storefront, only after the visitor accepts cookies, with the same event ID\nthe pixel used. A Purchase is sent only for a paid order, using its stored value and items.\nAlways 204; nothing is sent when the Conversions API is not configured.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "event": {
+                    "type": "string",
+                    "enum": [
+                      "ViewContent",
+                      "AddToCart",
+                      "InitiateCheckout",
+                      "AddPaymentInfo",
+                      "Purchase",
+                      "CompleteRegistration",
+                      "Lead",
+                      "Contact"
+                    ]
+                  },
+                  "eventId": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 100,
+                    "pattern": "^[\\w.:-]+$"
+                  },
+                  "url": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "format": "uri"
+                  },
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10000000
+                  },
+                  "contents": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 1000
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "quantity"
+                      ]
+                    }
+                  },
+                  "numItems": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "order": {
+                    "type": "string",
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "event",
+                  "eventId",
+                  "url"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "204": {
             "description": "Received"
@@ -12120,7 +12616,7 @@
     },
     {
       "name": "Reports",
-      "description": "Reports browsers send on their own, such as CSP violations."
+      "description": "Reports browsers send, such as CSP violations and consented ad-measurement events."
     }
   ]
 }

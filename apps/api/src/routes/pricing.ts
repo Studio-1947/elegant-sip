@@ -109,6 +109,7 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
             name: products.name,
             imageSrc: products.imageSrc,
             status: products.status,
+            archivedAt: products.archivedAt,
             size: productVariants.size,
             price: productVariants.price,
             stock: productVariants.stock,
@@ -125,6 +126,16 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
             variantSize: line.variantSize,
             reason: 'unavailable',
             message: 'This tea is no longer in the catalogue and has been removed from your cart.',
+          })
+          continue
+        }
+
+        if (row.archivedAt) {
+          adjustments.push({
+            productSlug: row.slug,
+            variantSize: row.size,
+            reason: 'unavailable',
+            message: `${row.name} is no longer sold and has been removed from your cart.`,
           })
           continue
         }

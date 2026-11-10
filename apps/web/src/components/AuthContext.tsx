@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ApiClientError, api, type SessionUser } from '../lib/api'
+import { ApiClientError, api, type LoginResult, type SessionUser } from '../lib/api'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Authentication.
@@ -27,11 +27,16 @@ interface AuthContextType {
   user: User | null
   /** True until the first /auth/me has resolved — avoids flashing signed-out UI. */
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  /** With two-step sign-in on, resolves to the code challenge and no one is signed in yet. */
+  login: (email: string, password: string) => Promise<LoginResult>
   loginWithWhatsApp: (challengeId: string, code: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  /** Ends every session for this account; throws if the server refused. */
+  logoutEverywhere: () => Promise<void>
   refresh: () => Promise<void>
+  /** Adopts the user an account-settings call returned. */
+  applyUser: (session: SessionUser) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -70,8 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   const login = useCallback(async (email: string, password: string) => {
-    const { user: session } = await api.auth.login({ email, password })
-    setUser(toUser(session))
+    const result = await api.auth.login({ email, password })
+    if (!result.mfaRequired) setUser(toUser(result.user))
+    return result
   }, [])
 
   const loginWithWhatsApp = useCallback(async (challengeId: string, code: string) => {
@@ -96,9 +102,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
+  const logoutEverywhere = useCallback(async () => {
+    try {
+      await api.auth.logoutAll()
+    } catch (error) {
+      // Already signed out is the outcome asked for; anything else is reported.
+      if (!(error instanceof ApiClientError && error.isUnauthenticated)) throw error
+    }
+    setUser(null)
+  }, [])
+
+  const applyUser = useCallback((session: SessionUser) => setUser(toUser(session)), [])
+
   const value = useMemo(
-    () => ({ user, loading, login, loginWithWhatsApp, register, logout, refresh }),
-    [user, loading, login, loginWithWhatsApp, register, logout, refresh],
+    () => ({ user, loading, login, loginWithWhatsApp, register, logout, logoutEverywhere, refresh, applyUser }),
+    [user, loading, login, loginWithWhatsApp, register, logout, logoutEverywhere, refresh, applyUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

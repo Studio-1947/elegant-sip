@@ -151,7 +151,7 @@ async function readEvent(file: string): Promise<StatusEvent | undefined> {
 }
 
 export async function readSnapshot(statusDir: string | undefined): Promise<ServerSnapshot> {
-  let disk: ServerSnapshot['disk'] = null
+  let disk: ServerSnapshot['disk']
   try {
     // The container's root lives on the host disk Docker uses, which also
     // holds the database volume, so this is the number that matters.
