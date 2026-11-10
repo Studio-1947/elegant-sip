@@ -5,6 +5,8 @@ import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
 import { useAuth } from './AuthContext'
 import { loadRazorpay } from '../lib/razorpay'
+import { isShipmentProblem, shipmentLabel } from '../lib/shipment'
+import { track } from '../lib/analytics'
 
 export default function OrderPage({ id }: { id?: string }) {
   const [order, setOrder] = useState<OrderView | null>(null)
@@ -133,7 +135,10 @@ export default function OrderPage({ id }: { id?: string }) {
           void api.orders
             .verifyPayment(order.number, response, guestAccessToken)
             .then(({ status }) => {
-              if (status === 'paid') setOrder({ ...order, status: 'paid', paidAt: new Date().toISOString() })
+              if (status === 'paid') {
+                setOrder({ ...order, status: 'paid', paidAt: new Date().toISOString() })
+                track('purchase', { order: order.number, value: order.total, items: order.items.length })
+              }
               else setPaymentNotice('Payment received and waiting for your bank to confirm. This page will update shortly.')
             })
             .catch((cause) => setPaymentNotice(cause instanceof ApiClientError ? cause.message : 'We could not confirm the payment yet. If you were charged, this page will update shortly.'))
@@ -213,10 +218,18 @@ export default function OrderPage({ id }: { id?: string }) {
           <div className="mb-6 bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1b261b]/10 pb-4">
               <h2 className="text-sm font-bold uppercase tracking-wide">Tracking</h2>
-              <span className="rounded-full bg-[#8bb56e]/15 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#315b26]">
-                {SHIPMENT_LABELS[order.shipment.status] ?? order.shipment.status.replaceAll('_', ' ')}
+              <span className={`rounded-full px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider ${isShipmentProblem(order.shipment.status) ? 'bg-amber-50 text-amber-800' : 'bg-[#8bb56e]/15 text-[#315b26]'}`}>
+                {shipmentLabel(order.shipment.status)}
               </span>
             </div>
+            {isShipmentProblem(order.shipment.status) && (
+              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                {order.shipment.status === 'rto'
+                  ? 'The courier could not deliver this parcel and is bringing it back to us. '
+                  : 'The courier has reported a delay with this parcel. '}
+                <Link to="/contact" className="font-bold underline">Contact us</Link> with your order number and we will sort it out.
+              </p>
+            )}
             <div className="mt-4 grid gap-2 text-xs text-[#4a584a] sm:grid-cols-2">
               <p><span className="font-bold text-[#1b261b]">Courier:</span> {order.shipment.courierName ?? 'Assigned shortly'}</p>
               <p><span className="font-bold text-[#1b261b]">AWB:</span> <span className="font-mono">{order.shipment.awb}</span></p>
@@ -322,16 +335,6 @@ export default function OrderPage({ id }: { id?: string }) {
   )
 }
 
-const SHIPMENT_LABELS: Record<string, string> = {
-  awb_assigned: 'Preparing to ship',
-  pickup_scheduled: 'Awaiting courier pickup',
-  in_transit: 'In transit',
-  out_for_delivery: 'Out for delivery',
-  delivered: 'Delivered',
-  exception: 'Delivery delayed',
-  rto: 'Returning to us',
-}
-
 function timelineFor(order: OrderView) {
   const paid = ['paid', 'packed', 'shipped', 'delivered'].includes(order.status)
   const packed = ['packed', 'shipped', 'delivered'].includes(order.status)
@@ -344,7 +347,7 @@ function timelineFor(order: OrderView) {
     { label: 'Payment confirmed', complete: paid, date: order.paidAt, detail: paid ? 'Payment confirmed.' : 'Awaiting secure payment confirmation.' },
     { label: 'Packed', complete: packed, date: null, detail: packed ? 'Your teas have been packed.' : 'We will pack your order next.' },
     { label: 'Shipped', complete: shipped, date: order.shippedAt, detail: shipped ? (order.tracking?.number ? `Tracking: ${order.tracking.number}` : 'With the courier.') : 'Tracking will appear here when dispatched.' },
-    { label: 'Delivered', complete: delivered, date: null, detail: delivered ? 'Marked delivered.' : 'Awaiting delivery confirmation.' },
+    { label: 'Delivered', complete: delivered, date: delivered ? (order.shipment?.deliveredAt ?? null) : null, detail: delivered ? 'Delivered.' : order.shipment?.expectedDeliveryAt ? `Expected by ${new Date(order.shipment.expectedDeliveryAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}.` : 'Awaiting delivery confirmation.' },
   ]
 }
 

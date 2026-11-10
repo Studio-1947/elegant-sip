@@ -726,6 +726,7 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
       ['Total paid', formatPaise(row.total)],
       [`Includes GST (${TAX_RATE * 100}%)`, formatPaise(row.tax)],
     ],
+    action: { label: 'View your order', url: `${env.SITE_URL}/order/${encodeURIComponent(row.number)}` },
     footnote: `Delivering to ${row.shippingName}, ${row.shippingCity} ${row.shippingPostalCode}.`,
   })
 }

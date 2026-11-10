@@ -1,31 +1,38 @@
-import { useState } from 'react'
-import { analyticsProvider, hasAnalyticsConsent, setAnalyticsConsent } from '../lib/analytics'
+import { useEffect, useState } from 'react'
+import { CONSENT_OPEN_EVENT, hasAnalyticsConsent, setAnalyticsConsent, trackingConfigured } from '../lib/analytics'
 import { Link } from '../lib/router'
 
 /**
- * Shown only when an analytics provider is configured and the visitor hasn't
- * decided yet. With no provider (the default), nothing is tracked and no
- * banner appears.
+ * Asks before any analytics or advertising tag loads. Shown when something is
+ * configured to track and the visitor hasn't decided yet, and again whenever
+ * they open "Cookie preferences".
  */
 export default function ConsentBanner() {
-  const [decided, setDecided] = useState(() => hasAnalyticsConsent() !== null)
+  const [open, setOpen] = useState(() => trackingConfigured() && hasAnalyticsConsent() === null)
 
-  if (!analyticsProvider() || decided) return null
+  useEffect(() => {
+    const reopen = () => setOpen(true)
+    window.addEventListener(CONSENT_OPEN_EVENT, reopen)
+    return () => window.removeEventListener(CONSENT_OPEN_EVENT, reopen)
+  }, [])
+
+  if (!trackingConfigured() || !open) return null
 
   const choose = (granted: boolean) => {
+    setOpen(false)
     setAnalyticsConsent(granted)
-    setDecided(true)
   }
 
   return (
     <div
       role="dialog"
-      aria-label="Analytics consent"
+      aria-label="Cookie consent"
       className="fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-sm z-50 bg-white border border-[#1b261b]/15 rounded-2xl p-5 shadow-[0_12px_40px_rgba(27,38,27,0.15)]"
     >
       <p className="text-xs text-[#4a584a] leading-relaxed mb-4">
-        We'd like to measure anonymous usage to improve the store — no personal details, ever.
-        See our <Link to="/privacy" className="text-[#4a7333] font-semibold hover:underline">Privacy Policy</Link>.
+        May we use cookies from Google and Meta to measure visits and see which of our ads work? We never share
+        your name, email or address with them. See our{' '}
+        <Link to="/privacy" className="text-[#4a7333] font-semibold hover:underline">Privacy Policy</Link>.
       </p>
       <div className="flex gap-3">
         <button

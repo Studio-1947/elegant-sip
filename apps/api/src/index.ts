@@ -3,6 +3,7 @@ import { buildApp } from './app.js'
 import { env } from './env.js'
 import { sql } from './db/client.js'
 import { expirePendingOrders } from './routes/orders.js'
+import { syncStaleShipments } from './lib/fulfilment.js'
 
 const app = await buildApp()
 
@@ -54,6 +55,21 @@ try {
   void expireOrders()
   const expiryTimer = setInterval(() => void expireOrders(), env.ORDER_EXPIRY_SWEEP_SECONDS * 1_000)
   expiryTimer.unref()
+
+  if (env.SHIPMENT_SYNC_MINUTES > 0 && env.SHIPPING_PROVIDER !== 'manual') {
+    const syncShipments = async () => {
+      try {
+        const synced = await syncStaleShipments(env.SHIPMENT_SYNC_MINUTES, app.log)
+        if (synced > 0) app.log.info({ synced }, 'refreshed courier tracking')
+      } catch (err) {
+        app.log.error({ err }, 'background shipment sync failed')
+      }
+    }
+    // Check every quarter of the window so no parcel waits much longer than it.
+    const interval = Math.max(5, Math.round(env.SHIPMENT_SYNC_MINUTES / 4)) * 60_000
+    const shipmentTimer = setInterval(() => void syncShipments(), interval)
+    shipmentTimer.unref()
+  }
 } catch (err) {
   app.log.error({ err }, 'failed to start')
   process.exit(1)
