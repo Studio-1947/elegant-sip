@@ -71,7 +71,7 @@ export default function WishlistPage() {
                       const variant = getDefaultVariant(item)
                       addToCart({ productSlug: item.slug, name: item.name, price: variant.price, imageSrc: item.imageSrc, size: variant.size }, 1)
                       showToast(`${item.name} added to your cart`)
-                      track('add_to_cart', { product: item.slug, source: 'wishlist' })
+                      track('add_to_cart', { product: item.slug, name: item.name, variant: variant.size, quantity: 1, value: variant.price, source: 'wishlist' })
                     }}
                     disabled={!isInStock(item) || item.status === 'coming-soon'}
                     className="bg-[#1b261b] hover:bg-[#2b3a2b] disabled:bg-[#1b261b]/10 disabled:text-[#4a584a] disabled:cursor-not-allowed text-white text-[11px] font-bold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-colors cursor-pointer"

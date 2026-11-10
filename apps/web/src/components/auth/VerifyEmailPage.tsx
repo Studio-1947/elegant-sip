@@ -3,6 +3,7 @@ import { ApiClientError, api } from '../../lib/api'
 import { Link, parseRoute, useDocumentMeta, useRoute } from '../../lib/router'
 import { useAuth } from '../AuthContext'
 import { clearLinkToken, linkToken } from '../../lib/urlSecrets'
+import { track } from '../../lib/analytics'
 import { AuthCard } from './AuthCard'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ export default function VerifyEmailPage() {
       .verifyEmail(token)
       .then(async () => {
         clearLinkToken()
+        track('signup', { method: 'email' })
         setState('done')
         // If they are already signed in, reflect the new verified status.
         await refresh()

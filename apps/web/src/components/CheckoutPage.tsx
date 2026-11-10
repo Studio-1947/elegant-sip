@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
-import { track } from '../lib/analytics'
+import { cartLines, purchaseProps, track } from '../lib/analytics'
+import { rememberPendingPurchase } from '../lib/pendingPurchase'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
 import { api, ApiClientError, type PlaceOrderResult, type SavedAddress } from '../lib/api'
 import { formatINR } from '../lib/currency'
@@ -47,6 +48,14 @@ function checkoutAttempt() {
 
 export default function CheckoutPage() {
   const { cart, cartTotal, discount, coupon, clearCart, quote, toCartLines } = useCart()
+  const checkoutTracked = useRef(false)
+  const paymentInfoTracked = useRef(false)
+  // One checkout start per visit, from the cart, a "Buy now" button or a direct link.
+  useEffect(() => {
+    if (checkoutTracked.current || cart.length === 0) return
+    checkoutTracked.current = true
+    track('begin_checkout', { value: cartTotal, lines: cartLines(cart) })
+  }, [cart, cartTotal])
   const { user } = useAuth()
   const { openLogin } = useUi()
   const [step, setStep] = useState<Step>(1)
@@ -156,7 +165,11 @@ export default function CheckoutPage() {
   const goNext = () => {
     if (step === 1 && validateStep1()) {
       setStep(2)
-      track('begin_checkout', { step: 2 })
+      // Once per visit, however often the customer goes back to edit the address.
+      if (!paymentInfoTracked.current) {
+        paymentInfoTracked.current = true
+        track('add_payment_info', { value: cartTotal, lines: cartLines(cart) })
+      }
     }
   }
 
@@ -312,8 +325,10 @@ export default function CheckoutPage() {
       if (status === 'paid') {
         setPlacedOrder({ ...placed, order: { ...placed.order, status: 'paid' } })
         setPaymentNotice(null)
-        track('purchase', { order: placed.order.number, value: placed.order.total, items: placed.order.items.length })
+        track('purchase', purchaseProps(placed.order))
       } else {
+        // The order page records the purchase once the bank's confirmation arrives.
+        rememberPendingPurchase(placed.order.number)
         setPaymentNotice('Payment received and waiting for your bank to confirm. Your order will update shortly.')
       }
     } catch (err) {

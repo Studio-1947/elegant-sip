@@ -42,6 +42,22 @@ function loadGtm(w: TagWindow) {
   w.dataLayer = w.dataLayer || []
   w.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' })
   addScript(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`)
+
+  // The store changes pages without reloading, so GTM is told about each one.
+  // In the container, fire the GA4 page_view on this event OR on a History
+  // Change trigger, never both, or every page counts twice.
+  let last = `${location.pathname}${location.search}`
+  const onRoute = () => {
+    const current = `${location.pathname}${location.search}`
+    if (current === last) return
+    last = current
+    // After the page has rendered, so the new title is in place.
+    window.setTimeout(() => {
+      w.dataLayer!.push({ event: 'virtual_page_view', page_path: current, page_location: location.href, page_title: document.title })
+    }, 250)
+  }
+  window.addEventListener('elegantsip:route', onRoute)
+  window.addEventListener('popstate', onRoute)
 }
 
 /** Meta's standard base code, unminified. */

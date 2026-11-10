@@ -42,8 +42,13 @@ export default function CartPage() {
   }
 
   const handleRemove = (id: string, size: string) => {
+    const line = cart.find((item) => item.productSlug === id && item.size === size)
     removeFromCart(id, size)
-    track('remove_from_cart', { product: id })
+    track('remove_from_cart', {
+      product: id,
+      variant: size,
+      ...(line ? { name: line.name, quantity: line.quantity, value: line.price * line.quantity } : {}),
+    })
   }
 
   return (
@@ -236,7 +241,6 @@ export default function CartPage() {
 
             <Link
               to="/checkout"
-              onClick={() => track('begin_checkout', { step: 1 })}
               className="block w-full bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-4 rounded-lg transition-colors mt-8 text-center active:scale-[0.98]"
             >
               Proceed to Checkout

@@ -9,6 +9,7 @@ import { indianMobileError, normaliseIndianMobile, phoneInputDigits } from '@ele
 import { isShipmentProblem, shipmentSummary } from '../lib/shipment'
 import { Link, navigate, useDocumentMeta } from '../lib/router'
 import AddressBookSection from './account/AddressBookSection'
+import { formatDate } from '../lib/dates'
 
 const ORDER_STATUS: Record<OrderView['status'], { label: string; tone: string }> = {
   pending_payment: { label: 'Awaiting payment', tone: 'bg-amber-50 text-amber-800' },
@@ -160,7 +161,7 @@ export default function AccountPage() {
                     </span>
                   </div>
                   <p className="text-[11px] text-[#4a584a] mt-1">
-                    {new Date(order.placedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {formatDate(order.placedAt)}
                     {' · '}
                     {order.items.reduce((acc, i) => acc + i.quantity, 0)} items
                   </p>

@@ -15,6 +15,7 @@ vi.mock('./CartDrawer', () => ({ default: () => null }))
 import LoginModal from './LoginModal'
 import { UiProvider, useUi } from './UiContext'
 import { __resetAuthMethods } from '../lib/authMethods'
+import { ApiClientError } from '../lib/api'
 
 const whatsappOn = (on: boolean) => api.auth.methods.mockResolvedValue({ whatsapp: on })
 const renderModal = () => render(<LoginModal isOpen onClose={vi.fn()} />)
@@ -82,7 +83,7 @@ describe('login box: WhatsApp number', () => {
 })
 
 describe('login box: email and password', () => {
-  const submit = () => screen.getAllByRole('button', { name: 'Sign In' }).find((b) => b.getAttribute('type') === 'submit')!
+  const submit = () => screen.getByRole('button', { name: 'Sign In' })
 
   it('shows an error under each empty field and does not call the API', async () => {
     whatsappOn(false)
@@ -113,11 +114,11 @@ describe('login box: email and password', () => {
     whatsappOn(false)
     const user = userEvent.setup()
     renderModal()
-    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+    await user.click(screen.getByRole('tab', { name: 'Create Account' }))
     await user.type(screen.getByLabelText('Full Name'), 'Asha Rai')
     await user.type(screen.getByLabelText('Email'), 'asha@example.com')
     await user.type(screen.getByLabelText('Password'), 'short')
-    await user.click(screen.getAllByRole('button', { name: 'Create Account' }).find((b) => b.getAttribute('type') === 'submit')!)
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
     expect(await screen.findByText('Use at least 10 characters.')).toBeTruthy()
     expect(auth.register).not.toHaveBeenCalled()
   })
@@ -131,6 +132,40 @@ describe('login box: email and password', () => {
     await user.type(screen.getByLabelText('Password'), 'correct-horse-battery')
     await user.click(submit())
     expect(auth.login).toHaveBeenCalledWith('asha@example.com', 'correct-horse-battery')
+  })
+})
+
+describe('login box: answers from the server', () => {
+  it('shows a field error from the server under that field', async () => {
+    whatsappOn(false)
+    auth.login.mockRejectedValue(new ApiClientError(400, 'validation_error', 'Some fields need attention.', { email: ['Invalid email address'] }))
+    const user = userEvent.setup()
+    renderModal()
+    await user.type(screen.getByLabelText('Email'), 'asha@example.co')
+    await user.type(screen.getByLabelText('Password'), 'correct-horse-battery')
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
+    expect(await screen.findByText('Invalid email address.')).toBeTruthy()
+    expect(screen.getByLabelText('Email').getAttribute('aria-invalid')).toBe('true')
+  })
+
+  it('shows plain words when sign-in is rate limited', async () => {
+    whatsappOn(false)
+    auth.login.mockRejectedValue(new ApiClientError(429, 'rate_limited', 'Too many attempts. Please wait a minute and try again.'))
+    const user = userEvent.setup()
+    renderModal()
+    await user.type(screen.getByLabelText('Email'), 'asha@example.com')
+    await user.type(screen.getByLabelText('Password'), 'correct-horse-battery')
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('Too many attempts. Please wait a minute and try again.')
+  })
+
+  it('marks the selected tab for screen readers', async () => {
+    whatsappOn(false)
+    const user = userEvent.setup()
+    renderModal()
+    expect(screen.getByRole('tab', { name: 'Sign In' }).getAttribute('aria-selected')).toBe('true')
+    await user.click(screen.getByRole('tab', { name: 'Create Account' }))
+    expect(screen.getByRole('tab', { name: 'Create Account' }).getAttribute('aria-selected')).toBe('true')
   })
 })
 

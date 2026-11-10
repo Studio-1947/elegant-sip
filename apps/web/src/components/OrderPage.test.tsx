@@ -9,10 +9,12 @@ const auth = vi.hoisted(() => ({ state: { user: null as null | { id: string }, l
 vi.mock('./AuthContext', () => ({ useAuth: () => auth.state }))
 const ui = vi.hoisted(() => ({ openLogin: vi.fn() }))
 vi.mock('./UiContext', () => ({ useUi: () => ui }))
-vi.mock('../lib/analytics', () => ({ track: vi.fn() }))
+const analytics = vi.hoisted(() => ({ track: vi.fn() }))
+vi.mock('../lib/analytics', async (importOriginal) => ({ ...(await importOriginal<typeof import('../lib/analytics')>()), track: analytics.track }))
 
 import OrderPage from './OrderPage'
 import { ApiClientError } from '../lib/api'
+import { rememberPendingPurchase } from '../lib/pendingPurchase'
 
 const NUMBER = 'ES-20261110-ABCD'
 
@@ -79,6 +81,24 @@ describe('order page from an email link', () => {
     api.orders.get.mockRejectedValue(notFound())
     render(<OrderPage id={NUMBER} />)
     expect(await screen.findByRole('heading', { name: 'Order not found' })).toBeTruthy()
+  })
+})
+
+describe('purchases the bank confirms later', () => {
+  it('records the purchase once, when the order first shows as paid', async () => {
+    auth.state = { user: { id: 'user-1' }, loading: false }
+    rememberPendingPurchase(NUMBER)
+    api.orders.get.mockResolvedValue({ ...order, items: [{ productSlug: 'first-flush', productName: 'First Flush', variantSize: '100 g', quantity: 2, unitPrice: 43_050, lineTotal: 86_100, imageSrc: '/x.webp' }] })
+    const { unmount } = render(<OrderPage id={NUMBER} />)
+    await screen.findByRole('heading', { name: NUMBER })
+    expect(analytics.track).toHaveBeenCalledWith('purchase', expect.objectContaining({ order: NUMBER, value: 86_100, units: 2 }))
+    unmount()
+
+    // Opening the order again does not count it twice.
+    analytics.track.mockClear()
+    render(<OrderPage id={NUMBER} />)
+    await screen.findByRole('heading', { name: NUMBER })
+    expect(analytics.track).not.toHaveBeenCalledWith('purchase', expect.anything())
   })
 })
 

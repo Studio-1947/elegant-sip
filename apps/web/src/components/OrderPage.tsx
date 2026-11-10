@@ -9,7 +9,9 @@ import { openPrintWindow, POPUP_BLOCKED_MESSAGE, writePrintDocument } from '../l
 import { invoiceHtml } from '../lib/invoicePrint'
 import { loadRazorpay } from '../lib/razorpay'
 import { isShipmentProblem, shipmentLabel } from '../lib/shipment'
-import { track } from '../lib/analytics'
+import { purchaseProps, track } from '../lib/analytics'
+import { takePendingPurchase } from '../lib/pendingPurchase'
+import { formatDate, formatDateTime, formatShortDate } from '../lib/dates'
 
 export default function OrderPage({ id }: { id?: string }) {
   const [order, setOrder] = useState<OrderView | null>(null)
@@ -43,6 +45,10 @@ export default function OrderPage({ id }: { id?: string }) {
         .get(id, guestAccessToken)
         .then((o) => {
           if (cancelled) return
+          // A payment the bank confirmed after checkout (webhook) still counts as a purchase.
+          if (o.status !== 'pending_payment' && o.status !== 'cancelled' && (statusRef.current === 'pending_payment' || takePendingPurchase(o.number))) {
+            track('purchase', purchaseProps(o))
+          }
           statusRef.current = o.status
           setOrder(o)
           setError(null)
@@ -115,11 +121,7 @@ export default function OrderPage({ id }: { id?: string }) {
 
   const method = SHIPPING_METHODS.find((m) => m.id === order.shippingMethod)
   const taxAddedOnTop = order.tax > 0 && order.total === order.subtotal - order.discount + order.shippingFee + order.tax
-  const placedOn = new Date(order.placedAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  const placedOn = formatDate(order.placedAt)
   const canRequestService = Boolean(user && ['paid', 'packed', 'shipped', 'delivered'].includes(order.status))
 
   const submitServiceRequest = async (event: FormEvent<HTMLFormElement>) => {
@@ -167,7 +169,7 @@ export default function OrderPage({ id }: { id?: string }) {
             .then(({ status }) => {
               if (status === 'paid') {
                 setOrder({ ...order, status: 'paid', paidAt: new Date().toISOString() })
-                track('purchase', { order: order.number, value: order.total, items: order.items.length })
+                track('purchase', purchaseProps(order))
               }
               else setPaymentNotice('Payment received and waiting for your bank to confirm. This page will update shortly.')
             })
@@ -217,7 +219,7 @@ export default function OrderPage({ id }: { id?: string }) {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
             <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-2">Order</span>
-            <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight">{order.number}</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight [overflow-wrap:anywhere]">{order.number}</h1>
           </div>
           <p className="text-xs font-mono text-[#4a584a]">Placed {placedOn}</p>
         </div>
@@ -250,7 +252,7 @@ export default function OrderPage({ id }: { id?: string }) {
             {['paid', 'packed', 'shipped', 'delivered'].includes(order.status) && <button onClick={() => void printInvoice()} disabled={loadingInvoice} className="rounded-full border border-[#1b261b]/20 px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider hover:border-[#8bb56e] disabled:opacity-50">{loadingInvoice ? 'Loading…' : 'Invoice / Print PDF'}</button>}
           </div>
           {invoiceError && <p role="alert" className="mt-3 text-xs text-red-700">{invoiceError}</p>}
-          <ol className="mt-5 space-y-4">{timelineFor(order).map((event) => <li key={event.label} className="flex gap-3 text-xs"><span className={`mt-0.5 h-3 w-3 rounded-full border-2 ${event.complete ? 'border-[#4a7333] bg-[#8bb56e]' : 'border-[#1b261b]/20 bg-white'}`} /><div><p className={event.complete ? 'font-bold text-[#1b261b]' : 'text-[#4a584a]'}>{event.label}</p><p className="mt-0.5 text-[#4a584a]">{event.date ? new Date(event.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : event.detail}</p></div></li>)}</ol>
+          <ol className="mt-5 space-y-4">{timelineFor(order).map((event) => <li key={event.label} className="flex gap-3 text-xs"><span className={`mt-0.5 h-3 w-3 rounded-full border-2 ${event.complete ? 'border-[#4a7333] bg-[#8bb56e]' : 'border-[#1b261b]/20 bg-white'}`} /><div><p className={event.complete ? 'font-bold text-[#1b261b]' : 'text-[#4a584a]'}>{event.label}</p><p className="mt-0.5 text-[#4a584a]">{event.date ? formatDateTime(event.date) : event.detail}</p></div></li>)}</ol>
         </div>
 
         {order.shipment && (
@@ -273,9 +275,9 @@ export default function OrderPage({ id }: { id?: string }) {
               <p><span className="font-bold text-[#1b261b]">Courier:</span> {order.shipment.courierName ?? 'Assigned shortly'}</p>
               <p><span className="font-bold text-[#1b261b]">AWB:</span> <span className="font-mono">{order.shipment.awb}</span></p>
               {order.shipment.deliveredAt ? (
-                <p><span className="font-bold text-[#1b261b]">Delivered:</span> {new Date(order.shipment.deliveredAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
+                <p><span className="font-bold text-[#1b261b]">Delivered:</span> {formatShortDate(order.shipment.deliveredAt)}</p>
               ) : order.shipment.expectedDeliveryAt && (
-                <p><span className="font-bold text-[#1b261b]">Expected by:</span> {new Date(order.shipment.expectedDeliveryAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
+                <p><span className="font-bold text-[#1b261b]">Expected by:</span> {formatShortDate(order.shipment.expectedDeliveryAt)}</p>
               )}
             </div>
             {order.shipment.events.length > 0 && (
@@ -283,7 +285,7 @@ export default function OrderPage({ id }: { id?: string }) {
                 {[...order.shipment.events].reverse().map((event) => (
                   <li key={`${event.at}-${event.status}`} className="text-xs">
                     <p className="font-bold text-[#1b261b]">{event.status}{event.location ? ` · ${event.location}` : ''}</p>
-                    <p className="mt-0.5 text-[#4a584a]">{new Date(event.at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                    <p className="mt-0.5 text-[#4a584a]">{formatDateTime(event.at)}</p>
                   </li>
                 ))}
               </ol>
@@ -385,7 +387,7 @@ function timelineFor(order: OrderView) {
     { label: 'Order placed', complete: true, date: order.placedAt, detail: '' },
     { label: 'Payment confirmed', complete: paid, date: order.paidAt, detail: paid ? 'Payment confirmed.' : 'Awaiting secure payment confirmation.' },
     { label: 'Packed', complete: packed, date: null, detail: packed ? 'Your teas have been packed.' : 'We will pack your order next.' },
-    { label: 'Shipped', complete: shipped, date: order.shippedAt, detail: shipped ? (order.tracking?.number ? `Tracking: ${order.tracking.number}` : 'With the courier.') : 'Tracking will appear here when dispatched.' },
-    { label: 'Delivered', complete: delivered, date: delivered ? (order.shipment?.deliveredAt ?? null) : null, detail: delivered ? 'Delivered.' : order.shipment?.expectedDeliveryAt && !isShipmentProblem(order.shipment.status) ? `Expected by ${new Date(order.shipment.expectedDeliveryAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}.` : 'Awaiting delivery confirmation.' },
+    { label: 'Shipped', complete: shipped, date: order.shippedAt, detail: shipped ? (order.tracking?.number ? `Tracking: ${order.tracking.number}` : 'With the courier.') : order.tracking?.number ? `Courier booked (tracking ${order.tracking.number}), waiting for pickup.` : 'Tracking will appear here when dispatched.' },
+    { label: 'Delivered', complete: delivered, date: delivered ? (order.shipment?.deliveredAt ?? null) : null, detail: delivered ? 'Delivered.' : order.shipment?.expectedDeliveryAt && !isShipmentProblem(order.shipment.status) ? `Expected by ${formatShortDate(order.shipment.expectedDeliveryAt)}.` : 'Awaiting delivery confirmation.' },
   ]
 }

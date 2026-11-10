@@ -36,6 +36,16 @@ function FieldError({ id, message }: { id: string; message?: string | null }) {
   )
 }
 
+/** The API's per-field messages, for the fields this form shows. */
+function fieldErrorsFrom(errors: Record<string, string[]> | undefined): FieldErrors {
+  const out: FieldErrors = {}
+  for (const field of ['name', 'email', 'password'] as const) {
+    const message = errors?.[field]?.[0]
+    if (message) out[field] = message.endsWith('.') ? message : `${message}.`
+  }
+  return out
+}
+
 function emailError(value: string): string | undefined {
   const email = value.trim()
   if (!email) return 'Enter your email address.'
@@ -154,10 +164,19 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         await login(email.trim(), password)
         onClose()
       }
+      // Sign-ups are counted when the email is confirmed (VerifyEmailPage).
       // Never send the email to analytics: the privacy policy says we don't.
-      track(mode === 'signup' ? 'signup' : 'login', { method: 'email' })
+      if (mode === 'signin') track('login', { method: 'email' })
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again.')
+      // The server checks the same rules; show its answer under the field it is about.
+      const serverFields = err instanceof ApiClientError ? fieldErrorsFrom(err.fieldErrors) : {}
+      const firstField = (['name', 'email', 'password'] as const).find((field) => serverFields[field])
+      if (firstField) {
+        setFieldErrors(serverFields)
+        document.getElementById(`auth-${firstField}`)?.focus()
+      } else {
+        setError(err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -287,10 +306,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </p>
 
         {/* Tabs */}
-        {!whatsapp && <div className="flex border border-[#1b261b]/15 rounded-xl p-1 mb-8">
+        {!whatsapp && <div role="tablist" aria-label="Sign in or create an account" className="flex border border-[#1b261b]/15 rounded-xl p-1 mb-8">
           {(['signin', 'signup'] as const).map((m) => (
             <button
               key={m}
+              role="tab"
+              aria-selected={mode === m}
               onClick={() => switchMode(m)}
               className={`flex-1 py-2.5 rounded-lg text-xs font-mono tracking-widest uppercase transition-all cursor-pointer ${mode === m
                   ? 'bg-[#1b261b] text-white'
