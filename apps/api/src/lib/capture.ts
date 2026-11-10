@@ -2,6 +2,7 @@ import { and, eq, ne } from 'drizzle-orm'
 import type { FastifyBaseLogger } from 'fastify'
 import { db } from '../db/client.js'
 import { orders, payments } from '../db/schema-commerce.js'
+import { alertStaff } from './alerts.js'
 import { issueInvoice } from './invoice.js'
 import { sendOrderConfirmation } from '../routes/orders.js'
 
@@ -73,4 +74,12 @@ export async function recordCaptureOnClosedOrder(
     { orderNumber: input.orderNumber, paymentId: input.paymentId },
     'REFUND REQUIRED: payment captured for an order that was already cancelled',
   )
+  await alertStaff({
+    subject: `Refund required for order ${input.orderNumber}`,
+    body: ['A payment was captured for an order that had already been cancelled. Refund it from the Razorpay dashboard.'],
+    facts: [
+      ['Order', input.orderNumber],
+      ['Payment', input.paymentId],
+    ],
+  })
 }

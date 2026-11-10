@@ -151,6 +151,11 @@ function load(): Env {
       console.error('Invalid environment configuration:\n  PAYMENT_PROVIDER: production allows razorpay or disabled\n')
       process.exit(1)
     }
+    // The fake courier invents AWBs; real orders would be "shipped" with nothing booked.
+    if (value.SHIPPING_PROVIDER === 'fake') {
+      console.error('Invalid environment configuration:\n  SHIPPING_PROVIDER: production allows shiprocket or manual\n')
+      process.exit(1)
+    }
     if (value.PAYMENT_PROVIDER === 'razorpay') {
       const missing = (['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'] as const).filter(
         (key) => !value[key],

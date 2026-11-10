@@ -1,36 +1,47 @@
 import { desc, eq, lte, sql } from 'drizzle-orm'
+import type { FastifyBaseLogger } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { paiseSchema, problemSchema, slugSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { productVariants, products, reviews } from '../db/schema.js'
-import { adminAuditEvents, orders, returnRequests, stockLedger, users } from '../db/schema-commerce.js'
+import { adminAuditEvents, orders, returnRequests, shipments, stockLedger, users } from '../db/schema-commerce.js'
 import { releaseOrderHoldings } from './orders.js'
+import { ApiError } from '../lib/problem.js'
+import { adminProductRoutes } from './admin-products.js'
+import { adminShippingRoutes } from './admin-shipping.js'
+import { getInvoiceView } from '../lib/invoice.js'
+import { cancelOrderWithShipment, sendShippedEmail } from '../lib/fulfilment.js'
+import { env } from '../env.js'
 
 /** The status changes staff may make by hand. Anything else is a 409. */
 const STAFF_TRANSITIONS: Record<string, readonly string[]> = {
   pending_payment: ['cancelled'],
   paid: ['packed', 'shipped', 'cancelled'],
   packed: ['shipped', 'cancelled'],
-  shipped: ['delivered'],
+  // Cancelling a shipped order is only for a parcel coming back (rto); see the PATCH handler.
+  shipped: ['delivered', 'cancelled'],
 }
 
-/** Cancels an order and returns its stock and coupon use, once. False if it had already moved on. */
-async function cancelOrderAndRelease(orderId: string, fromStatuses: string[], note: string): Promise<boolean> {
-  return db.transaction(async (tx) => {
-    const [locked] = await tx.select({ status: orders.status }).from(orders).where(eq(orders.id, orderId)).for('update')
+/**
+ * Cancels an order and returns its stock and coupon use, once. False if it
+ * had already moved on. A booked courier shipment is cancelled first, and a
+ * parcel already with the courier refuses the cancel (409).
+ */
+async function cancelOrderAndRelease(
+  order: { id: string; number: string },
+  fromStatuses: string[],
+  note: string,
+  log: FastifyBaseLogger,
+): Promise<boolean> {
+  return cancelOrderWithShipment(order.id, order.number, log, async (tx) => {
+    const [locked] = await tx.select({ status: orders.status }).from(orders).where(eq(orders.id, order.id)).for('update')
     if (!locked || !fromStatuses.includes(locked.status)) return false
-    await tx.update(orders).set({ status: 'cancelled', cancelledAt: new Date() }).where(eq(orders.id, orderId))
-    await releaseOrderHoldings(tx, orderId, note)
+    await tx.update(orders).set({ status: 'cancelled', cancelledAt: new Date() }).where(eq(orders.id, order.id))
+    await releaseOrderHoldings(tx, order.id, note)
     return true
   })
 }
-import { ApiError } from '../lib/problem.js'
-import { adminProductRoutes } from './admin-products.js'
-import { adminShippingRoutes } from './admin-shipping.js'
-import { getInvoiceView } from '../lib/invoice.js'
-import { sendShippedEmail } from '../lib/fulfilment.js'
-import { env } from '../env.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Admin.
@@ -178,7 +189,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
             `This order is ${item.order.status}. Reject the cancellation and handle it as a return instead.`,
           )
         }
-        const cancelled = await cancelOrderAndRelease(item.order.id, ['paid', 'packed'], `Cancellation request ${item.id} approved`)
+        const cancelled = await cancelOrderAndRelease(item.order, ['paid', 'packed'], `Cancellation request ${item.id} approved`, request.log)
         if (!cancelled) throw ApiError.conflict('order_changed', 'The order changed while you were reviewing it. Reload and try again.')
         restocked = true
       }
@@ -279,7 +290,17 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
          transaction. A paid order's refund is issued from the Razorpay
          dashboard. */
       if (status === 'cancelled' && order.status !== 'cancelled') {
-        const cancelled = await cancelOrderAndRelease(order.id, [order.status], 'Cancelled by staff')
+        // A shipped order can only be cancelled once its parcel is on its way back.
+        if (order.status === 'shipped') {
+          const shipment = await db.query.shipments.findFirst({ where: eq(shipments.orderId, order.id), columns: { status: true } })
+          if (shipment?.status !== 'rto') {
+            throw ApiError.conflict(
+              'invalid_status_change',
+              'A shipped order can only be cancelled once the courier is returning it (RTO). Otherwise handle it as a return.',
+            )
+          }
+        }
+        const cancelled = await cancelOrderAndRelease(order, [order.status], 'Cancelled by staff', request.log)
         if (!cancelled) throw ApiError.conflict('order_changed', 'The order changed while you were updating it. Reload and try again.')
         if (order.status !== 'pending_payment') {
           request.log.warn({ orderNumber: order.number }, 'paid order cancelled by staff: refund it in the gateway dashboard')
@@ -287,13 +308,15 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         return { ok: true as const, notified: false }
       }
 
+      // Only the first move to shipped stamps shippedAt and emails; correcting tracking later does neither.
+      const firstShip = status === 'shipped' && order.status !== 'shipped'
       await db
         .update(orders)
         .set({
           ...(status ? { status } : {}),
           ...(trackingCarrier !== undefined ? { trackingCarrier } : {}),
           ...(trackingNumber !== undefined ? { trackingNumber } : {}),
-          ...(status === 'shipped' ? { shippedAt: new Date() } : {}),
+          ...(firstShip ? { shippedAt: new Date() } : {}),
           ...(status === 'cancelled' ? { cancelledAt: new Date() } : {}),
         })
         .where(eq(orders.id, order.id))
@@ -301,7 +324,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       let notified = false
       const carrier = trackingCarrier ?? order.trackingCarrier
       const tracking = trackingNumber ?? order.trackingNumber
-      if (status === 'shipped' && tracking) {
+      if (firstShip && tracking) {
         const result = await sendShippedEmail(order, carrier, tracking)
         notified = result.delivered
       }

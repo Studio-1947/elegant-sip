@@ -226,8 +226,9 @@ const toOrderDto = (row: OrderRow) => ({
     row.trackingNumber || row.trackingCarrier
       ? { carrier: row.trackingCarrier, number: row.trackingNumber }
       : null,
+  // A cancelled or refunded order shows no parcel, even one still returning to us.
   shipment:
-    row.shipment && row.shipment.status !== 'cancelled' && row.shipment.awb
+    row.shipment && row.shipment.status !== 'cancelled' && row.shipment.awb && !['cancelled', 'refunded'].includes(row.status)
       ? {
           status: row.shipment.status,
           courierName: row.shipment.courierName,
