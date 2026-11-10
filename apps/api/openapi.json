@@ -987,6 +987,35 @@
         }
       }
     },
+    "/v1/auth/methods": {
+      "get": {
+        "summary": "Sign-in methods currently available",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "whatsapp": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "whatsapp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/auth/whatsapp/request": {
       "post": {
         "tags": [
