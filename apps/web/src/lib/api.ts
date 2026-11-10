@@ -32,6 +32,7 @@ export class ApiClientError extends Error {
 
 const NETWORK_MESSAGE =
   'We could not reach the shop. Check your connection and try again — nothing has been charged.'
+const RATE_LIMITED_MESSAGE = 'Too many attempts. Please wait a minute and try again.'
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response
@@ -63,10 +64,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const problem = body as Partial<Problem> | null
+    // A limit hit anywhere gets plain words, even when a proxy or the rate
+    // limiter answers without our usual problem details.
+    const limited = response.status === 429
     throw new ApiClientError(
       response.status,
-      problem?.type ?? 'unknown_error',
-      problem?.detail ?? 'Something went wrong. Please try again.',
+      problem?.type ?? (limited ? 'rate_limited' : 'unknown_error'),
+      problem?.detail ?? (limited ? RATE_LIMITED_MESSAGE : 'Something went wrong. Please try again.'),
       problem?.errors,
       problem?.requestId,
     )
@@ -333,6 +337,8 @@ export const api = {
 
   auth: {
     me: () => request<{ user: SessionUser | null }>('/v1/auth/me'),
+    /** Which sign-in methods the server can serve right now. */
+    methods: () => request<{ whatsapp: boolean }>('/v1/auth/methods'),
     register: (payload: { name: string; email: string; password: string }) =>
       post<{ ok: true }>('/v1/auth/register', payload),
     login: (payload: { email: string; password: string }) =>

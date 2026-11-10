@@ -1,5 +1,5 @@
 import { useDocumentMeta } from '../../lib/router'
-import { CONTACT_EMAIL, ContactList, INSTAGRAM, LegalLayout, listClass, OnceLaunched, Section, StatusCallout, WHATSAPP } from './shared'
+import { ContactList, LegalLayout, listClass, Section } from './shared'
 
 export default function TermsPage() {
   useDocumentMeta(
@@ -7,78 +7,26 @@ export default function TermsPage() {
     'The terms that govern use of the Elegant Sip site and any order placed through it.',
   )
   return (
-    <LegalLayout label="Legal" title="Terms & Conditions" updated="November 9, 2026">
+    <LegalLayout label="Legal" title="Terms & Conditions" updated="November 10, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
         <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our"). Please read
         these terms before using elegantsip.in (the "Site"). By browsing or using the Site, you
         agree to them.
       </p>
 
-      <StatusCallout>
-        The Site currently operates <strong className="text-[#1b261b]">without a real backend</strong> —
-        checkout, accounts, and orders are simulated in your browser and no real payment is taken
-        on-site. <strong className="text-[#1b261b]">Real checkout and payment processing are planned</strong> for
-        a future release. Sections marked <OnceLaunched /> will take effect once that launches;
-        until then, they describe intended future behavior, not the current Site.
-      </StatusCallout>
-
       <Section title="1. Who we are">
         <p>Elegant Sip sells single-origin Darjeeling tea. We're reachable at:</p>
         <ContactList />
       </Section>
 
-      <Section title="2. The demo checkout (today)">
-        <ul className={listClass}>
-          <li>
-            Adding items to cart, applying coupons, "placing an order," creating an "account," and
-            submitting reviews are all <strong className="text-[#1b261b]">simulated</strong> on this
-            Site — handled entirely in your browser's local storage.
-          </li>
-          <li>
-            <strong className="text-[#1b261b]">No real payment is processed</strong> when you
-            complete the demo checkout. No money changes hands, and no order is fulfilled as a
-            result of using the on-site checkout flow.
-          </li>
-          <li>
-            The Site clearly labels this ("Demo checkout — no real payment is processed"). If you
-            see anything on the Site that appears to contradict this, it's a bug — please tell us.
-          </li>
-          <li>
-            Demo order numbers, order history, and account data exist only in your browser and can
-            disappear if you clear your browser storage. We cannot recover this data, and it has no
-            legal or commercial effect.
-          </li>
-        </ul>
-      </Section>
-
-      <Section title="3. How to place a real order (today)">
-        <p>Until real checkout launches, to actually purchase tea:</p>
-        <ol className="list-decimal pl-5 space-y-2">
-          <li>
-            Contact us via WhatsApp ({WHATSAPP}), Instagram ({INSTAGRAM}), or email ({CONTACT_EMAIL}).
-          </li>
-          <li>
-            We'll confirm product availability, pricing, and payment method with you directly,
-            outside the Site.
-          </li>
-          <li>
-            Any order, payment, and delivery arrangement made this way is a separate agreement
-            between you and us, governed by these terms to the extent applicable, and by whatever
-            we confirm with you directly (e.g., over WhatsApp).
-          </li>
-        </ol>
-        <p>
-          Prices shown on the Site are in Indian Rupees (INR) and are indicative; please confirm
-          current pricing and stock with us before paying anything, anywhere off-site.
-        </p>
-      </Section>
-
-      <Section title="4. Real checkout & orders" badge="Once launched">
-        <p>Once real checkout is live on the Site, the following will apply to orders placed through it:</p>
+      <Section title="2. Orders and payment">
+        <p>These terms apply to every order placed on the Site:</p>
         <ul className={listClass}>
           <li>
             <strong className="text-[#1b261b]">Order acceptance:</strong> your order is an offer to
-            buy; a contract is formed only when we confirm and accept it (e.g., via order confirmation).
+            buy. A contract is formed when your payment is confirmed and we email your order
+            confirmation. If we can't fulfil an order (for example, a tea sells out), we cancel it
+            and refund you in full.
           </li>
           <li>
             <strong className="text-[#1b261b]">Pricing & currency:</strong> all prices are in INR
@@ -87,8 +35,9 @@ export default function TermsPage() {
             it) and shown before you pay.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Payment:</strong> payments will be processed through
-            a third-party payment gateway. We do not store your full card details on our own servers.
+            <strong className="text-[#1b261b]">Payment:</strong> payments are processed by Razorpay.
+            We never see or store your card, UPI or bank details. An order that isn't paid within 30
+            minutes is released and its stock returned.
           </li>
           <li>
             <strong className="text-[#1b261b]">Order accuracy:</strong> you're responsible for
@@ -96,9 +45,9 @@ export default function TermsPage() {
             caused by incorrect information you provided.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Cancellations & modifications:</strong> once an
-            order is confirmed, cancellation or modification will be possible only within a window
-            we specify at checkout or on request, subject to fulfillment status.
+            <strong className="text-[#1b261b]">Cancellations & changes:</strong> you can change or
+            cancel an order free of charge any time before it is handed to the courier. Request it
+            from the order page in My Account, or contact us.
           </li>
           <li>
             <strong className="text-[#1b261b]">Coupons:</strong> promotional codes (e.g.,
@@ -107,13 +56,9 @@ export default function TermsPage() {
             cannot be combined unless stated.
           </li>
         </ul>
-        <p>
-          We will replace this section with finalized, binding terms — including payment processor
-          details, order-confirmation process, and cutoff times — before real checkout goes live.
-        </p>
       </Section>
 
-      <Section title="5. Shipping & delivery" badge="Once launched">
+      <Section title="3. Shipping & delivery">
         <ul className={listClass}>
           <li>
             We currently ship <strong className="text-[#1b261b]">within India</strong>. Standard
@@ -139,7 +84,7 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="6. Returns, refunds & cancellations" badge="Once launched">
+      <Section title="4. Returns, refunds & cancellations">
         <p>
           <strong className="text-[#1b261b]">The Elegant Sip Promise.</strong> If a tea does not
           live up to your expectations, tell us within{' '}
@@ -169,7 +114,7 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="7. Product information">
+      <Section title="5. Product information">
         <ul className={listClass}>
           <li>
             We describe products (origin, flush, grade, weight) as accurately as we can. Small
@@ -184,29 +129,20 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="8. Accounts">
+      <Section title="6. Accounts">
         <p>
-          <strong className="text-[#1b261b]">Today</strong>, "accounts" on the Site are a local,
-          simulated experience for demonstration purposes only and don't represent a real
-          registered account with us.
-        </p>
-        <p>
-          Once real accounts launch, you'll be responsible for keeping your login credentials
-          confidential and for activity under your account. Notify us immediately of any
-          unauthorized use.
+          You need an account to place an order. Keep your password and sign-in codes to yourself;
+          you're responsible for activity under your account. Tell us straight away if you think
+          someone else has used it.
         </p>
       </Section>
 
-      <Section title="9. Reviews & user content">
+      <Section title="7. Reviews & user content">
         <ul className={listClass}>
           <li>
-            Product reviews are stored locally in your browser and shown on your device; they are
-            not currently moderated or shared with other users through a backend.
-          </li>
-          <li>
-            Once reviews are backed by a real server, they'll be visible to other visitors. Don't
-            submit anything false, defamatory, abusive, or that infringes someone else's rights. We
-            may remove reviews that violate this or applicable law.
+            Reviews you post are shown publicly on product pages with your name. Don't submit
+            anything false, defamatory, abusive, or that infringes someone else's rights. We may
+            check reviews before they appear and remove any that break these rules or the law.
           </li>
           <li>
             The "Verified" badge (where shown) reflects whether our own order records show a
@@ -215,7 +151,7 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="10. Intellectual property">
+      <Section title="8. Intellectual property">
         <p>
           All Site content — text, images, logos, design, and the Elegant Sip name and branding
           belongs to us or our licensors. You may not copy, reproduce, or use it commercially
@@ -223,17 +159,17 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="11. Acceptable use">
+      <Section title="9. Acceptable use">
         <p>You agree not to:</p>
         <ul className={listClass}>
           <li>Use the Site for any unlawful purpose.</li>
-          <li>Attempt to interfere with, hack, or disrupt the Site or its (future) backend.</li>
+          <li>Attempt to interfere with, hack, or disrupt the Site or its systems.</li>
           <li>Scrape or harvest data from the Site at scale without permission.</li>
-          <li>Submit false information through forms, reviews, or (once live) real orders.</li>
+          <li>Submit false information through forms, reviews, or orders.</li>
         </ul>
       </Section>
 
-      <Section title="12. Disclaimers & limitation of liability">
+      <Section title="10. Disclaimers & limitation of liability">
         <ul className={listClass}>
           <li>
             The Site is provided "as is." While we try to keep it accurate and available, we don't
@@ -250,7 +186,7 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="13. Governing law">
+      <Section title="11. Governing law">
         <p>
           These terms are governed by the laws of India. Disputes will be subject to the
           jurisdiction of the courts having authority over our place of business, unless otherwise
@@ -258,16 +194,14 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="14. Changes to these terms">
+      <Section title="12. Changes to these terms">
         <p>
-          We may update these terms as the Site evolves — most notably when real checkout,
-          payments, and accounts launch. We'll update the "Last updated" date above, and remove the
-          "Once launched" markers once the corresponding features are live. Continued use of the
-          Site after changes means you accept the updated terms.
+          We may update these terms as the Site evolves and will change the "Last updated" date
+          above when we do. An order is governed by the terms in force when it was placed.
         </p>
       </Section>
 
-      <Section title="15. Contact">
+      <Section title="13. Contact">
         <p>Questions about these terms:</p>
         <ContactList />
       </Section>

@@ -2,10 +2,11 @@ import '../dev-defaults.js'
 import { argv } from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { COUPONS_ENABLED, rupees } from '@elegantsip/shared'
-import { and, eq, notInArray, sql as drizzleSql } from 'drizzle-orm'
+import { createHash } from 'node:crypto'
+import { and, eq, inArray, sql as drizzleSql } from 'drizzle-orm'
 import { db, sql } from './client.js'
 import { NEW_RANGE } from './seed-new-range.js'
-import { coupons, gardenProducts, gardens, journalPosts, productVariants, products } from './schema.js'
+import { coupons, gardenProducts, gardens, journalPosts, productVariants, products, seedState } from './schema.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Seed — the real catalogue, migrated out of the storefront's TypeScript.
@@ -14,7 +15,9 @@ import { coupons, gardenProducts, gardens, journalPosts, productVariants, produc
  * with `rupees()`. Nothing is invented: this is the same six products, two
  * gardens and three journal posts the site shipped with.
  *
- * Idempotent — safe to re-run against a seeded database.
+ * Idempotent — safe to re-run against a seeded database. Products are only
+ * rewritten when their definition here changes (see seedProducts), so price
+ * and copy edits made in the admin dashboard survive restarts.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 const PRODUCTS = [
@@ -227,6 +230,114 @@ const JOURNAL = [
   },
 ]
 
+export type ProductSeed = (typeof PRODUCTS)[number] | (typeof NEW_RANGE)[number]
+
+/** Fingerprint of everything the seed would write for a product, except stock (never overwritten). */
+function productFingerprint(p: ProductSeed, sortOrder: number): string {
+  const variants = p.variants.map((v) => {
+    const { stock: _stock, ...rest } = v as typeof v & { stock: number }
+    return rest
+  })
+  return createHash('sha256').update(JSON.stringify({ ...p, variants, sortOrder })).digest('hex')
+}
+
+/**
+ * Products are the one part of the catalogue staff edit in the admin
+ * dashboard, so the boot seed must not undo those edits. Each product is
+ * written only when it is new, or when its definition in this file changed
+ * since the last run (a deliberate catalogue change shipped in a deploy).
+ * Pack sizes are removed only when this file dropped them; sizes added in
+ * admin are never deleted.
+ */
+export async function seedProducts(definitions: readonly ProductSeed[], gardenIds: Map<string, string>) {
+  let applied = 0
+  let variantCount = 0
+  for (const [i, p] of definitions.entries()) {
+    const { variants, garden, ...fields } = p
+    const key = `product:${p.slug}`
+    const hash = productFingerprint(p, i)
+    const sizes = variants.map((v) => v.size)
+    variantCount += variants.length
+
+    const existing = await db.query.products.findFirst({ where: eq(products.slug, p.slug), columns: { id: true } })
+    const state = await db.query.seedState.findFirst({ where: eq(seedState.key, key) })
+
+    const remember = () =>
+      db
+        .insert(seedState)
+        .values({ key, hash, sizes })
+        .onConflictDoUpdate({ target: seedState.key, set: { hash, sizes, appliedAt: new Date() } })
+
+    let productId = existing?.id
+    if (existing && (!state || state.hash === hash)) {
+      // Unchanged since the last run, or the first run since tracking began
+      // (the database already holds the last seed plus any admin edits): keep it.
+      if (!state) await remember()
+    } else {
+      const [row] = await db
+        .insert(products)
+        .values({ ...fields, sortOrder: i })
+        .onConflictDoUpdate({
+          target: products.slug,
+          set: {
+            name: fields.name,
+            status: fields.status,
+            description: fields.description,
+            longDescription: fields.longDescription,
+            imageSrc: fields.imageSrc,
+            category: fields.category,
+            bodyLevel: fields.bodyLevel,
+            harvestLabel: fields.harvestLabel,
+            tastingNotes: fields.tastingNotes,
+            origin: fields.origin,
+            flavorProfile: fields.flavorProfile,
+            brewingGuide: fields.brewingGuide,
+            sortOrder: i,
+            updatedAt: new Date(),
+          },
+        })
+        .returning({ id: products.id })
+      productId = row.id
+
+      const dropped = (state?.sizes ?? []).filter((size) => !sizes.includes(size))
+      if (dropped.length > 0) {
+        await db.delete(productVariants).where(and(eq(productVariants.productId, row.id), inArray(productVariants.size, dropped)))
+      }
+
+      for (const [vi, v] of variants.entries()) {
+        const sizeKey = v.size.toLowerCase().replace(/\s+/g, '-')
+        // The new range carries the pricing sheet's SKU codes; older rows derive one.
+        const sku: string = 'sku' in v && typeof v.sku === 'string' ? v.sku : `${p.slug}--${sizeKey}`
+        const compareAtPrice = 'compareAtPrice' in v && typeof v.compareAtPrice === 'number' ? v.compareAtPrice : null
+        await db
+          .insert(productVariants)
+          .values({ productId: row.id, size: v.size, sku, price: v.price, compareAtPrice, stock: v.stock, sortOrder: vi })
+          .onConflictDoUpdate({
+            target: [productVariants.productId, productVariants.size],
+            // Real inventory is never reset. The one exception is a zero-price
+            // "coming soon" placeholder becoming a real product: it has no
+            // inventory yet, so it takes the seed's opening stock.
+            set: {
+              sku,
+              price: v.price,
+              compareAtPrice,
+              stock: drizzleSql`CASE WHEN ${productVariants.price} = 0 AND ${v.price} > 0 THEN ${v.stock} ELSE ${productVariants.stock} END`,
+              sortOrder: vi,
+            },
+          })
+      }
+      await remember()
+      applied += 1
+    }
+
+    if (garden && productId) {
+      const gardenId = gardenIds.get(garden)
+      if (gardenId) await db.insert(gardenProducts).values({ gardenId, productId }).onConflictDoNothing()
+    }
+  }
+  return { applied, variantCount }
+}
+
 export async function seed() {
   console.log('seeding…')
 
@@ -241,71 +352,9 @@ export async function seed() {
   }
   console.log(`  gardens      ${GARDENS.length}`)
 
-  let variantCount = 0
   const ALL_PRODUCTS = [...PRODUCTS, ...NEW_RANGE]
-  for (const [i, p] of ALL_PRODUCTS.entries()) {
-    const { variants, garden, ...fields } = p
-    const [row] = await db
-      .insert(products)
-      .values({ ...fields, sortOrder: i })
-      .onConflictDoUpdate({
-        target: products.slug,
-        set: {
-          name: fields.name,
-          status: fields.status,
-          description: fields.description,
-          longDescription: fields.longDescription,
-          imageSrc: fields.imageSrc,
-          category: fields.category,
-          bodyLevel: fields.bodyLevel,
-          harvestLabel: fields.harvestLabel,
-          tastingNotes: fields.tastingNotes,
-          origin: fields.origin,
-          flavorProfile: fields.flavorProfile,
-          brewingGuide: fields.brewingGuide,
-          sortOrder: i,
-          updatedAt: new Date(),
-        },
-      })
-    .returning({ id: products.id })
-
-    await db
-      .delete(productVariants)
-      .where(and(eq(productVariants.productId, row.id), notInArray(productVariants.size, variants.map((v) => v.size))))
-
-    for (const [vi, v] of variants.entries()) {
-      const sizeKey = v.size.toLowerCase().replace(/\s+/g, '-')
-      // The new range carries the pricing sheet's SKU codes; older rows derive one.
-      const sku: string = 'sku' in v && typeof v.sku === 'string' ? v.sku : `${p.slug}--${sizeKey}`
-      const compareAtPrice = 'compareAtPrice' in v && typeof v.compareAtPrice === 'number' ? v.compareAtPrice : null
-      await db
-        .insert(productVariants)
-        .values({ productId: row.id, size: v.size, sku, price: v.price, compareAtPrice, stock: v.stock, sortOrder: vi })
-        .onConflictDoUpdate({
-          target: [productVariants.productId, productVariants.size],
-          // Production re-seeds on every start, so real inventory must never be
-          // reset. The one exception is a zero-price "coming soon" placeholder
-          // becoming a real product: it has no inventory yet, so it takes the
-          // seed's opening stock instead of staying sold out.
-          set: {
-            sku,
-            price: v.price,
-            compareAtPrice,
-            stock: drizzleSql`CASE WHEN ${productVariants.price} = 0 AND ${v.price} > 0 THEN ${v.stock} ELSE ${productVariants.stock} END`,
-            sortOrder: vi,
-          },
-        })
-      variantCount += 1
-    }
-
-    if (garden) {
-      const gardenId = gardenIds.get(garden)
-      if (gardenId) {
-        await db.insert(gardenProducts).values({ gardenId, productId: row.id }).onConflictDoNothing()
-      }
-    }
-  }
-  console.log(`  products     ${ALL_PRODUCTS.length} (${variantCount} variants)`)
+  const { applied, variantCount } = await seedProducts(ALL_PRODUCTS, gardenIds)
+  console.log(`  products     ${ALL_PRODUCTS.length} (${variantCount} variants, ${applied} updated from seed)`)
 
   for (const post of JOURNAL) {
     await db

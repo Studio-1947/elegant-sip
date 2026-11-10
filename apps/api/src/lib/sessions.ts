@@ -29,6 +29,24 @@ redis.on('error', (err) => {
   console.error('[redis]', err.message)
 })
 
+/**
+ * For the readiness probe. Bounded, because with the offline queue on a ping
+ * to a dead server waits out every reconnect attempt instead of failing.
+ */
+export async function pingRedis(timeoutMs = 1_000): Promise<boolean> {
+  let timer: NodeJS.Timeout | undefined
+  const timeout = new Promise<false>((resolve) => {
+    timer = setTimeout(() => resolve(false), timeoutMs)
+  })
+  try {
+    return await Promise.race([redis.ping().then((reply) => reply === 'PONG'), timeout])
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export interface SessionData {
   userId: string
   email: string
@@ -147,13 +165,5 @@ export function sessionCookieOptions(hostname: string) {
     secure: site.https || crossSite,
     path: '/',
     maxAge: SESSION_TTL_SECONDS,
-  }
-}
-
-export async function pingRedis(): Promise<boolean> {
-  try {
-    return (await redis.ping()) === 'PONG'
-  } catch {
-    return false
   }
 }

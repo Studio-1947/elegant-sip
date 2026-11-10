@@ -1,4 +1,5 @@
 import type { OrderView } from './api'
+import { formatDayMonth } from './dates'
 
 /** Customer-facing wording for courier shipment states. */
 export const SHIPMENT_LABELS: Record<string, string> = {
@@ -26,7 +27,7 @@ export function shipmentSummary(order: Pick<OrderView, 'status' | 'shipment'>): 
   if (!shipment || shipment.status === 'delivered' || ['delivered', 'cancelled', 'refunded'].includes(order.status)) return null
   const expected =
     shipment.expectedDeliveryAt && !isShipmentProblem(shipment.status)
-      ? ` · expected ${new Date(shipment.expectedDeliveryAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+      ? ` · expected ${formatDayMonth(shipment.expectedDeliveryAt)}`
       : ''
   return `${shipmentLabel(shipment.status)}${expected}`
 }

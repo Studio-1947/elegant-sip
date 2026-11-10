@@ -78,7 +78,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   useEffect(() => {
     if (!product) return
     const shown = getDefaultVariant(product)
-    track('view_item', { product: product.slug, ...(shown && !comingSoon ? { value: shown.price } : {}) })
+    track('view_item', { product: product.slug, name: product.name, ...(shown && !comingSoon ? { variant: shown.size, value: shown.price } : {}) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.slug])
 
@@ -223,7 +223,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       quantity,
     )
     showToast(`${product.name} added to your cart`)
-    track('add_to_cart', { product: product.slug, quantity, value: activeVariant.price * quantity, source: 'product_detail' })
+    track('add_to_cart', { product: product.slug, name: product.name, variant: activeVariant.size, quantity, value: activeVariant.price * quantity, source: 'product_detail' })
     setTimeout(() => {
       setIsAdding(false)
       setIsAdded(true)
@@ -238,7 +238,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
-    track('add_to_cart', { product: product.slug, quantity, value: activeVariant.price * quantity, source: 'product_detail_buy_now' })
+    track('add_to_cart', { product: product.slug, name: product.name, variant: activeVariant.size, quantity, value: activeVariant.price * quantity, source: 'product_detail_buy_now' })
     navigate('/checkout')
   }
 

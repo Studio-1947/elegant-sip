@@ -12,6 +12,9 @@ import { z } from 'zod'
 const blankAsUnset = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => (typeof value === 'string' && value.trim() === '' ? undefined : value), schema.optional())
 
+/** Also docker-compose.prod.yml's fallback, so "set to this" counts as unset. */
+export const DEFAULT_MAIL_FROM = 'Elegant Sip <orders@elegantsip.in>'
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
@@ -24,7 +27,7 @@ const envSchema = z.object({
   /* Email. Without SMTP_URL the transport logs instead of sending and reports
      delivered:false — so the UI can never claim a message was sent. */
   SMTP_URL: z.string().optional(),
-  MAIL_FROM: z.string().default('Elegant Sip <orders@elegantsip.in>'),
+  MAIL_FROM: z.string().default(DEFAULT_MAIL_FROM),
   CONTACT_INBOX: z.string().default('elegantsipdarjeeling@gmail.com'),
 
   /* GST. Invoices are generated either way, but without a GSTIN the document
@@ -113,6 +116,15 @@ const envSchema = z.object({
    * long — a safety net for missed webhooks. 0 turns it off.
    */
   SHIPMENT_SYNC_MINUTES: z.coerce.number().int().min(0).max(24 * 60).default(180),
+
+  /*
+   * Server watchdog (lib/watchdog.ts), production only: emails CONTACT_INBOX
+   * about a nearly full disk or failed backups. OPS_STATUS_DIR is where the
+   * backup containers leave their status files; unset skips the backup checks.
+   */
+  WATCHDOG_MINUTES: z.coerce.number().int().min(0).max(24 * 60).default(30),
+  DISK_ALERT_PERCENT: z.coerce.number().min(1).max(90).default(15),
+  OPS_STATUS_DIR: blankAsUnset(z.string()),
 })
 
 export type Env = z.infer<typeof envSchema>
@@ -151,6 +163,11 @@ function load(): Env {
       console.error('Invalid environment configuration:\n  PAYMENT_PROVIDER: production allows razorpay or disabled\n')
       process.exit(1)
     }
+    // The fake courier invents AWBs; real orders would be "shipped" with nothing booked.
+    if (value.SHIPPING_PROVIDER === 'fake') {
+      console.error('Invalid environment configuration:\n  SHIPPING_PROVIDER: production allows shiprocket or manual\n')
+      process.exit(1)
+    }
     if (value.PAYMENT_PROVIDER === 'razorpay') {
       const missing = (['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'] as const).filter(
         (key) => !value[key],
@@ -165,6 +182,33 @@ function load(): Env {
 }
 
 export const env = load()
+
+/**
+ * Email problems worth shouting about at boot but not worth refusing to boot
+ * over: a shop that cannot start is worse than one whose receipts are logged
+ * instead of sent. `rawMailFrom` is the unparsed variable, before the default.
+ */
+export function emailConfigIssues(
+  config: Pick<Env, 'NODE_ENV' | 'SMTP_URL' | 'PAYMENT_PROVIDER'>,
+  rawMailFrom: string | undefined,
+): { level: 'error' | 'warn'; message: string }[] {
+  if (config.NODE_ENV !== 'production') return []
+  const issues: { level: 'error' | 'warn'; message: string }[] = []
+  if (!config.SMTP_URL?.trim() && config.PAYMENT_PROVIDER === 'razorpay') {
+    issues.push({
+      level: 'error',
+      message:
+        'EMAIL NOT CONFIGURED: SMTP_URL is unset while taking real payments. Order confirmations, password resets and sign-up links are logged, not sent.',
+    })
+  }
+  if (!rawMailFrom?.trim() || rawMailFrom.trim() === DEFAULT_MAIL_FROM) {
+    issues.push({
+      level: 'warn',
+      message: `MAIL_FROM is unset, so mail goes out as "${DEFAULT_MAIL_FROM}". Unless the SMTP provider is authorised to send for that domain (SPF/DKIM), receiving servers may reject it under DMARC.`,
+    })
+  }
+  return issues
+}
 
 export const isProduction = env.NODE_ENV === 'production'
 

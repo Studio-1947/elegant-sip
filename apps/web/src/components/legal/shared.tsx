@@ -8,6 +8,13 @@ export const CONTACT_EMAIL = 'elegantsipdarjeeling@gmail.com'
 export const WHATSAPP = '+91 75839 95294'
 export const INSTAGRAM = '@elegantsip_darjeeling'
 
+/**
+ * India's e-commerce rules require the grievance officer's name and designation
+ * on the site. Fill this in (e.g. { name: 'Full Name', designation: 'Founder' });
+ * until then the policy shows the contact address only.
+ */
+export const GRIEVANCE_OFFICER: { name: string; designation?: string } | null = null
+
 export const listClass = 'list-disc pl-5 space-y-2'
 
 export function LegalLayout({ label, title, updated, children }: { label: string; title: ReactNode; updated: string; children: ReactNode }) {

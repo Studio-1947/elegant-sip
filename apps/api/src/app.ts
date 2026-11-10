@@ -13,7 +13,7 @@ import {
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
 import { env, isProduction } from './env.js'
-import { registerErrorHandler } from './lib/problem.js'
+import { rateLimitError, registerErrorHandler } from './lib/problem.js'
 import { SESSION_COOKIE, readSession } from './lib/sessions.js'
 import { authRoutes } from './routes/auth.js'
 import { healthRoutes } from './routes/health.js'
@@ -29,6 +29,7 @@ import { journalRoutes } from './routes/journal.js'
 import { pricingRoutes } from './routes/pricing.js'
 import { otpRoutes } from './routes/otp.js'
 import { pincodeRoutes } from './routes/pincode.js'
+import { cspReportRoutes } from './routes/csp.js'
 
 function hasPinoPretty(): boolean {
   try {
@@ -114,6 +115,8 @@ export async function buildApp(): Promise<FastifyInstance> {
      * server rather than in-process.
      */
     global: env.NODE_ENV !== 'test',
+    // A 429 is an RFC 9457 problem like every other error, worded for customers.
+    errorResponseBuilder: rateLimitError,
   })
 
   await app.register(swagger, {
@@ -149,6 +152,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         { name: 'Admin', description: 'Shop operations. Every route requires the admin role.' },
         { name: 'Pricing', description: 'Server-authoritative money. The client displays; it never calculates.' },
         { name: 'Locations', description: 'Postal locality suggestions for delivery checkout.' },
+        { name: 'Reports', description: 'Reports browsers send on their own, such as CSP violations.' },
       ],
     },
     transform: jsonSchemaTransform,
@@ -175,6 +179,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(accountRoutes, { prefix: '/v1' })
   await app.register(profileRoutes, { prefix: '/v1' })
   await app.register(adminRoutes, { prefix: '/v1' })
+  // Caddy's Content-Security-Policy names this exact path: /api/v1/csp-report.
+  await app.register(cspReportRoutes, { prefix: '/v1' })
 
   return app
 }

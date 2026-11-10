@@ -60,7 +60,12 @@ export const otpChallenges = pgTable(
     consumedAt: timestamp('consumed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('otp_challenges_phone_idx').on(t.phone), index('otp_challenges_user_idx').on(t.userId)],
+  (t) => [
+    // Per-number rate limits count recent challenges by phone and age; this
+    // index also serves plain phone lookups, so it replaces the phone-only one.
+    index('otp_challenges_phone_created_idx').on(t.phone, t.createdAt),
+    index('otp_challenges_user_idx').on(t.userId),
+  ],
 )
 
 /**
@@ -313,6 +318,13 @@ export const shipments = pgTable(
     lastError: text('last_error'),
     events: jsonb('events').$type<ShipmentEvent[]>().notNull().default([]),
     lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+    /**
+     * Fresh bookings of this order with the courier (1 = the first). Shiprocket
+     * needs a new order_id for each, so attempts after the first are suffixed.
+     */
+    bookingAttempt: integer('booking_attempt').notNull().default(0),
+    /** Lease held while a booking or cancellation talks to the courier; stale after a few minutes. */
+    bookingStartedAt: timestamp('booking_started_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

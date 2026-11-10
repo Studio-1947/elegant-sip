@@ -30,10 +30,18 @@ import { env } from '../env.js'
 
 export const HSN_TEA = '0902'
 
-/** Indian financial year for a date: April–March, expressed as "2026-27". */
+/** India is UTC+5:30 all year; it has no daylight saving. */
+const IST_OFFSET_MS = 330 * 60_000
+
+/**
+ * Indian financial year for a date: April–March, expressed as "2026-27".
+ * Decided on the Indian calendar, not UTC's — an invoice issued at 00:30 IST
+ * on 1 April is still 31 March in UTC, but belongs to the new year's series.
+ */
 export function financialYearOf(date: Date): string {
-  const year = date.getUTCFullYear()
-  const startYear = date.getUTCMonth() >= 3 ? year : year - 1
+  const ist = new Date(date.getTime() + IST_OFFSET_MS)
+  const year = ist.getUTCFullYear()
+  const startYear = ist.getUTCMonth() >= 3 ? year : year - 1
   return `${startYear}-${String((startYear + 1) % 100).padStart(2, '0')}`
 }
 

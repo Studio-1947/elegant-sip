@@ -1,18 +1,25 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { api, ApiClientError, type InvoiceView, type OrderView } from '../lib/api'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { api, ApiClientError, type OrderView } from '../lib/api'
 import { SHIPPING_METHODS } from '../lib/pricing'
 import { formatINR } from '../lib/currency'
 import { Link, useDocumentMeta } from '../lib/router'
 import { useAuth } from './AuthContext'
+import { useUi } from './UiContext'
+import { openPrintWindow, POPUP_BLOCKED_MESSAGE, writePrintDocument } from '../lib/printWindow'
+import { invoiceHtml } from '../lib/invoicePrint'
 import { loadRazorpay } from '../lib/razorpay'
 import { isShipmentProblem, shipmentLabel } from '../lib/shipment'
-import { track } from '../lib/analytics'
+import { purchaseProps, track } from '../lib/analytics'
+import { takePendingPurchase } from '../lib/pendingPurchase'
+import { formatDate, formatDateTime, formatShortDate } from '../lib/dates'
 
 export default function OrderPage({ id }: { id?: string }) {
   const [order, setOrder] = useState<OrderView | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const { openLogin } = useUi()
+  const [invoiceError, setInvoiceError] = useState<string | null>(null)
   const [requestType, setRequestType] = useState<'cancellation' | 'return'>('return')
   const [requestReason, setRequestReason] = useState('')
   const [requestMessage, setRequestMessage] = useState<string | null>(null)
@@ -20,12 +27,16 @@ export default function OrderPage({ id }: { id?: string }) {
   const [loadingInvoice, setLoadingInvoice] = useState(false)
   const [paying, setPaying] = useState(false)
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
+  /** Latest loaded status, read by the poll without re-running the load effect. */
+  const statusRef = useRef<OrderView['status'] | null>(null)
 
   useEffect(() => {
     if (!id) {
       setLoading(false)
       return
     }
+    // Orders belong to accounts: wait until we know who is signed in.
+    if (authLoading) return
     let cancelled = false
     setLoading(true)
     const guestAccessToken = sessionStorage.getItem(`elegant_sip_order_access_${id}`)
@@ -34,6 +45,11 @@ export default function OrderPage({ id }: { id?: string }) {
         .get(id, guestAccessToken)
         .then((o) => {
           if (cancelled) return
+          // A payment the bank confirmed after checkout (webhook) still counts as a purchase.
+          if (o.status !== 'pending_payment' && o.status !== 'cancelled' && (statusRef.current === 'pending_payment' || takePendingPurchase(o.number))) {
+            track('purchase', purchaseProps(o))
+          }
+          statusRef.current = o.status
           setOrder(o)
           setError(null)
         })
@@ -47,13 +63,14 @@ export default function OrderPage({ id }: { id?: string }) {
     // A payment gateway webhook may arrive after the customer returns from its
     // hosted checkout. Poll only while payment is pending, then stop forever.
     const poll = window.setInterval(() => {
-      if (document.visibilityState === 'visible' && order?.status === 'pending_payment') void load()
+      if (document.visibilityState === 'visible' && statusRef.current === 'pending_payment') void load()
     }, 5_000)
     return () => {
       cancelled = true
       window.clearInterval(poll)
     }
-  }, [id, order?.status])
+    // Signing in from the "sign in to view" prompt loads the order without a reload.
+  }, [id, user?.id, authLoading])
 
   useDocumentMeta(
     order ? `Order ${order.number} | Elegant Sip` : 'Order not found | Elegant Sip',
@@ -65,6 +82,25 @@ export default function OrderPage({ id }: { id?: string }) {
     return (
       <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6 text-center">
         <p className="text-sm text-[#4a584a]" aria-busy="true">Loading your order…</p>
+      </div>
+    )
+  }
+
+  if (!order && !user) {
+    // Email links land here; a signed-out customer needs a way in, not "not found".
+    return (
+      <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6 text-center">
+        <h1 className="text-3xl font-bold mb-4">Sign in to view this order</h1>
+        <p className="text-sm text-[#4a584a] mb-8 max-w-md mx-auto">
+          Sign in with the account you used at checkout to see order {id ? <span className="font-mono">{id}</span> : 'details'}, its tracking and invoice.
+        </p>
+        <button
+          type="button"
+          onClick={openLogin}
+          className="inline-block bg-[#1b261b] hover:bg-[#2b3a2b] text-white text-xs font-bold tracking-widest uppercase py-3 px-8 rounded-lg transition-colors cursor-pointer"
+        >
+          Sign in
+        </button>
       </div>
     )
   }
@@ -85,11 +121,7 @@ export default function OrderPage({ id }: { id?: string }) {
 
   const method = SHIPPING_METHODS.find((m) => m.id === order.shippingMethod)
   const taxAddedOnTop = order.tax > 0 && order.total === order.subtotal - order.discount + order.shippingFee + order.tax
-  const placedOn = new Date(order.placedAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  const placedOn = formatDate(order.placedAt)
   const canRequestService = Boolean(user && ['paid', 'packed', 'shipped', 'delivered'].includes(order.status))
 
   const submitServiceRequest = async (event: FormEvent<HTMLFormElement>) => {
@@ -137,7 +169,7 @@ export default function OrderPage({ id }: { id?: string }) {
             .then(({ status }) => {
               if (status === 'paid') {
                 setOrder({ ...order, status: 'paid', paidAt: new Date().toISOString() })
-                track('purchase', { order: order.number, value: order.total, items: order.items.length })
+                track('purchase', purchaseProps(order))
               }
               else setPaymentNotice('Payment received and waiting for your bank to confirm. This page will update shortly.')
             })
@@ -157,13 +189,21 @@ export default function OrderPage({ id }: { id?: string }) {
   }
 
   const printInvoice = async () => {
+    // Open the window during the click itself; pop-up blockers refuse one opened after the download.
+    const popup = openPrintWindow()
+    if (!popup) {
+      setInvoiceError(POPUP_BLOCKED_MESSAGE)
+      return
+    }
+    setInvoiceError(null)
     setLoadingInvoice(true)
     try {
       const guestAccessToken = sessionStorage.getItem(`elegant_sip_order_access_${order.number}`)
       const { invoice } = await api.orders.invoice(order.number, guestAccessToken)
-      openInvoicePrint(invoice)
+      writePrintDocument(popup, invoiceHtml(invoice))
     } catch (cause) {
-      setError(cause instanceof ApiClientError ? cause.message : 'Your invoice is not available yet.')
+      popup.close()
+      setInvoiceError(cause instanceof ApiClientError ? cause.message : 'Your invoice is not available yet.')
     } finally {
       setLoadingInvoice(false)
     }
@@ -179,7 +219,7 @@ export default function OrderPage({ id }: { id?: string }) {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
             <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-2">Order</span>
-            <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight">{order.number}</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight [overflow-wrap:anywhere]">{order.number}</h1>
           </div>
           <p className="text-xs font-mono text-[#4a584a]">Placed {placedOn}</p>
         </div>
@@ -211,7 +251,8 @@ export default function OrderPage({ id }: { id?: string }) {
             <h2 className="text-sm font-bold uppercase tracking-wide">Order timeline</h2>
             {['paid', 'packed', 'shipped', 'delivered'].includes(order.status) && <button onClick={() => void printInvoice()} disabled={loadingInvoice} className="rounded-full border border-[#1b261b]/20 px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider hover:border-[#8bb56e] disabled:opacity-50">{loadingInvoice ? 'Loading…' : 'Invoice / Print PDF'}</button>}
           </div>
-          <ol className="mt-5 space-y-4">{timelineFor(order).map((event) => <li key={event.label} className="flex gap-3 text-xs"><span className={`mt-0.5 h-3 w-3 rounded-full border-2 ${event.complete ? 'border-[#4a7333] bg-[#8bb56e]' : 'border-[#1b261b]/20 bg-white'}`} /><div><p className={event.complete ? 'font-bold text-[#1b261b]' : 'text-[#4a584a]'}>{event.label}</p><p className="mt-0.5 text-[#4a584a]">{event.date ? new Date(event.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : event.detail}</p></div></li>)}</ol>
+          {invoiceError && <p role="alert" className="mt-3 text-xs text-red-700">{invoiceError}</p>}
+          <ol className="mt-5 space-y-4">{timelineFor(order).map((event) => <li key={event.label} className="flex gap-3 text-xs"><span className={`mt-0.5 h-3 w-3 rounded-full border-2 ${event.complete ? 'border-[#4a7333] bg-[#8bb56e]' : 'border-[#1b261b]/20 bg-white'}`} /><div><p className={event.complete ? 'font-bold text-[#1b261b]' : 'text-[#4a584a]'}>{event.label}</p><p className="mt-0.5 text-[#4a584a]">{event.date ? formatDateTime(event.date) : event.detail}</p></div></li>)}</ol>
         </div>
 
         {order.shipment && (
@@ -234,9 +275,9 @@ export default function OrderPage({ id }: { id?: string }) {
               <p><span className="font-bold text-[#1b261b]">Courier:</span> {order.shipment.courierName ?? 'Assigned shortly'}</p>
               <p><span className="font-bold text-[#1b261b]">AWB:</span> <span className="font-mono">{order.shipment.awb}</span></p>
               {order.shipment.deliveredAt ? (
-                <p><span className="font-bold text-[#1b261b]">Delivered:</span> {new Date(order.shipment.deliveredAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
+                <p><span className="font-bold text-[#1b261b]">Delivered:</span> {formatShortDate(order.shipment.deliveredAt)}</p>
               ) : order.shipment.expectedDeliveryAt && (
-                <p><span className="font-bold text-[#1b261b]">Expected by:</span> {new Date(order.shipment.expectedDeliveryAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
+                <p><span className="font-bold text-[#1b261b]">Expected by:</span> {formatShortDate(order.shipment.expectedDeliveryAt)}</p>
               )}
             </div>
             {order.shipment.events.length > 0 && (
@@ -244,7 +285,7 @@ export default function OrderPage({ id }: { id?: string }) {
                 {[...order.shipment.events].reverse().map((event) => (
                   <li key={`${event.at}-${event.status}`} className="text-xs">
                     <p className="font-bold text-[#1b261b]">{event.status}{event.location ? ` · ${event.location}` : ''}</p>
-                    <p className="mt-0.5 text-[#4a584a]">{new Date(event.at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                    <p className="mt-0.5 text-[#4a584a]">{formatDateTime(event.at)}</p>
                   </li>
                 ))}
               </ol>
@@ -346,17 +387,7 @@ function timelineFor(order: OrderView) {
     { label: 'Order placed', complete: true, date: order.placedAt, detail: '' },
     { label: 'Payment confirmed', complete: paid, date: order.paidAt, detail: paid ? 'Payment confirmed.' : 'Awaiting secure payment confirmation.' },
     { label: 'Packed', complete: packed, date: null, detail: packed ? 'Your teas have been packed.' : 'We will pack your order next.' },
-    { label: 'Shipped', complete: shipped, date: order.shippedAt, detail: shipped ? (order.tracking?.number ? `Tracking: ${order.tracking.number}` : 'With the courier.') : 'Tracking will appear here when dispatched.' },
-    { label: 'Delivered', complete: delivered, date: delivered ? (order.shipment?.deliveredAt ?? null) : null, detail: delivered ? 'Delivered.' : order.shipment?.expectedDeliveryAt ? `Expected by ${new Date(order.shipment.expectedDeliveryAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}.` : 'Awaiting delivery confirmation.' },
+    { label: 'Shipped', complete: shipped, date: order.shippedAt, detail: shipped ? (order.tracking?.number ? `Tracking: ${order.tracking.number}` : 'With the courier.') : order.tracking?.number ? `Courier booked (tracking ${order.tracking.number}), waiting for pickup.` : 'Tracking will appear here when dispatched.' },
+    { label: 'Delivered', complete: delivered, date: delivered ? (order.shipment?.deliveredAt ?? null) : null, detail: delivered ? 'Delivered.' : order.shipment?.expectedDeliveryAt && !isShipmentProblem(order.shipment.status) ? `Expected by ${formatShortDate(order.shipment.expectedDeliveryAt)}.` : 'Awaiting delivery confirmation.' },
   ]
-}
-
-function openInvoicePrint(invoice: InvoiceView) {
-  const popup = window.open('', '_blank', 'noopener,noreferrer,width=720,height=820')
-  if (!popup) return
-  const safe = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character]!)
-  const taxLines = [["CGST", invoice.totals.cgst], ["SGST", invoice.totals.sgst], ["IGST", invoice.totals.igst]].filter(([, value]) => value).map(([label, value]) => `<tr><td class="muted">Includes ${label} (${invoice.taxRatePercent / (label === 'IGST' ? 1 : 2)}%)</td><td class="right muted">${safe(value!)}</td></tr>`).join('')
-  // eslint-disable-next-line no-useless-escape -- preserves a literal closing script tag in generated print HTML.
-  popup.document.write(`<!doctype html><title>Invoice ${safe(invoice.number)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#182518}h1{font-size:24px}table{border-collapse:collapse;width:100%;margin-top:18px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left}.right{text-align:right}.muted{color:#526052;font-size:12px}</style><h1>Elegant Sip — ${invoice.isTaxInvoice ? 'Tax Invoice' : 'Provisional Invoice'}</h1><p><b>${safe(invoice.number)}</b><br><span class="muted">Issued ${safe(new Date(invoice.issuedAt).toLocaleDateString('en-IN'))} · HSN ${safe(invoice.hsn)}</span></p><p><b>Bill to</b><br>${safe(invoice.buyer.name)}<br>${safe(invoice.buyer.line1)}<br>${safe(invoice.buyer.city)}, ${safe(invoice.buyer.state ?? '')} ${safe(invoice.buyer.postalCode)}</p><table><thead><tr><th>Description</th><th>Qty</th><th class="right">Amount</th></tr></thead><tbody>${invoice.lines.map((line) => `<tr><td>${safe(line.description)}</td><td>${line.quantity}</td><td class="right">${safe(line.lineTotal)}</td></tr>`).join('')}</tbody></table><table><tbody><tr><td>Subtotal</td><td class="right">${safe(invoice.totals.subtotal)}</td></tr><tr><td>Shipping</td><td class="right">${safe(invoice.totals.shipping)}</td></tr><tr><td><b>Total</b></td><td class="right"><b>${safe(invoice.totals.total)}</b></td></tr>${taxLines}</tbody></table><script>window.onload=()=>window.print()<\/script>`)
-  popup.document.close()
 }

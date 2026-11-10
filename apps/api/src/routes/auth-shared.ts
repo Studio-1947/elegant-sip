@@ -56,6 +56,13 @@ export const PLACEHOLDER_EMAIL_DOMAIN = '@whatsapp.elegantsip.invalid'
 export const PLACEHOLDER_NAME = 'Tea Lover'
 export const isPlaceholderEmail = (email: string) => email.toLowerCase().endsWith('.invalid')
 
+/**
+ * An address a person may claim as their own. `.invalid` is reserved for the
+ * stand-ins above: letting someone register one would let them take a WhatsApp
+ * number's placeholder first and block that number from signing up.
+ */
+export const ownEmailSchema = emailSchema.refine((email) => !isPlaceholderEmail(email), 'Enter your own email address.')
+
 export const publicUserSchema = z.object({
   id: z.string().uuid(),
   email: z.string(),

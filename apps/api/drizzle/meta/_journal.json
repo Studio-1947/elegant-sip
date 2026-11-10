@@ -85,6 +85,27 @@
       "when": 1794233517833,
       "tag": "0011_variant_compare_at_price",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794290534715,
+      "tag": "0012_otp_rate_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794290583280,
+      "tag": "0013_shipment_booking_lease",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794291517225,
+      "tag": "0014_seed_state",
+      "breakpoints": true
     }
   ]
 }
