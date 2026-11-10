@@ -50,6 +50,23 @@ jobs:
           git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
           git checkout --detach "$DEPLOY_SHA"
 
+          # A dump of the live database before the new release migrates it, so a
+          # bad migration can be rolled back. Kept apart from the nightly dumps
+          # (the newest 5), and a failed dump stops the deploy before anything changes.
+          if docker compose -f docker-compose.prod.yml ps --status running --services | grep -qx backup; then
+            docker compose -f docker-compose.prod.yml exec -T backup sh -c '
+              set -e
+              umask 077
+              mkdir -p /backups/predeploy
+              file="/backups/predeploy/elegantsip-$(date +%Y-%m-%d-%H%M%S).dump"
+              pg_dump --no-owner --format=custom --file="$file"
+              echo "pre-deploy backup: $file"
+              ls -1t /backups/predeploy/*.dump | tail -n +6 | xargs -r rm -f
+            '
+          else
+            echo "backup service not running (first deploy?): skipping the pre-deploy dump"
+          fi
+
           docker compose -f docker-compose.prod.yml up -d --build
           docker compose -f docker-compose.prod.yml ps
 

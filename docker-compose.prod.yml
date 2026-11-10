@@ -16,8 +16,17 @@
 
 name: elegantsip-prod
 
+# Docker keeps container logs forever by default; a busy API would fill the
+# disk and stop Postgres. Each service keeps at most 5 × 10 MB.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '5'
+
 services:
   postgres:
+    logging: *default-logging
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
@@ -33,6 +42,7 @@ services:
       retries: 10
 
   redis:
+    logging: *default-logging
     image: redis:7-alpine
     restart: unless-stopped
     # Sessions only. Losing Redis signs everyone out; it never loses an order,
@@ -45,6 +55,7 @@ services:
       retries: 10
 
   api:
+    logging: *default-logging
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -110,6 +121,7 @@ services:
       - '4000'
 
   web:
+    logging: *default-logging
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -143,6 +155,7 @@ services:
   # Nightly dump at 02:30, fourteen kept. Small, unglamorous, and the only
   # reason a broken server is an inconvenience rather than a lost business.
   backup:
+    logging: *default-logging
     image: postgres:17-alpine
     restart: unless-stopped
     depends_on:

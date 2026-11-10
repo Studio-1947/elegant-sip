@@ -5,6 +5,10 @@
 #
 # Then: API http://localhost:4000 · Swagger http://localhost:4000/docs
 #       Mail http://localhost:8025 · Postgres localhost:5432
+#
+# Every port binds to 127.0.0.1 only. Docker-published ports bypass the
+# firewall, so running this file on a server by mistake must never expose the
+# development database (dev password) or Redis (no password) to the internet.
 
 name: elegantsip
 
@@ -18,7 +22,7 @@ services:
       POSTGRES_DB: elegantsip
     ports:
       # Set POSTGRES_PORT in the root .env when 5432 is taken by a local install.
-      - '${POSTGRES_PORT:-5432}:5432'
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -34,7 +38,7 @@ services:
     restart: unless-stopped
     command: ['redis-server', '--save', '', '--appendonly', 'no']
     ports:
-      - '6379:6379'
+      - '127.0.0.1:6379:6379'
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
@@ -47,8 +51,8 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - '8025:8025' # web UI
-      - '1025:1025' # SMTP
+      - '127.0.0.1:8025:8025' # web UI
+      - '127.0.0.1:1025:1025' # SMTP
     environment:
       MP_MAX_MESSAGES: 500
 
@@ -104,7 +108,7 @@ services:
       SMTP_URL: ${SMTP_URL:-smtp://mailpit:1025}
       MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.in>}
     ports:
-      - '4000:4000'
+      - '127.0.0.1:4000:4000'
 
 volumes:
   postgres-data:
