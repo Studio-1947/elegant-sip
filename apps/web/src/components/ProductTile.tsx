@@ -42,7 +42,7 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
       1,
     )
     showToast(`${product.name} added to your cart`)
-    track('add_to_cart', { product: product.slug, quantity: 1, source: 'product_tile' })
+    track('add_to_cart', { product: product.slug, name: product.name, variant: variant.size, quantity: 1, value: variant.price, source: 'product_tile' })
     setAdded(true)
     timer.current = window.setTimeout(() => setAdded(false), 2500)
   }
