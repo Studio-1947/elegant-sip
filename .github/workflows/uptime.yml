@@ -1,0 +1,45 @@
+name: Uptime
+
+# Checks the live site from outside, every 10 minutes. A failed run is the
+# alert: GitHub emails a failed scheduled run to whoever last changed the
+# `cron` line below (check Settings → Notifications → Actions on GitHub).
+#
+# The server's own watchdog (apps/api/src/lib/watchdog.ts) emails about a
+# full disk or failed backups, but it cannot report the server being down.
+# This can. GitHub may run scheduled jobs a few minutes late, and pauses them
+# after 60 days without commits; re-enable from the Actions tab if that happens.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Storefront and API answer
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Repository variable UPTIME_URL overrides, e.g. for a staging check.
+      SITE: ${{ vars.UPTIME_URL || 'https://elegantsip.in' }}
+    steps:
+      - name: Check the home page and /api/ready (database and Redis)
+        run: |
+          fail=0
+          for path in / /api/ready; do
+            # Three tries 30 s apart, so the restart during a deploy is not
+            # reported as an outage. An expired certificate fails too.
+            if code=$(curl --silent --show-error --fail --output /dev/null --write-out '%{http_code}' \
+                --max-time 20 --retry 2 --retry-delay 30 --retry-all-errors "$SITE$path"); then
+              echo "up    $code  $SITE$path"
+            else
+              echo "::error::DOWN  $SITE$path (HTTP ${code:-no answer})"
+              fail=1
+            fi
+          done
+          exit $fail

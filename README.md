@@ -383,8 +383,22 @@ The database commands assume the default `POSTGRES_USER` and `POSTGRES_DB` of
 #### Backups and restore
 
 A dump is taken nightly at 02:30 (`BACKUP_TIMEZONE`, default Asia/Kolkata) into
-`/var/www/elegant-sip/backups`, keeping 14. Copy them off the server regularly
-and keep the folder owner-only (`chmod 700 backups`).
+`/var/www/elegant-sip/backups`, keeping 14. Keep the folder owner-only
+(`chmod 700 backups`).
+
+**Off-site copies.** With the `OFFSITE_` settings in `.env` filled in (see
+`.env.prod.example`), the `offsite` service encrypts every dump and copies it
+to an S3-compatible bucket at start and nightly at 03:15, keeping
+`OFFSITE_KEEP_DAYS` (90). Until then the dumps exist only on this server.
+`dc logs offsite` shows each run. Keep `OFFSITE_ENCRYPT_PASSWORD` in a password
+manager as well: the copies cannot be decrypted without it.
+
+**Alerts.** The API emails `CONTACT_INBOX` when free disk drops under
+`DISK_ALERT_PERCENT` (15%), when a nightly backup fails or is over a day old,
+and when off-site copies fail or stop; a problem that lasts is repeated daily.
+That needs `SMTP_URL`. A site that is down entirely cannot email, so the
+*Uptime* GitHub workflow requests `/` and `/api/ready` every 10 minutes and a
+failed run emails whoever last edited its schedule.
 
 ```bash
 ls -lh /var/www/elegant-sip/backups
@@ -397,6 +411,23 @@ dc exec -T postgres pg_dump -U elegantsip -d elegantsip --no-owner --format=cust
 # Download to your computer (run on YOUR machine):
 scp deploy@187.127.185.82:/var/www/elegant-sip/backups/<file>.dump .
 ```
+
+Fetch an off-site copy (on the server, or any machine with Docker), using the
+same values as `.env`. Files keep their names with `.bin` added:
+
+```bash
+docker run --rm -v "$PWD:/out" -e P='<OFFSITE_ENCRYPT_PASSWORD>' \
+  -e RCLONE_CONFIG_OFFSITE_TYPE=s3 -e RCLONE_CONFIG_OFFSITE_PROVIDER=Cloudflare \
+  -e RCLONE_CONFIG_OFFSITE_ENDPOINT='<OFFSITE_S3_ENDPOINT>' -e RCLONE_CONFIG_OFFSITE_REGION=auto \
+  -e RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID='<key id>' -e RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY='<secret>' \
+  --entrypoint sh rclone/rclone:1.68.2 -c \
+  'rclone copy --crypt-remote "offsite:<OFFSITE_S3_BUCKET>" --crypt-filename-encryption off \
+     --crypt-directory-name-encryption=false --crypt-password "$(rclone obscure "$P")" \
+     :crypt:elegantsip-2026-11-09.dump /out'
+```
+
+Leave a space before `docker` so the passphrase stays out of shell history.
+Then restore it like any other dump.
 
 Restore replaces the live data, so stop the API first:
 

@@ -12,7 +12,8 @@
 #   · no Mailpit — mail is either really sent or honestly reported as not sent
 #   · no published database ports
 #   · secrets come from .env, never from this tracked file
-#   · a nightly database dump, kept for a fortnight
+#   · a nightly database dump, kept for a fortnight, and an encrypted copy of
+#     it off the server once OFFSITE_S3_BUCKET is set
 
 name: elegantsip-prod
 
@@ -126,6 +127,13 @@ services:
       SHIP_PACKAGE_BREADTH_CM: ${SHIP_PACKAGE_BREADTH_CM:-15}
       SHIP_PACKAGE_HEIGHT_CM: ${SHIP_PACKAGE_HEIGHT_CM:-10}
       SHIP_PACKAGING_WEIGHT_GRAMS: ${SHIP_PACKAGING_WEIGHT_GRAMS:-150}
+      # Emails CONTACT_INBOX about a nearly full disk or failed backups, read
+      # from the status files the backup and offsite services leave below.
+      OPS_STATUS_DIR: /ops-status
+      WATCHDOG_MINUTES: ${WATCHDOG_MINUTES:-30}
+      DISK_ALERT_PERCENT: ${DISK_ALERT_PERCENT:-15}
+    volumes:
+      - ops-status:/ops-status:ro
     expose:
       - '4000'
 
@@ -186,10 +194,15 @@ services:
       TZ: ${BACKUP_TIMEZONE:-Asia/Kolkata}
     volumes:
       - ./backups:/backups
+      - ops-status:/status
     entrypoint: ['/bin/sh', '-c']
     command:
       - |
         umask 077
+        # Timestamps (and the error, on failure) for the API's watchdog.
+        # World-readable: the API runs as a non-root user and they hold no data.
+        chmod 755 /status
+        status() { printf '%s\n%s\n' "$$(date +%s)" "$$2" > "/status/$$1.tmp" && chmod 644 "/status/$$1.tmp" && mv "/status/$$1.tmp" "/status/$$1"; }
         echo "backups: nightly at 02:30 ($$TZ), 14 kept in ./backups"
         while true; do
           now=$$(date +%s)
@@ -204,13 +217,94 @@ services:
           if pg_dump --no-owner --format=custom --file="/backups/elegantsip-$$stamp.dump" 2>/backups/last-error.log; then
             echo "backup ok: elegantsip-$$stamp.dump"
             rm -f /backups/last-error.log
+            status backup-ok ""
           else
             echo "BACKUP FAILED — see backups/last-error.log"
+            status backup-failed "$$(tail -c 400 /backups/last-error.log)"
           fi
           ls -1t /backups/*.dump 2>/dev/null | tail -n +15 | xargs -r rm -f
+        done
+
+  # An encrypted copy of ./backups in S3-compatible storage (Cloudflare R2,
+  # Backblaze B2, AWS S3…), so losing the server does not lose the business.
+  # Runs at start and nightly at 03:15, after the 02:30 dump. Copies only:
+  # nothing in the bucket is removed because it vanished from the server, and
+  # files older than OFFSITE_KEEP_DAYS are pruned only while new dumps keep
+  # arriving. Encrypted with OFFSITE_ENCRYPT_PASSWORD before upload; without
+  # that passphrase nothing is uploaded at all, because dumps hold customer
+  # names, addresses and phone numbers. Restore: README, "Backups and restore".
+  offsite:
+    logging: *default-logging
+    image: rclone/rclone:1.68.2
+    restart: unless-stopped
+    environment:
+      TZ: ${BACKUP_TIMEZONE:-Asia/Kolkata}
+      OFFSITE_S3_BUCKET: ${OFFSITE_S3_BUCKET:-}
+      OFFSITE_ENCRYPT_PASSWORD: ${OFFSITE_ENCRYPT_PASSWORD:-}
+      OFFSITE_KEEP_DAYS: ${OFFSITE_KEEP_DAYS:-90}
+      RCLONE_CONFIG_OFFSITE_TYPE: s3
+      RCLONE_CONFIG_OFFSITE_PROVIDER: ${OFFSITE_S3_PROVIDER:-Other}
+      RCLONE_CONFIG_OFFSITE_ENDPOINT: ${OFFSITE_S3_ENDPOINT:-}
+      RCLONE_CONFIG_OFFSITE_REGION: ${OFFSITE_S3_REGION:-auto}
+      RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID: ${OFFSITE_S3_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY: ${OFFSITE_S3_SECRET_ACCESS_KEY:-}
+      # The key may write objects without being allowed to create buckets.
+      RCLONE_CONFIG_OFFSITE_NO_CHECK_BUCKET: 'true'
+    volumes:
+      - ./backups:/backups:ro
+      - ops-status:/status
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        status() { printf '%s\n%s\n' "$$(date +%s)" "$$2" > "/status/$$1.tmp" && chmod 644 "/status/$$1.tmp" && mv "/status/$$1.tmp" "/status/$$1"; }
+        idle() { while true; do sleep 86400; done; }
+        if [ -z "$$OFFSITE_S3_BUCKET" ]; then
+          echo "off-site copies NOT CONFIGURED: backups stay on this server only. Set OFFSITE_S3_BUCKET in .env."
+          status offsite-off ""
+          idle
+        fi
+        if [ -z "$$OFFSITE_ENCRYPT_PASSWORD" ]; then
+          echo "OFF-SITE COPY REFUSED: set OFFSITE_ENCRYPT_PASSWORD. Customer data is never uploaded unencrypted."
+          status offsite-failed "OFFSITE_ENCRYPT_PASSWORD is not set, so nothing was uploaded."
+          idle
+        fi
+        # "vault" encrypts file contents on the way into the bucket. Names stay
+        # readable (they are only dates) so the right dump is easy to find.
+        export RCLONE_CONFIG_VAULT_TYPE=crypt
+        export RCLONE_CONFIG_VAULT_REMOTE="offsite:$$OFFSITE_S3_BUCKET"
+        export RCLONE_CONFIG_VAULT_FILENAME_ENCRYPTION=off
+        export RCLONE_CONFIG_VAULT_DIRECTORY_NAME_ENCRYPTION=false
+        export RCLONE_CONFIG_VAULT_PASSWORD="$$(rclone obscure "$$OFFSITE_ENCRYPT_PASSWORD")"
+        unset OFFSITE_ENCRYPT_PASSWORD
+        copy_off_site() {
+          if ! out=$$(rclone copy /backups vault: --include '*.dump' --log-level ERROR 2>&1); then
+            echo "OFF-SITE COPY FAILED: $$out"
+            status offsite-failed "$$out"
+            return
+          fi
+          # Prune only while fresh dumps are arriving, so a broken backup job
+          # can never age the last good copies out of the bucket.
+          if find /backups -maxdepth 1 -name '*.dump' -mtime -2 | grep -q .; then
+            rclone delete vault: --min-age "$${OFFSITE_KEEP_DAYS}d" --log-level ERROR 2>&1 || echo "off-site prune failed (copies are safe)"
+          fi
+          echo "off-site copy ok ($$OFFSITE_S3_BUCKET)"
+          status offsite-ok ""
+        }
+        echo "off-site copies: at start and nightly at 03:15 ($$TZ) to $$OFFSITE_S3_BUCKET, $${OFFSITE_KEEP_DAYS} days kept"
+        copy_off_site
+        while true; do
+          hour=$$(date +%H | sed 's/^0//')
+          minute=$$(date +%M | sed 's/^0//')
+          second=$$(date +%S | sed 's/^0//')
+          seconds_until=$$((3 * 3600 + 15 * 60 - hour * 3600 - minute * 60 - second))
+          if [ $$seconds_until -le 0 ]; then seconds_until=$$((seconds_until + 86400)); fi
+          sleep $$seconds_until
+          copy_off_site
         done
 
 volumes:
   postgres-data:
   caddy-data:
   caddy-config:
+  # Status files from backup/offsite for the API watchdog. Timestamps only.
+  ops-status:

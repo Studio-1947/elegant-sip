@@ -116,6 +116,15 @@ const envSchema = z.object({
    * long — a safety net for missed webhooks. 0 turns it off.
    */
   SHIPMENT_SYNC_MINUTES: z.coerce.number().int().min(0).max(24 * 60).default(180),
+
+  /*
+   * Server watchdog (lib/watchdog.ts), production only: emails CONTACT_INBOX
+   * about a nearly full disk or failed backups. OPS_STATUS_DIR is where the
+   * backup containers leave their status files; unset skips the backup checks.
+   */
+  WATCHDOG_MINUTES: z.coerce.number().int().min(0).max(24 * 60).default(30),
+  DISK_ALERT_PERCENT: z.coerce.number().min(1).max(90).default(15),
+  OPS_STATUS_DIR: blankAsUnset(z.string()),
 })
 
 export type Env = z.infer<typeof envSchema>
