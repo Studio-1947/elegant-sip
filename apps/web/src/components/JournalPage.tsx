@@ -26,7 +26,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
         // ISO 8601 — "March 12, 2026" is not a valid schema.org date.
         datePublished: article.publishedAt,
         dateModified: article.publishedAt,
-        wordCount: article.body.join(' ').split(/\s+/).length,
+        ...(article.body.length ? { wordCount: article.body.join(' ').split(/\s+/).length } : {}),
         articleSection: article.category,
         inLanguage: 'en-IN',
         author: { '@type': 'Organization', name: article.author, url: absoluteUrl('/about') },
@@ -58,7 +58,7 @@ export function JournalArticlePage({ id }: { id?: string }) {
     return (
       <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-40 pb-24 px-6 text-center">
         <h1 className="text-3xl font-bold mb-4">Article not found</h1>
-        <Link to="/journal" className="text-xs font-mono tracking-widest uppercase text-[#4a7333] hover:text-[#1b261b] transition-colors">
+        <Link to="/journal" className="inline-flex items-center min-h-[44px] text-xs font-mono tracking-widest uppercase text-[#4a7333] hover:text-[#1b261b] transition-colors">
           ← Back to the Journal
         </Link>
       </div>
@@ -70,27 +70,44 @@ export function JournalArticlePage({ id }: { id?: string }) {
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans pt-32 pb-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-3xl mx-auto">
-        <Link to="/journal" className="text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mb-8 inline-block">
+        <Link to="/journal" className="inline-flex items-center min-h-[44px] text-xs font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mb-6">
           ← Back to the Journal
         </Link>
 
         <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">{article.category}</span>
         <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-tight leading-[1.1] mb-6">{article.title}</h1>
-        <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-[#4a584a] uppercase tracking-wider mb-10">
+        {/* Each item carries its own leading dot, so a wrapped line never starts with a stray separator */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-mono text-[#4a584a] uppercase tracking-wider mb-10">
           <span>{article.author}</span>
-          <span className="w-1 h-1 rounded-full bg-[#8bb56e]" />
-          <span>{formatDate(article.publishedAt)}</span>
-          <span className="w-1 h-1 rounded-full bg-[#8bb56e]" />
-          <span>{article.readTime}</span>
+          <span className="inline-flex items-center gap-4">
+            <span className="w-1 h-1 rounded-full bg-[#8bb56e]" aria-hidden="true" />
+            {formatDate(article.publishedAt)}
+          </span>
+          {article.body.length > 0 && (
+            <span className="inline-flex items-center gap-4">
+              <span className="w-1 h-1 rounded-full bg-[#8bb56e]" aria-hidden="true" />
+              {article.readTime}
+            </span>
+          )}
         </div>
 
         <img src={article.imageSrc} srcSet={buildSrcSet(article.imageSrc)} sizes="(max-width: 768px) 100vw, 50vw" alt={article.imageAlt} width={1600} height={900} fetchPriority="high" className="w-full h-auto object-cover rounded-2xl border border-[#1b261b]/10 mb-10" />
 
-        <div className="space-y-6 text-sm md:text-base text-[#4a584a] leading-relaxed">
-          {article.body.map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
-        </div>
+        {article.body.length > 0 ? (
+          <div className="space-y-6 text-sm md:text-base text-[#4a584a] leading-relaxed">
+            {article.body.map((paragraph, i) => (
+              <p key={i}>{paragraph}</p>
+            ))}
+          </div>
+        ) : (
+          /* No body yet: show the summary and say so, rather than a blank gap or invented copy. */
+          <div className="space-y-6">
+            <p className="text-base md:text-lg text-[#1b261b] leading-relaxed">{article.excerpt}</p>
+            <p className="text-sm text-[#4a584a] bg-white border border-[#1b261b]/10 rounded-xl px-5 py-4">
+              The full article is being written and will be published here soon.
+            </p>
+          </div>
+        )}
 
         {others.length > 0 && (
           <div className="mt-20 border-t border-[#1b261b]/10 pt-12">
@@ -161,13 +178,13 @@ export default function JournalPage() {
         </p>
 
         {/* Category filter */}
-        <div className="flex flex-wrap gap-3 mb-12">
+        <div className="relative flex overflow-x-auto overflow-y-hidden no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap gap-3 mb-12">
           {categories.map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
               aria-pressed={category === c}
-              className={`text-xs font-bold tracking-wide py-2 px-5 rounded-full border transition-colors cursor-pointer ${category === c
+              className={`flex-shrink-0 whitespace-nowrap text-xs font-bold tracking-wide min-h-[44px] px-5 rounded-full border transition-colors cursor-pointer ${category === c
                   ? 'bg-[#1b261b] border-[#1b261b] text-white'
                   : 'bg-white border-[#1b261b]/10 text-[#1b261b] hover:border-[#8bb56e] hover:text-[#4a7333]'
                 }`}

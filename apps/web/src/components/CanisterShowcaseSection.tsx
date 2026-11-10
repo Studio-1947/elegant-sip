@@ -1,10 +1,18 @@
 import { useScrollReveal } from '../lib/useScrollReveal'
 import SkeletonImage from './SkeletonImage'
 import BlurText from './BlurText'
+import { Link } from '../lib/router'
 
 const EYEBROW = 'Single Origin'
 const PARAGRAPH =
   'Harvested from high-altitude estates in the mist-shrouded Darjeeling hills. Hand-plucked, gently processed, and curated to preserve the delicate, signature muscatel flavor profile in every cup.'
+
+/** Only claims the site already makes elsewhere. */
+const POINTS = [
+  { label: 'Hand‑plucked', icon: 'M12 21c-4.5-3-7.5-6.5-7.5-10.5A7.5 7.5 0 0112 3a7.5 7.5 0 017.5 7.5C19.5 14.5 16.5 18 12 21zm0-14v8' },
+  { label: 'Small lots', icon: 'M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m16.5 0h-16.5m16.5 0l-1.5-3h-13.5l-1.5 3M10 11.25h4' },
+  { label: 'Packed to order', icon: 'M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9' },
+]
 
 function Heading({ className }: { className: string }) {
   return (
@@ -20,13 +28,56 @@ export default function CanisterShowcaseSection() {
 
   return (
     <div className="w-full overflow-hidden">
-      {/* ── Phone: text only (the canister photo is desktop/tablet-only) ── */}
-      <div className="md:hidden px-6 pt-4 pb-12 bg-[#f9faf7]">
-        <span className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
-          {EYEBROW}
-        </span>
-        <Heading className="text-[#1b261b] text-4xl font-bold uppercase tracking-tight leading-[1.1] mb-4" />
-        <p className="text-[#4a584a] text-sm leading-relaxed">{PARAGRAPH}</p>
+      {/* ── Phone: the desktop photo, cropped to the hand and jar and faded into
+             the page, with the heading rising out of the fade as on desktop. ── */}
+      <div className="md:hidden pb-14 bg-[#f9faf7]">
+        {/* Heading sits top-left over the photo's pale backdrop (as on desktop);
+            the crop puts the jar right of centre so the two never collide. */}
+        <div className="relative pt-24">
+          <SkeletonImage
+            src="/tea1_1.webp"
+            alt="Elegant Sip first flush Darjeeling tea canister"
+            loading="lazy"
+            width={2560}
+            height={1440}
+            sizes="100vw"
+            className="w-full h-[20rem] object-cover object-[38%_45%]"
+          />
+          {/* Top and bottom fades melt the photo's white backdrop into the page */}
+          <div className="absolute inset-x-0 top-24 h-24 bg-gradient-to-b from-[#f9faf7] to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 -bottom-px h-28 bg-gradient-to-t from-[#f9faf7] to-transparent pointer-events-none" />
+
+          <div className="absolute top-6 left-6 right-6 z-10">
+            <span className="text-[#4a7333] text-[11px] font-mono font-bold tracking-[0.3em] uppercase block mb-3">
+              {EYEBROW}
+            </span>
+            <Heading className="text-[#1b261b] text-4xl font-bold uppercase tracking-tight leading-[1.05]" />
+          </div>
+        </div>
+
+        <div className="relative mt-2 px-6">
+
+        <ul className="grid grid-cols-3 gap-2 mb-7">
+          {POINTS.map((point) => (
+            <li key={point.label} className="flex flex-col items-center text-center gap-2 bg-white border border-[#1b261b]/10 rounded-xl px-1 py-3">
+              <svg className="w-5 h-5 text-[#4a7333]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d={point.icon} />
+              </svg>
+              <span className="text-[11px] font-semibold text-[#1b261b] leading-tight">{point.label}</span>
+            </li>
+          ))}
+        </ul>
+
+        <Link
+          to="/shop"
+          className="flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-[#1b261b] text-white text-xs font-bold tracking-widest uppercase active:scale-[0.99] transition-transform"
+        >
+          Explore the range
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          </svg>
+        </Link>
+        </div>
       </div>
 
       {/* ── Tablet: side-by-side, text left / jar right ── */}

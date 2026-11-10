@@ -47,7 +47,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Floral', 'Muscatel', 'Bright'],
     bodyLevel: 2,
     brewingGuide: {
-      temperature: '194°F / 90°C',
+      temperature: '90°C / 194°F',
       time: '3–4 minutes',
       steeps: '2–3',
       leafAmount: '1 tsp per 8 oz',
@@ -67,7 +67,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Honeyed', 'Malty', 'Smooth'],
     bodyLevel: 4,
     brewingGuide: {
-      temperature: '194°F / 90°C',
+      temperature: '90°C / 194°F',
       time: '3–4 minutes',
       steeps: '2–3',
       leafAmount: '1 tsp per 8 oz',
@@ -87,7 +87,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Fresh', 'Grassy', 'Clean finish'],
     bodyLevel: 2,
     brewingGuide: {
-      temperature: '176°F / 80°C',
+      temperature: '80°C / 176°F',
       time: '2–3 minutes',
       steeps: '3',
       leafAmount: '1 tsp per 8 oz',
@@ -107,7 +107,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Toasty', 'Nutty', 'Soft'],
     bodyLevel: 3,
     brewingGuide: {
-      temperature: '185°F / 85°C',
+      temperature: '85°C / 185°F',
       time: '2–3 minutes',
       steeps: '3',
       leafAmount: '1 tsp per 8 oz',
@@ -127,7 +127,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Delicate', 'Sweet', 'Light'],
     bodyLevel: 1,
     brewingGuide: {
-      temperature: '176°F / 80°C',
+      temperature: '80°C / 176°F',
       time: '4–5 minutes',
       steeps: '3–4',
       leafAmount: '2 tsp per 8 oz',
@@ -147,7 +147,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Soft', 'Sweet', 'Floral'],
     bodyLevel: 1,
     brewingGuide: {
-      temperature: '176°F / 80°C',
+      temperature: '80°C / 176°F',
       time: '3–4 minutes',
       steeps: '3',
       leafAmount: '2 tsp per 8 oz',
@@ -175,7 +175,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Floral', 'Muscatel', 'Layered'],
     bodyLevel: 2,
     brewingGuide: {
-      temperature: '194°F / 90°C',
+      temperature: '90°C / 194°F',
       time: '3–4 minutes',
       steeps: '2–3',
       leafAmount: '1½ tsp per 8 oz',
@@ -195,7 +195,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Muscatel', 'Fruity', 'Full'],
     bodyLevel: 4,
     brewingGuide: {
-      temperature: '203°F / 95°C',
+      temperature: '95°C / 203°F',
       time: '3–4 minutes',
       steeps: '2',
       leafAmount: '1 tsp per 8 oz',
@@ -215,7 +215,7 @@ export const NEW_RANGE = [
     tastingNotes: ['Mellow', 'Coppery', 'Smooth'],
     bodyLevel: 3,
     brewingGuide: {
-      temperature: '203°F / 95°C',
+      temperature: '95°C / 203°F',
       time: '3–4 minutes',
       steeps: '2',
       leafAmount: '1 tsp per 8 oz',

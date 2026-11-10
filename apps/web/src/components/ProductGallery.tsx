@@ -49,7 +49,7 @@ export default function ProductGallery({ product }: { product: Product }) {
       </div>
 
       {many && (
-        <div className="relative mt-4 flex gap-3 overflow-x-auto snap-x no-scrollbar" role="group" aria-label={`${product.name} photos`}>
+        <div className="relative mt-4 flex gap-3 overflow-x-auto overflow-y-hidden snap-x no-scrollbar" role="group" aria-label={`${product.name} photos`}>
           {images.map((src, i) => (
             <button
               key={src}

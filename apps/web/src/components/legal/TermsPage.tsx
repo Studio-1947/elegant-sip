@@ -15,7 +15,7 @@ export default function TermsPage() {
       </p>
 
       <StatusCallout>
-        The Site currently operates <strong className="text-[#1b261b]">without a real backend</strong>
+        The Site currently operates <strong className="text-[#1b261b]">without a real backend</strong> —
         checkout, accounts, and orders are simulated in your browser and no real payment is taken
         on-site. <strong className="text-[#1b261b]">Real checkout and payment processing are planned</strong> for
         a future release. Sections marked <OnceLaunched /> will take effect once that launches;

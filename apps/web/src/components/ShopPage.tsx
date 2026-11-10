@@ -61,7 +61,7 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-[#f9faf7] text-[#1b261b] font-sans">
       <main className="pt-20">
-        <ProductsSection headingLevel="h1" showFilters searchQuery={q} />
+        <ProductsSection headingLevel="h1" showFilters searchQuery={q} mobileLayout="grid" />
       </main>
 
       <TrustBadgesSection />

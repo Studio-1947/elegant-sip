@@ -140,12 +140,17 @@ export default function ProductCard({ product }: { product: Product }) {
       </ProductCardGallery>
 
       {/* ── Info block ── */}
-      <div className="p-5 md:p-6 flex flex-col flex-grow">
+      <div className="@container p-5 md:p-6 flex flex-col flex-grow">
         {/* Eyebrow */}
         <span className="flex items-center gap-1.5 text-[11px] font-mono tracking-[0.1em] sm:tracking-[0.15em] uppercase text-[#4a584a] mb-2 whitespace-nowrap overflow-hidden">
           <span className="text-[#b0782e] text-[7px]" aria-hidden="true">●</span>
           {/* Herbal blends are not Darjeeling single-origin tea, so they must not say so. */}
-          {product.category === 'Herbal Tea' ? 'Herbal · Caffeine free' : 'Darjeeling · Single Origin'}
+          {product.category === 'Herbal Tea' ? ('Herbal · Caffeine free') : (
+            <>
+              {/* Narrow cards (e.g. three-up beside a product page) drop the region rather than cut it mid-word */}
+              <span className="hidden @[14rem]:inline">Darjeeling ·&nbsp;</span>Single Origin
+            </>
+          )}
         </span>
 
         {/* Name, then price on its own fixed-height row, so every card lines up

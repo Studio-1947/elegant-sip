@@ -28,7 +28,7 @@ export default function AboutPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end">
           <div className="max-w-5xl mx-auto w-full px-6 md:px-12 pb-14">
-            <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">Our Story</span>
+            <span className="text-[#a8cf8a] text-xs font-mono font-bold tracking-[0.3em] uppercase block mb-4">Our Story</span>
             {/* Must not duplicate /gardens' h1 — two indexable pages sharing a
                 heading compete with each other for the same query. */}
             <h1 className="text-white text-4xl md:text-6xl font-bold uppercase tracking-tight leading-[1.05]">
