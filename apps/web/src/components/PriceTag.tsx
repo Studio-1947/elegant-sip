@@ -30,7 +30,7 @@ export default function PriceTag({ price, compareAtPrice, size = 'card' }: Price
       </s>
       <span
         className={`bg-[#4a7333] text-white font-mono font-bold uppercase tracking-wider rounded-full whitespace-nowrap ${
-          page ? 'text-xs px-2.5 py-1' : 'text-[10px] px-2 py-0.5'
+          page ? 'text-xs px-2.5 py-1' : 'text-[11px] px-2 py-0.5'
         }`}
       >
         {off}% off

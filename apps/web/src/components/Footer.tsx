@@ -7,7 +7,7 @@ export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="bg-[#1b261b] md:bg-[#f9faf7] border-t border-white/10 md:border-[#1b261b]/10 rounded-t-3xl md:rounded-none">
+    <footer className="bg-[#1b261b] md:bg-[#f9faf7] border-t border-white/10 md:border-[#1b261b]/10">
       <div className="max-w-6xl mx-auto px-6 md:px-16 lg:px-24 py-14 md:py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-12 mb-12 md:mb-14">
           {/* Brand */}
@@ -38,11 +38,11 @@ export default function Footer() {
           {/* Shop */}
           <nav aria-label="Shop links">
             <h2 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Shop</h2>
-            <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
-              <li><Link to="/shop" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">The Collection</Link></li>
-              <li><Link to="/wishlist" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Wishlist</Link></li>
+            <ul className="-my-3 text-xs text-white/70 md:text-[#4a584a]">
+              <li><Link to="/shop" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">The Collection</Link></li>
+              <li><Link to="/wishlist" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Wishlist</Link></li>
               <li>
-                <button onClick={openQuiz} className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors cursor-pointer">
+                <button onClick={openQuiz} className="py-3 text-left hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors cursor-pointer">
                   Taste Matcher Quiz
                 </button>
               </li>
@@ -52,23 +52,23 @@ export default function Footer() {
           {/* Learn */}
           <nav aria-label="Learn links">
             <h2 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Learn</h2>
-            <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
-              <li><Link to="/about" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Our Story</Link></li>
-              <li><Link to="/gardens" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">The Gardens</Link></li>
-              <li><Link to="/journal" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Journal</Link></li>
-              <li><Link to="/brewing" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Brewing Guide</Link></li>
+            <ul className="-my-3 text-xs text-white/70 md:text-[#4a584a]">
+              <li><Link to="/about" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Our Story</Link></li>
+              <li><Link to="/gardens" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">The Gardens</Link></li>
+              <li><Link to="/journal" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Journal</Link></li>
+              <li><Link to="/brewing" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Brewing Guide</Link></li>
             </ul>
           </nav>
 
           {/* Support */}
           <nav aria-label="Support links" className="col-span-2 md:col-span-1">
             <h2 className="text-[11px] font-mono tracking-[0.3em] uppercase text-[#a8cf8a] md:text-[#4a7333] mb-5">Support</h2>
-            <ul className="space-y-3 text-xs text-white/70 md:text-[#4a584a]">
-              <li><Link to="/contact" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Support</Link></li>
-              <li><Link to="/faq" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Frequently Asked Questions</Link></li>
-              <li><Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping & Returns</Link></li>
-              <li><Link to="/account" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">My Account</Link></li>
-              <li><a href="mailto:elegantsipdarjeeling@gmail.com" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">elegantsipdarjeeling@gmail.com</a></li>
+            <ul className="-my-3 text-xs text-white/70 md:text-[#4a584a]">
+              <li><Link to="/contact" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Support</Link></li>
+              <li><Link to="/faq" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Frequently Asked Questions</Link></li>
+              <li><Link to="/shipping" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping & Returns</Link></li>
+              <li><Link to="/account" className="inline-block py-3 no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">My Account</Link></li>
+              <li><a href="mailto:elegantsipdarjeeling@gmail.com" className="inline-block py-3 break-all no-underline hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">elegantsipdarjeeling@gmail.com</a></li>
             </ul>
           </nav>
         </div>
@@ -86,7 +86,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={social.label}
-              className="w-9 h-9 rounded-full border border-white/20 text-white/70 md:border-[#1b261b]/15 md:text-[#4a584a] hover:text-white hover:bg-[#8bb56e] hover:border-[#8bb56e] flex items-center justify-center transition-all"
+              className="w-11 h-11 rounded-full border border-white/20 text-white/70 md:border-[#1b261b]/15 md:text-[#4a584a] hover:text-white hover:bg-[#8bb56e] hover:border-[#8bb56e] flex items-center justify-center transition-all"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d={social.d} />

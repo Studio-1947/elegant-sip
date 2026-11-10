@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-09T14:28:08.588Z",
+  "syncedAt": "2026-11-10T05:19:06.514Z",
   "source": "http://localhost:4000",
   "products": [
     {
@@ -60,7 +60,7 @@
         "caffeine": 3
       },
       "brewingGuide": {
-        "temperature": "194°F / 90°C",
+        "temperature": "90°C / 194°F",
         "time": "3–4 minutes",
         "steeps": "2–3",
         "leafAmount": "1 tsp per 8 oz",
@@ -129,7 +129,7 @@
         "caffeine": 4
       },
       "brewingGuide": {
-        "temperature": "203°F / 95°C",
+        "temperature": "95°C / 203°F",
         "time": "2–3 minutes",
         "steeps": "2",
         "leafAmount": "1 tsp per 8 oz",
@@ -198,7 +198,7 @@
         "caffeine": 4
       },
       "brewingGuide": {
-        "temperature": "212°F / 100°C",
+        "temperature": "100°C / 212°F",
         "time": "3–4 minutes",
         "steeps": "2",
         "leafAmount": "1 tsp per 8 oz",
@@ -232,7 +232,7 @@
           "size": "100 g",
           "price": 10000,
           "compareAtPrice": null,
-          "stock": 49,
+          "stock": 50,
           "sku": "first-flush-fannings--100-g"
         },
         {
@@ -267,7 +267,7 @@
         "caffeine": 5
       },
       "brewingGuide": {
-        "temperature": "212°F / 100°C",
+        "temperature": "100°C / 212°F",
         "time": "2–3 minutes",
         "steeps": "1–2",
         "leafAmount": "1 tsp per 8 oz",
@@ -308,7 +308,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "194°F / 90°C",
+        "temperature": "90°C / 194°F",
         "time": "3–4 minutes",
         "steeps": "2–3",
         "leafAmount": "1 tsp per 8 oz",
@@ -349,7 +349,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "194°F / 90°C",
+        "temperature": "90°C / 194°F",
         "time": "3–4 minutes",
         "steeps": "2–3",
         "leafAmount": "1 tsp per 8 oz",
@@ -390,7 +390,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "176°F / 80°C",
+        "temperature": "80°C / 176°F",
         "time": "2–3 minutes",
         "steeps": "3",
         "leafAmount": "1 tsp per 8 oz",
@@ -431,7 +431,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "185°F / 85°C",
+        "temperature": "85°C / 185°F",
         "time": "2–3 minutes",
         "steeps": "3",
         "leafAmount": "1 tsp per 8 oz",
@@ -472,7 +472,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "176°F / 80°C",
+        "temperature": "80°C / 176°F",
         "time": "4–5 minutes",
         "steeps": "3–4",
         "leafAmount": "2 tsp per 8 oz",
@@ -513,7 +513,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "176°F / 80°C",
+        "temperature": "80°C / 176°F",
         "time": "3–4 minutes",
         "steeps": "3",
         "leafAmount": "2 tsp per 8 oz",
@@ -554,7 +554,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "194°F / 90°C",
+        "temperature": "90°C / 194°F",
         "time": "3–4 minutes",
         "steeps": "2–3",
         "leafAmount": "1½ tsp per 8 oz",
@@ -595,7 +595,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "203°F / 95°C",
+        "temperature": "95°C / 203°F",
         "time": "3–4 minutes",
         "steeps": "2",
         "leafAmount": "1 tsp per 8 oz",
@@ -636,7 +636,7 @@
       "origin": null,
       "flavorProfile": null,
       "brewingGuide": {
-        "temperature": "203°F / 95°C",
+        "temperature": "95°C / 203°F",
         "time": "3–4 minutes",
         "steeps": "2",
         "leafAmount": "1 tsp per 8 oz",

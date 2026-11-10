@@ -93,7 +93,7 @@ export default function ContactPage() {
               </svg>
               <div>
                 <p className="text-xs font-mono uppercase tracking-widest text-[#4a584a] mb-1">Email</p>
-                <a href="mailto:elegantsipdarjeeling@gmail.com" className="text-sm font-bold hover:text-[#4a7333] transition-colors">elegantsipdarjeeling@gmail.com</a>
+                <a href="mailto:elegantsipdarjeeling@gmail.com" className="inline-block py-3 -my-3 text-sm font-bold break-all hover:text-[#4a7333] transition-colors">elegantsipdarjeeling@gmail.com</a>
               </div>
             </div>
             <div className="flex items-start gap-4">
