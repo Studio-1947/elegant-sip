@@ -25,7 +25,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
   const [reviews, setReviews] = useState<ReviewView[]>([])
-  const [rating, setRating] = useState({ average: 0, count: 0 })
+  const [rating, setRating] = useState(() => product?.rating ?? { average: 0, count: 0 })
   const { addToCart } = useCart()
   const { showToast } = useUi()
   const { guarantee } = useStoreSettings()
@@ -45,14 +45,21 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     return () => io.disconnect()
   }, [id])
 
-  // Reset per-product state when navigating between products (same component instance)
-  useEffect(() => {
+  // Reset per-product state when navigating between products (same component
+  // instance). Done during render so the new product never paints with the old
+  // product's quantity, pack or reviews.
+  const [prevId, setPrevId] = useState(id)
+  if (id !== prevId) {
+    setPrevId(id)
     setQuantity(1)
     setSelectedSize(null)
     setIsAdding(false)
     setIsAdded(false)
     setReviews([])
     setRating(product?.rating ?? { average: 0, count: 0 })
+  }
+
+  useEffect(() => {
     if (!id) return
     // Published reviews are fetched live; the snapshot's rating is the
     // build-time figure and is replaced as soon as the API answers.
@@ -68,7 +75,6 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const variant = product

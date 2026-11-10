@@ -122,7 +122,10 @@ export type MetaCapiMode = 'off' | 'test' | 'live'
 
 export function metaCapiMode(): MetaCapiMode {
   if (!env.META_PIXEL_ID || !env.META_CAPI_ACCESS_TOKEN) return 'off'
-  return env.META_CAPI_TEST_EVENT_CODE ? 'test' : 'live'
+  if (env.META_CAPI_TEST_EVENT_CODE) return 'test'
+  // A development server takes fake payments: its events must never reach the
+  // live pixel and skew real ad results. Locally, only test events are sent.
+  return env.NODE_ENV === 'development' ? 'off' : 'live'
 }
 
 /** The latest failure, cleared by the next success. For the admin page. */

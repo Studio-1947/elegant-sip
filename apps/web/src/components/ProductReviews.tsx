@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { api, ApiClientError, type ReviewView } from '../lib/api'
 import { formatDate } from '../lib/dates'
 import { useAuth } from './AuthContext'

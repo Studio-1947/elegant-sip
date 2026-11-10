@@ -15,7 +15,7 @@ import { formatDate, formatDateTime, formatShortDate } from '../lib/dates'
 
 export default function OrderPage({ id }: { id?: string }) {
   const [order, setOrder] = useState<OrderView | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(Boolean(id))
   const [error, setError] = useState<string | null>(null)
   const { user, loading: authLoading } = useAuth()
   const { openLogin } = useUi()
@@ -30,15 +30,22 @@ export default function OrderPage({ id }: { id?: string }) {
   /** Latest loaded status, read by the poll without re-running the load effect. */
   const statusRef = useRef<OrderView['status'] | null>(null)
 
+  // What the load effect below is doing: nothing (no id), waiting to learn who
+  // is signed in, or fetching this order for this account. Each new fetch starts
+  // in the loading state, set here during render rather than in the effect.
+  const loadKey = !id ? null : authLoading ? 'auth' : `${id}|${user?.id ?? ''}`
+  const [prevLoadKey, setPrevLoadKey] = useState(loadKey)
+  if (loadKey !== prevLoadKey) {
+    setPrevLoadKey(loadKey)
+    if (loadKey === null) setLoading(false)
+    else if (loadKey !== 'auth') setLoading(true)
+  }
+
   useEffect(() => {
-    if (!id) {
-      setLoading(false)
-      return
-    }
+    if (!id) return
     // Orders belong to accounts: wait until we know who is signed in.
     if (authLoading) return
     let cancelled = false
-    setLoading(true)
     const guestAccessToken = sessionStorage.getItem(`elegant_sip_order_access_${id}`)
     const load = () =>
       api.orders

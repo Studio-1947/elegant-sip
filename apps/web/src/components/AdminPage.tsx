@@ -70,30 +70,52 @@ export default function AdminPage() {
 
   useDocumentMeta('Staff Operations | Elegant Sip', 'Restricted staff order operations.', { noindex: true })
 
-  const load = useCallback(async (currentFilter: '' | AdminOrderStatus) => {
-    setLoading(true)
-    setError('')
-    try {
-      const [orderResponse, configResponse, returnResponse, lowStockResponse] = await Promise.all([
+  // Every state update here waits for the API, so the effect below may call it.
+  const fetchDashboard = useCallback(
+    (currentFilter: '' | AdminOrderStatus) =>
+      Promise.all([
         api.admin.listOrders(currentFilter || undefined),
         api.admin.config(),
         api.admin.listReturnRequests(),
         api.admin.lowStock(),
       ])
-      setOrders(orderResponse.orders)
-      setConfig(configResponse)
-      setReturnRequests(returnResponse.requests)
-      setLowStock(lowStockResponse.variants)
-    } catch (cause) {
-      setError(cause instanceof ApiClientError ? cause.message : 'Could not load the staff dashboard.')
-    } finally {
-      setLoading(false)
+        .then(([orderResponse, configResponse, returnResponse, lowStockResponse]) => {
+          setOrders(orderResponse.orders)
+          setConfig(configResponse)
+          setReturnRequests(returnResponse.requests)
+          setLowStock(lowStockResponse.variants)
+        })
+        .catch((cause: unknown) => {
+          setError(cause instanceof ApiClientError ? cause.message : 'Could not load the staff dashboard.')
+        })
+        .finally(() => setLoading(false)),
+    [],
+  )
+
+  const load = useCallback(
+    (currentFilter: '' | AdminOrderStatus) => {
+      setLoading(true)
+      setError('')
+      return fetchDashboard(currentFilter)
+    },
+    [fetchDashboard],
+  )
+
+  // Load once an admin is confirmed, and again whenever the filter changes.
+  // The loading state is entered during render; the effect only fetches.
+  const autoLoadFilter = user?.role === 'admin' ? filter : null
+  const [prevAutoLoadFilter, setPrevAutoLoadFilter] = useState<typeof autoLoadFilter>(null)
+  if (autoLoadFilter !== prevAutoLoadFilter) {
+    setPrevAutoLoadFilter(autoLoadFilter)
+    if (autoLoadFilter !== null) {
+      setLoading(true)
+      setError('')
     }
-  }, [])
+  }
 
   useEffect(() => {
-    if (user?.role === 'admin') void load(filter)
-  }, [filter, load, user?.role])
+    if (autoLoadFilter !== null) void fetchDashboard(autoLoadFilter)
+  }, [autoLoadFilter, fetchDashboard])
 
   const refreshLowStock = useCallback(async () => {
     try {
