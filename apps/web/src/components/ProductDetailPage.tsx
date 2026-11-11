@@ -292,12 +292,18 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               </div>
             )}
 
-            <p className="text-sm text-[#4a584a] leading-relaxed mb-6">{product.description}</p>
+            <p className="text-sm text-[#4a584a] leading-relaxed mb-4">{product.description}</p>
             {product.longDescription && (
-              <details className="mb-8 text-sm text-[#4a584a]">
-                <summary className="cursor-pointer py-3 -my-3 font-medium text-[#1b261b] marker:text-[#4a7333]">More about this tea</summary>
-                <p className="mt-3 leading-relaxed">{product.longDescription}</p>
-              </details>
+              <a
+                href="#about-this-tea"
+                onClick={(e) => {
+                  e.preventDefault()
+                  document.getElementById('about-this-tea')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+                className="inline-block mb-8 py-2 -my-2 text-xs font-mono tracking-widest uppercase text-[#4a7333] hover:text-[#1b261b] underline decoration-[#8bb56e]/50 underline-offset-4 transition-colors"
+              >
+                Read the full description ↓
+              </a>
             )}
 
             {/* Size picker */}
@@ -405,6 +411,35 @@ export default function ProductDetailPage({ id }: { id?: string }) {
             </ul>
           </div>
         </div>
+
+        {/* Full description, always open: split on blank lines into paragraphs */}
+        {product.longDescription && (
+          <section id="about-this-tea" aria-labelledby="about-this-tea-heading" className="scroll-mt-32 mb-12 md:mb-16 max-w-3xl">
+            <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-2">The Tea</span>
+            <h2 id="about-this-tea-heading" className="text-2xl md:text-3xl font-bold uppercase tracking-tight mb-6">
+              About {product.name}
+            </h2>
+            <div className="space-y-4 text-[15px] text-[#4a584a] leading-relaxed">
+              {product.longDescription
+                .split(/\n\s*\n/)
+                .map((para) => para.trim())
+                .filter(Boolean)
+                .map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+            </div>
+            {product.tastingNotes?.length > 0 && (
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mr-1">Tasting notes</span>
+                {product.tastingNotes.map((note) => (
+                  <span key={note} className="px-3 py-1 rounded-full border border-[#8bb56e]/40 bg-[#8bb56e]/10 text-xs text-[#4a7333]">
+                    {note}
+                  </span>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Details: Origin + Flavor + Brewing */}
         <ProductInfoCards product={product} garden={garden} />
