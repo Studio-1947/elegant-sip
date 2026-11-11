@@ -27,6 +27,7 @@ async function cancelOrderAndRelease(orderId: string, fromStatuses: string[], no
 }
 import { ApiError } from '../lib/problem.js'
 import { adminProductRoutes } from './admin-products.js'
+import { adminMediaRoutes } from './admin-media.js'
 import { adminShippingRoutes } from './admin-shipping.js'
 import { getInvoiceView } from '../lib/invoice.js'
 import { sendShippedEmail } from '../lib/fulfilment.js'
@@ -74,6 +75,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
   /* Catalogue management lives in its own module (300-line rule) but registers
      here, inside the auth hook above. */
   await app.register(adminProductRoutes)
+  await app.register(adminMediaRoutes)
   await app.register(adminShippingRoutes)
 
   app.get(

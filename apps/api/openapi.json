@@ -1304,6 +1304,9 @@
                             ],
                             "description": "Coming-soon products are listed but cannot be purchased and carry no price"
                           },
+                          "listed": {
+                            "type": "boolean"
+                          },
                           "fromPrice": {
                             "anyOf": [
                               {
@@ -1332,6 +1335,12 @@
                           },
                           "imageSrc": {
                             "type": "string"
+                          },
+                          "images": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
                           },
                           "category": {
                             "type": "string"
@@ -1563,10 +1572,12 @@
                           "slug",
                           "name",
                           "status",
+                          "listed",
                           "fromPrice",
                           "description",
                           "longDescription",
                           "imageSrc",
+                          "images",
                           "category",
                           "tastingNotes",
                           "bodyLevel",
@@ -1643,6 +1654,9 @@
                       ],
                       "description": "Coming-soon products are listed but cannot be purchased and carry no price"
                     },
+                    "listed": {
+                      "type": "boolean"
+                    },
                     "fromPrice": {
                       "anyOf": [
                         {
@@ -1671,6 +1685,12 @@
                     },
                     "imageSrc": {
                       "type": "string"
+                    },
+                    "images": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     },
                     "category": {
                       "type": "string"
@@ -1902,10 +1922,12 @@
                     "slug",
                     "name",
                     "status",
+                    "listed",
                     "fromPrice",
                     "description",
                     "longDescription",
                     "imageSrc",
+                    "images",
                     "category",
                     "tastingNotes",
                     "bodyLevel",
@@ -3267,6 +3289,27 @@
                     "message"
                   ],
                   "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/feeds/meta.csv": {
+      "get": {
+        "summary": "Meta product feed (CSV)",
+        "tags": [
+          "Catalogue"
+        ],
+        "description": "Built live from the database on every request, so a price change in the admin reaches\nMeta on its next scheduled fetch with no sync or redeploy.\n\nOne row per product, for the pack the product page opens on. `sale_price` is exactly\nwhat checkout charges for one pack and is sent only when lower than `price`.\nComing-soon and unlisted products are omitted. Cached for 5 minutes.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -8456,6 +8499,10 @@
                       "coming-soon"
                     ]
                   },
+                  "listed": {
+                    "description": "False hides the product from the storefront and the Meta feed. It stays in the database.",
+                    "type": "boolean"
+                  },
                   "description": {
                     "type": "string",
                     "minLength": 10,
@@ -8474,8 +8521,18 @@
                   },
                   "imageSrc": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 200
+                    "maxLength": 200,
+                    "pattern": "^\\/(?!.*\\.\\.)[A-Za-z0-9/_.-]+\\.(webp|png|jpe?g|avif)$"
+                  },
+                  "images": {
+                    "description": "Extra photos after the main one, in display order.",
+                    "maxItems": 12,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 200,
+                      "pattern": "^\\/(?!.*\\.\\.)[A-Za-z0-9/_.-]+\\.(webp|png|jpe?g|avif)$"
+                    }
                   },
                   "category": {
                     "type": "string",
@@ -9112,6 +9169,368 @@
             }
           },
           "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove a pack size",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Only for a pack that has never been ordered: removing one with orders would also erase its stock history. Set its stock to zero instead. A product keeps at least one pack.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "in": "path",
+            "name": "size",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/uploads/product-photo": {
+      "post": {
+        "summary": "Upload a product photo",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Send the photo itself as the request body with its Content-Type (JPG, PNG, WebP or AVIF, up to 15 MB).\nIt is re-encoded to WebP (max 2048px, plus 640px and 1024px sizes) and the returned `src` can be used\nas a product's main photo or in its gallery. Uploading does not change any product by itself.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "src": {
+                      "type": "string"
+                    },
+                    "width": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "height": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "width",
+                    "height"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Default Response",
             "content": {
               "application/json": {

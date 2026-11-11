@@ -1,4 +1,4 @@
-import type { Problem } from '@elegantsip/shared'
+import type { Problem, Product } from '@elegantsip/shared'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * API client.
@@ -230,6 +230,27 @@ export interface AdminOrder {
   shipmentStatus: string | null
 }
 
+/** Fields the admin product editor can change. Omitted fields stay as they are. */
+export type AdminProductEdit = Partial<
+  Pick<
+    Product,
+    | 'name'
+    | 'status'
+    | 'listed'
+    | 'description'
+    | 'longDescription'
+    | 'imageSrc'
+    | 'images'
+    | 'category'
+    | 'tastingNotes'
+    | 'bodyLevel'
+    | 'harvestLabel'
+    | 'origin'
+    | 'flavorProfile'
+    | 'brewingGuide'
+  >
+>
+
 export interface AdminConfig {
   paymentProvider: string
   paymentsLive: boolean
@@ -346,6 +367,11 @@ export const api = {
     verifyWhatsApp: (challengeId: string, code: string) => post<{ user: SessionUser }>('/v1/auth/whatsapp/verify', { challengeId, code }),
   },
 
+  products: {
+    /** The live catalogue. The storefront reads it only to refresh prices and stock. */
+    list: () => request<{ products: Product[] }>('/v1/products'),
+  },
+
   pricing: {
     /** The authoritative money. The storefront displays this; it never computes it. */
     quote: (payload: {
@@ -417,9 +443,10 @@ export const api = {
   },
 
   admin: {
-    listOrders: (status?: AdminOrderStatus) =>
+    /** Newest first. The API returns at most 200 per call. */
+    listOrders: (status?: AdminOrderStatus, limit = 50) =>
       request<{ orders: AdminOrder[] }>(
-        `/v1/admin/orders${status ? `?status=${encodeURIComponent(status)}` : ''}`,
+        `/v1/admin/orders?limit=${limit}${status ? `&status=${encodeURIComponent(status)}` : ''}`,
       ),
     getOrder: (number: string) => request<AdminOrderDetail>(`/v1/admin/orders/${encodeURIComponent(number)}`),
     updateOrder: (
@@ -439,6 +466,43 @@ export const api = {
     updateReturnRequest: (id: string, payload: { status: 'approved' | 'rejected' | 'received'; staffNote?: string }) =>
       request<{ ok: true; restocked: boolean }>(`/v1/admin/return-requests/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     lowStock: (threshold = 5) => request<{ variants: LowStockVariant[] }>(`/v1/admin/stock/low?threshold=${threshold}`),
+    /** Show or hide a product on the storefront and in the Meta feed. */
+    setProductListed: (slug: string, listed: boolean) =>
+      request<{ ok: true }>(`/v1/admin/products/${encodeURIComponent(slug)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ listed }),
+      }),
+    /** Partial edit: only the fields sent are changed. */
+    updateProduct: (slug: string, payload: AdminProductEdit) =>
+      request<{ ok: true }>(`/v1/admin/products/${encodeURIComponent(slug)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    /** Sends the file as-is; the API re-encodes it and returns its site path. */
+    uploadProductPhoto: (file: File) =>
+      request<{ src: string; width: number; height: number }>('/v1/admin/uploads/product-photo', {
+        method: 'POST',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      }),
+    addVariant: (slug: string, payload: { size: string; price: number; stock: number }) =>
+      post<{ slug: string; size: string; price: number; stock: number }>(
+        `/v1/admin/products/${encodeURIComponent(slug)}/variants`,
+        payload,
+      ),
+    deleteVariant: (slug: string, size: string) =>
+      request<{ ok: true }>(`/v1/admin/products/${encodeURIComponent(slug)}/variants/${encodeURIComponent(size)}`, {
+        method: 'DELETE',
+      }),
+    /** Records a stock movement in the ledger; `delta` is the change, not the new total. */
+    adjustStock: (payload: { productSlug: string; variantSize: string; delta: number; note?: string }) =>
+      post<{ productSlug: string; variantSize: string; stock: number }>('/v1/admin/stock', payload),
+    /** Paise. `compareAtPrice: null` ends an offer (no struck-out price). */
+    updateVariantPrice: (slug: string, size: string, payload: { price: number; compareAtPrice: number | null }) =>
+      request<{ slug: string; size: string; price: number; compareAtPrice: number | null }>(
+        `/v1/admin/products/${encodeURIComponent(slug)}/variants/${encodeURIComponent(size)}`,
+        { method: 'PATCH', body: JSON.stringify(payload) },
+      ),
     shipment: (number: string) =>
       request<{ provider: AdminConfig['shippingProvider']; phone: string | null; shipment: AdminShipment | null }>(
         `/v1/admin/orders/${encodeURIComponent(number)}/shipment`,

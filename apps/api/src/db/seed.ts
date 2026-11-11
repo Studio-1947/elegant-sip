@@ -2,7 +2,7 @@ import '../dev-defaults.js'
 import { argv } from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { COUPONS_ENABLED, rupees } from '@elegantsip/shared'
-import { and, eq, notInArray, sql as drizzleSql } from 'drizzle-orm'
+import { and, eq, isNull, notInArray, sql as drizzleSql } from 'drizzle-orm'
 import { db, sql } from './client.js'
 import { NEW_RANGE } from './seed-new-range.js'
 import { coupons, gardenProducts, gardens, journalPosts, productVariants, products } from './schema.js'
@@ -20,6 +20,8 @@ import { coupons, gardenProducts, gardens, journalPosts, productVariants, produc
 const PRODUCTS = [
   {
     slug: 'first-flush-whole-leaf',
+    // Off the storefront while the new range launches (set on first insert only).
+    listed: false,
     name: 'First Flush Whole Leaf',
     status: 'active' as const,
     description:
@@ -56,6 +58,8 @@ const PRODUCTS = [
   },
   {
     slug: 'first-flush-broken-leaf',
+    // Off the storefront while the new range launches (set on first insert only).
+    listed: false,
     name: 'First Flush Broken Leaf',
     status: 'active' as const,
     description: 'Broken-leaf Darjeeling first flush — the same spring character with a quicker, stronger brew.',
@@ -90,6 +94,8 @@ const PRODUCTS = [
   },
   {
     slug: 'first-flush-broken-mixed',
+    // Off the storefront while the new range launches (set on first insert only).
+    listed: false,
     name: 'First Flush Broken Mixed',
     status: 'active' as const,
     description:
@@ -125,6 +131,8 @@ const PRODUCTS = [
   },
   {
     slug: 'first-flush-fannings',
+    // Off the storefront while the new range launches (set on first insert only).
+    listed: false,
     name: 'First Flush Fannings',
     status: 'active' as const,
     description:
@@ -245,9 +253,12 @@ export async function seed() {
   const ALL_PRODUCTS = [...PRODUCTS, ...NEW_RANGE]
   for (const [i, p] of ALL_PRODUCTS.entries()) {
     const { variants, garden, ...fields } = p
-    const [row] = await db
+    const images = 'images' in fields ? fields.images : []
+    // Products the admin has edited are theirs: the update is skipped for them
+    // (`setWhere`), and so is everything below that touches their packs.
+    const [updated] = await db
       .insert(products)
-      .values({ ...fields, sortOrder: i })
+      .values({ ...fields, images, sortOrder: i })
       .onConflictDoUpdate({
         target: products.slug,
         set: {
@@ -256,6 +267,7 @@ export async function seed() {
           description: fields.description,
           longDescription: fields.longDescription,
           imageSrc: fields.imageSrc,
+          images,
           category: fields.category,
           bodyLevel: fields.bodyLevel,
           harvestLabel: fields.harvestLabel,
@@ -266,8 +278,15 @@ export async function seed() {
           sortOrder: i,
           updatedAt: new Date(),
         },
+        setWhere: isNull(products.adminEditedAt),
       })
-    .returning({ id: products.id })
+      .returning({ id: products.id })
+
+    if (!updated) {
+      // Admin-owned: leave its content and packs exactly as the admin set them.
+      continue
+    }
+    const row = updated
 
     await db
       .delete(productVariants)
@@ -283,14 +302,16 @@ export async function seed() {
         .values({ productId: row.id, size: v.size, sku, price: v.price, compareAtPrice, stock: v.stock, sortOrder: vi })
         .onConflictDoUpdate({
           target: [productVariants.productId, productVariants.size],
-          // Production re-seeds on every start, so real inventory must never be
-          // reset. The one exception is a zero-price "coming soon" placeholder
-          // becoming a real product: it has no inventory yet, so it takes the
-          // seed's opening stock instead of staying sold out.
+          // Production re-seeds on every start, so real prices and inventory
+          // must never be reset: the admin owns them once a pack exists. The one
+          // exception is a zero-price "coming soon" placeholder becoming a real
+          // product: it has no price or inventory yet, so it takes the seed's
+          // price and opening stock instead of staying unpriced and sold out.
+          // (Every expression here reads the existing row, before the update.)
           set: {
             sku,
-            price: v.price,
-            compareAtPrice,
+            price: drizzleSql`CASE WHEN ${productVariants.price} = 0 THEN ${v.price}::integer ELSE ${productVariants.price} END`,
+            compareAtPrice: drizzleSql`CASE WHEN ${productVariants.price} = 0 THEN ${compareAtPrice}::integer ELSE ${productVariants.compareAtPrice} END`,
             stock: drizzleSql`CASE WHEN ${productVariants.price} = 0 AND ${v.price} > 0 THEN ${v.stock} ELSE ${productVariants.stock} END`,
             sortOrder: vi,
           },
@@ -305,7 +326,7 @@ export async function seed() {
       }
     }
   }
-  console.log(`  products     ${ALL_PRODUCTS.length} (${variantCount} variants)`)
+  console.log(`  products     ${ALL_PRODUCTS.length} (${variantCount} variants; admin-edited products left as they are)`)
 
   for (const post of JOURNAL) {
     await db

@@ -3,13 +3,13 @@ import ProductCard from './ProductCard'
 import ProductTile from './ProductTile'
 import { Link } from '../lib/router'
 import { PRODUCTS } from '../data/products'
+import { useLiveCatalogue } from '../lib/liveCatalogue'
 import { useUi } from './UiContext'
 import SelectDropdown from './SelectDropdown'
 import BlurText from './BlurText'
 import { useScrollReveal } from '../lib/useScrollReveal'
 
 // Catalogue order, not alphabetical: First Flush → Second Flush → Third Flush.
-const CATEGORIES = ['All', ...new Set(PRODUCTS.map((p) => p.category))]
 
 const SORT_OPTIONS = [
   { value: 'featured', label: 'Sort: Featured' },
@@ -50,6 +50,10 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
     setSearch(searchQuery)
   }, [searchQuery])
 
+  // Bumps when the live catalogue lands, so filters and sorts re-run on it.
+  const catalogueVersion = useLiveCatalogue()
+  // Read on every render: the live catalogue can change a tea's category.
+  const categories = ['All', ...new Set(PRODUCTS.map((p) => p.category))]
   const visibleProducts = useMemo(() => {
     let filtered = category === 'All' ? [...PRODUCTS] : PRODUCTS.filter((p) => p.category === category)
     const q = search.trim().toLowerCase()
@@ -66,7 +70,8 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
     // getRating() alone only saw the empty static REVIEWS, so this was a no-op.
     if (sort === 'rating') filtered.sort((a, b) => b.rating.average - a.rating.average)
     return filtered
-  }, [category, sort, search])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- catalogueVersion signals in-place catalogue updates
+  }, [category, sort, search, catalogueVersion])
 
   return (
     <section ref={sectionRef} className="px-6 md:px-12 lg:px-16 py-16 md:py-32 max-w-[1400px] mx-auto bg-[#f9faf7]">
@@ -157,7 +162,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
         <div className="relative z-30 max-w-6xl mx-auto mb-6 md:mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           {/* Category chips — one swipeable row on phones, wrapping row from sm up */}
           <div className="relative flex overflow-x-auto overflow-y-hidden no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}

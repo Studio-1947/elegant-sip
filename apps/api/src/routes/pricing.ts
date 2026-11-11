@@ -13,6 +13,7 @@ import {
 import { db } from '../db/client.js'
 import { coupons, productVariants, products } from '../db/schema.js'
 import { ApiError } from '../lib/problem.js'
+import { unavailableReason, unitPrice, variantPricingColumns } from '../lib/catalogue-pricing.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Pricing — the server is the authority.
@@ -104,15 +105,7 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
 
       for (const line of items) {
         const row = await db
-          .select({
-            slug: products.slug,
-            name: products.name,
-            imageSrc: products.imageSrc,
-            status: products.status,
-            size: productVariants.size,
-            price: productVariants.price,
-            stock: productVariants.stock,
-          })
+          .select(variantPricingColumns)
           .from(productVariants)
           .innerJoin(products, eq(productVariants.productId, products.id))
           .where(and(eq(products.slug, line.productSlug), eq(productVariants.size, line.variantSize)))
@@ -129,7 +122,8 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
           continue
         }
 
-        if (row.status === 'coming-soon') {
+        const blocked = unavailableReason(row)
+        if (blocked === 'coming-soon') {
           adjustments.push({
             productSlug: row.slug,
             variantSize: row.size,
@@ -139,7 +133,7 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
           continue
         }
 
-        if (row.stock <= 0) {
+        if (blocked === 'out-of-stock') {
           adjustments.push({
             productSlug: row.slug,
             variantSize: row.size,
@@ -165,8 +159,8 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
           variantSize: row.size,
           imageSrc: row.imageSrc,
           quantity,
-          unitPrice: row.price,
-          lineTotal: row.price * quantity,
+          unitPrice: unitPrice(row),
+          lineTotal: unitPrice(row) * quantity,
         })
       }
 

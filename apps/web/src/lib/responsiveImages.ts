@@ -62,7 +62,8 @@ export function buildSrcSet(src: string | undefined, intrinsicWidth?: number): s
   const base = src.slice(1, -'.webp'.length)
   // Already a variant (e.g. "/hero-1024.webp") — don't build a set from a set.
   if (/-\d+$/.test(base)) return undefined
-  if (!RESPONSIVE_IMAGES.has(base)) return undefined
+  // Admin uploads always get -640 and -1024 sizes when they are saved.
+  if (!RESPONSIVE_IMAGES.has(base) && !base.startsWith('uploads/products/')) return undefined
 
   const largest = intrinsicWidth && intrinsicWidth > 1024 ? intrinsicWidth : 2560
   return [...WIDTHS.map((w) => `/${base}-${w}.webp ${w}w`), `${src} ${largest}w`].join(', ')

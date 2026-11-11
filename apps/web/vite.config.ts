@@ -164,6 +164,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      // Admin-uploaded product photos. Production serves these from a volume.
+      '/uploads': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // `localhost` can resolve to an unrelated IPv6 listener on Windows/WSL.
       // The local Fastify process binds IPv4, so proxy to it explicitly.
       '/api': {

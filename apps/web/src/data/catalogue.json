@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-11T05:39:43.165Z",
+  "syncedAt": "2026-11-11T11:22:45.853Z",
   "source": "http://localhost:4000",
   "products": [
     {
@@ -7,10 +7,12 @@
       "slug": "first-flush-whole-leaf",
       "name": "First Flush Whole Leaf",
       "status": "active",
+      "listed": false,
       "fromPrice": 60000,
       "description": "The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for.",
       "longDescription": "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in the Rungbong Valley, withered long and fired light, this tea brews pale gold rather than red. Each pack is whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
       "imageSrc": "/morningdew.webp",
+      "images": [],
       "category": "First Flush",
       "tastingNotes": [
         "Floral",
@@ -76,10 +78,12 @@
       "slug": "first-flush-broken-leaf",
       "name": "First Flush Broken Leaf",
       "status": "active",
+      "listed": false,
       "fromPrice": 50000,
       "description": "Broken-leaf Darjeeling first flush — the same spring character with a quicker, stronger brew.",
       "longDescription": "Same garden, same pluck, smaller cut. Breaking the leaf exposes more surface to the water, so a broken-leaf first flush gives up its colour and briskness in half the time a whole leaf takes. You keep the muscatel note and trade a little of the floral top end for body — the everyday Darjeeling for people who find whole leaf too delicate for a morning cup.",
       "imageSrc": "/origin.webp",
+      "images": [],
       "category": "First Flush",
       "tastingNotes": [
         "Muscatel",
@@ -145,10 +149,12 @@
       "slug": "first-flush-broken-mixed",
       "name": "First Flush Broken Mixed",
       "status": "active",
+      "listed": false,
       "fromPrice": 15000,
       "description": "A robust mixed broken grade from the Darjeeling spring harvest — strong, brisk, and happy to take milk.",
       "longDescription": "From the warmer, lower slopes below Kurseong, where the bush wakes earlier and grows faster. That makes a bolder, maltier cup with more colour and less of the ethereal floral note you get at altitude — which is exactly what you want in a tea that has to stand up to milk and sugar. The most versatile grade we sell, and the best value per cup.",
       "imageSrc": "/origin.webp",
+      "images": [],
       "category": "First Flush",
       "tastingNotes": [
         "Malty",
@@ -214,10 +220,12 @@
       "slug": "first-flush-fannings",
       "name": "First Flush Fannings",
       "status": "active",
+      "listed": false,
       "fromPrice": 10000,
       "description": "Fine Darjeeling first flush fannings — fast-brewing and full-strength. The working tea of the Darjeeling hills.",
       "longDescription": "Fannings are the finest cut: the smallest particles sifted from the same first flush pluck. More surface area means near-instant extraction, a deep coppery colour, and a cup with real backbone. This is not a contemplative tea and does not pretend to be — it is the grade the hills actually drink every morning, and it makes the best masala chai in the catalogue.",
       "imageSrc": "/origin.webp",
+      "images": [],
       "category": "First Flush",
       "tastingNotes": [
         "Bold",
@@ -232,7 +240,7 @@
           "size": "100 g",
           "price": 10000,
           "compareAtPrice": null,
-          "stock": 50,
+          "stock": 49,
           "sku": "first-flush-fannings--100-g"
         },
         {
@@ -283,10 +291,15 @@
       "slug": "first-flush",
       "name": "First Flush",
       "status": "active",
-      "fromPrice": 86100,
+      "listed": true,
+      "fromPrice": 90000,
       "description": "The first pluck of spring — a bright, floral Darjeeling with the light muscatel lift the season is known for.",
       "longDescription": "First flush is the first picking of the year, taken in the weeks after the tea bushes wake from winter. The new shoots are small and tender, and they carry the aromatics the plant has stored through the cold months. That is why a first flush Darjeeling tastes so unlike other black teas: lighter, greener and more fragrant.\n\nIt brews a pale gold rather than a deep red. The aroma is fresh and floral, the body is light, and the finish carries the gentle muscatel lift (a bright, grape-like note) that Darjeeling spring teas are known for. There is a little briskness at the edges, but nothing heavy.\n\nDrink it plain, without milk or sugar, so the delicate notes come through. It suits a slow morning or a mid-afternoon cup, and goes well with light food such as butter biscuits, fruit or a plain sponge. The leaf gives a good second steep; add about 30 seconds to the time.",
       "imageSrc": "/products/first-flush.webp",
+      "images": [
+        "/products/first-flush-leaf.webp",
+        "/products/first-flush-pile.webp"
+      ],
       "category": "Black Tea",
       "tastingNotes": [
         "Floral",
@@ -299,7 +312,7 @@
         {
           "id": "3ec19330-b5ec-4cb7-b703-4684aac74bbc",
           "size": "100 g",
-          "price": 86100,
+          "price": 90000,
           "compareAtPrice": 114800,
           "stock": 20,
           "sku": "P001-S100"
@@ -324,10 +337,16 @@
       "slug": "golden-needle",
       "name": "Golden Needle",
       "status": "active",
+      "listed": true,
       "fromPrice": 315700,
       "description": "Golden-tipped buds that brew a rounded, honeyed cup — the richest tea in the range.",
       "longDescription": "Golden Needle is made almost entirely from young buds. As they are rolled and oxidised, the fine hairs on the buds turn a deep gold, which gives the tea its name and its look: slender, twisted golden tips.\n\nBecause buds are rich and tender, this is the fullest cup in our range. It brews a clear amber with an aroma of honey and baked bread. The taste is smooth and rounded, with a malty depth and a natural sweetness that needs no sugar. There is very little bitterness, even if you steep it a little long.\n\nTry the first cup plain to taste the honeyed character; it is sturdy enough for a splash of milk if you prefer. It holds up well to a second and third steep, so a little leaf goes a long way. A fine choice for a special occasion, or as a gift for someone who loves black tea.",
       "imageSrc": "/products/golden-needle.webp",
+      "images": [
+        "/products/golden-needle-alt.webp",
+        "/products/golden-needle-leaf.webp",
+        "/products/golden-needle-pile.webp"
+      ],
       "category": "Black Tea",
       "tastingNotes": [
         "Honeyed",
@@ -365,10 +384,14 @@
       "slug": "green-tea",
       "name": "Green Tea",
       "status": "active",
+      "listed": true,
       "fromPrice": 58500,
       "description": "Unoxidised Darjeeling leaf — fresh, grassy and gentle, for an everyday lighter cup.",
       "longDescription": "Green tea is the least changed form of the tea leaf. Soon after picking, the leaves are heated to stop oxidation, the natural process that turns leaves dark and gives black tea its colour and strength. The leaf stays green, and the cup keeps the fresh character of the plant.\n\nIt brews a pale yellow-green cup with a clean, grassy aroma. The taste is fresh and gentle, with a soft vegetal sweetness and a clean finish. It is lighter in body and less astringent than our black teas, which makes it an easy cup to drink through the day.\n\nTemperature matters most with green tea. Water straight off the boil scorches the leaf and draws out bitterness, so let the kettle rest for a few minutes first. Drink it plain, without milk. It pairs well with light meals, and the leaf can be steeped three times; the later cups are softer and sweeter.",
       "imageSrc": "/products/green-tea.webp",
+      "images": [
+        "/products/green-tea-alt.webp"
+      ],
       "category": "Green Tea",
       "tastingNotes": [
         "Fresh",
@@ -406,10 +429,16 @@
       "slug": "pan-roasted",
       "name": "Pan Roasted",
       "status": "active",
+      "listed": true,
       "fromPrice": 60800,
       "description": "Leaf fired in a hot pan by hand, giving a toasty, nutty green tea with a soft finish.",
       "longDescription": "Pan Roasted is a green tea finished over fire. Instead of being steamed, the freshly picked leaf is tossed in a hot pan to stop oxidation. The heat dries the leaf and gives it a warm, toasted character you will not find in a steamed green tea.\n\nThe cup is golden-green, with a nutty aroma like lightly toasted grain or chestnut. Beneath the roast the fresh green notes are still there, and the finish is soft and rounded rather than grassy. It is gentler than most green teas, with very little bitterness.\n\nBrew it a few degrees hotter than other green teas, around 85°C, to bring out the roasted notes, and drink it plain. Its warmth makes it a good green tea for cooler evenings and for anyone who finds regular green tea too grassy. It pairs well with savoury food.",
       "imageSrc": "/products/pan-roasted.webp",
+      "images": [
+        "/products/pan-roasted-alt.webp",
+        "/products/pan-roasted-leaf.webp",
+        "/products/pan-roasted-pile.webp"
+      ],
       "category": "Green Tea",
       "tastingNotes": [
         "Toasty",
@@ -447,10 +476,16 @@
       "slug": "silver-needle",
       "name": "Silver Needle",
       "status": "active",
+      "listed": true,
       "fromPrice": 315700,
       "description": "Downy silver buds, simply withered and dried — the most delicate cup we make.",
       "longDescription": "Silver Needle is made only from the unopened leaf bud, picked before it unfurls. Each bud is covered in fine silver-white down. The buds are simply withered and dried, with no rolling and almost no processing, so what you brew is very close to the bud as it grew on the bush.\n\nThe cup is very pale, almost clear, with a delicate aroma of fresh hay and soft flowers. The taste is light, smooth and subtly sweet, with no bitterness. It is the most delicate tea we make, and its flavour builds slowly over a long steep and several infusions.\n\nGive it time and cooler water. The buds are light and bulky, so use about 2 teaspoons per cup and steep for 4–5 minutes at around 80°C. Drink it plain. It rewards a quiet moment and a clean palate, and the buds can be steeped three or four times.",
       "imageSrc": "/products/silver-needle.webp",
+      "images": [
+        "/products/silver-needle-alt.webp",
+        "/products/silver-needle-leaf.webp",
+        "/products/silver-needle-pile.webp"
+      ],
       "category": "White Tea",
       "tastingNotes": [
         "Delicate",
@@ -488,10 +523,14 @@
       "slug": "white-tea",
       "name": "White Tea",
       "status": "active",
+      "listed": true,
       "fromPrice": 132000,
       "description": "Gently withered leaf and bud — soft, sweet and lightly floral.",
       "longDescription": "White tea is handled as little as possible. The leaf and bud are left to wither naturally and are then dried, without the rolling and oxidation that make black tea. The result keeps much of the freshness and sweetness of the living leaf.\n\nIt brews a pale golden cup with a soft floral aroma. The taste is mellow and gently sweet, with a light body and a smooth, clean finish. Because it includes leaf as well as bud, it has a little more body than Silver Needle while staying delicate.\n\nKeep the water below boiling, around 80°C, and do not rush the steep. Drink it plain. It is a calm, light cup for the afternoon or evening, and it rewards several short steeps, each one a little different from the last.",
       "imageSrc": "/products/white-tea.webp",
+      "images": [
+        "/products/white-tea-alt.webp"
+      ],
       "category": "White Tea",
       "tastingNotes": [
         "Soft",
@@ -529,10 +568,12 @@
       "slug": "whole-leaf-first-flush",
       "name": "Whole Leaf 1st Flush",
       "status": "active",
+      "listed": true,
       "fromPrice": 177900,
       "description": "Unbroken spring leaves, picked by hand — the fullest expression of a Darjeeling first flush.",
       "longDescription": "This is first flush Darjeeling with the leaf left whole. The leaves are picked by hand and kept intact through withering, rolling and drying, rather than broken into smaller pieces. Whole leaves release their flavour slowly, so the cup has more layers than a broken grade.\n\nIt brews a bright, pale gold. The aroma is fresh and floral, and the taste opens with spring flowers, moves into the muscatel note Darjeeling is known for, and ends with a long, clean finish. It is light in body but full of flavour, with a gentle briskness.\n\nUse a little more leaf by volume than usual, as whole leaves are bulky, and watch them unfurl in the pot. Drink it plain. This is the cup to choose when you want to taste a first flush at its best, and the leaf gives a fine second steep.",
       "imageSrc": "/products/whole-leaf-first-flush.webp",
+      "images": [],
       "category": "Black Tea",
       "tastingNotes": [
         "Floral",
@@ -570,10 +611,12 @@
       "slug": "second-flush",
       "name": "2nd Flush",
       "status": "active",
+      "listed": true,
       "fromPrice": 74600,
       "description": "The summer pluck — a deeper, fruitier Darjeeling with the classic muscatel character.",
       "longDescription": "Second flush is the summer picking, taken in early summer once the spring growth has passed. The leaves are larger and more mature than in spring, and the warmer weather gives them a deeper, fuller flavour.\n\nThe cup is a rich amber. The aroma is fruity, and the taste brings ripe fruit and the muscatel character (a grape-like sweetness) that made second flush Darjeeling famous. It has more body and strength than a first flush, with a smooth, lingering finish.\n\nTry the first cup plain to taste the muscatel; it is sturdy enough to take a splash of milk if you prefer. A good all-day black tea, and a fine match for breakfast or an afternoon snack.",
       "imageSrc": "/products/second-flush.webp",
+      "images": [],
       "category": "Black Tea",
       "tastingNotes": [
         "Muscatel",
@@ -611,10 +654,12 @@
       "slug": "autumn-flush",
       "name": "3rd Flush",
       "status": "active",
+      "listed": true,
       "fromPrice": 63100,
       "description": "The autumn pluck — a mellow, rounded cup with a coppery colour and a gentle sweetness.",
       "longDescription": "Third flush, also called autumn flush, is picked after the monsoon as the growing season winds down. The bushes grow more slowly in the cooler weather, and the leaf develops a softer, rounder character than the summer teas.\n\nIt brews a coppery, reddish cup. The aroma is warm and gentle, and the taste is mellow and smooth, with a light natural sweetness and low astringency. It is easy to drink and forgiving, even if you steep it a little long.\n\nDrink it plain or with milk; it takes both well. It makes a dependable everyday cup, morning or afternoon, and is a good introduction to Darjeeling for anyone used to stronger tea.",
       "imageSrc": "/products/third-flush.webp",
+      "images": [],
       "category": "Black Tea",
       "tastingNotes": [
         "Mellow",
@@ -652,10 +697,12 @@
       "slug": "whole-leaf-second-flush",
       "name": "Whole Leaf 2nd Flush",
       "status": "coming-soon",
+      "listed": true,
       "fromPrice": null,
       "description": "Unbroken summer leaves for a fuller, fruitier muscatel cup. Arriving soon.",
       "longDescription": "Whole Leaf 2nd Flush is our summer Darjeeling with the leaf kept whole. The leaves are left intact through rolling and drying, so they open fully in the pot and release their flavour slowly.\n\nExpect a rich amber cup with ripe fruit and the muscatel sweetness that second flush is known for, with more body and a longer finish than the broken grade. Drink it plain, or with a splash of milk.",
       "imageSrc": "/products/whole-leaf-second-flush.webp",
+      "images": [],
       "category": "Black Tea",
       "tastingNotes": [
         "Muscatel",
@@ -693,10 +740,12 @@
       "slug": "whole-leaf-autumn-flush",
       "name": "Whole Leaf Autumn Flush",
       "status": "coming-soon",
+      "listed": true,
       "fromPrice": null,
       "description": "Unbroken autumn leaves for a smooth, coppery, gently sweet cup. Arriving soon.",
       "longDescription": "Whole Leaf Autumn Flush is our autumn Darjeeling with the leaf kept whole. Picked as the growing season winds down, the leaves stay intact so they unfurl fully and give a smooth, layered cup.\n\nExpect a coppery cup that is mellow and gently sweet, with low astringency and a soft, rounded finish. It is easy to drink plain and takes milk well.",
       "imageSrc": "/products/whole-leaf-autumn-flush.webp",
+      "images": [],
       "category": "Black Tea",
       "tastingNotes": [
         "Mellow",
@@ -734,10 +783,12 @@
       "slug": "chamomile",
       "name": "Chamomile",
       "status": "coming-soon",
+      "listed": true,
       "fromPrice": null,
       "description": "Whole chamomile flowers for a calm, honeyed, caffeine-free cup. Arriving soon.",
       "longDescription": "Our Chamomile is made from whole dried chamomile flowers rather than broken pieces or dust. Whole flowers keep more of their natural oils, which gives a fuller flavour and aroma.\n\nIt brews a clear golden cup with a sweet, floral aroma and a hint of apple. The taste is soft and honeyed, with no bitterness. Chamomile is naturally caffeine-free, which makes it a popular choice for the evening.\n\nPour water just off the boil and steep for about 5 minutes, or longer for a stronger cup. Drink it plain or with a little honey.",
       "imageSrc": "/products/chamomile.webp",
+      "images": [],
       "category": "Herbal Tea",
       "tastingNotes": [
         "Floral",

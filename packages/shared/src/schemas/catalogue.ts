@@ -70,11 +70,15 @@ export const productSchema = z.object({
   slug: slugSchema,
   name: z.string(),
   status: productStatusSchema,
+  /** False: kept in the catalogue but not shown on the storefront or in the Meta feed. */
+  listed: z.boolean(),
   /** Lowest variant price — the card's "from" figure. Null when coming soon. */
   fromPrice: paiseSchema.nullable(),
   description: z.string(),
   longDescription: z.string().nullable(),
   imageSrc: z.string(),
+  /** Extra photos after `imageSrc`, in display order. */
+  images: z.array(z.string()),
   category: z.string(),
   tastingNotes: z.array(z.string()),
   bodyLevel: z.number().int().min(1).max(5).nullable(),

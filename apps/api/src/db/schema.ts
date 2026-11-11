@@ -37,9 +37,17 @@ export const products = pgTable(
     slug: text('slug').notNull().unique(),
     name: text('name').notNull(),
     status: productStatus('status').notNull().default('active'),
+    /**
+     * False takes a product off the storefront and out of the Meta feed while
+     * keeping it in the database. Owned by the admin: the seed sets it only
+     * when it first creates a product.
+     */
+    listed: boolean('listed').notNull().default(true),
     description: text('description').notNull(),
     longDescription: text('long_description'),
     imageSrc: text('image_src').notNull(),
+    /** Extra photos after `imageSrc`, in display order. */
+    images: jsonb('images').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     category: text('category').notNull(),
     tastingNotes: jsonb('tasting_notes').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     bodyLevel: smallint('body_level'),
@@ -68,6 +76,11 @@ export const products = pgTable(
     } | null>(),
     /** Catalogue order for the shop grid — deliberately not alphabetical. */
     sortOrder: integer('sort_order').notNull().default(0),
+    /**
+     * Set the first time the admin changes this product or its packs. From then
+     * on the admin owns it: the seed, which runs on every start, leaves it alone.
+     */
+    adminEditedAt: timestamp('admin_edited_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

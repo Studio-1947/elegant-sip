@@ -107,6 +107,10 @@ services:
       SHIP_PACKAGING_WEIGHT_GRAMS: ${SHIP_PACKAGING_WEIGHT_GRAMS:-150}
     expose:
       - '4000'
+    volumes:
+      # Product photos uploaded in the admin. The web service mounts the same
+      # volume read-only and serves it at /uploads/.
+      - uploads:/data/uploads
 
   web:
     build:
@@ -138,6 +142,9 @@ services:
       # for fresh certificates on every restart, which they rate-limit.
       - caddy-data:/data
       - caddy-config:/config
+      # Admin-uploaded product photos, served as /uploads/products/… by the
+      # same file server as the rest of the site (and cached as immutable).
+      - uploads:/srv/uploads:ro
 
   # Nightly dump at 02:30, fourteen kept. Small, unglamorous, and the only
   # reason a broken server is an inconvenience rather than a lost business.
@@ -157,6 +164,7 @@ services:
       TZ: ${BACKUP_TIMEZONE:-Asia/Kolkata}
     volumes:
       - ./backups:/backups
+      - uploads:/uploads:ro
     entrypoint: ['/bin/sh', '-c']
     command:
       - |
@@ -178,10 +186,19 @@ services:
           else
             echo "BACKUP FAILED — see backups/last-error.log"
           fi
+          # Product photos uploaded in the admin: the database only holds
+          # their paths, so a restore needs these too.
+          if tar -czf "/backups/uploads-$$stamp.tar.gz" -C /uploads . 2>>/backups/last-error.log; then
+            echo "backup ok: uploads-$$stamp.tar.gz"
+          else
+            echo "UPLOADS BACKUP FAILED — see backups/last-error.log"
+          fi
           ls -1t /backups/*.dump 2>/dev/null | tail -n +15 | xargs -r rm -f
+          ls -1t /backups/uploads-*.tar.gz 2>/dev/null | tail -n +15 | xargs -r rm -f
         done
 
 volumes:
   postgres-data:
   caddy-data:
   caddy-config:
+  uploads:

@@ -39,6 +39,13 @@ const brewingSchema = z.object({
   notes: z.string().trim().max(400),
 })
 
+/** A photo on this site: a root-relative path such as /products/x.webp or /uploads/products/x.webp. */
+const imagePathSchema = z
+  .string()
+  .trim()
+  .max(200)
+  .regex(/^\/(?!.*\.\.)[A-Za-z0-9/_.-]+\.(webp|png|jpe?g|avif)$/i, 'Must be a photo path on this site, e.g. /uploads/products/abc.webp')
+
 /** Derived and stable: slug + tier, matching the seed convention. */
 const skuFor = (slug: string, size: string) =>
   `${slug}--${size.split(' · ')[0].toLowerCase().replace(/\s+/g, '-')}`
@@ -169,9 +176,14 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         body: z.object({
           name: z.string().trim().min(2).max(120).optional(),
           status: z.enum(['active', 'coming-soon']).optional(),
+          listed: z
+            .boolean()
+            .optional()
+            .describe('False hides the product from the storefront and the Meta feed. It stays in the database.'),
           description: z.string().trim().min(10).max(600).optional(),
           longDescription: z.string().trim().max(4000).nullable().optional(),
-          imageSrc: z.string().trim().min(1).max(200).optional(),
+          imageSrc: imagePathSchema.optional(),
+          images: z.array(imagePathSchema).max(12).optional().describe('Extra photos after the main one, in display order.'),
           category: z.string().trim().min(2).max(60).optional(),
           tastingNotes: z.array(z.string().trim().max(40)).max(8).optional(),
           bodyLevel: z.number().int().min(1).max(5).nullable().optional(),
@@ -188,9 +200,10 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
       if (Object.keys(request.body).length === 0) {
         throw ApiError.badRequest('Send at least one field to change.')
       }
+      const now = new Date()
       const rows = await db
         .update(products)
-        .set({ ...request.body, updatedAt: new Date() })
+        .set({ ...request.body, updatedAt: now, adminEditedAt: now })
         .where(eq(products.slug, request.params.slug))
         .returning({ id: products.id })
       if (rows.length === 0) throw ApiError.notFound(`Product "${request.params.slug}"`)
@@ -243,6 +256,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         if (stock > 0) {
           await tx.insert(stockLedger).values({ variantId: variant.id, delta: stock, reason: 'seed' })
         }
+        await tx.update(products).set({ adminEditedAt: new Date() }).where(eq(products.id, product.id))
       })
 
       return { slug: product.slug, size, price, stock }
@@ -273,7 +287,12 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) => {
       const variant = await db
-        .select({ id: productVariants.id, size: productVariants.size })
+        .select({
+          id: productVariants.id,
+          productId: productVariants.productId,
+          size: productVariants.size,
+          compareAtPrice: productVariants.compareAtPrice,
+        })
         .from(productVariants)
         .innerJoin(products, eq(productVariants.productId, products.id))
         .where(eq(products.slug, request.params.slug))
@@ -281,6 +300,11 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
 
       if (!variant) {
         throw ApiError.notFound(`Variant "${request.params.size}" of "${request.params.slug}"`)
+      }
+      // Say it plainly instead of letting the database constraint fail.
+      const compareAt = request.body.compareAtPrice !== undefined ? request.body.compareAtPrice : variant.compareAtPrice
+      if (compareAt !== null && compareAt <= request.body.price) {
+        throw ApiError.badRequest('The regular (crossed-out) price must be higher than the selling price, or left empty.')
       }
 
       const [updated] = await db
@@ -291,6 +315,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         })
         .where(eq(productVariants.id, variant.id))
         .returning({ price: productVariants.price, compareAtPrice: productVariants.compareAtPrice })
+      await db.update(products).set({ adminEditedAt: new Date() }).where(eq(products.id, variant.productId))
 
       return { slug: request.params.slug, size: variant.size, price: updated.price, compareAtPrice: updated.compareAtPrice }
     },

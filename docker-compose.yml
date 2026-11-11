@@ -105,6 +105,10 @@ services:
       MAIL_FROM: ${MAIL_FROM:-Elegant Sip <orders@elegantsip.in>}
     ports:
       - '4000:4000'
+    volumes:
+      # Product photos uploaded in the admin.
+      - uploads:/data/uploads
 
 volumes:
   postgres-data:
+  uploads:

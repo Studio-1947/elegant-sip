@@ -85,6 +85,20 @@
       "when": 1794233517833,
       "tag": "0011_variant_compare_at_price",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794389229357,
+      "tag": "0012_product_listed_and_launch_prices",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794395620640,
+      "tag": "0013_product_images_and_admin_ownership",
+      "breakpoints": true
     }
   ]
 }

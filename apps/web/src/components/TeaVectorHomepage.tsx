@@ -8,6 +8,7 @@ import { useRoute, parseRoute, getRoute } from '../lib/router'
 import { useIsCompact } from '../lib/useMediaQuery'
 import { getVideoProgress } from '../lib/videoLoading'
 import { setLenis } from '../lib/scroll'
+import { useLiveCatalogue } from '../lib/liveCatalogue'
 
 // Non-home routes are code-split: each loads on demand with a skeleton page
 // as the Suspense fallback. The home experience stays in the main bundle.
@@ -36,6 +37,8 @@ const NotFoundPage = lazy(() => import('./NotFoundPage'))
 
 export default function TeaVectorHomepage() {
   const route = useRoute()
+  // Re-renders every page once the live catalogue arrives from the API.
+  useLiveCatalogue()
   const { name: routeName, id: routeId } = parseRoute(route)
   const isHome = routeName === 'home'
 

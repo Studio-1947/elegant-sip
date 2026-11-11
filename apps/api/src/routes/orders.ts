@@ -27,6 +27,7 @@ import {
   stockLedger,
 } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
+import { unavailableReason, unitPrice } from '../lib/catalogue-pricing.js'
 import { getGateway } from '../lib/gateway.js'
 import { capturePayment } from '../lib/capture.js'
 import { sendEmail } from '../lib/email.js'
@@ -390,7 +391,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
               `"${line.productSlug}" (${line.variantSize}) is no longer available. Please review your cart.`,
             )
           }
-          if (v.status === 'coming-soon') {
+          if (unavailableReason(v) === 'coming-soon') {
             throw ApiError.badRequest(`${v.name} has not been released yet and cannot be ordered.`)
           }
           if (v.stock < line.quantity) {
@@ -408,9 +409,9 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             variantSize: v.size,
             sku: v.sku,
             imageSrc: v.imageSrc,
-            unitPrice: v.price,
+            unitPrice: unitPrice(v),
             quantity: line.quantity,
-            lineTotal: v.price * line.quantity,
+            lineTotal: unitPrice(v) * line.quantity,
           })
         }
 

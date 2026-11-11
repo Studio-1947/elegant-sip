@@ -30,7 +30,11 @@ services:
       # little idle CPU; without it hot reload silently does nothing.
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: '400'
+      UPLOADS_DIR: /data/uploads
     volumes:
+      # Admin photo uploads land in apps/api/uploads on the host (gitignored),
+      # the same folder the test suite and a host-run API use.
+      - ./apps/api/uploads:/data/uploads
       # Source only. node_modules stays as installed inside the image — mounting
       # the host's would put Windows-built binaries into Alpine Linux.
       - ./apps/api/src:/repo/apps/api/src:ro

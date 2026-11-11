@@ -49,3 +49,10 @@ apps/api/dist/
 
 # Database dumps from the production stack — never in git.
 backups/
+
+# Product photos uploaded through the admin while developing locally.
+apps/api/uploads/
+
+# Full-size lifestyle photography (~100 MB each). Too large for git and for
+# the website; upload a copy through the admin photo uploader to use one.
+apps/web/product-photos/lifestyle-originals/
