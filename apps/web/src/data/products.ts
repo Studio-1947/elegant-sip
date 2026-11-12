@@ -48,9 +48,9 @@ export function subscribeCatalogue(listener: () => void): () => void {
  * Overlay the live catalogue (GET /v1/products) onto the snapshot, in place.
  *
  * Live order wins, teas missing from the live list (retired) drop out, and a
- * tea added since the last sync appears. For known teas only the fields staff
- * change day to day are taken: status, prices, stock and pack sizes. Display
- * only — the server re-prices every cart regardless.
+ * tea added since the last sync appears. For known teas everything staff can
+ * edit in the dashboard is taken: text, photos, status, prices, stock and pack
+ * sizes. Display only — the server re-prices every cart regardless.
  */
 export function applyLiveCatalogue(live: readonly Product[]): void {
   const known = new Map(SNAPSHOT_PRODUCTS.map((p) => [p.slug, p]))
@@ -60,6 +60,21 @@ export function applyLiveCatalogue(live: readonly Product[]): void {
       const shown = known.get(fresh.slug)
       if (!shown) return fresh
       shown.status = fresh.status
+      // Words and photos edited in the admin product editor.
+      Object.assign(shown, {
+        name: fresh.name,
+        description: fresh.description,
+        longDescription: fresh.longDescription,
+        imageSrc: fresh.imageSrc,
+        images: fresh.images,
+        category: fresh.category,
+        tastingNotes: fresh.tastingNotes,
+        bodyLevel: fresh.bodyLevel,
+        harvestLabel: fresh.harvestLabel,
+        origin: fresh.origin,
+        flavorProfile: fresh.flavorProfile,
+        brewingGuide: fresh.brewingGuide,
+      })
       shown.fromPrice = fresh.fromPrice
       shown.archivedAt = null
       shown.variants = fresh.variants.map((v) => {
@@ -73,20 +88,8 @@ export function applyLiveCatalogue(live: readonly Product[]): void {
   listeners.forEach((listener) => listener())
 }
 
-/** Extra photos beyond `imageSrc`, in display order. Not in the API yet. */
-const EXTRA_IMAGES: Record<string, string[]> = {
-  'first-flush': ['/products/first-flush-leaf.webp', '/products/first-flush-pile.webp'],
-  'golden-needle': ['/products/golden-needle-alt.webp', '/products/golden-needle-leaf.webp', '/products/golden-needle-pile.webp'],
-  'green-tea': ['/products/green-tea-alt.webp'],
-  'pan-roasted': ['/products/pan-roasted-alt.webp', '/products/pan-roasted-leaf.webp', '/products/pan-roasted-pile.webp'],
-  'silver-needle': ['/products/silver-needle-alt.webp', '/products/silver-needle-leaf.webp', '/products/silver-needle-pile.webp'],
-  'white-tea': ['/products/white-tea-alt.webp'],
-}
-
-export const getProductImages = (product: Product): string[] => [
-  product.imageSrc,
-  ...(EXTRA_IMAGES[product.slug] ?? []),
-]
+/** Main photo first, then the gallery photos set in the admin, in order. */
+export const getProductImages = (product: Product): string[] => [product.imageSrc, ...(product.images ?? [])]
 
 /** Alt text for a product photo, read from its filename suffix. */
 export const describeProductImage = (product: Product, src: string): string => {

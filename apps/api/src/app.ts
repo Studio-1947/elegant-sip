@@ -27,6 +27,8 @@ import { productRoutes } from './routes/products.js'
 import { gardenRoutes } from './routes/gardens.js'
 import { journalRoutes } from './routes/journal.js'
 import { pricingRoutes } from './routes/pricing.js'
+import { feedRoutes } from './routes/feeds.js'
+import { uploadRoutes } from './routes/uploads.js'
 import { otpRoutes } from './routes/otp.js'
 import { pincodeRoutes } from './routes/pincode.js'
 import { cspReportRoutes } from './routes/csp.js'
@@ -173,6 +175,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(gardenRoutes, { prefix: '/v1' })
   await app.register(journalRoutes, { prefix: '/v1' })
   await app.register(pricingRoutes, { prefix: '/v1' })
+  await app.register(feedRoutes, { prefix: '/v1' })
+  await app.register(uploadRoutes)
   await app.register(pincodeRoutes, { prefix: '/v1' })
   await app.register(orderRoutes, { prefix: '/v1' })
   await app.register(paymentRoutes, { prefix: '/v1' })

@@ -10,7 +10,6 @@ import { useScrollReveal } from '../lib/useScrollReveal'
 import { useCatalogue } from '../lib/liveCatalogue'
 
 // Catalogue order, not alphabetical: First Flush → Second Flush → Third Flush.
-const CATEGORIES = ['All', ...new Set(PRODUCTS.map((p) => p.category))]
 
 const SORT_OPTIONS = [
   { value: 'featured', label: 'Sort: Featured' },
@@ -56,6 +55,8 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
 
   // Live prices and retirements land after first paint; the list is recomputed then.
   const products = useCatalogue()
+  // From the live list, so a category renamed in the admin shows up as a filter.
+  const categories = useMemo(() => ['All', ...new Set(products.map((p) => p.category))], [products])
   const visibleProducts = useMemo(() => {
     let filtered = category === 'All' ? [...products] : products.filter((p) => p.category === category)
     const q = search.trim().toLowerCase()
@@ -163,7 +164,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
         <div className="relative z-30 max-w-6xl mx-auto mb-6 md:mb-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           {/* Category chips — one swipeable row on phones, wrapping row from sm up */}
           <div className="relative flex overflow-x-auto overflow-y-hidden no-scrollbar -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center items-center gap-2.5 sm:gap-3">
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}

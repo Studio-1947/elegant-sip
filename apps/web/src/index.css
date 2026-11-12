@@ -261,3 +261,49 @@ h2,
 h3 {
   text-wrap: balance;
 }
+
+/* ── Admin panel motion ───────────────────────────────────────────────────────
+   Short and quiet: things arrive, they don't perform. All of it switches off
+   for visitors who ask for reduced motion. */
+@keyframes adm-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes adm-pop {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes adm-sheet {
+  from { opacity: 0.6; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes adm-toast-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes adm-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@keyframes adm-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes adm-spin {
+  to { transform: rotate(360deg); }
+}
+.adm-backdrop { animation: adm-backdrop 180ms ease-out both; }
+.adm-pop { animation: adm-pop 240ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+.adm-toast { animation: adm-toast-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.adm-progress { transform-origin: left; animation: adm-progress linear forwards; }
+/* Lists rise in one after another; --i is the item's index (capped by the caller). */
+.adm-rise { animation: adm-rise 320ms ease-out both; animation-delay: calc(var(--i, 0) * 40ms); }
+.adm-spin { animation: adm-spin 0.8s linear infinite; }
+@media (max-width: 639px) {
+  .adm-pop.adm-sheet-sm { animation: adm-sheet 280ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-backdrop, .adm-pop, .adm-toast, .adm-rise, .adm-pop.adm-sheet-sm { animation: none; }
+  .adm-progress { animation: none; transform: scaleX(0); }
+  .adm-spin { animation-duration: 2.4s; }
+}

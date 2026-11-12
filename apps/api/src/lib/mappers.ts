@@ -39,6 +39,7 @@ export function toProductDto(row: ProductRow): Product {
     description: row.description,
     longDescription: row.longDescription,
     imageSrc: row.imageSrc,
+    images: row.images ?? [],
     category: row.category,
     tastingNotes: row.tastingNotes ?? [],
     bodyLevel: row.bodyLevel,

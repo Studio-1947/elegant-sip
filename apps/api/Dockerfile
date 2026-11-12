@@ -69,6 +69,11 @@ COPY --from=build /repo/apps/api/dist ./dist
 COPY --from=build /repo/apps/api/drizzle ./drizzle
 COPY apps/api/package.json ./package.json
 
+# Admin photo uploads. Created here and owned by `node`, so a fresh Docker
+# volume mounted on it inherits that ownership and the API can write to it.
+ENV UPLOADS_DIR=/data/uploads
+RUN mkdir -p /data/uploads/products && chown -R node:node /data/uploads
+
 # Never run as root.
 USER node
 

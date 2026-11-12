@@ -43,6 +43,8 @@ function needsIntroLoader(): boolean {
 
 export default function TeaVectorHomepage() {
   const route = useRoute()
+  // Re-renders every page once the live catalogue arrives from the API.
+  useLiveCatalogue()
   const { name: routeName, id: routeId } = parseRoute(route)
   const isHome = routeName === 'home'
   // Live prices, stock and retirements: re-renders the page tree when they land.

@@ -53,6 +53,13 @@ const envSchema = z.object({
   /** Public base URL of the storefront, used in emails and absolute links. */
   SITE_URL: z.string().url().default('https://elegantsip.in'),
 
+  /**
+   * Where product photos uploaded in the admin are written. Must be on a
+   * persistent volume in production (docker-compose.prod.yml mounts one), or
+   * uploads vanish when the container is rebuilt.
+   */
+  UPLOADS_DIR: z.string().min(1).default('./uploads'),
+
   /*
    * Apply migrations and load the catalogue during boot rather than as a
    * separate step before it.

@@ -377,6 +377,13 @@ export interface AdminProductEdit {
   tastingNotes?: string[]
   harvestLabel?: string | null
   brewingGuide?: NonNullable<Product['brewingGuide']> | null
+  category?: string
+  bodyLevel?: number | null
+  origin?: NonNullable<Product['origin']> | null
+  flavorProfile?: NonNullable<Product['flavorProfile']> | null
+  /** Main photo, and the gallery after it in display order: site paths from uploadProductPhoto. */
+  imageSrc?: string
+  images?: string[]
   /** True retires the tea; false brings it back. */
   archived?: boolean
 }
@@ -593,9 +600,10 @@ export const api = {
   },
 
   admin: {
-    listOrders: (status?: AdminOrderStatus) =>
+    /** Newest first. The API returns at most 200 per call. */
+    listOrders: (status?: AdminOrderStatus, limit = 50) =>
       request<{ orders: AdminOrder[] }>(
-        `/v1/admin/orders${status ? `?status=${encodeURIComponent(status)}` : ''}`,
+        `/v1/admin/orders?limit=${limit}${status ? `&status=${encodeURIComponent(status)}` : ''}`,
       ),
     getOrder: (number: string) => request<AdminOrderDetail>(`/v1/admin/orders/${encodeURIComponent(number)}`),
     updateOrder: (
@@ -629,6 +637,18 @@ export const api = {
       post<{ changes: OfferChange[] }>('/v1/admin/offers', { action, ...(productSlug ? { productSlug } : {}) }),
     updateProduct: (slug: string, payload: AdminProductEdit) =>
       request<{ ok: true }>(`/v1/admin/products/${encodeURIComponent(slug)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    /** Sends the file as-is; the API re-encodes it and returns its site path. */
+    uploadProductPhoto: (file: File) =>
+      request<{ src: string; width: number; height: number }>('/v1/admin/uploads/product-photo', {
+        method: 'POST',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      }),
+    addVariant: (slug: string, payload: { size: string; price: number; stock: number }) =>
+      post<{ slug: string; size: string; price: number; stock: number }>(`/v1/admin/products/${encodeURIComponent(slug)}/variants`, payload),
+    /** Only for a pack that has never been ordered; the API refuses otherwise. */
+    deleteVariant: (slug: string, size: string) =>
+      request<{ ok: true }>(`/v1/admin/products/${encodeURIComponent(slug)}/variants/${encodeURIComponent(size)}`, { method: 'DELETE' }),
     /** Prices are integer paise. A null compareAtPrice ends the offer; omit it to leave it unchanged. */
     updateVariantPrice: (slug: string, size: string, payload: { price: number; compareAtPrice?: number | null }) =>
       request<{ slug: string; size: string; price: number; compareAtPrice: number | null }>(

@@ -120,6 +120,13 @@
       "when": 1794303441856,
       "tag": "0016_meta_purchase_client",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794459124358,
+      "tag": "0017_product_gallery_images",
+      "breakpoints": true
     }
   ]
 }

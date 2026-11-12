@@ -33,6 +33,7 @@
     "nodemailer": "^10.4.0",
     "pdfkit": "^0.20.1",
     "postgres": "^3.4.9",
+    "sharp": "^0.34.4",
     "zod": "^4.6.7"
   },
   "devDependencies": {

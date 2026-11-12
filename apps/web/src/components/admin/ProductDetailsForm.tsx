@@ -1,108 +1,181 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Product } from '@elegantsip/shared'
-import { ApiClientError, api, type AdminProductEdit } from '../../lib/api'
+import { api, type AdminProductEdit } from '../../lib/api'
+import { errorText, inputClass, labelClass, primaryButton, type Notice } from './adminUi'
+import { Spinner } from './ui/controls'
 
 type Brewing = NonNullable<Product['brewingGuide']>
+type Origin = NonNullable<Product['origin']>
+type Flavor = NonNullable<Product['flavorProfile']>
 
-const inputClass = 'mt-1 block w-full rounded-lg border border-[#1b261b]/15 bg-white px-2.5 py-1.5 text-sm text-[#1b261b]'
-const labelClass = 'text-[10px] font-mono uppercase tracking-wider text-[#4a584a]'
+const EMPTY_BREWING: Brewing = { temperature: '', time: '', steeps: '', leafAmount: '', notes: '' }
+const EMPTY_ORIGIN: Origin = { origin: '', estate: '', elevation: '', harvest: '', cultivar: '' }
+const EMPTY_FLAVOR: Flavor = { strength: 3, astringency: 3, sweetness: 3, floral: 3, caffeine: 3 }
 
-const BREWING_FIELDS: { key: keyof Brewing; label: string; max: number; placeholder: string }[] = [
-  { key: 'temperature', label: 'Water temperature', max: 40, placeholder: '85°C / 185°F' },
-  { key: 'time', label: 'Steep time', max: 40, placeholder: '3–4 minutes' },
-  { key: 'steeps', label: 'Steeps', max: 20, placeholder: '2–3' },
-  { key: 'leafAmount', label: 'Leaf amount', max: 40, placeholder: '1 tsp per 8 oz' },
-]
+function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <label className={labelClass}>
+      {label}
+      {children}
+      {hint && <span className="mt-1 block normal-case tracking-normal text-[11px] text-[#4a584a]/80">{hint}</span>}
+    </label>
+  )
+}
 
-const emptyBrewing: Brewing = { temperature: '', time: '', steeps: '', leafAmount: '', notes: '' }
+/** Optional block (brewing, origin, flavour): a checkbox decides whether the product shows it at all. */
+function Optional({ title, on, setOn, children }: { title: string; on: boolean; setOn: (v: boolean) => void; children: ReactNode }) {
+  return (
+    <fieldset className={`rounded-2xl border p-4 transition duration-300 ${on ? 'border-[#8bb56e]/40 bg-white shadow-sm' : 'border-[#1b261b]/[0.08] bg-[#1b261b]/[0.02]'}`}>
+      <legend className="px-1">
+        <label className="flex cursor-pointer items-center gap-2 text-xs font-bold uppercase tracking-wider">
+          <input type="checkbox" checked={on} onChange={(e) => setOn(e.target.checked)} className="h-4 w-4 accent-[#4a7333]" />
+          {title}
+        </label>
+      </legend>
+      {on ? <div className="adm-rise">{children}</div> : <p className="text-xs text-[#4a584a]">Not shown on the product page. Tick to add it.</p>}
+    </fieldset>
+  )
+}
 
-/** "muscatel, honey ,  " → ["muscatel", "honey"] */
-const parseTastingNotes = (input: string): string[] =>
-  input.split(',').map((note) => note.trim()).filter(Boolean)
-
-/**
- * The product's words: name, status, descriptions, tasting notes, harvest and
- * the brewing card. Only changed fields are sent; a blank optional field
- * clears it.
- */
-export default function ProductDetailsForm({ product, onCancel, onSaved }: { product: Product; onCancel: () => void; onSaved: (name: string) => void }) {
+/** Text, category, status and the optional info cards. Saved together with one button. */
+export default function ProductDetailsForm({ product, onSaved, notify }: { product: Product; onSaved: () => void; notify: (n: Notice) => void }) {
   const [name, setName] = useState(product.name)
+  const [category, setCategory] = useState(product.category)
   const [status, setStatus] = useState(product.status)
   const [description, setDescription] = useState(product.description)
   const [longDescription, setLongDescription] = useState(product.longDescription ?? '')
   const [notes, setNotes] = useState(product.tastingNotes.join(', '))
-  const [harvest, setHarvest] = useState(product.harvestLabel ?? '')
-  const [brewing, setBrewing] = useState<Brewing>(product.brewingGuide ?? emptyBrewing)
+  const [bodyLevel, setBodyLevel] = useState(product.bodyLevel === null ? '' : String(product.bodyLevel))
+  const [harvestLabel, setHarvestLabel] = useState(product.harvestLabel ?? '')
+  const [brewingOn, setBrewingOn] = useState(product.brewingGuide !== null)
+  const [brewing, setBrewing] = useState<Brewing>(product.brewingGuide ?? EMPTY_BREWING)
+  const [originOn, setOriginOn] = useState(product.origin !== null)
+  const [origin, setOrigin] = useState<Origin>(product.origin ?? EMPTY_ORIGIN)
+  const [flavorOn, setFlavorOn] = useState(product.flavorProfile !== null)
+  const [flavor, setFlavor] = useState<Flavor>(product.flavorProfile ?? EMPTY_FLAVOR)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
 
-  const validate = (): AdminProductEdit | string => {
-    const changes: AdminProductEdit = {}
-    if (name.trim() !== product.name) changes.name = name.trim()
-    if (status !== product.status) changes.status = status
-    if (description.trim() !== product.description) changes.description = description.trim()
-    const long = longDescription.trim() || null
-    if (long !== product.longDescription) changes.longDescription = long
-    const tasting = parseTastingNotes(notes)
-    if (tasting.join('\n') !== product.tastingNotes.join('\n')) changes.tastingNotes = tasting
-    const harvestLabel = harvest.trim() || null
-    if (harvestLabel !== product.harvestLabel) changes.harvestLabel = harvestLabel
+  const save = async () => {
+    const tastingNotes = notes.split(',').map((n) => n.trim()).filter(Boolean)
+    const problems = [
+      name.trim().length < 2 && 'Name needs at least 2 characters.',
+      category.trim().length < 2 && 'Category needs at least 2 characters.',
+      description.trim().length < 10 && 'Short description needs at least 10 characters.',
+      description.trim().length > 600 && 'Short description must be 600 characters or fewer.',
+      longDescription.trim().length > 4000 && 'Full description must be 4,000 characters or fewer.',
+      tastingNotes.length > 8 && 'Up to 8 tasting notes.',
+      tastingNotes.some((n) => n.length > 40) && 'Each tasting note must be 40 characters or fewer.',
+      originOn && (origin.origin.trim().length < 2 || origin.estate.trim().length < 2) && 'Origin needs at least a region and an estate.',
+    ].filter(Boolean)
+    if (problems.length > 0) return notify({ tone: 'error', text: `${product.name}: ${problems[0]}` })
 
-    const card = Object.fromEntries(Object.entries(brewing).map(([k, v]) => [k, v.trim()])) as Brewing
-    const filled = Object.values(card).some(Boolean)
-    const nextCard = filled ? card : null
-    if (JSON.stringify(nextCard) !== JSON.stringify(product.brewingGuide)) changes.brewingGuide = nextCard
-
-    if (Object.keys(changes).length === 0) return 'Nothing has changed.'
-    if (changes.name !== undefined && (changes.name.length < 2 || changes.name.length > 120)) return 'The name must be 2 to 120 characters.'
-    if (changes.description !== undefined && (changes.description.length < 10 || changes.description.length > 600)) return 'The short description must be 10 to 600 characters.'
-    if (tasting.length > 8) return 'Use at most 8 tasting notes.'
-    if (tasting.some((note) => note.length > 40)) return 'Each tasting note must be 40 characters or fewer.'
-    if (filled && BREWING_FIELDS.some(({ key }) => !card[key])) {
-      return 'Fill in temperature, time, steeps and leaf amount, or clear the whole brewing card.'
+    const payload: AdminProductEdit = {
+      name: name.trim(),
+      category: category.trim(),
+      status,
+      description: description.trim(),
+      longDescription: longDescription.trim() || null,
+      tastingNotes,
+      bodyLevel: bodyLevel ? Number(bodyLevel) : null,
+      harvestLabel: harvestLabel.trim() || null,
+      brewingGuide: brewingOn ? brewing : null,
+      origin: originOn ? origin : null,
+      flavorProfile: flavorOn ? flavor : null,
     }
-    return changes
-  }
-
-  const submit = async () => {
-    const changes = validate()
-    if (typeof changes === 'string') return setError(changes)
     setBusy(true)
-    setError('')
     try {
-      await api.admin.updateProduct(product.slug, changes)
-      onSaved(changes.name ?? product.name)
+      await api.admin.updateProduct(product.slug, payload)
+      notify({ tone: 'ok', text: `${name.trim()}: details saved. The site shows them on the next page load.` })
+      onSaved()
     } catch (cause) {
-      setError(cause instanceof ApiClientError ? cause.message : 'The product could not be saved.')
+      notify({ tone: 'error', text: errorText(cause, 'The details could not be saved.') })
     } finally {
       setBusy(false)
     }
   }
 
+  const text = (value: string, set: (v: string) => void, max?: number) => (
+    <input value={value} onChange={(e) => set(e.target.value)} maxLength={max} className={inputClass} />
+  )
+
   return (
-    <form onSubmit={(event) => { event.preventDefault(); void submit() }} className="mt-4 grid gap-3 rounded-xl border border-[#1b261b]/10 p-4 sm:grid-cols-[2fr_1fr]">
-      <label className={labelClass}>Name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required className={inputClass} /></label>
-      <label className={labelClass}>Status
-        <select value={status} onChange={(event) => setStatus(event.target.value as Product['status'])} className={inputClass}>
-          <option value="active">Active (on sale)</option>
-          <option value="coming-soon">Coming soon (not for sale)</option>
-        </select>
-      </label>
-      <label className={`${labelClass} sm:col-span-2`}>Short description<textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={600} rows={3} required className={inputClass} /></label>
-      <label className={`${labelClass} sm:col-span-2`}>Long description (product page, optional)<textarea value={longDescription} onChange={(event) => setLongDescription(event.target.value)} maxLength={4000} rows={6} className={inputClass} /></label>
-      <label className={labelClass}>Tasting notes (comma separated)<input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="muscatel, honey, stone fruit" className={inputClass} /></label>
-      <label className={labelClass}>Harvest label (optional)<input value={harvest} onChange={(event) => setHarvest(event.target.value)} maxLength={60} placeholder="First Flush 2026" className={inputClass} /></label>
-      <fieldset className="grid gap-3 rounded-lg border border-[#1b261b]/10 p-3 sm:col-span-2 sm:grid-cols-4">
-        <legend className={`${labelClass} px-1`}>Brewing card (leave every box blank for none)</legend>
-        {BREWING_FIELDS.map(({ key, label, max, placeholder }) => (
-          <label key={key} className={labelClass}>{label}<input value={brewing[key]} onChange={(event) => setBrewing((b) => ({ ...b, [key]: event.target.value }))} maxLength={max} placeholder={placeholder} className={inputClass} /></label>
-        ))}
-        <label className={`${labelClass} sm:col-span-4`}>Brewing notes (optional)<textarea value={brewing.notes} onChange={(event) => setBrewing((b) => ({ ...b, notes: event.target.value }))} maxLength={400} rows={2} className={inputClass} /></label>
-      </fieldset>
-      <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-        <button disabled={busy} className="rounded-lg bg-[#4a7333] px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save details'}</button>
-        <button type="button" onClick={onCancel} className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#4a584a]">Cancel</button>
-        {error && <p role="alert" className="text-xs text-rose-700">{error}</p>}
+    <form
+      onSubmit={(event) => {
+        event.preventDefault()
+        void save()
+      }}
+      className="space-y-4"
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Name">{text(name, setName, 120)}</Field>
+        <Field label="Category" hint="Also the shop filter, e.g. Black Tea.">{text(category, setCategory, 60)}</Field>
+        <Field label="Status" hint="Coming soon can't be bought, whatever its price.">
+          <select value={status} onChange={(e) => setStatus(e.target.value as Product['status'])} className={inputClass}>
+            <option value="active">On sale</option>
+            <option value="coming-soon">Coming soon</option>
+          </select>
+        </Field>
+        <Field label="Tasting notes" hint="Comma-separated, up to 8.">{text(notes, setNotes)}</Field>
+        <Field label="Body (1 light – 5 full)">
+          <select value={bodyLevel} onChange={(e) => setBodyLevel(e.target.value)} className={inputClass}>
+            <option value="">Not set</option>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Harvest label" hint="Optional, e.g. Spring 2026.">{text(harvestLabel, setHarvestLabel, 60)}</Field>
+      </div>
+      <Field label={`Short description (${description.trim().length}/600)`} hint="On cards and at the top of the product page.">
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className={inputClass} />
+      </Field>
+      <Field label={`Full description (${longDescription.trim().length}/4000)`} hint="The “About this tea” section. Leave a blank line between paragraphs.">
+        <textarea value={longDescription} onChange={(e) => setLongDescription(e.target.value)} rows={8} className={inputClass} />
+      </Field>
+
+      <Optional title="Brewing guide" on={brewingOn} setOn={setBrewingOn}>
+        <div className="grid gap-3 sm:grid-cols-4">
+          {(['temperature', 'time', 'steeps', 'leafAmount'] as const).map((k) => (
+            <Field key={k} label={{ temperature: 'Temperature', time: 'Steep time', steeps: 'Steeps', leafAmount: 'Leaf' }[k]}>
+              <input value={brewing[k]} onChange={(e) => setBrewing({ ...brewing, [k]: e.target.value })} maxLength={k === 'steeps' ? 20 : 40} className={inputClass} />
+            </Field>
+          ))}
+        </div>
+        <div className="mt-3">
+          <Field label="Brewing tip">
+            <input value={brewing.notes} onChange={(e) => setBrewing({ ...brewing, notes: e.target.value })} maxLength={400} className={inputClass} />
+          </Field>
+        </div>
+      </Optional>
+
+      <Optional title="Tea origin" on={originOn} setOn={setOriginOn}>
+        <div className="grid gap-3 sm:grid-cols-5">
+          {(['origin', 'estate', 'elevation', 'harvest', 'cultivar'] as const).map((k) => (
+            <Field key={k} label={k[0].toUpperCase() + k.slice(1)}>
+              <input value={origin[k]} onChange={(e) => setOrigin({ ...origin, [k]: e.target.value })} maxLength={k === 'origin' || k === 'cultivar' ? 120 : k === 'estate' ? 80 : 60} className={inputClass} />
+            </Field>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-[#4a584a]">Only fill this in with confirmed facts. It appears as a card on the product page.</p>
+      </Optional>
+
+      <Optional title="Flavour profile" on={flavorOn} setOn={setFlavorOn}>
+        <div className="grid gap-3 sm:grid-cols-5">
+          {(['strength', 'astringency', 'sweetness', 'floral', 'caffeine'] as const).map((k) => (
+            <Field key={k} label={`${k[0].toUpperCase() + k.slice(1)}: ${flavor[k]}/5`}>
+              <input type="range" min={1} max={5} step={1} value={flavor[k]} onChange={(e) => setFlavor({ ...flavor, [k]: Number(e.target.value) })} className="mt-2 w-full accent-[#4a7333]" />
+            </Field>
+          ))}
+        </div>
+      </Optional>
+
+      {/* Stays in view at the bottom of the editor while scrolling a long form. */}
+      <div className="sticky -bottom-5 -mx-6 flex items-center justify-between gap-3 border-t border-[#1b261b]/[0.07] bg-[#fbfcf9]/95 px-6 py-3 backdrop-blur sm:-mx-7 sm:px-7">
+        <span className="text-[11px] text-[#4a584a]">Text, category, status and the info cards save together.</span>
+        <button type="submit" disabled={busy} className={primaryButton}>
+          {busy ? <Spinner className="h-3.5 w-3.5" /> : null}
+          {busy ? 'Saving…' : 'Save details'}
+        </button>
       </div>
     </form>
   )

@@ -302,6 +302,8 @@ export async function seedProducts(definitions: readonly ProductSeed[], gardenId
             description: fields.description,
             longDescription: fields.longDescription,
             imageSrc: fields.imageSrc,
+            // Gallery photos: only the new range defines them; older teas have none.
+            images: 'images' in fields ? fields.images : [],
             category: fields.category,
             bodyLevel: fields.bodyLevel,
             harvestLabel: fields.harvestLabel,

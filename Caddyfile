@@ -46,6 +46,15 @@
 {$SITE_ADDRESS::80} {
 	encode zstd gzip
 
+	# Meta product feed on the main domain, built live by the API, so a price
+	# change in the admin reaches Meta without a sync or redeploy.
+	handle /meta-feed.csv {
+		rewrite * /v1/feeds/meta.csv
+		reverse_proxy api:4000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+
 	# The API. `handle_path` strips the /api prefix, so a browser request to
 	# /api/v1/products arrives at the API as /v1/products — its routes are
 	# unchanged and know nothing about the prefix.

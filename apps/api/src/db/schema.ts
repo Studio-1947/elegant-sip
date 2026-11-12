@@ -40,6 +40,8 @@ export const products = pgTable(
     description: text('description').notNull(),
     longDescription: text('long_description'),
     imageSrc: text('image_src').notNull(),
+    /** Extra photos after `imageSrc`, in display order. */
+    images: jsonb('images').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     category: text('category').notNull(),
     tastingNotes: jsonb('tasting_notes').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     bodyLevel: smallint('body_level'),

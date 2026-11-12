@@ -9,6 +9,7 @@ import { adminAuditEvents, orders, returnRequests, shipments, stockLedger, users
 import { releaseOrderHoldings } from './orders.js'
 import { ApiError } from '../lib/problem.js'
 import { adminProductRoutes } from './admin-products.js'
+import { adminMediaRoutes } from './admin-media.js'
 import { adminReviewRoutes } from './admin-reviews.js'
 import { adminShippingRoutes } from './admin-shipping.js'
 import { adminOutboxRoutes } from './admin-outbox.js'
@@ -107,6 +108,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
   /* Catalogue management lives in its own module (300-line rule) but registers
      here, inside the auth hook above. */
   await app.register(adminProductRoutes)
+  await app.register(adminMediaRoutes)
   await app.register(adminReviewRoutes)
   await app.register(adminShippingRoutes)
   await app.register(adminOutboxRoutes)

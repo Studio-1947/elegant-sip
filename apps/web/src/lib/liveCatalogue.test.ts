@@ -38,8 +38,8 @@ describe('live catalogue', () => {
     expect(updated).toBe(keptObject)
     expect(updated.variants[0]).toMatchObject({ price: 12_300, compareAtPrice: null, stock: 3 })
     expect(updated.fromPrice).toBe(12_300)
-    // Copy is not overlaid: only the fields staff change day to day.
-    expect(updated.name).not.toBe('A renamed tea')
+    // Words and photos are edited in the admin product editor too, so they overlay as well.
+    expect(updated.name).toBe('A renamed tea')
 
     expect(getProduct(second.slug)).toBeUndefined()
     expect(PRODUCTS).toHaveLength(before - 1)

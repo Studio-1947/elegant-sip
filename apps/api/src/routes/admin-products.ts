@@ -40,6 +40,13 @@ const brewingSchema = z.object({
   notes: z.string().trim().max(400),
 })
 
+/** A photo on this site: a root-relative path such as /products/x.webp or /uploads/products/x.webp. */
+const imagePathSchema = z
+  .string()
+  .trim()
+  .max(200)
+  .regex(/^\/(?!.*\.\.)[A-Za-z0-9/_.-]+\.(webp|png|jpe?g|avif)$/i, 'Must be a photo path on this site, e.g. /uploads/products/abc.webp')
+
 /** Derived and stable: slug + tier, matching the seed convention. */
 const skuFor = (slug: string, size: string) =>
   `${slug}--${size.split(' · ')[0].toLowerCase().replace(/\s+/g, '-')}`
@@ -175,7 +182,8 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
           status: z.enum(['active', 'coming-soon']).optional(),
           description: z.string().trim().min(10).max(600).optional(),
           longDescription: z.string().trim().max(4000).nullable().optional(),
-          imageSrc: z.string().trim().min(1).max(200).optional(),
+          imageSrc: imagePathSchema.optional(),
+          images: z.array(imagePathSchema).max(12).optional().describe('Extra photos after the main one, in display order.'),
           category: z.string().trim().min(2).max(60).optional(),
           tastingNotes: z.array(z.string().trim().max(40)).max(8).optional(),
           bodyLevel: z.number().int().min(1).max(5).nullable().optional(),
