@@ -23,13 +23,17 @@ interface ScrollRevealOptions {
  * still at opacity 0), which makes scroll-position triggers fire too early.
  * Observers are armed only after the content reveal signal so nothing animates
  * while the pinned content is still hidden.
+ *
+ * Kept quick (UX audit: sections sat blank while scrolling): reveals start just
+ * before an element enters, and the stagger counts only the elements arriving
+ * together, so the tenth card on a page never waits a second behind the first.
  */
 export function useScrollReveal<T extends HTMLElement = HTMLElement>(
   options: ScrollRevealOptions = {},
 ) {
   const ref = useRef<T>(null)
   const [armed, setArmed] = useState(false)
-  const { target, y = 36, duration = 0.9, stagger = 0.12 } = options
+  const { target, y = 20, duration = 0.6, stagger = 0.08 } = options
 
   useEffect(() => onContentRevealed(() => setArmed(true)), [])
 
@@ -49,11 +53,12 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
     const tweens = new Map<Element, gsap.core.Tween>()
     const io = new IntersectionObserver(
       (entries) => {
+        // Stagger only within this batch: elements that entered together.
+        let index = 0
         for (const entry of entries) {
           if (!entry.isIntersecting) continue
           const el = entry.target
           io.unobserve(el)
-          const index = elements.indexOf(el)
           tweens.set(
             el,
             gsap.fromTo(
@@ -62,9 +67,11 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
               { opacity: 1, y: 0, duration, ease: 'power3.out', delay: index * stagger },
             ),
           )
+          index += 1
         }
       },
-      { threshold: 0.1 },
+      // Start a little before the element scrolls into view.
+      { threshold: 0.01, rootMargin: '0px 0px 15% 0px' },
     )
     elements.forEach((el) => io.observe(el))
 

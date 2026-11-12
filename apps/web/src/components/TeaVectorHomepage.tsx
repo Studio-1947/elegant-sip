@@ -35,16 +35,24 @@ const VerifyEmailPage = lazy(() => import('./auth/VerifyEmailPage'))
 const ResetPasswordPage = lazy(() => import('./auth/ResetPasswordPage'))
 const NotFoundPage = lazy(() => import('./NotFoundPage'))
 
-/** Only the homepage has a hero video to wait for; reduced motion skips the loader. */
+/**
+ * Only the homepage has a hero video to wait for. Reduced motion skips the
+ * loader, and so does a return visit this session: the page then opens past
+ * the intro, so there is nothing to wait for.
+ */
 function needsIntroLoader(): boolean {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  return !reduced && parseRoute(getRoute()).name === 'home'
+  let seen = false
+  try {
+    seen = sessionStorage.getItem('elegantsip-intro-seen') === 'true'
+  } catch {
+    // Storage blocked: treat as a first visit.
+  }
+  return !reduced && !seen && parseRoute(getRoute()).name === 'home'
 }
 
 export default function TeaVectorHomepage() {
   const route = useRoute()
-  // Re-renders every page once the live catalogue arrives from the API.
-  useLiveCatalogue()
   const { name: routeName, id: routeId } = parseRoute(route)
   const isHome = routeName === 'home'
   // Live prices, stock and retirements: re-renders the page tree when they land.
@@ -62,7 +70,7 @@ export default function TeaVectorHomepage() {
   // Loader: holds until the hero video is actually buffered enough to scrub,
   // showing REAL download progress. Escape hatches so nobody is ever trapped:
   // buffering stall (browser chose partial preload — the clamped scrub handles
-  // the rest), video error, or a 25s hard cap. Only the homepage has a video;
+  // the rest), video error, or an 8s hard cap. Only the homepage has a video;
   // every other route paints immediately. Reduced-motion skips it entirely.
   useEffect(() => {
     if (!showIntroLoader) return
@@ -90,12 +98,13 @@ export default function TeaVectorHomepage() {
       // Stall covers the never-started case too: iOS Safari may not buffer at
       // all until playback is primed — without this, iPhones sat on the loader
       // until the hard cap. The buffered-clamped scrub handles whatever's left.
-      const stalled = Date.now() - lastChange > (lastValue > 0 ? 5000 : 4000)
+      // Nothing downloading at all gives up sooner, so nobody watches a frozen loader.
+      const stalled = Date.now() - lastChange > (lastValue > 0 ? 5000 : 2500)
       // Release at 15% buffered rather than fully buffered: seeks are already
       // clamped to the buffered range, so the playhead simply trails the
       // download instead of the visitor staring at an opaque loader.
       const enoughBuffered = fraction >= 0.35 && elapsed > 1200
-      if (enoughBuffered || stalled || elapsed > 10000) finish()
+      if (enoughBuffered || stalled || elapsed > 8000) finish()
     }, 150)
     return () => {
       window.clearInterval(poll)

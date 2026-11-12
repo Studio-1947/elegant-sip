@@ -13,7 +13,7 @@ const garden = {
   id: crypto.randomUUID(),
   slug: 'gopaldhara',
   name: 'Gopaldhara',
-  region: 'Rungbong Valley',
+  region: 'Darjeeling',
   elevation: '3,500 ft',
   imageSrc: '/gopal-1024.webp',
   story: ['One.', 'Two.'],

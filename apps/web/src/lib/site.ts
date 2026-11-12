@@ -23,6 +23,8 @@ export const DEFAULT_DESCRIPTION =
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.webp`
 
 export const CONTACT_EMAIL = 'elegantsipdarjeeling@gmail.com'
+/** Food business licence. FSSAI's e-commerce rules expect it shown where the food is sold. */
+export const FSSAI_LICENSE = '12825006000162'
 export const WHATSAPP_NUMBER = '+917583995294'
 export const WHATSAPP_URL = 'https://wa.me/917583995294'
 export const INSTAGRAM_URL = 'https://www.instagram.com/elegantsip_darjeeling'

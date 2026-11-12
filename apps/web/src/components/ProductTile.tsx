@@ -70,7 +70,9 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
         </Link>
 
         {comingSoon ? (
-          <span className="absolute top-2 left-2 bg-[#1b261b] text-white text-[11px] font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-md pointer-events-none">
+          // Outlined, not a solid green pill: it must not read like the "% off" deal badge.
+          <span className="absolute top-2 left-2 inline-flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-[#1b261b]/30 text-[#1b261b] text-[11px] font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-md pointer-events-none">
+            <svg aria-hidden="true" className="h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="10" cy="10" r="7.5" /><path d="M10 6v4l2.5 2" /></svg>
             Coming soon
           </span>
         ) : off !== null ? (

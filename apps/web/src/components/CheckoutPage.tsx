@@ -509,6 +509,16 @@ export default function CheckoutPage() {
                   <p><span className="font-bold text-[#1b261b]">Shipping:</span> {SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.label} ({SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.detail})</p>
                   <p><span className="font-bold text-[#1b261b]">Contact:</span> {form.email} · {form.phone}</p>
                 </div>
+                {/* Say how and when the buyer pays before they commit (UX audit: no payment method shown). */}
+                {paymentsAvailable !== false && (
+                  <div className="mt-4 flex gap-3 rounded-xl border border-[#8bb56e]/35 bg-[#8bb56e]/5 p-4 text-xs text-[#4a584a]">
+                    <span aria-hidden="true" className="text-base leading-none">🔒</span>
+                    <p>
+                      <span className="font-bold text-[#1b261b]">Payment:</span> after you place the order, a secure Razorpay window opens to pay{' '}
+                      {formatINR(finalTotal)} by UPI, card, net banking or wallet. Nothing is charged until you approve the payment there.
+                    </p>
+                  </div>
+                )}
                 <p className="text-[11px] text-[#4a584a] mt-4">By placing your order you agree to our Terms & Conditions.</p>
               </div>
             )}
@@ -537,7 +547,7 @@ export default function CheckoutPage() {
                   disabled={placing || paymentsAvailable === false}
                   className="flex-grow bg-[#8bb56e] hover:bg-[#9cc580] disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold tracking-widest uppercase py-3.5 px-8 rounded-lg transition-colors cursor-pointer"
                 >
-                  {placing ? 'Placing Order…' : `Place Order • ${formatINR(finalTotal)}`}
+                  {placing ? 'Placing Order…' : `Place Order & Pay • ${formatINR(finalTotal)}`}
                 </button>
               )}
             </div>
