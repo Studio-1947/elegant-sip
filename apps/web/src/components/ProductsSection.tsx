@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import ProductCard from './ProductCard'
 import ProductTile from './ProductTile'
 import { Link } from '../lib/router'
@@ -32,9 +32,11 @@ interface ProductsSectionProps {
    * Tablet and desktop always use the full card grid.
    */
   mobileLayout?: 'shelf' | 'grid'
+  /** Shown under the heading, above search and filters (e.g. a note to buyers on /shop). */
+  notice?: ReactNode
 }
 
-export default function ProductsSection({ showHeading = true, headingLevel = 'h2', showFilters = false, searchQuery = '', mobileLayout = 'shelf' }: ProductsSectionProps) {
+export default function ProductsSection({ showHeading = true, headingLevel = 'h2', showFilters = false, searchQuery = '', mobileLayout = 'shelf', notice }: ProductsSectionProps) {
   const { openQuiz } = useUi()
   // Keep heading levels sequential below the section heading (no h1 → h3 skip).
   const SubHeading = headingLevel === 'h1' ? 'h2' : 'h3'
@@ -87,6 +89,8 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
           </p>
         </div>
       )}
+
+      {notice}
 
       {/* Taste Matcher — one tappable row on phones */}
       <button
