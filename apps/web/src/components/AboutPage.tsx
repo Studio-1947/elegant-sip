@@ -4,7 +4,7 @@ import SkeletonImage from './SkeletonImage'
 
 const TIMELINE = [
   { year: '2024', title: 'The first harvest', text: 'Elegant Sip is founded on a single conviction: tea should name its garden the way wine names its vineyard.' },
-  { year: '2025', title: 'Direct relationships', text: 'Our buyers on the ground in the various tea gardens of Darjeeling buy whole lots straight from the gardens during the first flush.' },
+  { year: '2025', title: 'Direct relationships', text: 'Our buyers on the ground in the various tea gardens of Darjeeling buy whole lots straight from the gardens.' },
   { year: '2026', title: 'The collection grows', text: 'Four Darjeeling grades from the same first flush pluck, and a Taste Matcher that helps every palate find its cup.' },
 ]
 
