@@ -10,7 +10,7 @@
 ###############################################################################
 
 # ── deps: install once, cached on lockfile changes alone ─────────────────────
-FROM node:22-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
@@ -42,7 +42,7 @@ EXPOSE 4000
 CMD ["npm", "run", "dev"]
 
 # ── prod-deps: runtime dependencies only ─────────────────────────────────────
-FROM node:22-alpine AS prod-deps
+FROM node:25-alpine AS prod-deps
 WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
@@ -52,7 +52,7 @@ RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev --workspace @elegantsip/api --include-workspace-root
 
 # ── runtime ──────────────────────────────────────────────────────────────────
-FROM node:22-alpine AS runtime
+FROM node:25-alpine AS runtime
 ENV NODE_ENV=production
 # dumb-init reaps zombies and forwards SIGTERM, so graceful shutdown actually
 # reaches the process and in-flight requests are drained.
