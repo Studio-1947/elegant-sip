@@ -1,6 +1,6 @@
 {
-  "id": "6f18a52c-6042-4be8-a93d-8d63fa63dcd5",
-  "prevId": "7ebf76fe-9481-413f-9923-3d3f9a182bc3",
+  "id": "2d0c7314-f694-447e-b111-47329066d2a8",
+  "prevId": "43e6c536-b85e-4450-92b5-0180f35356e9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -517,13 +517,6 @@
           "notNull": true,
           "default": "'active'"
         },
-        "listed": {
-          "name": "listed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
         "description": {
           "name": "description",
           "type": "text",
@@ -541,13 +534,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "images": {
-          "name": "images",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
         },
         "category": {
           "name": "category",
@@ -598,12 +584,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "admin_edited_at": {
-          "name": "admin_edited_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -1754,11 +1734,17 @@
         }
       },
       "indexes": {
-        "otp_challenges_phone_idx": {
-          "name": "otp_challenges_phone_idx",
+        "otp_challenges_phone_created_idx": {
+          "name": "otp_challenges_phone_created_idx",
           "columns": [
             {
               "expression": "phone",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2312,6 +2298,19 @@
         },
         "last_synced_at": {
           "name": "last_synced_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "booking_attempt": {
+          "name": "booking_attempt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "booking_started_at": {
+          "name": "booking_started_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

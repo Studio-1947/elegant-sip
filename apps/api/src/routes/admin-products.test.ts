@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
 import { buildApp } from '../app.js'
 import { db, sql } from '../db/client.js'
-import { productVariants, products } from '../db/schema.js'
+import { productVariants, products, seedState } from '../db/schema.js'
 import { users } from '../db/schema-commerce.js'
 import { redis } from '../lib/sessions.js'
 import sharp from 'sharp'
@@ -50,9 +50,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (available) {
-    // Hand green tea back to the seed: clear the admin ownership these tests
-    // gave it and re-seed, which restores its original content and packs.
-    await db.update(products).set({ adminEditedAt: null }).where(eq(products.slug, SLUG))
+    // Hand green tea back to the seed: mark its seed fingerprint stale so the
+    // re-seed rewrites it, restoring the original content and photos.
+    await db.update(products).set({ archivedAt: null }).where(eq(products.slug, SLUG))
+    await db.update(seedState).set({ hash: 'stale' }).where(eq(seedState.key, `product:${SLUG}`))
     await seed()
   }
   if (app) await app.close()
@@ -113,20 +114,20 @@ describe('admin price edits', () => {
 })
 
 describe('admin visibility', () => {
-  it('hides and shows a product', async () => {
+  it('retires and restores a product', async () => {
     if (!available) return
     try {
       const hide = await app.inject({
         method: 'PATCH',
         url: `/v1/admin/products/${SLUG}`,
         headers: { cookie: adminCookie },
-        payload: { listed: false },
+        payload: { archived: true },
       })
       expect(hide.statusCode, hide.body).toBe(200)
       const list = await app.inject({ method: 'GET', url: '/v1/products' })
-      expect(list.json().products.find((p: { slug: string }) => p.slug === SLUG).listed).toBe(false)
+      expect(list.json().products.find((p: { slug: string }) => p.slug === SLUG)?.archivedAt ?? 'gone').toBeTruthy()
     } finally {
-      await db.update(products).set({ listed: true }).where(eq(products.slug, SLUG))
+      await db.update(products).set({ archivedAt: null }).where(eq(products.slug, SLUG))
     }
   })
 })

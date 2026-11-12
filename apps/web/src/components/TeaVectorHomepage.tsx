@@ -35,15 +35,25 @@ const VerifyEmailPage = lazy(() => import('./auth/VerifyEmailPage'))
 const ResetPasswordPage = lazy(() => import('./auth/ResetPasswordPage'))
 const NotFoundPage = lazy(() => import('./NotFoundPage'))
 
+/** Only the homepage has a hero video to wait for; reduced motion skips the loader. */
+function needsIntroLoader(): boolean {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  return !reduced && parseRoute(getRoute()).name === 'home'
+}
+
 export default function TeaVectorHomepage() {
   const route = useRoute()
   // Re-renders every page once the live catalogue arrives from the API.
   useLiveCatalogue()
   const { name: routeName, id: routeId } = parseRoute(route)
   const isHome = routeName === 'home'
+  // Live prices, stock and retirements: re-renders the page tree when they land.
+  useLiveCatalogue()
 
   const [loadingPercentage, setLoadingPercentage] = useState(0)
-  const [loading, setLoading] = useState(true)
+  // Decided once, on the route the visitor first landed on.
+  const [showIntroLoader] = useState(needsIntroLoader)
+  const [loading, setLoading] = useState(showIntroLoader)
   const [fadeLoader, setFadeLoader] = useState(false)
   // Quantized scrub state: only the threshold the header cares about.
   // Storing raw progress here would re-render the whole app shell every frame.
@@ -55,12 +65,7 @@ export default function TeaVectorHomepage() {
   // the rest), video error, or a 25s hard cap. Only the homepage has a video;
   // every other route paints immediately. Reduced-motion skips it entirely.
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const home = parseRoute(getRoute()).name === 'home'
-    if (reduced || !home) {
-      setLoading(false)
-      return
-    }
+    if (!showIntroLoader) return
     const start = Date.now()
     let lastValue = 0
     let lastChange = Date.now()
@@ -96,7 +101,7 @@ export default function TeaVectorHomepage() {
       window.clearInterval(poll)
       if (fadeTimer) window.clearTimeout(fadeTimer)
     }
-  }, [])
+  }, [showIntroLoader])
 
   /*
    * Smooth scroll, loaded AFTER first paint.

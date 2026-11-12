@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # One lockfile at the root covers every workspace (apps/*, packages/*).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Patch and minor bumps of dev tooling land as one PR instead of a dozen.
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+
+  # Actions are pinned to commit SHAs in the workflows; this keeps the pins current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  # Base images (node, caddy) in the Dockerfiles.
+  - package-ecosystem: docker
+    directories:
+      - /apps/api
+      - /apps/web
+    schedule:
+      interval: monthly

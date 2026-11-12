@@ -5,6 +5,13 @@ import { Link, useDocumentMeta } from '../lib/router'
 import OrdersPanel from './admin/OrdersPanel'
 import ProductsPanel from './admin/ProductsPanel'
 import ReturnsPanel from './admin/ReturnsPanel'
+import RestockForm from './admin/RestockForm'
+import ReviewQueue from './admin/ReviewQueue'
+import MfaNudge from './admin/MfaNudge'
+import GardenEditor from './admin/GardenEditor'
+import StoreSettings from './admin/StoreSettings'
+import EmailOutbox from './admin/EmailOutbox'
+import AuditLog from './admin/AuditLog'
 import { cardClass, errorText, quietButton } from './admin/adminUi'
 import { FeedbackProvider, useFeedback } from './admin/ui/Feedback'
 import Modal from './admin/ui/Modal'
@@ -15,7 +22,7 @@ import { Spinner, Tabs } from './admin/ui/controls'
  * admin role (the API checks it again on every request).
  * ──────────────────────────────────────────────────────────────────────────── */
 
-type Section = 'orders' | 'returns' | 'products'
+type Section = 'orders' | 'returns' | 'products' | 'reviews' | 'gardens' | 'settings'
 
 function Gate({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -63,6 +70,7 @@ function Dashboard() {
   // counts are instant. `loading` starts true; Refresh sets it first.
   const load = useCallback(
     () =>
+      // Low stock uses the threshold from Shop settings.
       Promise.all([api.admin.listOrders(undefined, 200), api.admin.config(), api.admin.listReturnRequests(), api.admin.lowStock()])
         .then(([o, c, r, l]) => {
           setOrders(o.orders)
@@ -79,6 +87,15 @@ function Dashboard() {
     void load()
   }, [load])
 
+  const refreshLowStock = useCallback(
+    () =>
+      api.admin
+        .lowStock()
+        .then((r) => setLowStock(r.variants))
+        .catch((cause) => toast({ tone: 'error', text: errorText(cause, 'The low-stock list could not be refreshed.') })),
+    [toast],
+  )
+
   const refresh = () => {
     setLoading(true)
     void load()
@@ -94,6 +111,11 @@ function Dashboard() {
         { label: 'Customer email', ready: config.emailConfigured, value: config.emailConfigured ? 'Configured' : 'Not configured' },
         { label: 'GST invoice', ready: config.gstinConfigured, value: config.gstinConfigured ? 'GSTIN configured' : 'GSTIN needed' },
         { label: 'Shipping', ready: config.shippingLive, value: config.shippingLive ? 'Shiprocket live' : config.shippingProvider === 'fake' ? 'Shiprocket test mode' : 'Manual tracking' },
+        {
+          label: 'Meta server events',
+          ready: config.metaServerEvents === 'live' && !config.metaServerEventsError,
+          value: config.metaServerEventsError ? `Failing: ${config.metaServerEventsError}` : config.metaServerEvents === 'live' ? 'Conversions API live' : config.metaServerEvents === 'test' ? 'Test events only' : 'Not configured',
+        },
         { label: 'Seller location', ready: true, value: config.sellerState },
       ]
     : []
@@ -128,11 +150,13 @@ function Dashboard() {
           </div>
         </header>
 
+        <MfaNudge />
+
         <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat index={0} label="To pack" value={toPack} hint="Paid orders" tone="green" onClick={() => showOrders('paid')} />
           <Stat index={1} label="To ship" value={toShip} hint="Packed orders" tone="violet" onClick={() => showOrders('packed')} />
           <Stat index={2} label="Requests" value={awaiting} hint="Returns & cancellations" tone="amber" onClick={() => setSection('returns')} />
-          <Stat index={3} label="Low stock" value={lowStock.length} hint="5 packs or fewer" tone="rose" onClick={() => setStockOpen(true)} />
+          <Stat index={3} label="Low stock" value={lowStock.length} hint="At your stock threshold" tone="rose" onClick={() => setStockOpen(true)} />
         </div>
 
         <div className="no-scrollbar -mx-1 mb-6 overflow-x-auto px-1">
@@ -143,6 +167,9 @@ function Dashboard() {
               { value: 'orders', label: 'Orders', badge: toPack + toShip },
               { value: 'returns', label: 'Returns', badge: awaiting },
               { value: 'products', label: 'Products' },
+              { value: 'reviews', label: 'Reviews' },
+              { value: 'gardens', label: 'Gardens' },
+              { value: 'settings', label: 'Settings' },
             ]}
           />
         </div>
@@ -157,6 +184,15 @@ function Dashboard() {
               onFilter={setOrderFilter}
               onUpdated={(number, patch) => setOrders((all) => all.map((o) => (o.number === number ? { ...o, ...patch } : o)))}
             />
+          )}
+          {section === 'reviews' && <ReviewQueue />}
+          {section === 'gardens' && <GardenEditor />}
+          {section === 'settings' && (
+            <div className="space-y-8">
+              <StoreSettings onSaved={() => void refreshLowStock()} />
+              <EmailOutbox />
+              <AuditLog />
+            </div>
           )}
           {section === 'returns' && (
             <ReturnsPanel requests={requests} onUpdated={(id, status) => setRequests((all) => all.map((r) => (r.id === id ? { ...r, status } : r)))} />
@@ -201,7 +237,7 @@ function Dashboard() {
         }
       >
         {lowStock.length === 0 ? (
-          <p className="text-sm text-[#4a584a]">Every pack has more than 5 in stock.</p>
+          <p className="text-sm text-[#4a584a]">Every pack is above the low-stock threshold set in Settings.</p>
         ) : (
           <ul className="space-y-2">
             {lowStock.map((v, i) => (
@@ -209,7 +245,18 @@ function Dashboard() {
                 <span className="text-sm">
                   {v.productName} <span className="text-[#4a584a]">· {v.size}</span>
                 </span>
-                <b className={`rounded-lg px-2 py-0.5 font-mono text-sm ${v.stock === 0 ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}`}>{v.stock} left</b>
+                <span className="flex flex-wrap items-center justify-end gap-2">
+                  <b className={`rounded-lg px-2 py-0.5 font-mono text-sm ${v.stock === 0 ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}`}>{v.stock} left</b>
+                  <RestockForm
+                    productSlug={v.productSlug}
+                    productName={v.productName}
+                    size={v.size}
+                    onRestocked={(message) => {
+                      toast({ tone: 'ok', title: 'Restocked', text: message })
+                      void refreshLowStock()
+                    }}
+                  />
+                </span>
               </li>
             ))}
           </ul>

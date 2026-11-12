@@ -70,8 +70,6 @@ export const productSchema = z.object({
   slug: slugSchema,
   name: z.string(),
   status: productStatusSchema,
-  /** False: kept in the catalogue but not shown on the storefront or in the Meta feed. */
-  listed: z.boolean(),
   /** Lowest variant price — the card's "from" figure. Null when coming soon. */
   fromPrice: paiseSchema.nullable(),
   description: z.string(),
@@ -90,6 +88,11 @@ export const productSchema = z.object({
   rating: z
     .object({ average: z.number().min(0).max(5), count: z.number().int().nonnegative() })
     .describe('Derived from published reviews. count 0 means no stars are shown at all'),
+  archivedAt: z.iso
+    .datetime()
+    .nullable()
+    .optional()
+    .describe('When staff retired the product. Public endpoints never list a retired product, so it is null there; the admin list and old storefront snapshots carry it'),
 })
 
 export const gardenSchema = z.object({

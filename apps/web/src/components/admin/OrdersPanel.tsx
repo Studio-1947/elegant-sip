@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react'
 import { api, type AdminOrder, type AdminOrderDetail, type AdminOrderStatus } from '../../lib/api'
 import { formatINR } from '../../lib/currency'
 import { Link } from '../../lib/router'
+import { formatShortDate } from '../../lib/dates'
 import OrderDetailModal from './OrderDetailModal'
 import { cardClass, errorText, inputClass, labelClass, primaryButton, quietButton } from './adminUi'
 import { useFeedback } from './ui/Feedback'
@@ -97,8 +98,12 @@ export default function OrdersPanel({
       toast({
         tone: 'ok',
         title: `${order.number} · ${status}`,
-        text: result.notified ? `Shipment email sent to ${order.email}.` : 'Order updated.',
+        text: result.notified ? `${status === 'delivered' ? 'Delivery' : 'Shipment'} email sent to ${order.email}.` : 'Order updated.',
       })
+      // Cancelling a paid order does not refund it by itself.
+      if (result.refundDue) {
+        toast({ tone: 'info', title: 'Refund still due', text: `${order.number} is cancelled but its payment has not been refunded. Open Details to refund it.` })
+      }
     } catch (cause) {
       toast({ tone: 'error', text: errorText(cause, 'The order could not be updated.') })
     } finally {
@@ -164,7 +169,7 @@ export default function OrdersPanel({
                 </div>
                 <p className="mt-1.5 text-xs text-[#4a584a]">
                   {order.email} · {order.itemCount} item{order.itemCount === 1 ? '' : 's'} · {order.shippingCity} ·{' '}
-                  {new Date(order.placedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {formatShortDate(order.placedAt)}
                 </p>
                 {order.trackingNumber && (
                   <p className="mt-1 text-xs font-mono text-[#4a7333]">

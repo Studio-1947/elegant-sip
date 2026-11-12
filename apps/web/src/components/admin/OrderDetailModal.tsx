@@ -1,9 +1,13 @@
 import type { AdminOrderDetail } from '../../lib/api'
+import { formatDateTime } from '../../lib/dates'
+import { escapeHtml, openPrintWindow, POPUP_BLOCKED_MESSAGE, writePrintDocument } from '../../lib/printWindow'
+import RefundPanel from './RefundPanel'
 import ShipmentPanel from './ShipmentPanel'
 import { primaryButton } from './adminUi'
+import { useFeedback } from './ui/Feedback'
 import Modal from './ui/Modal'
 
-/** Fulfilment detail for one order: delivery, customer, pack list, shipment, packing slip. */
+/** Fulfilment detail for one order: delivery, customer, pack list, shipment, refund, packing slip. */
 export default function OrderDetailModal({
   detail,
   onClose,
@@ -13,15 +17,17 @@ export default function OrderDetailModal({
   onClose: () => void
   onChanged: () => void
 }) {
+  const { toast } = useFeedback()
   const printSlip = () => {
     if (!detail) return
-    const popup = window.open('', '_blank', 'noopener,noreferrer,width=720,height=820')
-    if (!popup) return
-    const safe = (value: string) =>
-      value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character]!)
+    const popup = openPrintWindow()
+    if (!popup) {
+      toast({ tone: 'error', text: POPUP_BLOCKED_MESSAGE })
+      return
+    }
+    const safe = escapeHtml
     // eslint-disable-next-line no-useless-escape -- preserves a literal closing script tag in generated print HTML.
-    popup.document.write(`<!doctype html><title>Packing slip ${safe(detail.number)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#182518}h1{font-size:24px}table{border-collapse:collapse;width:100%;margin-top:20px}th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left}.muted{color:#526052;font-size:12px}</style><h1>Elegant Sip — Packing Slip</h1><p><b>${safe(detail.number)}</b><br><span class="muted">Placed ${safe(new Date(detail.placedAt).toLocaleString('en-IN'))}</span></p><h2>Deliver to</h2><p>${safe(detail.shipping.name)}<br>${safe(detail.shipping.line1)}<br>${safe(detail.shipping.city)}, ${safe(detail.shipping.state ?? '')} ${safe(detail.shipping.postalCode)}<br>${safe(detail.shipping.country)}${detail.phone ? `<br>${safe(detail.phone)}` : ''}</p><h2>Items</h2><table><thead><tr><th>Tea</th><th>Pack</th><th>Qty</th></tr></thead><tbody>${detail.items.map((item) => `<tr><td>${safe(item.productName)}</td><td>${safe(item.variantSize)}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table>${detail.notes ? `<p><b>Customer note:</b> ${safe(detail.notes)}</p>` : ''}<script>window.onload=()=>window.print()<\/script>`)
-    popup.document.close()
+    writePrintDocument(popup, `<!doctype html><title>Packing slip ${safe(detail.number)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#182518}h1{font-size:24px}table{border-collapse:collapse;width:100%;margin-top:20px}th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left}.muted{color:#526052;font-size:12px}</style><h1>Elegant Sip — Packing Slip</h1><p><b>${safe(detail.number)}</b><br><span class="muted">Placed ${safe(formatDateTime(detail.placedAt))}</span></p><h2>Deliver to</h2><p>${safe(detail.shipping.name)}<br>${safe(detail.shipping.line1)}<br>${safe(detail.shipping.city)}, ${safe(detail.shipping.state ?? '')} ${safe(detail.shipping.postalCode)}<br>${safe(detail.shipping.country)}${detail.phone ? `<br>${safe(detail.phone)}` : ''}</p><h2>Items</h2><table><thead><tr><th>Tea</th><th>Pack</th><th>Qty</th></tr></thead><tbody>${detail.items.map((item) => `<tr><td>${safe(item.productName)}</td><td>${safe(item.variantSize)}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table>${detail.notes ? `<p><b>Customer note:</b> ${safe(detail.notes)}</p>` : ''}<script>window.onload=()=>window.print()<\/script>`)
   }
 
   return (
@@ -60,7 +66,7 @@ export default function OrderDetailModal({
                 <br />
                 {detail.phone ?? <span className="text-[#4a584a]">No phone supplied</span>}
                 <br />
-                <span className="text-[#4a584a]">Placed {new Date(detail.placedAt).toLocaleString('en-IN')}</span>
+                <span className="text-[#4a584a]">Placed {formatDateTime(detail.placedAt)}</span>
               </p>
             </section>
           </div>
@@ -83,6 +89,7 @@ export default function OrderDetailModal({
             </p>
           )}
           <ShipmentPanel orderNumber={detail.number} orderStatus={detail.status} onChanged={onChanged} />
+          <RefundPanel orderNumber={detail.number} onChanged={onChanged} />
         </div>
       )}
     </Modal>

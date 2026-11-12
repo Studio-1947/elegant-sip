@@ -161,6 +161,9 @@ export default defineConfig({
   test: {
     // Only this project's tests — the repo also holds unrelated local tooling.
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Components render into a simulated browser page.
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
   },
   server: {
     proxy: {

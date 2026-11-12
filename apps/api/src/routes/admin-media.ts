@@ -88,10 +88,7 @@ export const adminMediaRoutes: FastifyPluginAsyncZod = async (app) => {
         )
       }
 
-      await db.transaction(async (tx) => {
-        await tx.delete(productVariants).where(eq(productVariants.id, variant.id))
-        await tx.update(products).set({ adminEditedAt: new Date() }).where(eq(products.id, product.id))
-      })
+      await db.delete(productVariants).where(eq(productVariants.id, variant.id))
       return { ok: true as const }
     },
   )

@@ -5,8 +5,12 @@ import { useEffect, useState } from 'react'
 import { api, type OrderView } from '../lib/api'
 import { ApiClientError } from '../lib/api'
 import { formatINR } from '../lib/currency'
+import { indianMobileError, normaliseIndianMobile, phoneInputDigits } from '@elegantsip/shared'
+import { isShipmentProblem, shipmentSummary } from '../lib/shipment'
 import { Link, navigate, useDocumentMeta } from '../lib/router'
 import AddressBookSection from './account/AddressBookSection'
+import AccountSettingsSection from './account/AccountSettingsSection'
+import { formatDate } from '../lib/dates'
 
 const ORDER_STATUS: Record<OrderView['status'], { label: string; tone: string }> = {
   pending_payment: { label: 'Awaiting payment', tone: 'bg-amber-50 text-amber-800' },
@@ -19,7 +23,7 @@ const ORDER_STATUS: Record<OrderView['status'], { label: string; tone: string }>
 }
 
 export default function AccountPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, refresh } = useAuth()
   const { openLogin } = useUi()
   const { wishlist, addToCart } = useCart()
   const [orders, setOrders] = useState<OrderView[]>([])
@@ -29,6 +33,9 @@ export default function AccountPage() {
   const [phoneCode, setPhoneCode] = useState('')
   const [phoneMessage, setPhoneMessage] = useState<string | null>(null)
   const [phoneBusy, setPhoneBusy] = useState(false)
+  const [signedOutEverywhere, setSignedOutEverywhere] = useState(false)
+  // The notice belongs to that sign-out only; a later sign-in clears it.
+  if (user && signedOutEverywhere) setSignedOutEverywhere(false)
 
   useEffect(() => {
     if (!user) {
@@ -56,14 +63,16 @@ export default function AccountPage() {
   }
 
   const requestWhatsAppLink = async () => {
+    const local = normaliseIndianMobile(phone)
+    if (!local) { setPhoneMessage(indianMobileError(phone)); return }
     setPhoneMessage(null); setPhoneBusy(true)
-    try { const result = await api.account.requestWhatsApp(phone); setPhoneChallenge(result.challengeId); setPhoneMessage('A code has been sent to WhatsApp.') }
+    try { const result = await api.account.requestWhatsApp(`+91${local}`); setPhoneChallenge(result.challengeId); setPhoneMessage('A code has been sent to WhatsApp.') }
     catch (err) { setPhoneMessage(err instanceof ApiClientError ? err.message : 'Could not send a code.') } finally { setPhoneBusy(false) }
   }
   const verifyWhatsAppLink = async () => {
     if (!phoneChallenge) return
     setPhoneMessage(null); setPhoneBusy(true)
-    try { await api.account.verifyWhatsApp(phoneChallenge, phoneCode); setPhoneMessage('WhatsApp is linked. You can now sign in with a code.'); setPhoneChallenge(null); setPhoneCode('') }
+    try { await api.account.verifyWhatsApp(phoneChallenge, phoneCode); setPhoneMessage('WhatsApp is linked. You can now sign in with a code.'); setPhoneChallenge(null); setPhoneCode(''); void refresh() }
     catch (err) { setPhoneMessage(err instanceof ApiClientError ? err.message : 'Could not verify that code.') } finally { setPhoneBusy(false) }
   }
 
@@ -73,6 +82,11 @@ export default function AccountPage() {
         <div className="max-w-md mx-auto text-center bg-white border border-[#1b261b]/10 rounded-3xl p-10 md:p-14 shadow-[0_12px_40px_rgba(27,38,27,0.04)]">
           <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-4">My Account</span>
           <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">Welcome back</h1>
+          {signedOutEverywhere && (
+            <p role="status" className="mb-6 rounded-lg border border-[#8bb56e]/30 bg-[#8bb56e]/5 px-4 py-3 text-xs text-[#4a584a]">
+              You have been signed out on every device, including this one.
+            </p>
+          )}
           <p className="text-sm text-[#4a584a] leading-relaxed mb-8">
             Sign in to see your order history, wishlist, and saved checkout details.
           </p>
@@ -119,7 +133,7 @@ export default function AccountPage() {
         <section className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 mb-12">
           <h2 className="text-sm font-bold uppercase tracking-wide mb-1">WhatsApp sign-in</h2>
           <p className="text-xs text-[#4a584a] mb-4">Link your number once, then use a WhatsApp OTP instead of your password.</p>
-          {!phoneChallenge ? <div className="flex flex-col sm:flex-row gap-3"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98765 43210" inputMode="numeric" className="flex-1 border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm" /><button onClick={() => void requestWhatsAppLink()} disabled={phoneBusy} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">{phoneBusy ? 'Sending…' : 'Link WhatsApp'}</button></div> : <div className="flex flex-col sm:flex-row gap-3"><input value={phoneCode} onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" inputMode="numeric" className="flex-1 border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm tracking-[0.25em]" /><button onClick={() => void verifyWhatsAppLink()} disabled={phoneBusy || phoneCode.length !== 6} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">Verify number</button></div>}
+          {!phoneChallenge ? <div className="flex flex-col sm:flex-row gap-3"><div className="flex flex-1"><span aria-hidden="true" className="inline-flex items-center rounded-l-lg border border-r-0 border-[#1b261b]/15 bg-[#1b261b]/[0.04] px-3 text-sm font-mono text-[#4a584a]">+91</span><input value={phone} onChange={(e) => setPhone(phoneInputDigits(e.target.value))} placeholder="98765 43210" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={16} aria-label="WhatsApp number (10-digit Indian mobile)" className="flex-1 min-w-0 border border-[#1b261b]/15 rounded-r-lg px-4 py-3 text-sm" /></div><button onClick={() => void requestWhatsAppLink()} disabled={phoneBusy} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">{phoneBusy ? 'Sending…' : 'Link WhatsApp'}</button></div> : <div className="flex flex-col sm:flex-row gap-3"><input value={phoneCode} onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" inputMode="numeric" className="flex-1 border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm tracking-[0.25em]" /><button onClick={() => void verifyWhatsAppLink()} disabled={phoneBusy || phoneCode.length !== 6} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">Verify number</button></div>}
           {phoneMessage && <p role="status" className="text-xs text-[#4a584a] mt-3">{phoneMessage}</p>}
         </section>
 
@@ -156,16 +170,23 @@ export default function AccountPage() {
                     </span>
                   </div>
                   <p className="text-[11px] text-[#4a584a] mt-1">
-                    {new Date(order.placedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {formatDate(order.placedAt)}
                     {' · '}
                     {order.items.reduce((acc, i) => acc + i.quantity, 0)} items
                   </p>
+                  {shipmentSummary(order) && (
+                    <p className={`mt-1.5 text-[11px] font-semibold ${order.shipment && isShipmentProblem(order.shipment.status) ? 'text-amber-800' : 'text-[#4a7333]'}`}>
+                      {shipmentSummary(order)}
+                    </p>
+                  )}
                 </div>
                 <span className="text-sm font-bold font-mono">{formatINR(order.total)}</span>
               </Link>
             ))}
           </div>
         )}
+
+        <AccountSettingsSection onSignedOutEverywhere={() => setSignedOutEverywhere(true)} />
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 {
-  "id": "7ebf76fe-9481-413f-9923-3d3f9a182bc3",
+  "id": "43e6c536-b85e-4450-92b5-0180f35356e9",
   "prevId": "0b37e487-23c1-4638-aa0d-943edddfa05a",
   "version": "7",
   "dialect": "postgresql",
@@ -516,13 +516,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'active'"
-        },
-        "listed": {
-          "name": "listed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         },
         "description": {
           "name": "description",
@@ -1741,11 +1734,17 @@
         }
       },
       "indexes": {
-        "otp_challenges_phone_idx": {
-          "name": "otp_challenges_phone_idx",
+        "otp_challenges_phone_created_idx": {
+          "name": "otp_challenges_phone_created_idx",
           "columns": [
             {
               "expression": "phone",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

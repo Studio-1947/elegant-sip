@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { asc, isNull } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.js'
@@ -20,7 +20,7 @@ export const feedRoutes: FastifyPluginAsyncZod = async (app) => {
           '',
           'One row per product, for the pack the product page opens on. `sale_price` is exactly',
           'what checkout charges for one pack and is sent only when lower than `price`.',
-          'Coming-soon and unlisted products are omitted. Cached for 5 minutes.',
+          'Coming-soon and retired products are omitted. Cached for 5 minutes.',
         ].join('\n'),
         produces: ['text/csv'],
         response: { 200: z.string() },
@@ -28,7 +28,7 @@ export const feedRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (_request, reply) => {
       const rows = await db.query.products.findMany({
-        where: eq(products.listed, true),
+        where: isNull(products.archivedAt),
         with: { variants: { orderBy: asc(productVariants.sortOrder) } },
         orderBy: asc(products.sortOrder),
       })

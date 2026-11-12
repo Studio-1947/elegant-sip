@@ -5,9 +5,11 @@ import { eq } from 'drizzle-orm'
 import { buildApp } from '../app.js'
 import { db, sql } from '../db/client.js'
 import { productVariants, products } from '../db/schema.js'
-import { orders, stockLedger, users } from '../db/schema-commerce.js'
+import { orders, stockLedger, storeSettings, users } from '../db/schema-commerce.js'
 import { FakeGateway } from '../lib/gateway.js'
 import { redis } from '../lib/sessions.js'
+import { provideTestTea, retireTestTea } from '../test-fixtures.js'
+import { invalidateStoreSettings } from '../lib/settings.js'
 import { expirePendingOrders } from './orders.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -22,7 +24,8 @@ import { expirePendingOrders } from './orders.js'
  * a CI job without services does not report a false failure.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-const SLUG = 'first-flush-fannings'
+// A test tea of its own: staff can retire real teas at any time.
+const SLUG = 'test-checkout-tea'
 const SIZE = '100 g'
 
 let app: FastifyInstance
@@ -52,11 +55,13 @@ beforeAll(async () => {
     available = false
     return
   }
+  await provideTestTea(SLUG)
   app = await buildApp()
   await app.ready()
 })
 
 afterAll(async () => {
+  if (available) await retireTestTea(SLUG)
   if (app) await app.close()
   await sql.end({ timeout: 5 }).catch(() => {})
   await redis.quit().catch(() => {})
@@ -102,6 +107,87 @@ const checkout = (payload = order(), headers: Record<string, string> = {}) =>
     remoteAddress: `10.20.${Math.floor(++checkoutCount / 250)}.${checkoutCount % 250}`,
   })
 
+/* Guest checkout is a shop setting. The tests that depend on it set it, and
+   the original value is put back afterwards: the suite shares the dev database. */
+let guestCheckoutBefore: boolean | null = null
+async function setGuestCheckout(enabled: boolean) {
+  if (guestCheckoutBefore === null) {
+    const [row] = await db.select({ on: storeSettings.guestCheckoutEnabled }).from(storeSettings).where(eq(storeSettings.id, 1))
+    guestCheckoutBefore = row?.on ?? false
+  }
+  await db.update(storeSettings).set({ guestCheckoutEnabled: enabled }).where(eq(storeSettings.id, 1))
+  invalidateStoreSettings()
+}
+
+afterAll(async () => {
+  if (available && guestCheckoutBefore !== null) {
+    await db.update(storeSettings).set({ guestCheckoutEnabled: guestCheckoutBefore }).where(eq(storeSettings.id, 1))
+  }
+})
+
+const guestCheckout = (headers: Record<string, string> = {}, payload = order()) =>
+  app.inject({
+    method: 'POST',
+    url: '/v1/orders',
+    headers,
+    payload,
+    remoteAddress: `10.21.${Math.floor(++checkoutCount / 250)}.${checkoutCount % 250}`,
+  })
+
+describe('guest checkout', () => {
+  it('refuses a guest while guest checkout is switched off, and takes no stock', async () => {
+    if (!available) return
+    await setGuestCheckout(false)
+    const before = await stockFor(SLUG)
+    const res = await guestCheckout()
+    expect(res.statusCode).toBe(401)
+    expect(res.json()).toMatchObject({ type: 'unauthenticated', detail: 'Sign in before checking out.' })
+    expect((await stockFor(SLUG)).stock).toBe(before.stock)
+  })
+
+  it('accepts a guest when switched on; only the token holder can read the order', async () => {
+    if (!available) return
+    await setGuestCheckout(true)
+    const res = await guestCheckout()
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.guestAccessToken).toEqual(expect.any(String))
+    expect(body.guestAccessToken.length).toBeGreaterThanOrEqual(40)
+    const row = await db.query.orders.findFirst({ where: eq(orders.number, body.order.number) })
+    expect(row?.userId).toBeNull()
+
+    const url = `/v1/orders/${body.order.number}`
+    expect((await app.inject({ method: 'GET', url })).statusCode).toBe(404)
+    expect((await app.inject({ method: 'GET', url, headers: { 'x-order-access-token': 'x'.repeat(43) } })).statusCode).toBe(404)
+    const read = await app.inject({ method: 'GET', url, headers: { 'x-order-access-token': body.guestAccessToken } })
+    expect(read.statusCode).toBe(200)
+    expect(read.json().number).toBe(body.order.number)
+  })
+
+  it('keeps the browser’s own guest token across an idempotent retry', async () => {
+    if (!available) return
+    await setGuestCheckout(true)
+    const headers = { 'idempotency-key': randomUUID(), 'x-guest-access-token': `guest_retry_token_${randomUUID()}` }
+    const first = await guestCheckout(headers)
+    const retry = await guestCheckout(headers)
+    expect(first.statusCode).toBe(200)
+    expect(retry.statusCode).toBe(200)
+    expect(first.json().guestAccessToken).toBe(headers['x-guest-access-token'])
+    expect(retry.json().order.number).toBe(first.json().order.number)
+    // Without the token, the same key does not hand the order to someone else.
+    const stranger = await guestCheckout({ 'idempotency-key': headers['idempotency-key'] })
+    expect(stranger.statusCode).toBe(409)
+  })
+
+  it('still gives a signed-in buyer an account order, with no guest token, while guest checkout is on', async () => {
+    if (!available) return
+    await setGuestCheckout(true)
+    const res = await checkout()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().guestAccessToken).toBeNull()
+  })
+})
+
 describe('checkout', () => {
   it('prices from the catalogue and ignores any price sent by the client', async () => {
     if (!available) return
@@ -124,10 +210,12 @@ describe('checkout', () => {
     expect(body.order.total % 100).toBe(0)
   })
 
-  it('requires sign-in before an order can be placed', async () => {
+  it('requires sign-in before an order can be placed while guest checkout is off', async () => {
     if (!available) return
+    await setGuestCheckout(false)
     const denied = await app.inject({ method: 'POST', url: '/v1/orders', payload: order() })
     expect(denied.statusCode).toBe(401)
+    expect(denied.json().detail).toBe('Sign in before checking out.')
     const created = await checkout()
     expect(created.statusCode).toBe(200)
     const body = created.json()

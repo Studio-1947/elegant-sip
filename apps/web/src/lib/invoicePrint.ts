@@ -1,0 +1,10 @@
+import type { InvoiceView } from './api'
+import { escapeHtml } from './printWindow'
+
+/** The invoice as a printable HTML document; it opens the print dialog when loaded. */
+export function invoiceHtml(invoice: InvoiceView): string {
+  const safe = escapeHtml
+  const taxLines = [["CGST", invoice.totals.cgst], ["SGST", invoice.totals.sgst], ["IGST", invoice.totals.igst]].filter(([, value]) => value).map(([label, value]) => `<tr><td class="muted">Includes ${label} (${invoice.taxRatePercent / (label === 'IGST' ? 1 : 2)}%)</td><td class="right muted">${safe(value!)}</td></tr>`).join('')
+  // eslint-disable-next-line no-useless-escape -- preserves a literal closing script tag in generated print HTML.
+  return `<!doctype html><title>Invoice ${safe(invoice.number)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#182518}h1{font-size:24px}table{border-collapse:collapse;width:100%;margin-top:18px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left}.right{text-align:right}.muted{color:#526052;font-size:12px}</style><h1>Elegant Sip — ${invoice.isTaxInvoice ? 'Tax Invoice' : 'Provisional Invoice'}</h1><p><b>${safe(invoice.number)}</b><br><span class="muted">Issued ${safe(new Date(invoice.issuedAt).toLocaleDateString('en-IN'))} · HSN ${safe(invoice.hsn)}</span></p><p><b>Bill to</b><br>${safe(invoice.buyer.name)}<br>${safe(invoice.buyer.line1)}<br>${safe(invoice.buyer.city)}, ${safe(invoice.buyer.state ?? '')} ${safe(invoice.buyer.postalCode)}</p><table><thead><tr><th>Description</th><th>Qty</th><th class="right">Amount</th></tr></thead><tbody>${invoice.lines.map((line) => `<tr><td>${safe(line.description)}</td><td>${line.quantity}</td><td class="right">${safe(line.lineTotal)}</td></tr>`).join('')}</tbody></table><table><tbody><tr><td>Subtotal</td><td class="right">${safe(invoice.totals.subtotal)}</td></tr><tr><td>Shipping</td><td class="right">${safe(invoice.totals.shipping)}</td></tr><tr><td><b>Total</b></td><td class="right"><b>${safe(invoice.totals.total)}</b></td></tr>${taxLines}</tbody></table><script>window.onload=()=>window.print()<\/script>`
+}

@@ -28,7 +28,7 @@ export default function QuizResult({ match, onClose, onReset }: { match: Product
     setIsAdding(true)
     addToCart({ productSlug: match.slug, name: match.name, price: variant.price, imageSrc: match.imageSrc, size: variant.size }, 1)
     showToast(`${match.name} added to your cart`)
-    track('add_to_cart', { product: match.slug, source: 'quiz' })
+    track('add_to_cart', { product: match.slug, name: match.name, variant: variant.size, quantity: 1, value: variant.price, source: 'quiz' })
     setTimeout(() => {
       setIsAdding(false)
       setIsAdded(true)

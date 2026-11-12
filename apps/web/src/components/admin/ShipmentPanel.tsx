@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiClientError, api, type AdminOrderStatus, type AdminShipment, type CourierOption } from '../../lib/api'
 import { formatINR } from '../../lib/currency'
+import { formatDateTime } from '../../lib/dates'
 
 const STATUS_LABELS: Record<string, string> = {
   created: 'Booking started',
@@ -15,7 +16,7 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const formatWhen = (value: string | null) =>
-  value ? new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+  value ? formatDateTime(value) : '—'
 
 /**
  * Courier booking for one order: rates, booking (AWB + pickup + label),

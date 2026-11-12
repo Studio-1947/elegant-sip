@@ -19,7 +19,9 @@ const BADGES = [
   },
   {
     title: 'The Sip Promise',
-    text: '30-day satisfaction guarantee — replace or refund, no questions.',
+    // Filled in with the configured number of days, and dropped when the guarantee is off.
+    text: '',
+    guarantee: true,
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
@@ -38,14 +40,19 @@ const BADGES = [
 ]
 
 import { useScrollReveal } from '../lib/useScrollReveal'
+import { useStoreSettings } from '../lib/storeSettings'
 
 export default function TrustBadgesSection() {
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > div' })
+  const { guarantee } = useStoreSettings()
+  const badges = BADGES.filter((badge) => !badge.guarantee || guarantee.enabled).map((badge) =>
+    badge.guarantee ? { ...badge, text: `${guarantee.days}-day satisfaction guarantee — replace or refund, no questions.` } : badge,
+  )
 
   return (
     <section className="hidden md:block px-6 md:px-12 lg:px-16 pb-32 max-w-[1400px] mx-auto">
-      <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {BADGES.map((badge) => (
+      <div ref={gridRef} className={`grid grid-cols-1 sm:grid-cols-2 gap-6 ${badges.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+        {badges.map((badge) => (
           <div
             key={badge.title}
             className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 flex flex-col items-start gap-4 transition-shadow hover:shadow-[0_8px_24px_rgba(27,38,27,0.05)]"

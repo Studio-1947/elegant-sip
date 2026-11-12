@@ -54,7 +54,7 @@ export default function ProductCard({ product }: { product: Product }) {
       quantity,
     )
     showToast(`${product.name} added to your cart`)
-    track('add_to_cart', { product: product.slug, quantity, source: 'product_card' })
+    track('add_to_cart', { product: product.slug, name: product.name, variant: activeVariant.size, quantity, value: activeVariant.price * quantity, source: 'product_card' })
     timers.current.push(
       window.setTimeout(() => {
         setIsAdding(false)
@@ -71,7 +71,7 @@ export default function ProductCard({ product }: { product: Product }) {
       { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
-    track('add_to_cart', { product: product.slug, quantity, source: 'product_card_buy_now' })
+    track('add_to_cart', { product: product.slug, name: product.name, variant: activeVariant.size, quantity, value: activeVariant.price * quantity, source: 'product_card_buy_now' })
     navigate('/checkout')
   }
 

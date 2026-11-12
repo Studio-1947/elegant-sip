@@ -11,7 +11,10 @@ export default function ContactPage() {
     'Questions about an order, a grade, or wholesale? Reach the Elegant Sip team by email or WhatsApp.',
   )
 
-  const [sent, setSent] = useState<'endpoint' | 'undelivered' | null>(null)
+  /* `delivered`: the email reached the shop inbox. `retrying`: the mail server
+     refused it and it is queued for automatic retries. Either way the message
+     itself is saved under `reference`. */
+  const [sent, setSent] = useState<{ delivered: boolean; retrying: boolean; reference: string } | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', email: '', subject: 'Order question', message: '' })
@@ -21,12 +24,12 @@ export default function ContactPage() {
     setSending(true)
     setError(null)
     try {
-      const { delivered } = await api.contact.send(form)
+      const result = await api.contact.send(form)
       /* The API tells us whether the message actually went out. If it did not,
          we say so and offer the direct address rather than claiming it was
          sent. */
-      setSent(delivered ? 'endpoint' : 'undelivered')
-      track('contact_submitted', { subject: form.subject, method: delivered ? 'api' : 'not_delivered' })
+      setSent({ delivered: result.delivered, retrying: result.retrying === true, reference: result.reference })
+      track('contact_submitted', { subject: form.subject, method: result.delivered ? 'api' : 'not_delivered' })
     } catch (err) {
       setError(
         err instanceof ApiClientError
@@ -48,21 +51,26 @@ export default function ContactPage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold uppercase tracking-tight mb-4">
-            {sent === 'endpoint' ? 'Message sent' : 'Not sent yet'}
+            {sent.delivered ? 'Message sent' : 'Saved, not sent yet'}
           </h1>
-          <p className="text-sm text-[#4a584a] leading-relaxed mb-8">
-            {sent === 'endpoint' ? (
+          <p className="text-sm text-[#4a584a] leading-relaxed mb-4">
+            {sent.delivered ? (
               <>Thank you, {form.name.split(' ')[0] || 'friend'}. We reply to every message within one business day.</>
             ) : (
               <>
-                We took your message but could not deliver it just now — our mail service is not
-                reachable. Nothing is lost on your side: please email us directly at{' '}
+                We saved your message, but our mail service could not pass it to the team just now
+                {sent.retrying ? ' — it will keep trying automatically' : ''}. If it is urgent, please email us
+                directly at{' '}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold text-[#4a7333] underline underline-offset-2">
                   {CONTACT_EMAIL}
                 </a>{' '}
-                and we will reply within one business day.
+                and quote your reference.
               </>
             )}
+          </p>
+          <p className="text-sm text-[#1b261b] mb-8">
+            Your reference is{' '}
+            <span className="font-mono font-bold tracking-wider select-all" data-testid="contact-reference">{sent.reference}</span>
           </p>
           <button
             onClick={() => setSent(null)}

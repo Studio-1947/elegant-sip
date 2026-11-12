@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiClientError, api, type SavedAddress } from '../../lib/api'
 import { usePincodeLookup } from '../../lib/usePincodeLookup'
 import LocalityPicker from '../LocalityPicker'
@@ -98,15 +98,45 @@ export default function AddressBookSection() {
     }
   }
 
+  // In-page confirmation instead of window.confirm: styled, readable by screen readers, and not blocked by browsers.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const keepButton = useRef<HTMLButtonElement | null>(null)
+  const sectionRef = useRef<HTMLElement | null>(null)
+  // The address whose Remove button gets focus back when the question is dismissed.
+  const returnFocusTo = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (confirmingId) {
+      keepButton.current?.focus()
+    } else if (returnFocusTo.current) {
+      sectionRef.current?.querySelector<HTMLButtonElement>(`[data-remove-address="${returnFocusTo.current}"]`)?.focus()
+      returnFocusTo.current = null
+    }
+  }, [confirmingId])
+
+  const askToRemove = (address: SavedAddress) => {
+    setConfirmingId(address.id)
+    setMessage(null)
+  }
+
+  const keepAddress = (address: SavedAddress) => {
+    returnFocusTo.current = address.id
+    setConfirmingId(null)
+  }
+
   const remove = async (address: SavedAddress) => {
-    if (!window.confirm(`Remove “${address.label}” from your address book?`)) return
+    setRemoving(true)
     setMessage(null)
     try {
       await api.account.deleteAddress(address.id)
       await load()
+      setConfirmingId(null)
       setMessage('Address removed.')
     } catch (error) {
       setMessage(error instanceof ApiClientError ? error.message : 'We could not remove this address. Please try again.')
+    } finally {
+      setRemoving(false)
     }
   }
 
@@ -118,7 +148,7 @@ export default function AddressBookSection() {
   const pincodeLookup = usePincodeLookup(editing ? draft.postalCode : '', 'India', applyLocation)
 
   return (
-    <section aria-labelledby="address-book-heading" className="mb-12">
+    <section ref={sectionRef} aria-labelledby="address-book-heading" className="mb-12">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 id="address-book-heading" className="text-lg font-bold uppercase tracking-wide">Address book</h2>
@@ -166,7 +196,22 @@ export default function AddressBookSection() {
           {addresses.map((address) => <article key={address.id} className="rounded-2xl border border-[#1b261b]/10 bg-white p-5">
             <div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-bold">{address.label}</h3><p className="mt-1 text-xs text-[#4a584a]">{address.name}</p></div><div className="flex flex-wrap justify-end gap-1">{address.isDefaultShipping && <span className="rounded-md bg-[#8bb56e]/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#4a7333]">Shipping</span>}{address.isDefaultBilling && <span className="rounded-md bg-[#8bb56e]/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#4a7333]">Billing</span>}</div></div>
             <p className="mt-4 text-xs leading-relaxed text-[#4a584a]">{address.line1}<br />{address.city}{address.state ? `, ${address.state}` : ''} {address.postalCode}<br />India</p>
-            <div className="mt-4 flex gap-4"><button type="button" onClick={() => startEdit(address)} className="text-xs font-bold uppercase tracking-wider text-[#4a7333] hover:text-[#1b261b]">Edit</button><button type="button" onClick={() => void remove(address)} className="text-xs font-bold uppercase tracking-wider text-red-700 hover:text-red-900">Remove</button></div>
+            {confirmingId === address.id ? (
+              <div
+                role="group"
+                aria-labelledby={`remove-address-${address.id}`}
+                onKeyDown={(event) => { if (event.key === 'Escape' && !removing) keepAddress(address) }}
+                className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5"
+              >
+                <p id={`remove-address-${address.id}`} className="text-xs font-medium text-red-900">Remove “{address.label}” from your address book?</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => void remove(address)} disabled={removing} className="rounded-lg bg-red-700 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-800 disabled:opacity-60">{removing ? 'Removing…' : 'Yes, remove'}</button>
+                  <button type="button" ref={keepButton} onClick={() => keepAddress(address)} disabled={removing} className="rounded-lg border border-[#1b261b]/20 bg-white px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-[#1b261b] hover:border-[#1b261b] disabled:opacity-60">Keep it</button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 flex gap-4"><button type="button" onClick={() => startEdit(address)} className="text-xs font-bold uppercase tracking-wider text-[#4a7333] hover:text-[#1b261b]">Edit</button><button type="button" data-remove-address={address.id} onClick={() => askToRemove(address)} className="text-xs font-bold uppercase tracking-wider text-red-700 hover:text-red-900">Remove</button></div>
+            )}
           </article>)}
         </div>
       )}

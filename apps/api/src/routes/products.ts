@@ -1,4 +1,4 @@
-import { asc, eq, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, isNotNull, isNull } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { problemSchema, productSchema, reviewSchema, slugSchema } from '@elegantsip/shared'
@@ -15,12 +15,13 @@ export const productRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Catalogue'],
         summary: 'List the catalogue',
         description:
-          'Every product in catalogue order — deliberately not alphabetical. Coming-soon products are included but carry a null `fromPrice`, because they have no price yet and inventing one would be a lie.',
+          'Every product on the shop, in catalogue order — deliberately not alphabetical. Coming-soon products are included but carry a null `fromPrice`, because they have no price yet and inventing one would be a lie. Retired products are left out.',
         response: { 200: z.object({ products: z.array(productSchema) }) },
       },
     },
     async () => {
       const rows = await db.query.products.findMany({
+        where: isNull(products.archivedAt),
         with: { variants: { orderBy: asc(productVariants.sortOrder) }, reviews: true },
         orderBy: asc(products.sortOrder),
       })
@@ -34,13 +35,14 @@ export const productRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Catalogue'],
         summary: 'Get one product',
+        description: 'A retired product is 404, the same as one that never existed.',
         params: z.object({ slug: slugSchema }),
         response: { 200: productSchema, 404: problemSchema },
       },
     },
     async (request) => {
       const row = await db.query.products.findFirst({
-        where: eq(products.slug, request.params.slug),
+        where: and(eq(products.slug, request.params.slug), isNull(products.archivedAt)),
         with: { variants: { orderBy: asc(productVariants.sortOrder) }, reviews: true },
       })
       if (!row) throw ApiError.notFound(`Product "${request.params.slug}"`)
@@ -99,8 +101,46 @@ export const productRoutes: FastifyPluginAsyncZod = async (app) => {
       }
     },
   )
+
+  app.get(
+    '/reviews/recent',
+    {
+      schema: {
+        tags: ['Catalogue'],
+        summary: 'The latest published reviews, across all teas',
+        description:
+          'For the homepage. Newest first at every rating — never filtered to the flattering ones. Empty until staff publish a review.',
+        querystring: z.object({ limit: z.coerce.number().int().min(1).max(12).default(6) }),
+        response: {
+          200: z.object({
+            reviews: z.array(reviewSchema.extend({ productSlug: slugSchema, productName: z.string() })),
+          }),
+        },
+      },
+    },
+    async (request) => {
+      const rows = await db
+        .select({
+          id: reviews.id,
+          author: reviews.authorName,
+          rating: reviews.rating,
+          text: reviews.body,
+          publishedAt: reviews.publishedAt,
+          verified: reviews.verified,
+          productSlug: products.slug,
+          productName: products.name,
+        })
+        .from(reviews)
+        .innerJoin(products, eq(products.id, reviews.productId))
+        // The homepage links each review to its tea, so retired teas' reviews stay off it.
+        .where(and(isNotNull(reviews.publishedAt), isNull(products.archivedAt)))
+        .orderBy(desc(reviews.publishedAt))
+        .limit(request.query.limit)
+      return { reviews: rows.map((r) => ({ ...r, publishedAt: r.publishedAt!.toISOString() })) }
+    },
+  )
 }
 
 /** Exported for the sitemap/prerender build to fetch slugs cheaply. */
 export const publishedProductSlugs = () =>
-  db.select({ slug: products.slug }).from(products).where(isNotNull(products.slug))
+  db.select({ slug: products.slug }).from(products).where(isNull(products.archivedAt))

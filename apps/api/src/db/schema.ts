@@ -37,12 +37,6 @@ export const products = pgTable(
     slug: text('slug').notNull().unique(),
     name: text('name').notNull(),
     status: productStatus('status').notNull().default('active'),
-    /**
-     * False takes a product off the storefront and out of the Meta feed while
-     * keeping it in the database. Owned by the admin: the seed sets it only
-     * when it first creates a product.
-     */
-    listed: boolean('listed').notNull().default(true),
     description: text('description').notNull(),
     longDescription: text('long_description'),
     imageSrc: text('image_src').notNull(),
@@ -77,10 +71,11 @@ export const products = pgTable(
     /** Catalogue order for the shop grid — deliberately not alphabetical. */
     sortOrder: integer('sort_order').notNull().default(0),
     /**
-     * Set the first time the admin changes this product or its packs. From then
-     * on the admin owns it: the seed, which runs on every start, leaves it alone.
+     * Retired from the shop: not listed and cannot be ordered. Kept apart from
+     * `status` so a retired tea comes back exactly as it was. Old orders keep
+     * their own snapshot of the product either way.
      */
-    adminEditedAt: timestamp('admin_edited_at', { withTimezone: true }),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -107,6 +102,8 @@ export const productVariants = pgTable(
     compareAtPrice: integer('compare_at_price'),
     stock: integer('stock').notNull().default(0),
     sortOrder: integer('sort_order').notNull().default(0),
+    /** When staff were last emailed that this pack ran low; cleared once restocked above the threshold. */
+    lowStockAlertedAt: timestamp('low_stock_alerted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -229,6 +226,21 @@ export const coupons = pgTable(
 )
 
 /* ── Relations ────────────────────────────────────────────────────────────── */
+
+/**
+ * What the boot seed last applied, per catalogue item. The seed only rewrites
+ * an item when its definition in seed.ts changes, so edits made in the admin
+ * dashboard survive restarts and deploys that do not touch that item.
+ */
+export const seedState = pgTable('seed_state', {
+  /** e.g. "product:first-flush-whole-leaf". */
+  key: text('key').primaryKey(),
+  /** Fingerprint of the seed definition last applied. */
+  hash: text('hash').notNull(),
+  /** Pack sizes that definition listed, so a size dropped from seed.ts can be removed without touching sizes added in admin. */
+  sizes: jsonb('sizes').$type<string[]>().notNull().default([]),
+  appliedAt: timestamp('applied_at', { withTimezone: true }).notNull().defaultNow(),
+})
 
 export const productsRelations = relations(products, ({ many }) => ({
   variants: many(productVariants),

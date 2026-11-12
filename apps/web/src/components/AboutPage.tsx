@@ -53,8 +53,7 @@ export default function AboutPage() {
           <p>
             So we built the system we wanted to buy from. Our buyers spend the harvest seasons on the
             ground in the Rungbong and Kurseong valleys — tasting from the withering racks, walking the terraces,
-            and buying whole lots directly from the estates. We pay growers a premium for the right to
-            name them on the pack.
+            and buying whole lots directly from the estates.
           </p>
           <p>
             This is not charity; it's quality control. When a grower is paid properly, they can pick at
@@ -88,7 +87,7 @@ export default function AboutPage() {
       {/* Values */}
       <div className="max-w-5xl mx-auto px-6 md:px-12 py-24 grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
-          { title: 'Origin', text: 'Every tea names its garden, its elevation, its harvest date, and its cultivar — on the pack.' },
+          { title: 'Origin', text: 'Each tea page says where the leaf was grown, and the Gardens page shows the gardens we buy from.' },
           { title: 'Craft', text: 'Hand-rolled, shade-dried, slow-oxidized under the guidance of tea masters. No shortcuts.' },
           { title: 'Experience', text: 'Brewing cards with every order — temperature curves, steep counts, tasting notes.' },
         ].map((v) => (

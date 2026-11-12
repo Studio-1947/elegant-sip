@@ -35,7 +35,6 @@ export function toProductDto(row: ProductRow): Product {
     slug: row.slug,
     name: row.name,
     status: row.status,
-    listed: row.listed,
     fromPrice: comingSoon || prices.length === 0 ? null : Math.min(...prices),
     description: row.description,
     longDescription: row.longDescription,
@@ -57,5 +56,6 @@ export function toProductDto(row: ProductRow): Product {
     flavorProfile: row.flavorProfile ?? null,
     brewingGuide: row.brewingGuide ?? null,
     rating: { average, count },
+    archivedAt: row.archivedAt?.toISOString() ?? null,
   }
 }

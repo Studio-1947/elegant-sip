@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
-import { track } from '../lib/analytics'
+import { cartLines, hasAnalyticsConsent, purchaseProps, track } from '../lib/analytics'
+import { rememberPendingPurchase } from '../lib/pendingPurchase'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
 import { api, ApiClientError, type PlaceOrderResult, type SavedAddress } from '../lib/api'
 import { formatINR } from '../lib/currency'
@@ -21,8 +22,12 @@ import CheckoutSummary from './checkout/CheckoutSummary'
 import ShippingStep from './checkout/ShippingStep'
 import BillingAddressSection from './checkout/BillingAddressSection'
 import { loadRazorpay, type RazorpaySuccess } from '../lib/razorpay'
+import { useStoreSettings } from '../lib/storeSettings'
 
 const CHECKOUT_ATTEMPT_KEY = 'elegant_sip_checkout_attempt'
+/* The guest order token lives in sessionStorage, so the order page opens only in this tab. */
+const GUEST_ORDER_NOTE =
+  'As a guest, your order page opens only in this browser tab, and your invoice uses your delivery address. To see the order later from anywhere, create an account with the same email.'
 const INDIAN_MOBILE = /^[6-9]\d{9}$/
 
 function checkoutAttempt() {
@@ -47,6 +52,14 @@ function checkoutAttempt() {
 
 export default function CheckoutPage() {
   const { cart, cartTotal, discount, coupon, clearCart, quote, toCartLines } = useCart()
+  const checkoutTracked = useRef(false)
+  const paymentInfoTracked = useRef(false)
+  // One checkout start per visit, from the cart, a "Buy now" button or a direct link.
+  useEffect(() => {
+    if (checkoutTracked.current || cart.length === 0) return
+    checkoutTracked.current = true
+    track('begin_checkout', { value: cartTotal, lines: cartLines(cart) })
+  }, [cart, cartTotal])
   const { user } = useAuth()
   const { openLogin } = useUi()
   const [step, setStep] = useState<Step>(1)
@@ -54,9 +67,12 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
   const [orderNumber, setOrderNumber] = useState<string | null>(null)
   const [placedOrder, setPlacedOrder] = useState<PlaceOrderResult | null>(null)
+  const [placedEmail, setPlacedEmail] = useState('')
   const [orderError, setOrderError] = useState<string | null>(null)
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
   const [paying, setPaying] = useState(false)
+  /** Razorpay reported a successful payment; the server has not confirmed it yet. Never offer Pay now again. */
+  const [paymentSubmitted, setPaymentSubmitted] = useState(false)
   const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>('standard')
   const [placing, setPlacing] = useState(false)
   const [prefilled, setPrefilled] = useState(false)
@@ -65,13 +81,11 @@ export default function CheckoutPage() {
   const [sameAsShipping, setSameAsShipping] = useState(true)
   const [billingAddressId, setBillingAddressId] = useState<string | null>(null)
   const [billingAddressError, setBillingAddressError] = useState<string | null>(null)
-  const [paymentsAvailable, setPaymentsAvailable] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    void api.storefront.status().then((status) => !cancelled && setPaymentsAvailable(status.paymentsAvailable)).catch(() => {})
-    return () => { cancelled = true }
-  }, [])
+  const storeSettings = useStoreSettings()
+  const paymentsAvailable = storeSettings.paymentsAvailable
+  // Chosen on the sign-in screen; only offered while staff allow guest checkout.
+  const [guestChosen, setGuestChosen] = useState(false)
+  const asGuest = !user && guestChosen && storeSettings.guestCheckout
 
   // Prefill only for a signed-in visitor. Orders are stored per-device, so
   // prefilling a signed-out visitor would disclose the previous customer's
@@ -146,17 +160,21 @@ export default function CheckoutPage() {
     if (!form.city.trim()) next.city = 'Enter your city.'
     const postal = POSTAL_RULES[form.country] ?? GENERIC_POSTAL
     if (!postal.pattern.test(form.zip.trim())) next.zip = postal.hint
-    if (!sameAsShipping && !selectedBillingAddress) setBillingAddressError('Choose a billing address from your address book.')
+    if (!asGuest && !sameAsShipping && !selectedBillingAddress) setBillingAddressError('Choose a billing address from your address book.')
     else setBillingAddressError(null)
     setErrors(next)
     if (Object.keys(next).length > 0) focusFirstError(next)
-    return Object.keys(next).length === 0 && (sameAsShipping || Boolean(selectedBillingAddress))
+    return Object.keys(next).length === 0 && (asGuest || sameAsShipping || Boolean(selectedBillingAddress))
   }
 
   const goNext = () => {
     if (step === 1 && validateStep1()) {
       setStep(2)
-      track('begin_checkout', { step: 2 })
+      // Once per visit, however often the customer goes back to edit the address.
+      if (!paymentInfoTracked.current) {
+        paymentInfoTracked.current = true
+        track('add_payment_info', { value: cartTotal, lines: cartLines(cart) })
+      }
     }
   }
 
@@ -193,7 +211,7 @@ export default function CheckoutPage() {
         country: 'India' as const,
         phone: form.phone.trim(),
       }
-      const billing = sameAsShipping
+      const billing = sameAsShipping || asGuest
         ? shipping
         : selectedBillingAddress && {
           name: selectedBillingAddress.name,
@@ -217,6 +235,8 @@ export default function CheckoutPage() {
         shippingMethod,
         ...(coupon ? { couponCode: coupon } : {}),
         ...(notes ? { notes } : {}),
+        // Lets the payment confirmation report the purchase to Meta, as the pixel would.
+        ...(hasAnalyticsConsent() === true ? { adConsent: true } : {}),
       }, { idempotencyKey: attempt.idempotencyKey, ...(user ? {} : { guestAccessToken: attempt.guestAccessToken }) })
 
       if (user && saveAddress) {
@@ -230,6 +250,7 @@ export default function CheckoutPage() {
         // Not included in URLs, browser history, referrers, or persistent local storage.
         sessionStorage.setItem(`elegant_sip_order_access_${result.order.number}`, result.guestAccessToken)
       }
+      setPlacedEmail(form.email)
       setOrderNumber(result.order.number)
       setPlacedOrder(result)
       clearCart()
@@ -278,6 +299,7 @@ export default function CheckoutPage() {
         theme: { color: '#4a7333' },
         handler: (response) => {
           succeeded = true
+          setPaymentSubmitted(true)
           void confirmPayment(placed, response)
         },
         modal: {
@@ -287,7 +309,9 @@ export default function CheckoutPage() {
             setPaymentNotice(
               lastFailure
                 ? `${lastFailure} Choose Pay now to try again.`
-                : 'Payment was cancelled. Your teas are held for a short while — choose Pay now to finish.',
+                // Closing the window doesn't prove nothing was paid: a UPI payment
+                // approved in the bank's app can still arrive a moment later.
+                : 'The payment window was closed before payment finished. Choose Pay now to try again. If you already approved the payment in your UPI or bank app, wait a minute and check View order before paying again.',
             )
           },
         },
@@ -312,8 +336,10 @@ export default function CheckoutPage() {
       if (status === 'paid') {
         setPlacedOrder({ ...placed, order: { ...placed.order, status: 'paid' } })
         setPaymentNotice(null)
-        track('purchase', { order: placed.order.number, value: placed.order.total, items: placed.order.items.length })
+        track('purchase', purchaseProps(placed.order))
       } else {
+        // The order page records the purchase once the bank's confirmation arrives.
+        rememberPendingPurchase(placed.order.number)
         setPaymentNotice('Payment received and waiting for your bank to confirm. Your order will update shortly.')
       }
     } catch (err) {
@@ -336,7 +362,9 @@ export default function CheckoutPage() {
         paymentProvider={placedOrder?.payment.provider}
         paymentNotice={paymentNotice}
         paying={paying}
+        paymentSubmitted={paymentSubmitted}
         onPay={placedOrder ? () => void openPayment(placedOrder) : undefined}
+        guestEmail={placedOrder?.guestAccessToken ? placedEmail : undefined}
       />
     )
   }
@@ -345,14 +373,20 @@ export default function CheckoutPage() {
     return <EmptyCartScreen />
   }
 
-  if (!user) {
+  if (!user && !asGuest) {
     return (
       <div className="min-h-screen bg-[#f9faf7] px-6 pb-24 pt-32 text-[#1b261b] font-sans md:px-12 lg:px-24">
         <div className="mx-auto max-w-xl rounded-2xl border border-[#1b261b]/10 bg-white p-8 shadow-[0_12px_40px_rgba(27,38,27,0.04)] md:p-10">
           <Link to="/cart" className="inline-flex items-center gap-3 rounded-lg border border-[#1b261b]/20 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[#1b261b] transition-colors hover:border-[#4a7333] hover:bg-[#8bb56e]/10"><span aria-hidden="true" className="text-xl leading-none">←</span> Back to cart</Link>
-          <h1 className="mt-8 text-4xl font-bold uppercase tracking-tight">Sign in to checkout</h1>
+          <h1 className="mt-8 text-4xl font-bold uppercase tracking-tight">{storeSettings.guestCheckout ? 'Checkout' : 'Sign in to checkout'}</h1>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-[#4a584a]">Sign in or create an account to use your delivery and billing address book securely.</p>
           <button onClick={openLogin} className="mt-7 w-full rounded-lg bg-[#1b261b] px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#4a7333] active:translate-y-px">Sign in or create account</button>
+          {storeSettings.guestCheckout && (
+            <>
+              <button type="button" onClick={() => setGuestChosen(true)} className="mt-3 w-full rounded-lg border border-[#1b261b]/20 px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-[#1b261b] transition-colors hover:border-[#4a7333] hover:bg-[#8bb56e]/10 active:translate-y-px">Continue as guest</button>
+              <p className="mt-4 text-xs leading-relaxed text-[#4a584a]">{GUEST_ORDER_NOTE}</p>
+            </>
+          )}
         </div>
       </div>
     )
@@ -420,6 +454,12 @@ export default function CheckoutPage() {
             >
             {step === 1 && (
               <>
+              {asGuest && (
+                <p className="mb-6 rounded-xl border border-[#1b261b]/10 bg-[#f9faf7] px-4 py-3 text-xs leading-relaxed text-[#4a584a]">
+                  <span className="font-bold text-[#1b261b]">Checking out as a guest.</span> {GUEST_ORDER_NOTE}{' '}
+                  <button type="button" onClick={openLogin} className="font-bold text-[#4a7333] underline underline-offset-2">Sign in instead</button>
+                </p>
+              )}
               <ShippingStep
                 form={form}
                 errors={errors}
@@ -436,14 +476,15 @@ export default function CheckoutPage() {
                 saveAddress={saveAddress}
                 setSaveAddress={setSaveAddress}
               />
-              <BillingAddressSection
+              {/* Guests have no address book, so their invoice uses the delivery address. */}
+              {!asGuest && <BillingAddressSection
                 sameAsShipping={sameAsShipping}
                 setSameAsShipping={setSameAsShipping}
                 addresses={savedAddresses}
                 selectedAddress={selectedBillingAddress ?? null}
                 selectAddress={(address) => { setBillingAddressId(address.id); setBillingAddressError(null) }}
                 error={billingAddressError}
-              />
+              />}
               </>
             )}
 
@@ -464,7 +505,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="bg-[#f9faf7] border border-[#1b261b]/10 rounded-xl p-4 text-xs space-y-1.5 text-[#4a584a]">
                   <p><span className="font-bold text-[#1b261b]">Ship to:</span> {form.firstName} {form.lastName}, {form.address}, {form.city}{form.state ? `, ${form.state}` : ''} {form.zip}, {form.country}</p>
-                  <p><span className="font-bold text-[#1b261b]">Bill to:</span> {sameAsShipping ? 'Same as shipping address' : `${selectedBillingAddress?.name}, ${selectedBillingAddress?.line1}, ${selectedBillingAddress?.city} ${selectedBillingAddress?.postalCode}`}</p>
+                  <p><span className="font-bold text-[#1b261b]">Bill to:</span> {sameAsShipping || asGuest ? 'Same as shipping address' : `${selectedBillingAddress?.name}, ${selectedBillingAddress?.line1}, ${selectedBillingAddress?.city} ${selectedBillingAddress?.postalCode}`}</p>
                   <p><span className="font-bold text-[#1b261b]">Shipping:</span> {SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.label} ({SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.detail})</p>
                   <p><span className="font-bold text-[#1b261b]">Contact:</span> {form.email} · {form.phone}</p>
                 </div>

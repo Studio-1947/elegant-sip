@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.js'
@@ -9,6 +9,7 @@ import { parseProviderDate } from '../lib/shipping.js'
 import { env, isProduction } from '../env.js'
 import { getGateway } from '../lib/gateway.js'
 import { capturePayment, recordCaptureOnClosedOrder } from '../lib/capture.js'
+import { reconcileRefundEvent } from '../lib/refunds.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Payment webhooks.
@@ -111,6 +112,12 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
           .set({ processedAt: new Date(), error: error ?? null })
           .where(eq(webhookEvents.id, eventRowId))
         return reply.send({ received: true as const, status })
+      }
+
+      // refund.processed / refund.failed: settle the refund row by its gateway id.
+      if (parsed.refund) {
+        const outcome = await reconcileRefundEvent(parsed.eventType, parsed.refund, request.log)
+        return finish(outcome.status, outcome.error)
       }
 
       if (!parsed.payment) return finish('ignored_no_payment')
@@ -243,21 +250,35 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!parsed.success) return reply.send({ received: true as const, status: 'ignored_unparseable' })
       const event = parsed.data
 
-      const inserted = await db
+      const eventId = `${event.awb}:${event.current_status ?? 'unknown'}:${event.current_timestamp ?? 'undated'}`
+      const [inserted] = await db
         .insert(webhookEvents)
         .values({
           provider: 'shiprocket',
-          eventId: `${event.awb}:${event.current_status ?? 'unknown'}:${event.current_timestamp ?? 'undated'}`,
+          eventId,
           eventType: event.current_status ?? 'unknown',
           payload: request.body as object,
         })
         .onConflictDoNothing()
         .returning({ id: webhookEvents.id })
-      if (inserted.length === 0) return reply.send({ received: true as const, status: 'duplicate' })
+      let eventRowId = inserted?.id
+      if (!eventRowId) {
+        /* Seen before. Only a finished event is a duplicate: one recorded but
+           never processed (processing threw) gets another go on this retry. */
+        const existing = await db.query.webhookEvents.findFirst({
+          where: and(eq(webhookEvents.provider, 'shiprocket'), eq(webhookEvents.eventId, eventId)),
+          columns: { id: true, processedAt: true },
+        })
+        if (!existing || existing.processedAt) return reply.send({ received: true as const, status: 'duplicate' })
+        eventRowId = existing.id
+      }
 
-      const shipment = await db.query.shipments.findFirst({ where: eq(shipments.awb, event.awb) })
+      // A cancelled shipment's old AWB must not move the parcel or the order.
+      const shipment = await db.query.shipments.findFirst({
+        where: and(eq(shipments.awb, event.awb), ne(shipments.status, 'cancelled')),
+      })
       if (!shipment) {
-        await db.update(webhookEvents).set({ processedAt: new Date(), error: 'unknown awb' }).where(eq(webhookEvents.id, inserted[0].id))
+        await db.update(webhookEvents).set({ processedAt: new Date(), error: 'unknown awb' }).where(eq(webhookEvents.id, eventRowId))
         return reply.send({ received: true as const, status: 'unknown_awb' })
       }
 
@@ -278,7 +299,7 @@ export const webhookRoutes: FastifyPluginAsyncZod = async (app) => {
         },
         request.log,
       )
-      await db.update(webhookEvents).set({ processedAt: new Date() }).where(eq(webhookEvents.id, inserted[0].id))
+      await db.update(webhookEvents).set({ processedAt: new Date(), error: null }).where(eq(webhookEvents.id, eventRowId))
       return reply.send({ received: true as const, status: updated.status })
     },
   )

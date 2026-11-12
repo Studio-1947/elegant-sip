@@ -1,10 +1,13 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Catalogue — read from the build-time snapshot in catalogue.json.
+ * Catalogue — the build-time snapshot in catalogue.json, refreshed at runtime.
  *
- * The snapshot is pulled from the API by `npm run catalogue:sync`. This module
- * keeps the same export surface the components already use, so the source of
- * the data changed without the shop, product pages or SEO pipeline changing
- * with it.
+ * The snapshot is pulled from the API by `npm run catalogue:sync`. It paints
+ * the first frame and feeds the SEO prerender. Once the app is running,
+ * `applyLiveCatalogue` overlays the live prices, stock and status and drops
+ * retired teas, so a change staff make in the dashboard shows without a
+ * deploy. PRODUCTS is updated in place, so every consumer keeps working with
+ * the same export surface; components that cache derived lists subscribe to
+ * `useCatalogue()` (lib/liveCatalogue.ts) to recompute.
  *
  * MONEY IS PAISE HERE. The API speaks paise, so the snapshot does too, and
  * `formatINR` renders paise. Nothing in the storefront decides what a customer
@@ -22,15 +25,68 @@ export type JournalArticle = JournalPost
 
 export const CATALOGUE_SYNCED_AT: string = snapshot.syncedAt
 
-/** Every product in the snapshot, listed or not. */
-export const ALL_PRODUCTS: Product[] = snapshot.products as Product[]
+/** Every product in the snapshot, retired ones included, so a tea brought back live keeps its full record. */
+const SNAPSHOT_PRODUCTS = snapshot.products as Product[]
+
+/** What the shop shows. Teas retired in the dashboard carry `archivedAt` and are left out. */
+export const PRODUCTS: Product[] = SNAPSHOT_PRODUCTS.filter((p) => !p.archivedAt)
+
+/* ── Live refresh ─────────────────────────────────────────────────────────── */
+
+let current: readonly Product[] = [...PRODUCTS]
+const listeners = new Set<() => void>()
+
+/** The shop list as a new array each time live data is applied; for `useSyncExternalStore`. */
+export const getCatalogueSnapshot = (): readonly Product[] => current
+
+export function subscribeCatalogue(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
 
 /**
- * Products on the storefront. Unlisted products (the admin's `listed` flag)
- * stay in the API and the snapshot but are not shown, the same rule the Meta
- * feed uses. lib/liveCatalogue.ts refreshes this list in place from the live API.
+ * Overlay the live catalogue (GET /v1/products) onto the snapshot, in place.
+ *
+ * Live order wins, teas missing from the live list (retired) drop out, and a
+ * tea added since the last sync appears. For known teas everything staff can
+ * edit in the dashboard is taken: text, photos, status, prices, stock and pack
+ * sizes. Display only — the server re-prices every cart regardless.
  */
-export const PRODUCTS: Product[] = ALL_PRODUCTS.filter((p) => p.listed)
+export function applyLiveCatalogue(live: readonly Product[]): void {
+  const known = new Map(SNAPSHOT_PRODUCTS.map((p) => [p.slug, p]))
+  const next = live
+    .filter((fresh) => !fresh.archivedAt)
+    .map((fresh) => {
+      const shown = known.get(fresh.slug)
+      if (!shown) return fresh
+      shown.status = fresh.status
+      // Words and photos edited in the admin product editor.
+      Object.assign(shown, {
+        name: fresh.name,
+        description: fresh.description,
+        longDescription: fresh.longDescription,
+        imageSrc: fresh.imageSrc,
+        images: fresh.images,
+        category: fresh.category,
+        tastingNotes: fresh.tastingNotes,
+        bodyLevel: fresh.bodyLevel,
+        harvestLabel: fresh.harvestLabel,
+        origin: fresh.origin,
+        flavorProfile: fresh.flavorProfile,
+        brewingGuide: fresh.brewingGuide,
+      })
+      shown.fromPrice = fresh.fromPrice
+      shown.archivedAt = null
+      shown.variants = fresh.variants.map((v) => {
+        const same = shown.variants.find((old) => old.size === v.size)
+        return same ? Object.assign(same, { price: v.price, compareAtPrice: v.compareAtPrice, stock: v.stock }) : v
+      })
+      return shown
+    })
+  PRODUCTS.splice(0, PRODUCTS.length, ...next)
+  current = [...PRODUCTS]
+  listeners.forEach((listener) => listener())
+}
 
 /** Main photo first, then the gallery photos set in the admin, in order. */
 export const getProductImages = (product: Product): string[] => [product.imageSrc, ...(product.images ?? [])]

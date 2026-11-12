@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { api, ApiClientError, type ReviewView } from '../lib/api'
 import { formatDate } from '../lib/dates'
 import { useAuth } from './AuthContext'
@@ -24,12 +24,14 @@ export default function ProductReviews({ productSlug, reviews, rating, onAdded }
   const [submitted, setSubmitted] = useState(false)
 
   // Reset when navigating between products (same component instance).
-  useEffect(() => {
+  const [prevSlug, setPrevSlug] = useState(productSlug)
+  if (productSlug !== prevSlug) {
+    setPrevSlug(productSlug)
     setReviewOpen(false)
     setForm({ author: '', rating: 5, text: '' })
     setError(null)
     setSubmitted(false)
-  }, [productSlug])
+  }
 
   /*
    * The author name and the "verified purchase" flag both come from the
@@ -137,7 +139,7 @@ export default function ProductReviews({ productSlug, reviews, rating, onAdded }
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-[11px] font-mono text-[#4a584a]">
-              Demo store: reviews are saved in this browser. "Verified purchase" appears only if you've ordered this tea here.
+              Reviews appear once we've checked them. "Verified" is added only if you've bought this tea here.
             </p>
             <button
               type="submit"

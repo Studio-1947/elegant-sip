@@ -24,6 +24,7 @@ export interface ShipmentAddress {
 }
 
 export interface ShipmentInput {
+  /** Sent as Shiprocket's order_id: the order number, suffixed on rebookings (see providerOrderRef). */
   orderNumber: string
   orderDate: Date
   billing: ShipmentAddress
@@ -67,6 +68,12 @@ export class ShippingProviderError extends Error {
   }
 }
 
+export interface AssignedAwb {
+  awb: string
+  courierId: number | null
+  courierName: string | null
+}
+
 export interface ShippingProvider {
   readonly name: string
   createOrder(input: ShipmentInput): Promise<{ providerOrderId: string; providerShipmentId: string }>
@@ -74,11 +81,15 @@ export interface ShippingProvider {
     couriers: CourierOption[]
     recommendedCourierId: number | null
   }>
-  assignAwb(providerShipmentId: string, courierId?: number): Promise<{ awb: string; courierId: number | null; courierName: string | null }>
+  assignAwb(providerShipmentId: string, courierId?: number): Promise<AssignedAwb>
+  /** The AWB the courier already holds for a shipment, for when the reply to assignAwb was lost. */
+  assignedAwb(providerShipmentId: string): Promise<AssignedAwb | null>
   requestPickup(providerShipmentId: string): Promise<{ scheduledAt: string | null }>
   label(providerShipmentId: string): Promise<string | null>
   track(awb: string): Promise<TrackingResult>
   cancel(providerOrderId: string): Promise<void>
+  /** Public tracking page for an AWB, known as soon as it is assigned. */
+  publicTrackingUrl(awb: string): string | null
 }
 
 const toRupees = (paise: number) => Math.round(paise) / 100
@@ -135,7 +146,7 @@ class ShiprocketProvider implements ShippingProvider {
       return this.call<T>(method, path, body, true)
     }
     const text = await response.text()
-    let parsed: unknown = null
+    let parsed: unknown
     try {
       parsed = text ? JSON.parse(text) : null
     } catch {
@@ -262,6 +273,22 @@ class ShiprocketProvider implements ShippingProvider {
     return { awb: data.awb_code, courierId: data.courier_company_id ?? courierId ?? null, courierName: data.courier_name ?? null }
   }
 
+  /*
+   * Unverified against a live account: assumes GET /shipments/{id} answers
+   * { data: { awb, courier_id?, courier_name? } }. Fields are read defensively,
+   * and a miss returns null so staff are told to read the AWB from the panel.
+   */
+  async assignedAwb(providerShipmentId: string) {
+    const body = await this.call<{
+      data?: { awb?: string | number; awb_code?: string; courier_id?: number | string; courier_company_id?: number; courier_name?: string; courier?: string }
+    }>('GET', `/shipments/${encodeURIComponent(providerShipmentId)}`)
+    const data = body?.data
+    const awb = data?.awb || data?.awb_code
+    if (!awb) return null
+    const courierId = Number(data?.courier_company_id ?? data?.courier_id)
+    return { awb: String(awb), courierId: Number.isFinite(courierId) && courierId > 0 ? courierId : null, courierName: data?.courier_name ?? data?.courier ?? null }
+  }
+
   async requestPickup(providerShipmentId: string) {
     const body = await this.call<{ pickup_status?: number; response?: { pickup_scheduled_date?: string }; message?: string }>(
       'POST',
@@ -309,17 +336,53 @@ class ShiprocketProvider implements ShippingProvider {
   async cancel(providerOrderId: string) {
     await this.call('POST', '/orders/cancel', { ids: [Number(providerOrderId)] })
   }
+
+  /** The same page Shiprocket returns as `track_url`; webhooks never include it. */
+  publicTrackingUrl(awb: string) {
+    return `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`
+  }
 }
 
 /* ── Fake ─────────────────────────────────────────────────────────────────── */
+
+type FakeStep = 'createOrder' | 'assignAwb' | 'requestPickup' | 'label' | 'cancel'
 
 /** Local stand-in. Shared state is static so tests and the app agree. */
 export class FakeShippingProvider implements ShippingProvider {
   readonly name = 'fake'
   private static readonly tracking = new Map<string, TrackingResult>()
+  private static readonly awbs = new Map<string, AssignedAwb>()
+  private static readonly pickups = new Set<string>()
+  private static readonly failures = new Map<FakeStep, { message: string; applied: boolean }>()
+  private static readonly delays = new Map<FakeStep, number>()
+  /** Test record of every call: the step and its key argument (order_id, shipment id or provider order id). */
+  static readonly calls: { step: FakeStep; arg: string; weightGrams?: number }[] = []
 
-  async createOrder(_input: ShipmentInput) {
-    return { providerOrderId: String(randomInt(10_000_000, 99_999_999)), providerShipmentId: String(randomInt(10_000_000, 99_999_999)) }
+  /** Runs one step, honouring the test hooks below. */
+  private async step<T>(step: FakeStep, arg: string, run: () => T, weightGrams?: number): Promise<T> {
+    FakeShippingProvider.calls.push({ step, arg, ...(weightGrams !== undefined ? { weightGrams } : {}) })
+    const delay = FakeShippingProvider.delays.get(step)
+    if (delay) {
+      FakeShippingProvider.delays.delete(step)
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+    const failure = FakeShippingProvider.failures.get(step)
+    if (failure) {
+      FakeShippingProvider.failures.delete(step)
+      // `applied`: the courier did the work but the reply never arrived.
+      if (failure.applied) run()
+      throw new ShippingProviderError(failure.message)
+    }
+    return run()
+  }
+
+  async createOrder(input: ShipmentInput) {
+    return this.step(
+      'createOrder',
+      input.orderNumber,
+      () => ({ providerOrderId: String(randomInt(10_000_000, 99_999_999)), providerShipmentId: String(randomInt(10_000_000, 99_999_999)) }),
+      input.weightGrams,
+    )
   }
 
   async courierOptions(input: { deliveryPostcode: string; weightGrams: number }) {
@@ -333,29 +396,60 @@ export class FakeShippingProvider implements ShippingProvider {
     }
   }
 
-  async assignAwb(_providerShipmentId: string, courierId?: number) {
-    const awb = `FAKE${randomInt(100_000_000, 999_999_999)}`
-    FakeShippingProvider.tracking.set(awb, { providerStatus: 'AWB ASSIGNED', trackingUrl: null, expectedDeliveryAt: null, scans: [] })
-    return { awb, courierId: courierId ?? 1, courierName: courierId === 2 ? 'Fake Air' : 'Fake Surface' }
+  async assignAwb(providerShipmentId: string, courierId?: number) {
+    // Like Shiprocket, a second assignment is refused rather than repeated.
+    if (FakeShippingProvider.awbs.has(providerShipmentId)) {
+      throw new ShippingProviderError('AWB not assigned: AWB is already assigned to this shipment')
+    }
+    return this.step('assignAwb', providerShipmentId, () => {
+      const assigned = { awb: `FAKE${randomInt(100_000_000, 999_999_999)}`, courierId: courierId ?? 1, courierName: courierId === 2 ? 'Fake Air' : 'Fake Surface' }
+      FakeShippingProvider.awbs.set(providerShipmentId, assigned)
+      FakeShippingProvider.tracking.set(assigned.awb, { providerStatus: 'AWB ASSIGNED', trackingUrl: null, expectedDeliveryAt: null, scans: [] })
+      return assigned
+    })
   }
 
-  async requestPickup() {
-    return { scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() }
+  async assignedAwb(providerShipmentId: string) {
+    return FakeShippingProvider.awbs.get(providerShipmentId) ?? null
+  }
+
+  async requestPickup(providerShipmentId: string) {
+    if (FakeShippingProvider.pickups.has(providerShipmentId)) throw new ShippingProviderError('Pickup not scheduled: Already in Pickup Queue.')
+    return this.step('requestPickup', providerShipmentId, () => {
+      FakeShippingProvider.pickups.add(providerShipmentId)
+      return { scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() }
+    })
   }
 
   async label(providerShipmentId: string) {
-    return `https://example.invalid/labels/${providerShipmentId}.pdf`
+    return this.step('label', providerShipmentId, () => `https://example.invalid/labels/${providerShipmentId}.pdf`)
   }
 
   async track(awb: string): Promise<TrackingResult> {
     return FakeShippingProvider.tracking.get(awb) ?? { providerStatus: null, trackingUrl: null, expectedDeliveryAt: null, scans: [] }
   }
 
-  async cancel() {}
+  async cancel(providerOrderId: string) {
+    await this.step('cancel', providerOrderId, () => undefined)
+  }
+
+  publicTrackingUrl(awb: string) {
+    return `https://track.example/${encodeURIComponent(awb)}`
+  }
 
   /** Test helper: what the courier would report next. */
   static setTracking(awb: string, result: TrackingResult) {
     FakeShippingProvider.tracking.set(awb, result)
+  }
+
+  /** Test helper: the next call to `step` fails; with `applied`, after the courier has done it. */
+  static failNext(step: FakeStep, message = `fake ${step} failed`, options: { applied?: boolean } = {}) {
+    FakeShippingProvider.failures.set(step, { message, applied: options.applied ?? false })
+  }
+
+  /** Test helper: the next call to `step` takes this long, to overlap concurrent requests. */
+  static delayNext(step: FakeStep, ms: number) {
+    FakeShippingProvider.delays.set(step, ms)
   }
 }
 

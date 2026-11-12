@@ -1,11 +1,11 @@
 import { useDocumentMeta } from '../../lib/router'
+import { ROUTE_META } from '../../lib/seoRoutes'
+import { useStoreSettings } from '../../lib/storeSettings'
 import { CONTACT_EMAIL, LegalLayout, Section } from './shared'
 
 export default function ShippingReturnsPage() {
-  useDocumentMeta(
-    'Shipping & Returns | Elegant Sip',
-    'Shipping timelines and costs, and the 30-day Elegant Sip Promise on every pack.',
-  )
+  const { guarantee } = useStoreSettings()
+  useDocumentMeta('Shipping & Returns | Elegant Sip', ROUTE_META['/shipping'].description)
   return (
     <LegalLayout label="Support" title={<>Shipping & <span className="text-[#4a7333]">Returns</span></>} updated="November 9, 2026">
       <Section title="Shipping within India">
@@ -35,17 +35,20 @@ export default function ShippingReturnsPage() {
           {' '}and we'll update or cancel it. Once it's with the carrier, we'll help you redirect it instead.
         </p>
       </Section>
-      <Section title="The 30-day taste guarantee">
-        <p>
-          The Elegant Sip Promise: if any tea doesn't live up to your expectations, tell us within
-          30 days and we'll replace it or refund you — no return shipping, no questions, no forms.
-          We'd rather you find your perfect cup than force a box.
-        </p>
-        <p>
-          This is written into our <a href="/terms" className="text-[#5f8f42] font-semibold hover:underline">Terms &amp; Conditions</a>{' '}
-          as a binding commitment, so you are not relying on a marketing line.
-        </p>
-      </Section>
+      {/* Shown only while the shop offers it; the sections either side are the policy without it. */}
+      {guarantee.enabled && (
+        <Section title={`The ${guarantee.days}-day taste guarantee`}>
+          <p>
+            The Elegant Sip Promise: if any tea doesn't live up to your expectations, tell us within
+            {' '}{guarantee.days} days and we'll replace it or refund you — no return shipping, no questions, no forms.
+            We'd rather you find your perfect cup than force a box.
+          </p>
+          <p>
+            This is written into our <a href="/terms" className="text-[#5f8f42] font-semibold hover:underline">Terms &amp; Conditions</a>{' '}
+            as a binding commitment, so you are not relying on a marketing line.
+          </p>
+        </Section>
+      )}
       <Section title="Damaged or lost parcels">
         <p>
           If your order arrives damaged or goes missing in transit, contact us and we'll reship or

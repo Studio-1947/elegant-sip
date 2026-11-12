@@ -2,10 +2,11 @@ import '../dev-defaults.js'
 import { argv } from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { COUPONS_ENABLED, rupees } from '@elegantsip/shared'
-import { and, eq, isNull, notInArray, sql as drizzleSql } from 'drizzle-orm'
+import { createHash } from 'node:crypto'
+import { and, eq, inArray, sql as drizzleSql } from 'drizzle-orm'
 import { db, sql } from './client.js'
 import { NEW_RANGE } from './seed-new-range.js'
-import { coupons, gardenProducts, gardens, journalPosts, productVariants, products } from './schema.js'
+import { coupons, gardenProducts, gardens, journalPosts, productVariants, products, seedState } from './schema.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Seed — the real catalogue, migrated out of the storefront's TypeScript.
@@ -14,14 +15,14 @@ import { coupons, gardenProducts, gardens, journalPosts, productVariants, produc
  * with `rupees()`. Nothing is invented: this is the same six products, two
  * gardens and three journal posts the site shipped with.
  *
- * Idempotent — safe to re-run against a seeded database.
+ * Idempotent — safe to re-run against a seeded database. Products are only
+ * rewritten when their definition here changes (see seedProducts), so price
+ * and copy edits made in the admin dashboard survive restarts.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 const PRODUCTS = [
   {
     slug: 'first-flush-whole-leaf',
-    // Off the storefront while the new range launches (set on first insert only).
-    listed: false,
     name: 'First Flush Whole Leaf',
     status: 'active' as const,
     description:
@@ -58,8 +59,6 @@ const PRODUCTS = [
   },
   {
     slug: 'first-flush-broken-leaf',
-    // Off the storefront while the new range launches (set on first insert only).
-    listed: false,
     name: 'First Flush Broken Leaf',
     status: 'active' as const,
     description: 'Broken-leaf Darjeeling first flush — the same spring character with a quicker, stronger brew.',
@@ -94,8 +93,6 @@ const PRODUCTS = [
   },
   {
     slug: 'first-flush-broken-mixed',
-    // Off the storefront while the new range launches (set on first insert only).
-    listed: false,
     name: 'First Flush Broken Mixed',
     status: 'active' as const,
     description:
@@ -131,8 +128,6 @@ const PRODUCTS = [
   },
   {
     slug: 'first-flush-fannings',
-    // Off the storefront while the new range launches (set on first insert only).
-    listed: false,
     name: 'First Flush Fannings',
     status: 'active' as const,
     description:
@@ -169,6 +164,10 @@ const PRODUCTS = [
   // second-flush and autumn-flush moved to seed-new-range.ts (Nov 2026, with pack photos).
 ]
 
+/*
+ * Defaults for a new install only: once a garden exists, its copy and product
+ * links belong to the admin garden editor (see seedGardens).
+ */
 const GARDENS = [
   {
     slug: 'gopaldhara',
@@ -179,7 +178,6 @@ const GARDENS = [
     story: [
       'Gopaldhara sits in the Rungbong Valley above Mirik, and its upper sections are among the highest planted land in Darjeeling — rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.',
       'The first flush is a narrow window. After winter dormancy the bushes push a small quantity of tender two-leaves-and-a-bud, and the pluck runs for a few weeks in late February through April. That leaf is withered long and fired light, which is why a first flush brews pale gold rather than red, and why it should never meet milk.',
-      "Our whole leaf and broken leaf grades come from this valley. The same day's pluck is sorted into grades rather than blended across gardens, so a broken leaf here is not a lesser tea — it is the same leaf, cut for a faster, stronger cup.",
     ],
   },
   {
@@ -190,8 +188,8 @@ const GARDENS = [
     imageSrc: '/harvest.webp',
     story: [
       'Rohini lies lower down the hill, on the slopes below Kurseong where the Darjeeling foothills warm earlier in the season. Lower elevation means the bushes wake sooner, so Rohini is often among the first gardens in the district to send out a first flush at all.',
-      'A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet. That suits the broken mixed and fannings grades, which are built for strength: a fast brew, a full colour, and enough backbone to take milk or become masala chai.',
-      'Nothing here is blended with leaf from outside the district. The grade changes; the garden and the harvest do not.',
+      'A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet.',
+      'Nothing here is blended with leaf from outside the district.',
     ],
   },
 ]
@@ -235,98 +233,178 @@ const JOURNAL = [
   },
 ]
 
-export async function seed() {
-  console.log('seeding…')
+export type ProductSeed = (typeof PRODUCTS)[number] | (typeof NEW_RANGE)[number]
 
-  const gardenIds = new Map<string, string>()
-  for (const [i, g] of GARDENS.entries()) {
-    const [row] = await db
-      .insert(gardens)
-      .values({ ...g, sortOrder: i })
-      .onConflictDoUpdate({ target: gardens.slug, set: { name: g.name, region: g.region, story: g.story, imageSrc: g.imageSrc } })
-      .returning({ id: gardens.id })
-    gardenIds.set(g.slug, row.id)
-  }
-  console.log(`  gardens      ${GARDENS.length}`)
+/**
+ * Grades retired in Nov 2026. Their definitions stay so old links, orders and
+ * reviews still resolve, but a fresh database starts with them retired, as
+ * migration 0015 did for existing ones. Staff can bring one back from the
+ * dashboard; the seed never touches `archived_at` on an existing row.
+ */
+const RETIRED_ON_INSERT = new Set([
+  'first-flush-whole-leaf',
+  'first-flush-broken-leaf',
+  'first-flush-broken-mixed',
+  'first-flush-fannings',
+])
 
+/** Fingerprint of everything the seed would write for a product, except stock (never overwritten). */
+function productFingerprint(p: ProductSeed, sortOrder: number): string {
+  const variants = p.variants.map((v) => {
+    const { stock: _stock, ...rest } = v as typeof v & { stock: number }
+    return rest
+  })
+  return createHash('sha256').update(JSON.stringify({ ...p, variants, sortOrder })).digest('hex')
+}
+
+/**
+ * Products are the one part of the catalogue staff edit in the admin
+ * dashboard, so the boot seed must not undo those edits. Each product is
+ * written only when it is new, or when its definition in this file changed
+ * since the last run (a deliberate catalogue change shipped in a deploy).
+ * Pack sizes are removed only when this file dropped them; sizes added in
+ * admin are never deleted.
+ */
+export async function seedProducts(definitions: readonly ProductSeed[], gardenIds: Map<string, string>) {
+  let applied = 0
   let variantCount = 0
-  const ALL_PRODUCTS = [...PRODUCTS, ...NEW_RANGE]
-  for (const [i, p] of ALL_PRODUCTS.entries()) {
+  for (const [i, p] of definitions.entries()) {
     const { variants, garden, ...fields } = p
-    const images = 'images' in fields ? fields.images : []
-    // Products the admin has edited are theirs: the update is skipped for them
-    // (`setWhere`), and so is everything below that touches their packs.
-    const [updated] = await db
-      .insert(products)
-      .values({ ...fields, images, sortOrder: i })
-      .onConflictDoUpdate({
-        target: products.slug,
-        set: {
-          name: fields.name,
-          status: fields.status,
-          description: fields.description,
-          longDescription: fields.longDescription,
-          imageSrc: fields.imageSrc,
-          images,
-          category: fields.category,
-          bodyLevel: fields.bodyLevel,
-          harvestLabel: fields.harvestLabel,
-          tastingNotes: fields.tastingNotes,
-          origin: fields.origin,
-          flavorProfile: fields.flavorProfile,
-          brewingGuide: fields.brewingGuide,
-          sortOrder: i,
-          updatedAt: new Date(),
-        },
-        setWhere: isNull(products.adminEditedAt),
-      })
-      .returning({ id: products.id })
+    const key = `product:${p.slug}`
+    const hash = productFingerprint(p, i)
+    const sizes = variants.map((v) => v.size)
+    variantCount += variants.length
 
-    if (!updated) {
-      // Admin-owned: leave its content and packs exactly as the admin set them.
-      continue
-    }
-    const row = updated
+    const existing = await db.query.products.findFirst({ where: eq(products.slug, p.slug), columns: { id: true } })
+    const state = await db.query.seedState.findFirst({ where: eq(seedState.key, key) })
 
-    await db
-      .delete(productVariants)
-      .where(and(eq(productVariants.productId, row.id), notInArray(productVariants.size, variants.map((v) => v.size))))
+    const remember = () =>
+      db
+        .insert(seedState)
+        .values({ key, hash, sizes })
+        .onConflictDoUpdate({ target: seedState.key, set: { hash, sizes, appliedAt: new Date() } })
 
-    for (const [vi, v] of variants.entries()) {
-      const sizeKey = v.size.toLowerCase().replace(/\s+/g, '-')
-      // The new range carries the pricing sheet's SKU codes; older rows derive one.
-      const sku: string = 'sku' in v && typeof v.sku === 'string' ? v.sku : `${p.slug}--${sizeKey}`
-      const compareAtPrice = 'compareAtPrice' in v && typeof v.compareAtPrice === 'number' ? v.compareAtPrice : null
-      await db
-        .insert(productVariants)
-        .values({ productId: row.id, size: v.size, sku, price: v.price, compareAtPrice, stock: v.stock, sortOrder: vi })
+    let productId = existing?.id
+    if (existing && (!state || state.hash === hash)) {
+      // Unchanged since the last run, or the first run since tracking began
+      // (the database already holds the last seed plus any admin edits): keep it.
+      if (!state) await remember()
+    } else {
+      const [row] = await db
+        .insert(products)
+        .values({ ...fields, sortOrder: i, archivedAt: RETIRED_ON_INSERT.has(p.slug) ? new Date() : null })
+        // archivedAt is deliberately absent from `set`: retiring is a staff decision the seed must not undo.
         .onConflictDoUpdate({
-          target: [productVariants.productId, productVariants.size],
-          // Production re-seeds on every start, so real prices and inventory
-          // must never be reset: the admin owns them once a pack exists. The one
-          // exception is a zero-price "coming soon" placeholder becoming a real
-          // product: it has no price or inventory yet, so it takes the seed's
-          // price and opening stock instead of staying unpriced and sold out.
-          // (Every expression here reads the existing row, before the update.)
+          target: products.slug,
           set: {
-            sku,
-            price: drizzleSql`CASE WHEN ${productVariants.price} = 0 THEN ${v.price}::integer ELSE ${productVariants.price} END`,
-            compareAtPrice: drizzleSql`CASE WHEN ${productVariants.price} = 0 THEN ${compareAtPrice}::integer ELSE ${productVariants.compareAtPrice} END`,
-            stock: drizzleSql`CASE WHEN ${productVariants.price} = 0 AND ${v.price} > 0 THEN ${v.stock} ELSE ${productVariants.stock} END`,
-            sortOrder: vi,
+            name: fields.name,
+            status: fields.status,
+            description: fields.description,
+            longDescription: fields.longDescription,
+            imageSrc: fields.imageSrc,
+            // Gallery photos: only the new range defines them; older teas have none.
+            images: 'images' in fields ? fields.images : [],
+            category: fields.category,
+            bodyLevel: fields.bodyLevel,
+            harvestLabel: fields.harvestLabel,
+            tastingNotes: fields.tastingNotes,
+            origin: fields.origin,
+            flavorProfile: fields.flavorProfile,
+            brewingGuide: fields.brewingGuide,
+            sortOrder: i,
+            updatedAt: new Date(),
           },
         })
-      variantCount += 1
+        .returning({ id: products.id })
+      productId = row.id
+
+      const dropped = (state?.sizes ?? []).filter((size) => !sizes.includes(size))
+      if (dropped.length > 0) {
+        await db.delete(productVariants).where(and(eq(productVariants.productId, row.id), inArray(productVariants.size, dropped)))
+      }
+
+      for (const [vi, v] of variants.entries()) {
+        const sizeKey = v.size.toLowerCase().replace(/\s+/g, '-')
+        // The new range carries the pricing sheet's SKU codes; older rows derive one.
+        const sku: string = 'sku' in v && typeof v.sku === 'string' ? v.sku : `${p.slug}--${sizeKey}`
+        const compareAtPrice = 'compareAtPrice' in v && typeof v.compareAtPrice === 'number' ? v.compareAtPrice : null
+        await db
+          .insert(productVariants)
+          .values({ productId: row.id, size: v.size, sku, price: v.price, compareAtPrice, stock: v.stock, sortOrder: vi })
+          .onConflictDoUpdate({
+            target: [productVariants.productId, productVariants.size],
+            // Real inventory is never reset. The one exception is a zero-price
+            // "coming soon" placeholder becoming a real product: it has no
+            // inventory yet, so it takes the seed's opening stock.
+            set: {
+              sku,
+              price: v.price,
+              compareAtPrice,
+              stock: drizzleSql`CASE WHEN ${productVariants.price} = 0 AND ${v.price} > 0 THEN ${v.stock} ELSE ${productVariants.stock} END`,
+              sortOrder: vi,
+            },
+          })
+      }
+      await remember()
+      applied += 1
     }
 
-    if (garden) {
+    if (garden && productId) {
+      // Linked once per garden named here, so a link staff removed in the
+      // garden editor is not re-added on the next boot.
+      const linkKey = `garden-link:${p.slug}`
+      const linked = await db.query.seedState.findFirst({ where: eq(seedState.key, linkKey) })
       const gardenId = gardenIds.get(garden)
-      if (gardenId) {
-        await db.insert(gardenProducts).values({ gardenId, productId: row.id }).onConflictDoNothing()
+      if (gardenId && linked?.hash !== garden) {
+        await db.insert(gardenProducts).values({ gardenId, productId }).onConflictDoNothing()
+        await db
+          .insert(seedState)
+          .values({ key: linkKey, hash: garden })
+          .onConflictDoUpdate({ target: seedState.key, set: { hash: garden, appliedAt: new Date() } })
       }
     }
   }
-  console.log(`  products     ${ALL_PRODUCTS.length} (${variantCount} variants; admin-edited products left as they are)`)
+  return { applied, variantCount }
+}
+
+export type GardenSeed = (typeof GARDENS)[number]
+
+/**
+ * Gardens are edited, and can be deleted, in the admin dashboard, so the seed
+ * only creates a garden it has never created before and never rewrites one.
+ * The seed_state row is what stops a garden staff deleted from coming back.
+ */
+export async function seedGardens(definitions: readonly GardenSeed[]) {
+  const gardenIds = new Map<string, string>()
+  let created = 0
+  for (const [i, g] of definitions.entries()) {
+    const key = `garden:${g.slug}`
+    const state = await db.query.seedState.findFirst({ where: eq(seedState.key, key) })
+    let row = await db.query.gardens.findFirst({ where: eq(gardens.slug, g.slug), columns: { id: true } })
+    if (!row && !state) {
+      const [inserted] = await db
+        .insert(gardens)
+        .values({ ...g, sortOrder: i })
+        .onConflictDoNothing()
+        .returning({ id: gardens.id })
+      row = inserted
+      if (inserted) created += 1
+    }
+    if (!state) await db.insert(seedState).values({ key, hash: 'created' }).onConflictDoNothing()
+    if (row) gardenIds.set(g.slug, row.id)
+  }
+  return { gardenIds, created }
+}
+
+export async function seed() {
+  console.log('seeding…')
+
+  const { gardenIds, created } = await seedGardens(GARDENS)
+  console.log(`  gardens      ${GARDENS.length} (${created} new)`)
+
+  const ALL_PRODUCTS = [...PRODUCTS, ...NEW_RANGE]
+  const { applied, variantCount } = await seedProducts(ALL_PRODUCTS, gardenIds)
+  console.log(`  products     ${ALL_PRODUCTS.length} (${variantCount} variants, ${applied} updated from seed)`)
 
   for (const post of JOURNAL) {
     await db

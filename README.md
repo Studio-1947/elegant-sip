@@ -338,7 +338,8 @@ Actions deployment* below). To deploy by hand:
 cd /var/www/elegant-sip
 git fetch --prune origin main
 git checkout --detach origin/main
-dc up -d --build
+dc build --pull                     # --pull: fresh base images (security patches)
+dc up -d
 dc ps
 curl -fsS https://elegantsip.in/api/health
 docker image prune -f               # reclaim space from old builds
@@ -348,6 +349,9 @@ After changing `.env` only, no rebuild is needed: `dc up -d`. Containers are
 recreated with the new values.
 
 #### Roll back
+
+The automatic deploy rolls itself back when a release never answers `/ready`
+(see *Automatic GitHub Actions deployment*). To go back by hand:
 
 ```bash
 cd /var/www/elegant-sip
@@ -379,8 +383,22 @@ The database commands assume the default `POSTGRES_USER` and `POSTGRES_DB` of
 #### Backups and restore
 
 A dump is taken nightly at 02:30 (`BACKUP_TIMEZONE`, default Asia/Kolkata) into
-`/var/www/elegant-sip/backups`, keeping 14. Copy them off the server regularly
-and keep the folder owner-only (`chmod 700 backups`).
+`/var/www/elegant-sip/backups`, keeping 14. Keep the folder owner-only
+(`chmod 700 backups`).
+
+**Off-site copies.** With the `OFFSITE_` settings in `.env` filled in (see
+`.env.prod.example`), the `offsite` service encrypts every dump and copies it
+to an S3-compatible bucket at start and nightly at 03:15, keeping
+`OFFSITE_KEEP_DAYS` (90). Until then the dumps exist only on this server.
+`dc logs offsite` shows each run. Keep `OFFSITE_ENCRYPT_PASSWORD` in a password
+manager as well: the copies cannot be decrypted without it.
+
+**Alerts.** The API emails `CONTACT_INBOX` when free disk drops under
+`DISK_ALERT_PERCENT` (15%), when a nightly backup fails or is over a day old,
+and when off-site copies fail or stop; a problem that lasts is repeated daily.
+That needs `SMTP_URL`. A site that is down entirely cannot email, so the
+*Uptime* GitHub workflow requests `/` and `/api/ready` every 10 minutes and a
+failed run emails whoever last edited its schedule.
 
 ```bash
 ls -lh /var/www/elegant-sip/backups
@@ -393,6 +411,23 @@ dc exec -T postgres pg_dump -U elegantsip -d elegantsip --no-owner --format=cust
 # Download to your computer (run on YOUR machine):
 scp deploy@187.127.185.82:/var/www/elegant-sip/backups/<file>.dump .
 ```
+
+Fetch an off-site copy (on the server, or any machine with Docker), using the
+same values as `.env`. Files keep their names with `.bin` added:
+
+```bash
+docker run --rm -v "$PWD:/out" -e P='<OFFSITE_ENCRYPT_PASSWORD>' \
+  -e RCLONE_CONFIG_OFFSITE_TYPE=s3 -e RCLONE_CONFIG_OFFSITE_PROVIDER=Cloudflare \
+  -e RCLONE_CONFIG_OFFSITE_ENDPOINT='<OFFSITE_S3_ENDPOINT>' -e RCLONE_CONFIG_OFFSITE_REGION=auto \
+  -e RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID='<key id>' -e RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY='<secret>' \
+  --entrypoint sh rclone/rclone:1.68.2 -c \
+  'rclone copy --crypt-remote "offsite:<OFFSITE_S3_BUCKET>" --crypt-filename-encryption off \
+     --crypt-directory-name-encryption=false --crypt-password "$(rclone obscure "$P")" \
+     :crypt:elegantsip-2026-11-09.dump /out'
+```
+
+Leave a space before `docker` so the passphrase stays out of shell history.
+Then restore it like any other dump.
 
 Restore replaces the live data, so stop the API first:
 
@@ -441,6 +476,35 @@ Nothing else changes. The compose project is named `elegantsip-prod`, so its
 containers, network and volumes never collide with another project's, and
 Postgres, Redis and the API still publish no ports at all.
 
+#### Which proxy Caddy trusts (`CADDY_TRUSTED_PROXIES`)
+
+The API rate-limits per visitor, and gets the visitor's address from Caddy.
+Caddy accepts an `X-Forwarded-For` header only from addresses listed in
+`CADDY_TRUSTED_PROXIES`, so set it to match the topology:
+
+| How traffic reaches Caddy | `.env` line |
+|---|---|
+| Host nginx in front (`WEB_PUBLISH_HTTP=127.0.0.1:8080`) | `CADDY_TRUSTED_PROXIES=172.16.0.0/12` — nginx's requests arrive from the Docker bridge gateway. nginx must send `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` |
+| Caddy directly on 80/443 (no other proxy) | `CADDY_TRUSTED_PROXIES=` (present and empty: trust nobody) |
+| Not set at all | `private_ranges` — the historical default; correct behind nginx, but when Caddy faces the internet it lets anyone whose traffic Docker relays from its gateway (e.g. IPv6) pick their own address and dodge the rate limits |
+
+Confirm the Docker network sits inside `172.16.0.0/12` with
+`docker network inspect elegantsip-prod_default -f '{{(index .IPAM.Config 0).Subnet}}'`.
+Only an empty value, CIDRs/IPs separated by spaces, or `private_ranges` are
+accepted; anything else (the word `none` included) stops Caddy from starting.
+Apply with `dc up -d web`, then repeat the `?probe-me` check from
+`docs/GAPS-2026-11-08.md` to see your phone's real address in the API log.
+
+#### Security headers and the CSP
+
+Caddy adds the security headers to every storefront response, including a
+`Content-Security-Policy-Report-Only` header: browsers block nothing, they only
+report what the policy *would* have blocked to `/api/v1/csp-report`. The
+`Caddyfile` lists why each allowed origin is there. Once a week of reports is
+clean, rename the header to `Content-Security-Policy` to enforce it. Adding a
+new third-party script (a GTM tag, a chat widget, Google Ads) means adding its
+origins there first, or it will be blocked once the policy is enforced.
+
 ### Automatic GitHub Actions deployment
 
 `.github/workflows/deploy-production.yml` deploys each successful `main` CI
@@ -459,6 +523,17 @@ Create a dedicated keypair on your own computer, add its public key to
 the GitHub secret. Keep the VPS `.env` untracked; deployments update source and
 rebuild containers but never overwrite it. The workflow can also be run
 manually from the GitHub Actions page.
+
+Each run, on the server: records the live commit, takes a pre-deploy database
+dump into `backups/predeploy/` (newest 5 kept), checks out the tested commit,
+builds with `--pull` (fresh base images, while the old containers keep
+serving; a failed build leaves the site untouched), starts it, and waits up to
+150 s for the API's `/ready`. If it never becomes ready, the workflow logs the
+API output and **redeploys the previous commit**, waits for `/ready` again,
+and still finishes red with `ROLLED BACK` in the log. The rollback replaces
+code, not data: if the failed release's migrations had already run, check the
+site and, if needed, restore the newest `backups/predeploy/` dump (see
+*Backups and restore*).
 
 ### Docker: three compose files, one Dockerfile
 

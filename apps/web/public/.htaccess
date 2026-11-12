@@ -17,9 +17,17 @@
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
+  # Every real tea has a prerendered shell (matched above). Any other product
+  # URL gets the app shell, which renders the not-found page, with a real 404
+  # so search engines do not index a soft 404.
+  RewriteRule ^product/[^/]+/?$ - [R=404,L]
+
   # Everything else boots the SPA.
   RewriteRule ^ /index.html [L]
 </IfModule>
+
+# The 404 body is the app shell, so the in-app not-found page still renders.
+ErrorDocument 404 /index.html
 
 # Long-cache fingerprinted assets; never cache the HTML shells.
 <IfModule mod_headers.c>

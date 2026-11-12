@@ -38,6 +38,20 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * For @fastify/rate-limit's `errorResponseBuilder`. Its own message ("Rate
+ * limit exceeded, retry in 1 minute") reads like a fault; this one is safe to
+ * show as-is. `after` is its human duration ("1 minute", "37 seconds").
+ */
+export function rateLimitError(_request: FastifyRequest, context: { statusCode: number; after: string }) {
+  return new ApiError(
+    context.statusCode,
+    'rate_limited',
+    'Too many requests',
+    `Too many attempts. Please wait ${context.after} and try again.`,
+  )
+}
+
 export function registerErrorHandler(app: FastifyInstance) {
   app.setNotFoundHandler((request: FastifyRequest, reply: FastifyReply) => {
     const problem: Problem = {

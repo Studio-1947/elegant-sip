@@ -1,229 +1,243 @@
 import { Link, useDocumentMeta } from '../../lib/router'
-import { CONTACT_EMAIL, ContactList, DataTable, LegalLayout, listClass, OnceLaunched, Section, StatusCallout } from './shared'
+import { openConsentSettings, trackingConfigured } from '../../lib/analytics'
+import { CONTACT_EMAIL, ContactList, DataTable, GRIEVANCE_OFFICER, LegalLayout, listClass, Section } from './shared'
 
-const LOCAL_DATA_ROWS: [string, string][] = [
-  ['Cart contents', 'Remember items between visits'],
-  ['Wishlist', "Save products you're interested in"],
-  ['Demo account details (name, email)', 'Simulate a logged-in experience'],
-  [
-    'Demo order history — including the full name, email, street address, city and postal code you typed at demo checkout',
-    'Let you view past "orders" placed in the simulation. This is stored in your browser, is visible to anyone using this browser profile, and is not linked to any account',
-  ],
-  ['Order notes', 'Optional notes you add to a demo order'],
-  ['Product reviews you submit', 'Displayed on product pages on this device/browser'],
-  ['Newsletter email (if no email service is configured)', 'Local fallback record of signup'],
-  ['Cookie/analytics consent choice', 'Remember your preference'],
+/* Written to match what the site and its server actually do. When a feature
+   or provider changes, change this page in the same release. */
+
+const ACCOUNT_AND_ORDER_ROWS: [string, string][] = [
+  ['Name, email address, password (stored only as a one-way hash)', 'Create and secure your account; send order and account emails'],
+  ['WhatsApp number (only if you sign in with WhatsApp)', 'Send sign-in codes; codes are stored only as a one-way hash and expire after 10 minutes'],
+  ['Delivery and billing addresses, phone number, saved addresses', 'Deliver your order, contact you about delivery, print the invoice'],
+  ['Order contents, amounts, coupon used, invoice', 'Process the order, issue the GST invoice, keep the records tax law requires'],
+  ['Payment reference and status from Razorpay', 'Confirm payment and handle refunds. We never see or store your card, UPI or bank details'],
+  ['Courier tracking number and delivery updates', 'Show where your parcel is'],
+  ['Cancellation and return requests', 'Review and resolve them'],
+  ['Product reviews you post', 'Show them on product pages, with your name'],
+  ['Messages from the contact form', 'Answer you'],
+  ['Newsletter email address', 'Send the newsletter you asked for'],
 ]
 
-const CHECKOUT_DATA_ROWS: [string, string][] = [
-  ['Name, email, phone', 'Order confirmation and delivery coordination'],
-  ['Shipping address', 'Fulfillment and courier handoff'],
-  ['Order contents and amount', 'Order processing, invoicing, GST compliance'],
-  ['Payment details', 'Processed directly by our payment gateway (e.g., Razorpay/Stripe) — we do not store full card numbers on our own servers'],
-  ['Account credentials (if you create a real account)', 'Login and order history'],
+const BROWSER_ROWS: [string, string][] = [
+  ['Sign-in cookie', 'Keep you signed in for up to 30 days, or until you sign out'],
+  ['Cart, wishlist, coupon and order notes', 'Remember them between visits on this device'],
+  ['Cookie choice', 'Remember whether you accepted or declined analytics cookies'],
+  ['Google and Meta cookies (only after you accept)', 'Measure visits and ad performance, as described in section 4'],
+]
+
+const PROVIDER_ROWS: [string, string][] = [
+  ['Razorpay', 'Takes your payment. Receives the amount, your email and the payment details you enter on its checkout'],
+  ['Courier partners, booked directly or through Shiprocket', 'Deliver your order. Receive your name, delivery address, phone number and parcel details'],
+  ['Our email delivery provider', 'Sends order, delivery and account emails. Receives your email address and the message'],
+  ['Interakt and WhatsApp (Meta), only if you sign in with WhatsApp', 'Send your sign-in code. Receive your WhatsApp number and the code'],
+  ['Hostinger', 'Hosts our server and database'],
+  ['Google (Tag Manager) and Meta (Pixel and Conversions API), only after you accept cookies', 'Measure visits and ad performance. Receive the events in section 4, never your name, email, phone or address'],
 ]
 
 export default function PrivacyPage() {
   useDocumentMeta(
     'Privacy Policy | Elegant Sip',
-    'What Elegant Sip stores, where it is stored, and what we never send to third parties.',
+    'What Elegant Sip collects, why, who receives it, how long it is kept, and your rights.',
   )
   return (
-    <LegalLayout label="Legal" title="Privacy Policy" updated="August 19, 2026">
+    <LegalLayout label="Legal" title="Privacy Policy" updated="November 10, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
-        <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our").
-        Elegant Sip (elegantsip.in) is a Darjeeling tea storefront. This policy explains what
-        data the site collects, how it's stored, and how to reach us. It's written to match
-        exactly what the site does — nothing more.
+        <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our") sells
+        single-origin Darjeeling tea at elegantsip.in. This policy explains what personal data we
+        collect, why, who receives it, how long we keep it, and how to exercise your rights under
+        India's Digital Personal Data Protection Act, 2023.
       </p>
-
-      <StatusCallout>
-        As of this version, the site runs without a backend — checkout, accounts, and orders are
-        simulated locally in your browser and no real payment is processed on-site.{' '}
-        <strong className="text-[#1b261b]">Real checkout, accounts, and payment processing are planned</strong>{' '}
-        for a future release. Parts marked <OnceLaunched /> describe what will change once that
-        ships; until then, they don't apply. We'll update this policy's "Last updated" date and
-        remove the markers when the backend goes live.
-      </StatusCallout>
 
       <Section title="1. The short version">
         <ul className={listClass}>
-          <li>
-            <strong className="text-[#1b261b]">Today</strong>, this is a{' '}
-            <strong className="text-[#1b261b]">demo storefront</strong>. Checkout, accounts,
-            orders, and reviews run entirely in your browser's local storage — nothing is
-            transmitted to us or to a payment processor when you "check out." No real payment is
-            processed through the site.
-          </li>
-          <li>
-            To place an <strong className="text-[#1b261b]">actual order today</strong>, you contact
-            us directly via WhatsApp, Instagram, or email — see Section 6.
-          </li>
-          <li>
-            <OnceLaunched /> Once real checkout launches, placing an order will involve sending
-            your order, shipping address, and payment details to us and to a payment processor, as
-            described in Section 3.
-          </li>
-          <li>We don't sell your data, and we won't in the future either.</li>
+          <li>We collect what we need to run your account, take payment and deliver your tea.</li>
+          <li>Payments are handled by Razorpay. We never see or store your card, UPI or bank details.</li>
+          <li>Analytics and ad measurement by Google and Meta run only if you accept cookies.</li>
+          <li>We don't sell or rent your personal data, to anyone.</li>
+          <li>You can ask us to see, correct or delete your data at any time (section 7).</li>
         </ul>
       </Section>
 
-      <Section title="2. Information stored locally on your device">
+      <Section title="2. What we collect and why">
+        <p>When you create an account, order, or contact us, we store the following on our server:</p>
+        <DataTable rows={ACCOUNT_AND_ORDER_ROWS} />
+        <p>Your browser also keeps a few things on your device:</p>
+        <DataTable rows={BROWSER_ROWS} />
         <p>
-          When you use the site, the following is saved in your browser's local storage (not on
-          our servers):
-        </p>
-        <DataTable rows={LOCAL_DATA_ROWS} />
-        <p>
-          This data stays in your browser. We cannot see it, access it, or retrieve it. Clearing
-          your browser storage or cache deletes it permanently — we have no copy and cannot
-          restore it.
+          Like any website, our server briefly logs technical details of each request (IP address,
+          browser type, the page asked for) to keep the site secure and working.
         </p>
       </Section>
 
-      <Section title="3. Information sent to us">
-        <p>We only receive information you actively send us:</p>
+      <Section title="3. Why we're allowed to use it">
         <ul className={listClass}>
           <li>
-            <strong className="text-[#1b261b]">Contact form:</strong> if a contact-form service is
-            configured, submissions are sent to that provider and forwarded to us; otherwise the
-            form opens a pre-filled email to{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#4a7333] font-semibold hover:underline">{CONTACT_EMAIL}</a>{' '}
-            in your own mail client, and you choose whether to send it.
+            <strong className="text-[#1b261b]">To provide what you asked for:</strong> your account,
+            orders, deliveries, refunds and replies to your messages. You give us this data for that
+            purpose.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Newsletter signup:</strong> if an email service
-            provider is configured, your email is sent to that provider to add you to our mailing
-            list. If not, your email is only stored locally as described above and is not
-            transmitted anywhere.
+            <strong className="text-[#1b261b]">To meet legal duties:</strong> GST invoices and order
+            records that Indian tax law requires us to keep.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Direct contact:</strong> if you message us via
-            WhatsApp (+91 75839 95294), Instagram (@elegantsip_darjeeling), or email, we receive
-            whatever you send us through those platforms, governed by their respective privacy
-            policies (Meta/WhatsApp, Instagram, your email provider).
+            <strong className="text-[#1b261b]">With your consent:</strong> analytics and ad
+            measurement (section 4) and the newsletter. You can withdraw consent at any time, as
+            easily as you gave it.
           </li>
-        </ul>
-        <p>
-          <strong className="text-[#1b261b]">Today</strong>, we do not collect payment details,
-          shipping addresses, or phone numbers through the site itself, because no real
-          transaction is processed on the site.
-        </p>
-        <p className="flex flex-wrap items-center gap-2">
-          <OnceLaunched /> Once real checkout launches, placing an order will send the following
-          to our server and/or payment processor:
-        </p>
-        <DataTable rows={CHECKOUT_DATA_ROWS} />
-        <p>
-          We will update this section with the name of our payment processor, our data retention
-          periods, and our server-side security practices before real checkout goes live, and will
-          highlight the change to returning users.
-        </p>
-      </Section>
-
-      <Section title="4. Cookies & analytics">
-        <ul className={listClass}>
-          <li>The site does not run analytics by default.</li>
-          <li>
-            If we enable an analytics provider (Plausible or Google Analytics), tracking events
-            only begin <strong className="text-[#1b261b]">after you accept</strong> via the consent
-            banner. You can decline, and the site will function normally.
-          </li>
-          <li>We never send your email address or other personal identifiers to analytics tools.</li>
-          <li>Declining or clearing consent stops tracking going forward.</li>
         </ul>
       </Section>
 
-      <Section title="5. Third parties">
+      <Section title="4. Cookies, analytics and ad measurement">
         <ul className={listClass}>
           <li>
-            <strong className="text-[#1b261b]">Today</strong>, no payment processor is involved,
-            since no real payment occurs on-site.
+            We use <strong className="text-[#1b261b]">Google Tag Manager</strong> and the{' '}
+            <strong className="text-[#1b261b]">Meta Pixel</strong> to measure visits and to see which
+            of our ads lead to purchases. Neither loads until you{' '}
+            <strong className="text-[#1b261b]">accept</strong> the cookie banner. If you decline or
+            don't choose, nothing is sent to Google or Meta and the site works the same.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Contact form provider</strong> (e.g., Formspree)
-            only if one is configured, and only for messages you submit.
+            Once you accept, Google and Meta set their own cookies and receive: the pages you view,
+            the products you view or add to your cart (product, quantity and price), checkout steps,
+            and, when you buy, the order value and number of items. Like any website request, they
+            also see your IP address and browser type.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Newsletter provider</strong>  only if one is
-            configured, and only for the email you submit.
+            Meta receives these same events a second time from our server (Meta's{' '}
+            <strong className="text-[#1b261b]">Conversions API</strong>), together with your IP
+            address, browser type and the ID in Meta's own cookie, so that ad results are still
+            counted when a browser blocks Meta's script. Meta matches the two copies and counts
+            each event once. This also happens only after you accept, and stops when you withdraw.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Analytics provider</strong> (Plausible or GA4)
-            only if enabled, and only after consent.
+            If you had accepted when you check out, we keep that IP address, browser type and Meta
+            cookie ID with your order only until your payment is confirmed, so the purchase is
+            counted even if you close the page before it loads. They are deleted once it has been
+            reported.
           </li>
           <li>
-            <OnceLaunched /> Once real checkout launches, a payment processor (e.g.,
-            Razorpay/Stripe) and a shipping/courier partner will also receive the order and
-            delivery details necessary to fulfill your purchase. We'll name them here once selected.
+            We never send your name, email address, phone number or delivery address to Google or
+            Meta, and links from our emails (password reset, email confirmation) are cleaned before
+            any page view is recorded.
           </li>
           <li>
-            We do not share, sell, or rent data to advertisers or data brokers — now or after the
-            backend launches.
+            You can change your choice at any time with the{' '}
+            <strong className="text-[#1b261b]">Cookies</strong> link in the footer or the button
+            below. Withdrawing consent stops tracking from that moment.
           </li>
         </ul>
+        {trackingConfigured() && (
+          <button
+            type="button"
+            onClick={openConsentSettings}
+            className="mt-4 rounded-lg border border-[#1b261b]/20 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] cursor-pointer"
+          >
+            Cookie preferences
+          </button>
+        )}
       </Section>
 
-      <Section title="6. How to actually buy tea / reach us">
+      <Section title="5. Who receives your data">
         <p>
-          Since the site does not process real payments, to place a genuine order or ask about a
-          product, contact us directly:
+          We share personal data only with the service providers below, only what each needs, and
+          only to do that job for us:
         </p>
-        <ContactList />
+        <DataTable rows={PROVIDER_ROWS} />
         <p>
-          Any personal information you share through these channels (name, address, phone number,
-          payment details) is handled by us directly and by the respective platform
-          (WhatsApp/Meta, your email provider), not by this website.
+          We may also disclose data where Indian law requires it, for example to tax authorities or
+          in response to a lawful order. We do not sell or rent personal data to advertisers or data
+          brokers.
         </p>
       </Section>
 
-      <Section title="7. Your choices & rights">
+      <Section title="6. How long we keep it">
         <ul className={listClass}>
           <li>
-            <strong className="text-[#1b261b]">Delete local data:</strong> clear your browser's
-            site data for elegantsip.in.
+            <strong className="text-[#1b261b]">Orders and invoices:</strong> for as long as Indian
+            tax law requires us to keep accounting records (currently up to about six years), then
+            deleted.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Opt out of analytics:</strong> decline or withdraw
-            consent via the consent banner.
+            <strong className="text-[#1b261b]">Your account and saved addresses:</strong> until you
+            ask us to delete them. Order records we must keep by law stay for the period above.
           </li>
           <li>
-            <strong className="text-[#1b261b]">Opt out of the newsletter:</strong> contact us to be
-            removed, or simply stop providing your email; if stored locally only, clearing browser
-            data removes it.
+            <strong className="text-[#1b261b]">Sign-in codes:</strong> expire after 10 minutes and
+            are stored only as a one-way hash.
           </li>
           <li>
-            Since most data never reaches us, most deletion and access requests are things you can
-            already do yourself in your browser.
+            <strong className="text-[#1b261b]">Sign-in sessions:</strong> up to 30 days, or until you
+            sign out.
+          </li>
+          <li>
+            <strong className="text-[#1b261b]">Newsletter:</strong> until you ask us to remove you.
+          </li>
+          <li>
+            <strong className="text-[#1b261b]">Database backups:</strong> kept for 14 days, then
+            overwritten.
           </li>
         </ul>
       </Section>
 
-      <Section title="8. Children's privacy">
+      <Section title="7. Your rights">
+        <p>You can ask us to:</p>
+        <ul className={listClass}>
+          <li>tell you what personal data we hold about you and who we have shared it with;</li>
+          <li>correct or complete data that is wrong or out of date (most of it you can edit in My Account);</li>
+          <li>delete your data, except records the law requires us to keep;</li>
+          <li>stop using your data for anything you consented to (cookies, newsletter);</li>
+          <li>nominate someone to exercise these rights for you if you die or become unable to.</li>
+        </ul>
         <p>
-          The site is not directed at children under 18, and we do not knowingly collect personal
-          information from children.
+          Email{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#4a7333] font-semibold hover:underline">{CONTACT_EMAIL}</a>{' '}
+          from the address on your account. We may ask you to confirm it's you before acting. If
+          you're not satisfied with our answer, you can complain to the Data Protection Board of
+          India.
         </p>
       </Section>
 
-      <Section title="9. Data security">
+      <Section title="8. Grievance officer">
         <p>
-          Because checkout and accounts are simulated locally, there is no server-side database of
-          customer orders or payment information to breach. Data you send us directly (email,
-          WhatsApp, contact form) is protected only to the extent those platforms secure it.
+          {GRIEVANCE_OFFICER ? (
+            <>
+              Our grievance officer is <strong className="text-[#1b261b]">{GRIEVANCE_OFFICER.name}</strong>
+              {GRIEVANCE_OFFICER.designation ? `, ${GRIEVANCE_OFFICER.designation}` : ''}.{' '}
+            </>
+          ) : null}
+          For any complaint about your data or an order, write to{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#4a7333] font-semibold hover:underline">{CONTACT_EMAIL}</a>{' '}
+          with "Grievance" in the subject. We acknowledge every grievance within 48 hours and resolve
+          it within one month.
         </p>
       </Section>
 
-      <Section title="10. Changes to this policy">
+      <Section title="9. Security">
         <p>
-          We may update this policy as the site evolves — for example, if we add a real backend,
-          payment processing, or additional third-party services. The "Last updated" date at the
-          top will reflect the latest revision. Material changes (e.g., adding real payment
-          processing) will be reflected here before they take effect.
+          Connections to the site are encrypted (HTTPS). Passwords and sign-in codes are stored only
+          as one-way hashes. The database is reachable only from our own server, and access to order
+          data is limited to staff who need it. No system is perfectly secure; if a breach affects
+          your data, we will tell you and the Data Protection Board as the law requires.
         </p>
       </Section>
 
-      <Section title="11. Contact us">
+      <Section title="10. Children">
+        <p>
+          The site is meant for adults. We do not knowingly collect personal data from anyone under
+          18. If you believe a child has given us their data, contact us and we will delete it.
+        </p>
+      </Section>
+
+      <Section title="11. Changes to this policy">
+        <p>
+          When we change how we use personal data, we update this page and the "Last updated" date
+          above before the change takes effect. For a significant change, we will also tell account
+          holders by email.
+        </p>
+      </Section>
+
+      <Section title="12. Contact us">
         <p>Questions about this policy or your data:</p>
         <ContactList />
         <p>
@@ -231,8 +245,6 @@ export default function PrivacyPage() {
           <Link to="/contact" className="text-[#4a7333] font-semibold hover:underline">contact page</Link>.
         </p>
       </Section>
-
-
     </LegalLayout>
   )
 }

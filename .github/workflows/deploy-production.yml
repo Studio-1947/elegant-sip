@@ -28,7 +28,7 @@ jobs:
       VPS_USER: ${{ secrets.VPS_USER }}
     steps:
       - name: Load deployment key
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
 
@@ -46,23 +46,86 @@ jobs:
           set -euo pipefail
 
           cd /var/www/elegant-sip
-          git fetch --prune origin main
-          git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
-          git checkout --detach "$DEPLOY_SHA"
-
-          docker compose -f docker-compose.prod.yml up -d --build
-          docker compose -f docker-compose.prod.yml ps
+          compose() { docker compose -f docker-compose.prod.yml "$@"; }
 
           # A deploy is done when the API answers /ready (database reachable,
           # migrations applied), not when the containers have merely started.
-          for attempt in $(seq 1 30); do
-            if docker compose -f docker-compose.prod.yml exec -T api               node -e "fetch('http://127.0.0.1:4000/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
-              echo "API ready"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "API did not become ready within 150 s"
-          docker compose -f docker-compose.prod.yml logs --tail=100 api
+          wait_for_api() {
+            for attempt in $(seq 1 30); do
+              if compose exec -T api node -e "fetch('http://127.0.0.1:4000/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+                return 0
+              fi
+              sleep 5
+            done
+            return 1
+          }
+
+          git fetch --prune origin main
+          git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
+
+          # What is live right now, so a release that never becomes ready can be
+          # swapped back for it automatically.
+          PREV_SHA=$(git rev-parse HEAD)
+          echo "live: $PREV_SHA -> deploying: $DEPLOY_SHA"
+
+          # A dump of the live database before the new release migrates it, so a
+          # bad migration can be rolled back. Kept apart from the nightly dumps
+          # (the newest 5), and a failed dump stops the deploy before anything changes.
+          if compose ps --status running --services | grep -qx backup; then
+            compose exec -T backup sh -c '
+              set -e
+              umask 077
+              mkdir -p /backups/predeploy
+              file="/backups/predeploy/elegantsip-$(date +%Y-%m-%d-%H%M%S).dump"
+              pg_dump --no-owner --format=custom --file="$file"
+              echo "pre-deploy backup: $file"
+              ls -1t /backups/predeploy/*.dump | tail -n +6 | xargs -r rm -f
+            '
+          else
+            echo "backup service not running (first deploy?): skipping the pre-deploy dump"
+          fi
+
+          git checkout --detach "$DEPLOY_SHA"
+
+          # Build first, while the old containers keep serving. --pull fetches
+          # fresh postgres/redis/node/caddy base images, so their security
+          # patches arrive with every deploy. A failed build changes nothing
+          # that is running; put the checkout back so it matches what is live.
+          if ! compose build --pull; then
+            git checkout --detach "$PREV_SHA"
+            echo "::error::Build of $DEPLOY_SHA failed; nothing was changed, $PREV_SHA is still live."
+            exit 1
+          fi
+
+          if compose up -d && wait_for_api; then
+            compose ps
+            echo "API ready: $DEPLOY_SHA is live"
+            exit 0
+          fi
+
+          echo "::error::API did not become ready within 150 s on $DEPLOY_SHA"
+          compose ps || true
+          compose logs --tail=100 api || true
+
+          if [ "$PREV_SHA" = "$DEPLOY_SHA" ]; then
+            echo "::error::$DEPLOY_SHA was already the live revision; there is nothing older to roll back to."
+            exit 1
+          fi
+
+          # Roll back to the release that was working. The base images were
+          # pulled moments ago and its layers are usually still cached, so this
+          # is quick. If the new release's migrations had already run, the old
+          # code meets the new schema: check the site, and if needed restore the
+          # pre-deploy dump printed above (backups/predeploy/, see README).
+          echo "ROLLING BACK to $PREV_SHA"
+          git checkout --detach "$PREV_SHA"
+          if compose up -d --build && wait_for_api; then
+            compose ps
+            echo "::error::ROLLED BACK. $DEPLOY_SHA never became ready and was taken down; $PREV_SHA is live again. Fix the release and push again."
+          else
+            echo "::error::ROLLBACK FAILED. $PREV_SHA did not become ready either; the site is probably down. Check 'docker compose -f docker-compose.prod.yml logs api' on the server now."
+            compose logs --tail=100 api || true
+          fi
+          # Red either way: the release that was pushed is not the one running.
           exit 1
           REMOTE

@@ -115,7 +115,7 @@ describe('GET /v1/feeds/meta.csv', () => {
     for (const r of records) expect(paise(r.price)).toBeGreaterThan(0)
   })
 
-  it('leaves out unlisted products', async () => {
+  it('leaves out retired products', async () => {
     if (!available) return
     const { records: before } = await fetchFeed()
     const slugs = before.map((r) => r.link.split('/product/')[1])
@@ -123,16 +123,16 @@ describe('GET /v1/feeds/meta.csv', () => {
       expect(slugs).not.toContain(hidden)
     }
 
-    // Unlisting a product in the admin takes it out of the very next fetch.
+    // Retiring a product in the admin takes it out of the very next fetch.
     const target = 'green-tea'
     expect(slugs).toContain(target)
     try {
-      await db.update(products).set({ listed: false }).where(eq(products.slug, target))
+      await db.update(products).set({ archivedAt: new Date() }).where(eq(products.slug, target))
       const { records: after } = await fetchFeed()
       expect(after.map((r) => r.link.split('/product/')[1])).not.toContain(target)
       expect(after).toHaveLength(before.length - 1)
     } finally {
-      await db.update(products).set({ listed: true }).where(eq(products.slug, target))
+      await db.update(products).set({ archivedAt: null }).where(eq(products.slug, target))
     }
   })
 

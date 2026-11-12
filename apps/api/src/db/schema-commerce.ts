@@ -37,6 +37,12 @@ export const users = pgTable(
     phone: text('phone').unique(),
     phoneVerifiedAt: timestamp('phone_verified_at', { withTimezone: true }),
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+    /** TOTP secret for two-step sign-in, encrypted with MFA_ENCRYPTION_KEY. Set during enrolment, before it is confirmed. */
+    mfaSecret: text('mfa_secret'),
+    /** Two-step sign-in is on only once a code from the authenticator app has been confirmed. */
+    mfaEnabledAt: timestamp('mfa_enabled_at', { withTimezone: true }),
+    /** SHA-256 digests of unused one-time recovery codes. */
+    mfaRecoveryCodes: jsonb('mfa_recovery_codes').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -60,7 +66,12 @@ export const otpChallenges = pgTable(
     consumedAt: timestamp('consumed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('otp_challenges_phone_idx').on(t.phone), index('otp_challenges_user_idx').on(t.userId)],
+  (t) => [
+    // Per-number rate limits count recent challenges by phone and age; this
+    // index also serves plain phone lookups, so it replaces the phone-only one.
+    index('otp_challenges_phone_created_idx').on(t.phone, t.createdAt),
+    index('otp_challenges_user_idx').on(t.userId),
+  ],
 )
 
 /**
@@ -148,6 +159,19 @@ export const orders = pgTable(
     total: integer('total').notNull(),
 
     notes: text('notes'),
+    /*
+     * Meta Conversions API. Recorded only when the customer had accepted
+     * cookies at checkout, so the payment webhook can report the purchase even
+     * if they never return to the site. Meta's own cookie IDs, nothing else.
+     */
+    adConsent: boolean('ad_consent').notNull().default(false),
+    metaFbp: text('meta_fbp'),
+    metaFbc: text('meta_fbc'),
+    /** Meta needs the buyer's IP and browser for website events. Cleared once the purchase is reported. */
+    metaClientIp: text('meta_client_ip'),
+    metaClientUa: text('meta_client_ua'),
+    /** Set once the server has reported this purchase to Meta, so it is reported once. */
+    metaPurchaseSentAt: timestamp('meta_purchase_sent_at', { withTimezone: true }),
     trackingNumber: text('tracking_number'),
     trackingCarrier: text('tracking_carrier'),
 
@@ -234,6 +258,102 @@ export const savedAddresses = pgTable(
   (t) => [index('saved_addresses_user_idx').on(t.userId)],
 )
 
+/*
+ * Shop-wide switches staff change from the admin page. Exactly one row (id 1),
+ * created by the migration.
+ */
+export const storeSettings = pgTable(
+  'store_settings',
+  {
+    id: integer('id').primaryKey().default(1),
+    /** Lets customers check out without an account (the API already supports guest orders). */
+    guestCheckoutEnabled: boolean('guest_checkout_enabled').notNull().default(false),
+    /** Shows the satisfaction guarantee on product pages, trust badges and policies. */
+    guaranteeEnabled: boolean('guarantee_enabled').notNull().default(true),
+    guaranteeDays: integer('guarantee_days').notNull().default(30),
+    /** Staff are emailed when a pack on sale falls to this many or fewer. */
+    lowStockThreshold: integer('low_stock_threshold').notNull().default(5),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (t) => [
+    check('store_settings_single_row', sql`${t.id} = 1`),
+    check('store_settings_guarantee_days', sql`${t.guaranteeDays} BETWEEN 1 AND 365`),
+    check('store_settings_low_stock_threshold', sql`${t.lowStockThreshold} BETWEEN 0 AND 1000`),
+  ],
+)
+
+export const refundStatus = pgEnum('refund_status', ['pending', 'processed', 'failed'])
+
+/** Money returned to a customer through the payment gateway. An order may have several (partial) refunds. */
+export const refunds = pgTable(
+  'refunds',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orderId: uuid('order_id').notNull().references(() => orders.id, { onDelete: 'restrict' }),
+    paymentId: uuid('payment_id').notNull().references(() => payments.id, { onDelete: 'restrict' }),
+    /** Client-generated, so a double-clicked refund is issued once. */
+    idempotencyKey: text('idempotency_key').notNull().unique(),
+    providerRefundId: text('provider_refund_id').unique(),
+    /** Paise. */
+    amount: integer('amount').notNull(),
+    status: refundStatus('status').notNull().default('pending'),
+    reason: text('reason').notNull(),
+    failureReason: text('failure_reason'),
+    requestedBy: uuid('requested_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('refunds_order_idx').on(t.orderId),
+    check('refunds_amount_positive', sql`${t.amount} > 0`),
+  ],
+)
+
+export const emailStatus = pgEnum('email_status', ['pending', 'sent', 'failed'])
+
+/**
+ * Outgoing email that could not be delivered on the first try, kept for a
+ * retry. A message that keeps failing ends as `failed` and staff are alerted.
+ */
+export const emailOutbox = pgTable(
+  'email_outbox',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** What kind of message, e.g. "order_confirmation", for logs and the admin page. */
+    kind: text('kind').notNull(),
+    to: text('to').notNull(),
+    subject: text('subject').notNull(),
+    html: text('html').notNull(),
+    text: text('text').notNull(),
+    replyTo: text('reply_to'),
+    status: emailStatus('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+  },
+  (t) => [index('email_outbox_due_idx').on(t.status, t.nextAttemptAt)],
+)
+
+/** Contact-form messages, each with a reference the customer can quote. */
+export const contactMessages = pgTable(
+  'contact_messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Customer-facing, e.g. ES-C-7K3P9Q. */
+    reference: text('reference').notNull().unique(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    subject: text('subject').notNull(),
+    message: text('message').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('contact_messages_created_idx').on(t.createdAt)],
+)
+
 /** Append-only staff mutation log. Payloads are deliberately excluded to avoid storing secrets or customer PII twice. */
 export const adminAuditEvents = pgTable(
   'admin_audit_events',
@@ -313,6 +433,13 @@ export const shipments = pgTable(
     lastError: text('last_error'),
     events: jsonb('events').$type<ShipmentEvent[]>().notNull().default([]),
     lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+    /**
+     * Fresh bookings of this order with the courier (1 = the first). Shiprocket
+     * needs a new order_id for each, so attempts after the first are suffixed.
+     */
+    bookingAttempt: integer('booking_attempt').notNull().default(0),
+    /** Lease held while a booking or cancellation talks to the courier; stale after a few minutes. */
+    bookingStartedAt: timestamp('booking_started_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

@@ -123,6 +123,16 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
         }
 
         const blocked = unavailableReason(row)
+        if (blocked === 'retired') {
+          adjustments.push({
+            productSlug: row.slug,
+            variantSize: row.size,
+            reason: 'unavailable',
+            message: `${row.name} is no longer sold and has been removed from your cart.`,
+          })
+          continue
+        }
+
         if (blocked === 'coming-soon') {
           adjustments.push({
             productSlug: row.slug,

@@ -2,7 +2,9 @@ import { and, eq, ne } from 'drizzle-orm'
 import type { FastifyBaseLogger } from 'fastify'
 import { db } from '../db/client.js'
 import { orders, payments } from '../db/schema-commerce.js'
+import { alertStaff } from './alerts.js'
 import { issueInvoice } from './invoice.js'
+import { reportPurchaseFromServer } from './meta-purchase.js'
 import { sendOrderConfirmation } from '../routes/orders.js'
 
 /**
@@ -52,6 +54,8 @@ export async function capturePayment(
   }
 
   log.info({ orderNumber: input.orderNumber }, 'order paid')
+  // Measurement only, after the payment is safely recorded; never awaited by the customer.
+  void reportPurchaseFromServer(input.orderId, log)
   return true
 }
 
@@ -73,4 +77,12 @@ export async function recordCaptureOnClosedOrder(
     { orderNumber: input.orderNumber, paymentId: input.paymentId },
     'REFUND REQUIRED: payment captured for an order that was already cancelled',
   )
+  await alertStaff({
+    subject: `Refund required for order ${input.orderNumber}`,
+    body: ['A payment was captured for an order that had already been cancelled. Refund it from the order’s Details on the staff page.'],
+    facts: [
+      ['Order', input.orderNumber],
+      ['Payment', input.paymentId],
+    ],
+  })
 }

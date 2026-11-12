@@ -1,10 +1,16 @@
 import './dev-defaults.js'
 import { buildApp } from './app.js'
-import { env } from './env.js'
+import { emailConfigIssues, env } from './env.js'
 import { sql } from './db/client.js'
 import { expirePendingOrders } from './routes/orders.js'
+import { syncStaleShipments } from './lib/fulfilment.js'
+import { startWatchdog } from './lib/watchdog.js'
+import { emailTransportConfigured } from './lib/email.js'
+import { startEmailOutboxWorker } from './lib/email-outbox.js'
 
 const app = await buildApp()
+
+for (const issue of emailConfigIssues(env, process.env.MAIL_FROM)) app.log[issue.level](issue.message)
 
 /*
  * Hosts without a pre-deploy step do this here instead. Seeding is safe to
@@ -54,6 +60,33 @@ try {
   void expireOrders()
   const expiryTimer = setInterval(() => void expireOrders(), env.ORDER_EXPIRY_SWEEP_SECONDS * 1_000)
   expiryTimer.unref()
+
+  if (env.SHIPMENT_SYNC_MINUTES > 0 && env.SHIPPING_PROVIDER !== 'manual') {
+    const syncShipments = async () => {
+      try {
+        const synced = await syncStaleShipments(env.SHIPMENT_SYNC_MINUTES, app.log)
+        if (synced > 0) app.log.info({ synced }, 'refreshed courier tracking')
+      } catch (err) {
+        app.log.error({ err }, 'background shipment sync failed')
+      }
+    }
+    // Check every quarter of the window so no parcel waits much longer than it.
+    const interval = Math.max(5, Math.round(env.SHIPMENT_SYNC_MINUTES / 4)) * 60_000
+    const shipmentTimer = setInterval(() => void syncShipments(), interval)
+    shipmentTimer.unref()
+  }
+
+  // Without SMTP nothing is ever queued (sendEmail only logs), so there is nothing to retry.
+  if (emailTransportConfigured) startEmailOutboxWorker(app.log).unref()
+
+  if (env.NODE_ENV === 'production' && env.WATCHDOG_MINUTES > 0) {
+    startWatchdog({
+      minutes: env.WATCHDOG_MINUTES,
+      statusDir: env.OPS_STATUS_DIR,
+      diskAlertPercent: env.DISK_ALERT_PERCENT,
+      log: app.log,
+    }).unref()
+  }
 } catch (err) {
   app.log.error({ err }, 'failed to start')
   process.exit(1)

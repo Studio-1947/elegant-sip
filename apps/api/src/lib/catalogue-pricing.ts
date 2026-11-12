@@ -14,6 +14,7 @@ export const variantPricingColumns = {
   name: products.name,
   imageSrc: products.imageSrc,
   status: products.status,
+  archivedAt: products.archivedAt,
   size: productVariants.size,
   sku: productVariants.sku,
   price: productVariants.price,
@@ -38,10 +39,11 @@ export const unitPrice = (v: Pick<PricingFields, 'price'>): number => v.price
 export const regularPrice = (v: Pick<PricingFields, 'price' | 'compareAtPrice'>): number =>
   v.compareAtPrice !== null && v.compareAtPrice > v.price ? v.compareAtPrice : v.price
 
-/** Why a pack cannot be ordered right now, or null when it can. */
+/** Why a pack cannot be ordered right now, or null when it can. A retired tea is never sold. */
 export const unavailableReason = (
-  v: Pick<PricingFields, 'status' | 'price' | 'stock'>,
-): 'coming-soon' | 'out-of-stock' | null => {
+  v: Pick<PricingFields, 'status' | 'price' | 'stock'> & { archivedAt?: Date | null },
+): 'retired' | 'coming-soon' | 'out-of-stock' | null => {
+  if (v.archivedAt) return 'retired'
   if (v.status === 'coming-soon' || v.price <= 0) return 'coming-soon'
   if (v.stock <= 0) return 'out-of-stock'
   return null

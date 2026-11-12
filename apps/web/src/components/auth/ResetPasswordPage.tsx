@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ApiClientError, api } from '../../lib/api'
 import { Link, navigate, parseRoute, useDocumentMeta, useRoute } from '../../lib/router'
+import { clearLinkToken, linkToken } from '../../lib/urlSecrets'
 import { AuthCard } from './AuthCard'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -16,7 +17,7 @@ const MIN_LENGTH = 10
 
 export default function ResetPasswordPage() {
   const route = useRoute()
-  const token = parseRoute(route).query.get('token') ?? ''
+  const token = linkToken('/reset-password', parseRoute(route).query.get('token'))
 
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -45,6 +46,7 @@ export default function ResetPasswordPage() {
     setSubmitting(true)
     try {
       await api.auth.resetPassword({ token, password })
+      clearLinkToken()
       setDone(true)
     } catch (err) {
       setError(

@@ -15,18 +15,23 @@ import {
   sessionCookieOptions,
 } from '../lib/sessions.js'
 import { sendEmail } from '../lib/email.js'
+import { claimGuestOrders } from '../lib/guest-orders.js'
+import { createLoginChallenge } from '../lib/mfa.js'
 import { env } from '../env.js'
 import {
   ARGON2,
   consumeToken,
   strictLimit,
   emailSchema,
+  ownEmailSchema,
+  isPlaceholderEmail,
   issueToken,
   passwordSchema,
   publicUserSchema,
   sendVerificationEmail,
   toPublicUser,
 } from './auth-shared.js'
+import { mfaRoutes } from './mfa.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Identity.
@@ -38,9 +43,13 @@ import {
  *    address exists. Both always report success — otherwise the endpoint is an
  *    account-enumeration oracle.
  *  · Changing a password destroys every existing session for that user.
+ *  · An account with two-step sign-in gets no session from its password
+ *    alone; /auth/login/mfa (mfa.ts) finishes the job.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export const authRoutes: FastifyPluginAsyncZod = async (app) => {
+  await app.register(mfaRoutes)
+
   app.post(
       '/auth/register',
       {
@@ -49,8 +58,8 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
           tags: ['Auth'],
           summary: 'Create an account',
           description:
-            'Always reports success, even if the address is already registered — a different response would let anyone test which addresses have accounts.',
-          body: z.object({ name: z.string().trim().min(2).max(80), email: emailSchema, password: passwordSchema }),
+            'Always reports success, even if the address is already registered — a different response would let anyone test which addresses have accounts. A registered address is emailed about the attempt instead, so both cases take the same time.',
+          body: z.object({ name: z.string().trim().min(2).max(80), email: ownEmailSchema, password: passwordSchema }),
           response: { 200: z.object({ ok: z.literal(true) }), 400: problemSchema },
         },
       },
@@ -58,10 +67,25 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         const { name, email, password } = request.body
         const existing = await db.query.users.findFirst({ where: eq(users.email, email) })
 
+        /* Both branches do the same expensive work — a hash and an email — so
+           neither the body nor the response time says which addresses have
+           accounts. The owner of a taken address hears about the attempt. */
+        const passwordHash = await hash(password, ARGON2)
         if (!existing) {
-          const passwordHash = await hash(password, ARGON2)
           const [user] = await db.insert(users).values({ name, email, passwordHash }).returning({ id: users.id })
           await sendVerificationEmail({ id: user.id, email, name })
+        } else if (!isPlaceholderEmail(existing.email)) {
+          await sendEmail({
+            to: existing.email,
+            subject: 'Your Elegant Sip account',
+            heading: 'You already have an account',
+            body: [
+              'Someone, perhaps you, just tried to create a new Elegant Sip account with this email address. It already has an account, so nothing was changed.',
+              'To get back in, sign in as usual. If you have forgotten your password, choose "Forgot your password?" on the sign-in form to set a new one.',
+              'If this was not you, you can ignore this message. Your account and password are untouched.',
+            ],
+            action: { label: 'Sign in to Elegant Sip', url: `${env.SITE_URL}/` },
+          })
         }
         // Same response either way.
         return { ok: true as const }
@@ -75,8 +99,16 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
           tags: ['Auth'],
           summary: 'Sign in',
+          description:
+            'For an account with two-step sign-in, a correct password answers `mfaRequired` with a five-minute challenge token instead of a session; finish at /auth/login/mfa.',
           body: z.object({ email: emailSchema, password: z.string().min(1).max(200) }),
-          response: { 200: z.object({ user: publicUserSchema }), 401: problemSchema },
+          response: {
+            200: z.union([
+              z.object({ user: publicUserSchema }),
+              z.object({ mfaRequired: z.literal(true), challengeToken: z.string() }),
+            ]),
+            401: problemSchema,
+          },
         },
       },
       async (request, reply) => {
@@ -86,7 +118,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         /* Hash even when the user does not exist, so response timing does not
            reveal which addresses are registered. */
         const digest = user?.passwordHash ?? '$argon2id$v=19$m=19456,t=2,p=1$c29tZXNhbHR2YWx1ZQ$0000000000000000000000000000000000000000000'
-        let ok = false
+        let ok: boolean
         try {
           ok = await verify(digest, password)
         } catch {
@@ -95,6 +127,10 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
         if (!user || !ok) {
           throw new ApiError(401, 'invalid_credentials', 'Sign-in failed', 'That email and password do not match.')
+        }
+
+        if (user.mfaEnabledAt) {
+          return { mfaRequired: true as const, challengeToken: await createLoginChallenge(user.id) }
         }
 
         const token = await createSession({ userId: user.id, email: user.email, role: user.role })
@@ -164,6 +200,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Auth'],
         summary: 'Confirm an email address',
+        description: 'Also moves any guest orders placed with this address into the account.',
         body: z.object({ token: z.string().min(1) }),
         response: { 200: z.object({ ok: z.literal(true) }), 400: problemSchema },
       },
@@ -173,7 +210,15 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!userId) {
         throw ApiError.badRequest('That confirmation link has expired or has already been used.')
       }
-      await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, userId))
+      await db.transaction(async (tx) => {
+        const [user] = await tx
+          .update(users)
+          .set({ emailVerifiedAt: new Date() })
+          .where(eq(users.id, userId))
+          .returning({ id: users.id, email: users.email })
+        // Ownership of the address is now proven, so its guest orders are this account's.
+        if (user && !isPlaceholderEmail(user.email)) await claimGuestOrders(tx, user.id, user.email)
+      })
       return { ok: true as const }
     },
   )

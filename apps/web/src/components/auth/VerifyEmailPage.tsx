@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { ApiClientError, api } from '../../lib/api'
 import { Link, parseRoute, useDocumentMeta, useRoute } from '../../lib/router'
 import { useAuth } from '../AuthContext'
+import { clearLinkToken, linkToken } from '../../lib/urlSecrets'
+import { track } from '../../lib/analytics'
 import { AuthCard } from './AuthCard'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -17,7 +19,7 @@ type State = 'working' | 'done' | 'failed' | 'missing'
 
 export default function VerifyEmailPage() {
   const route = useRoute()
-  const token = parseRoute(route).query.get('token') ?? ''
+  const token = linkToken('/verify-email', parseRoute(route).query.get('token'))
   const { refresh } = useAuth()
 
   const [state, setState] = useState<State>(token ? 'working' : 'missing')
@@ -35,6 +37,8 @@ export default function VerifyEmailPage() {
     void api.auth
       .verifyEmail(token)
       .then(async () => {
+        clearLinkToken()
+        track('signup', { method: 'email' })
         setState('done')
         // If they are already signed in, reflect the new verified status.
         await refresh()

@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
 import ProductTile from './ProductTile'
 import { Link } from '../lib/router'
 import { PRODUCTS } from '../data/products'
-import { useLiveCatalogue } from '../lib/liveCatalogue'
 import { useUi } from './UiContext'
 import SelectDropdown from './SelectDropdown'
 import BlurText from './BlurText'
 import { useScrollReveal } from '../lib/useScrollReveal'
+import { useCatalogue } from '../lib/liveCatalogue'
 
 // Catalogue order, not alphabetical: First Flush → Second Flush → Third Flush.
 
@@ -45,17 +45,20 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
   const sectionRef = useScrollReveal<HTMLElement>({ target: ':scope > div' })
   const gridRef = useScrollReveal<HTMLDivElement>({ target: ':scope > *', stagger: 0.15 })
 
-  // Sync when the outside query changes (e.g. arriving via a #/shop?q= link)
-  useEffect(() => {
+  // Sync when the outside query changes (e.g. arriving via a #/shop?q= link).
+  // Done during render so the list never paints once with the old query.
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery)
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery)
     setSearch(searchQuery)
-  }, [searchQuery])
+  }
 
-  // Bumps when the live catalogue lands, so filters and sorts re-run on it.
-  const catalogueVersion = useLiveCatalogue()
-  // Read on every render: the live catalogue can change a tea's category.
-  const categories = ['All', ...new Set(PRODUCTS.map((p) => p.category))]
+  // Live prices and retirements land after first paint; the list is recomputed then.
+  const products = useCatalogue()
+  // From the live list, so a category renamed in the admin shows up as a filter.
+  const categories = useMemo(() => ['All', ...new Set(products.map((p) => p.category))], [products])
   const visibleProducts = useMemo(() => {
-    let filtered = category === 'All' ? [...PRODUCTS] : PRODUCTS.filter((p) => p.category === category)
+    let filtered = category === 'All' ? [...products] : products.filter((p) => p.category === category)
     const q = search.trim().toLowerCase()
     if (q) {
       filtered = filtered.filter((p) =>
@@ -70,8 +73,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
     // getRating() alone only saw the empty static REVIEWS, so this was a no-op.
     if (sort === 'rating') filtered.sort((a, b) => b.rating.average - a.rating.average)
     return filtered
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- catalogueVersion signals in-place catalogue updates
-  }, [category, sort, search, catalogueVersion])
+  }, [products, category, sort, search])
 
   return (
     <section ref={sectionRef} className="px-6 md:px-12 lg:px-16 py-16 md:py-32 max-w-[1400px] mx-auto bg-[#f9faf7]">
@@ -148,7 +150,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search teas — whole leaf, fannings, muscatel…"
+              placeholder="Search teas — first flush, white, muscatel…"
               className="w-full bg-white border border-[#1b261b]/10 rounded-full pl-11 pr-4 py-3 text-sm focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/30"
             />
           </div>

@@ -12,7 +12,7 @@ import { ApiError } from '../lib/problem.js'
  * free-text estate name against a garden name and silently resolved to nothing.
  */
 const withProducts = {
-  productLinks: { with: { product: { columns: { slug: true } } } },
+  productLinks: { with: { product: { columns: { slug: true, archivedAt: true } } } },
 } as const
 
 const toDto = (row: {
@@ -23,7 +23,7 @@ const toDto = (row: {
   elevation: string
   imageSrc: string
   story: string[]
-  productLinks: { product: { slug: string } }[]
+  productLinks: { product: { slug: string; archivedAt: Date | null } }[]
 }) => ({
   id: row.id,
   slug: row.slug,
@@ -32,7 +32,8 @@ const toDto = (row: {
   elevation: row.elevation,
   imageSrc: row.imageSrc,
   story: row.story ?? [],
-  productSlugs: row.productLinks.map((l) => l.product.slug),
+  // A retired tea stays linked (staff may bring it back) but is not shown.
+  productSlugs: row.productLinks.filter((l) => !l.product.archivedAt).map((l) => l.product.slug),
 })
 
 export const gardenRoutes: FastifyPluginAsyncZod = async (app) => {

@@ -12,12 +12,22 @@
 #   · no Mailpit — mail is either really sent or honestly reported as not sent
 #   · no published database ports
 #   · secrets come from .env, never from this tracked file
-#   · a nightly database dump, kept for a fortnight
+#   · a nightly database dump, kept for a fortnight, and an encrypted copy of
+#     it off the server once OFFSITE_S3_BUCKET is set
 
 name: elegantsip-prod
 
+# Docker keeps container logs forever by default; a busy API would fill the
+# disk and stop Postgres. Each service keeps at most 5 × 10 MB.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '5'
+
 services:
   postgres:
+    logging: *default-logging
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
@@ -28,11 +38,18 @@ services:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      # Checked every 60 s once running, but every 2 s while starting, so the
+      # API (which waits for `healthy`) is up seconds after a reboot instead
+      # of a minute of 502s. start_interval needs Docker Engine 25+; older
+      # engines ignore it and fall back to `interval`.
       interval: 60s
       timeout: 5s
       retries: 10
+      start_period: 60s
+      start_interval: 2s
 
   redis:
+    logging: *default-logging
     image: redis:7-alpine
     restart: unless-stopped
     # Sessions only. Losing Redis signs everyone out; it never loses an order,
@@ -40,11 +57,15 @@ services:
     command: ['redis-server', '--save', '', '--appendonly', 'no', '--maxmemory', '256mb', '--maxmemory-policy', 'allkeys-lru']
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
+      # Same as Postgres: fast checks while starting, slow ones afterwards.
       interval: 60s
       timeout: 5s
       retries: 10
+      start_period: 30s
+      start_interval: 2s
 
   api:
+    logging: *default-logging
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -89,6 +110,8 @@ services:
       INTERAKT_OTP_TEMPLATE: ${INTERAKT_OTP_TEMPLATE:-elegant_sip_otp}
       INTERAKT_OTP_TEMPLATE_LANGUAGE: ${INTERAKT_OTP_TEMPLATE_LANGUAGE:-en}
       INTERAKT_WEBHOOK_SECRET: ${INTERAKT_WEBHOOK_SECRET:-}
+      # Encrypts staff authenticator secrets. Two-step sign-in cannot be turned on without it.
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:-}
       AANGAN_INTERAKT_WEBHOOK_URL: ${AANGAN_INTERAKT_WEBHOOK_URL:-}
       API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
       SELLER_GSTIN: ${SELLER_GSTIN:-}
@@ -100,11 +123,25 @@ services:
       SHIPROCKET_PICKUP_LOCATION: ${SHIPROCKET_PICKUP_LOCATION:-}
       SHIPROCKET_PICKUP_POSTCODE: ${SHIPROCKET_PICKUP_POSTCODE:-}
       SHIPROCKET_WEBHOOK_TOKEN: ${SHIPROCKET_WEBHOOK_TOKEN:-}
+      SHIPMENT_SYNC_MINUTES: ${SHIPMENT_SYNC_MINUTES:-180}
       SHIPROCKET_API_BASE_URL: ${SHIPROCKET_API_BASE_URL:-https://apiv2.shiprocket.in/v1/external}
       SHIP_PACKAGE_LENGTH_CM: ${SHIP_PACKAGE_LENGTH_CM:-20}
       SHIP_PACKAGE_BREADTH_CM: ${SHIP_PACKAGE_BREADTH_CM:-15}
       SHIP_PACKAGE_HEIGHT_CM: ${SHIP_PACKAGE_HEIGHT_CM:-10}
       SHIP_PACKAGING_WEIGHT_GRAMS: ${SHIP_PACKAGING_WEIGHT_GRAMS:-150}
+      # Emails CONTACT_INBOX about a nearly full disk or failed backups, read
+      # from the status files the backup and offsite services leave below.
+      OPS_STATUS_DIR: /ops-status
+      WATCHDOG_MINUTES: ${WATCHDOG_MINUTES:-30}
+      DISK_ALERT_PERCENT: ${DISK_ALERT_PERCENT:-15}
+      # Meta Conversions API: server-side copies of the pixel's events. Off
+      # until META_CAPI_ACCESS_TOKEN is set in .env.
+      META_PIXEL_ID: ${META_PIXEL_ID:-1702510334659568}
+      META_CAPI_ACCESS_TOKEN: ${META_CAPI_ACCESS_TOKEN:-}
+      META_CAPI_TEST_EVENT_CODE: ${META_CAPI_TEST_EVENT_CODE:-}
+      META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-v24.0}
+    volumes:
+      - ops-status:/ops-status:ro
     expose:
       - '4000'
     volumes:
@@ -113,6 +150,7 @@ services:
       - uploads:/data/uploads
 
   web:
+    logging: *default-logging
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -128,6 +166,12 @@ services:
       # overrides Caddyfile's default substitution and leaves it with no site
       # address, so Caddy exits in a restart loop.
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      # Which peers may supply the visitor's address in X-Forwarded-For (see
+      # the Caddyfile and .env.prod.example). Unset keeps `private_ranges`,
+      # right when host nginx sits in front. Set it EMPTY when Caddy faces the
+      # internet directly. `-` rather than `:-` on purpose: an empty value must
+      # reach Caddy as empty (trust nobody), not be replaced by the default.
+      CADDY_TRUSTED_PROXIES: ${CADDY_TRUSTED_PROXIES-private_ranges}
     # The defaults put Caddy straight onto the internet, which is right when
     # this stack has the server to itself. When the machine already runs a
     # reverse proxy for other projects, point these at loopback in .env
@@ -149,6 +193,7 @@ services:
   # Nightly dump at 02:30, fourteen kept. Small, unglamorous, and the only
   # reason a broken server is an inconvenience rather than a lost business.
   backup:
+    logging: *default-logging
     image: postgres:17-alpine
     restart: unless-stopped
     depends_on:
@@ -165,10 +210,15 @@ services:
     volumes:
       - ./backups:/backups
       - uploads:/uploads:ro
+      - ops-status:/status
     entrypoint: ['/bin/sh', '-c']
     command:
       - |
         umask 077
+        # Timestamps (and the error, on failure) for the API's watchdog.
+        # World-readable: the API runs as a non-root user and they hold no data.
+        chmod 755 /status
+        status() { printf '%s\n%s\n' "$$(date +%s)" "$$2" > "/status/$$1.tmp" && chmod 644 "/status/$$1.tmp" && mv "/status/$$1.tmp" "/status/$$1"; }
         echo "backups: nightly at 02:30 ($$TZ), 14 kept in ./backups"
         while true; do
           now=$$(date +%s)
@@ -183,11 +233,14 @@ services:
           if pg_dump --no-owner --format=custom --file="/backups/elegantsip-$$stamp.dump" 2>/backups/last-error.log; then
             echo "backup ok: elegantsip-$$stamp.dump"
             rm -f /backups/last-error.log
+            status backup-ok ""
           else
             echo "BACKUP FAILED — see backups/last-error.log"
+            status backup-failed "$$(tail -c 400 /backups/last-error.log)"
           fi
           # Product photos uploaded in the admin: the database only holds
-          # their paths, so a restore needs these too.
+          # their paths, so a restore needs these too. The offsite service
+          # copies these archives along with the dumps.
           if tar -czf "/backups/uploads-$$stamp.tar.gz" -C /uploads . 2>>/backups/last-error.log; then
             echo "backup ok: uploads-$$stamp.tar.gz"
           else
@@ -197,8 +250,87 @@ services:
           ls -1t /backups/uploads-*.tar.gz 2>/dev/null | tail -n +15 | xargs -r rm -f
         done
 
+  # An encrypted copy of ./backups in S3-compatible storage (Cloudflare R2,
+  # Backblaze B2, AWS S3…), so losing the server does not lose the business.
+  # Runs at start and nightly at 03:15, after the 02:30 dump. Copies only:
+  # nothing in the bucket is removed because it vanished from the server, and
+  # files older than OFFSITE_KEEP_DAYS are pruned only while new dumps keep
+  # arriving. Encrypted with OFFSITE_ENCRYPT_PASSWORD before upload; without
+  # that passphrase nothing is uploaded at all, because dumps hold customer
+  # names, addresses and phone numbers. Restore: README, "Backups and restore".
+  offsite:
+    logging: *default-logging
+    image: rclone/rclone:1.68.2
+    restart: unless-stopped
+    environment:
+      TZ: ${BACKUP_TIMEZONE:-Asia/Kolkata}
+      OFFSITE_S3_BUCKET: ${OFFSITE_S3_BUCKET:-}
+      OFFSITE_ENCRYPT_PASSWORD: ${OFFSITE_ENCRYPT_PASSWORD:-}
+      OFFSITE_KEEP_DAYS: ${OFFSITE_KEEP_DAYS:-90}
+      RCLONE_CONFIG_OFFSITE_TYPE: s3
+      RCLONE_CONFIG_OFFSITE_PROVIDER: ${OFFSITE_S3_PROVIDER:-Other}
+      RCLONE_CONFIG_OFFSITE_ENDPOINT: ${OFFSITE_S3_ENDPOINT:-}
+      RCLONE_CONFIG_OFFSITE_REGION: ${OFFSITE_S3_REGION:-auto}
+      RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID: ${OFFSITE_S3_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY: ${OFFSITE_S3_SECRET_ACCESS_KEY:-}
+      # The key may write objects without being allowed to create buckets.
+      RCLONE_CONFIG_OFFSITE_NO_CHECK_BUCKET: 'true'
+    volumes:
+      - ./backups:/backups:ro
+      - ops-status:/status
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        status() { printf '%s\n%s\n' "$$(date +%s)" "$$2" > "/status/$$1.tmp" && chmod 644 "/status/$$1.tmp" && mv "/status/$$1.tmp" "/status/$$1"; }
+        idle() { while true; do sleep 86400; done; }
+        if [ -z "$$OFFSITE_S3_BUCKET" ]; then
+          echo "off-site copies NOT CONFIGURED: backups stay on this server only. Set OFFSITE_S3_BUCKET in .env."
+          status offsite-off ""
+          idle
+        fi
+        if [ -z "$$OFFSITE_ENCRYPT_PASSWORD" ]; then
+          echo "OFF-SITE COPY REFUSED: set OFFSITE_ENCRYPT_PASSWORD. Customer data is never uploaded unencrypted."
+          status offsite-failed "OFFSITE_ENCRYPT_PASSWORD is not set, so nothing was uploaded."
+          idle
+        fi
+        # "vault" encrypts file contents on the way into the bucket. Names stay
+        # readable (they are only dates) so the right dump is easy to find.
+        export RCLONE_CONFIG_VAULT_TYPE=crypt
+        export RCLONE_CONFIG_VAULT_REMOTE="offsite:$$OFFSITE_S3_BUCKET"
+        export RCLONE_CONFIG_VAULT_FILENAME_ENCRYPTION=off
+        export RCLONE_CONFIG_VAULT_DIRECTORY_NAME_ENCRYPTION=false
+        export RCLONE_CONFIG_VAULT_PASSWORD="$$(rclone obscure "$$OFFSITE_ENCRYPT_PASSWORD")"
+        unset OFFSITE_ENCRYPT_PASSWORD
+        copy_off_site() {
+          if ! out=$$(rclone copy /backups vault: --include '*.dump' --include 'uploads-*.tar.gz' --log-level ERROR 2>&1); then
+            echo "OFF-SITE COPY FAILED: $$out"
+            status offsite-failed "$$out"
+            return
+          fi
+          # Prune only while fresh dumps are arriving, so a broken backup job
+          # can never age the last good copies out of the bucket.
+          if find /backups -maxdepth 1 -name '*.dump' -mtime -2 | grep -q .; then
+            rclone delete vault: --min-age "$${OFFSITE_KEEP_DAYS}d" --log-level ERROR 2>&1 || echo "off-site prune failed (copies are safe)"
+          fi
+          echo "off-site copy ok ($$OFFSITE_S3_BUCKET)"
+          status offsite-ok ""
+        }
+        echo "off-site copies: at start and nightly at 03:15 ($$TZ) to $$OFFSITE_S3_BUCKET, $${OFFSITE_KEEP_DAYS} days kept"
+        copy_off_site
+        while true; do
+          hour=$$(date +%H | sed 's/^0//')
+          minute=$$(date +%M | sed 's/^0//')
+          second=$$(date +%S | sed 's/^0//')
+          seconds_until=$$((3 * 3600 + 15 * 60 - hour * 3600 - minute * 60 - second))
+          if [ $$seconds_until -le 0 ]; then seconds_until=$$((seconds_until + 86400)); fi
+          sleep $$seconds_until
+          copy_off_site
+        done
+
 volumes:
   postgres-data:
   caddy-data:
   caddy-config:
   uploads:
+  # Status files from backup/offsite for the API watchdog. Timestamps only.
+  ops-status:

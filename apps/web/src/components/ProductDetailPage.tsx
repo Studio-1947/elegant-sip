@@ -14,7 +14,9 @@ import ProductCard from './ProductCard'
 import ProductTile from './ProductTile'
 import ProductInfoCards from './ProductInfoCards'
 import ProductReviews from './ProductReviews'
+import ProductGardenLine from './ProductGardenLine'
 import { useUi } from './UiContext'
+import { useStoreSettings } from '../lib/storeSettings'
 
 export default function ProductDetailPage({ id }: { id?: string }) {
   const product = getProduct(id)
@@ -23,9 +25,10 @@ export default function ProductDetailPage({ id }: { id?: string }) {
   const [isAdding, setIsAdding] = useState(false)
   const [isAdded, setIsAdded] = useState(false)
   const [reviews, setReviews] = useState<ReviewView[]>([])
-  const [rating, setRating] = useState({ average: 0, count: 0 })
+  const [rating, setRating] = useState(() => product?.rating ?? { average: 0, count: 0 })
   const { addToCart } = useCart()
   const { showToast } = useUi()
+  const { guarantee } = useStoreSettings()
 
   // Phones: once the main buttons scroll out of view, a buy bar docks at the
   // bottom of the screen, in the thumb zone, so buying never needs a scroll back.
@@ -42,14 +45,21 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     return () => io.disconnect()
   }, [id])
 
-  // Reset per-product state when navigating between products (same component instance)
-  useEffect(() => {
+  // Reset per-product state when navigating between products (same component
+  // instance). Done during render so the new product never paints with the old
+  // product's quantity, pack or reviews.
+  const [prevId, setPrevId] = useState(id)
+  if (id !== prevId) {
+    setPrevId(id)
     setQuantity(1)
     setSelectedSize(null)
     setIsAdding(false)
     setIsAdded(false)
     setReviews([])
     setRating(product?.rating ?? { average: 0, count: 0 })
+  }
+
+  useEffect(() => {
     if (!id) return
     // Published reviews are fetched live; the snapshot's rating is the
     // build-time figure and is replaced as soon as the API answers.
@@ -65,7 +75,6 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const variant = product
@@ -73,6 +82,14 @@ export default function ProductDetailPage({ id }: { id?: string }) {
     : undefined
   const variantInStock = (variant?.stock ?? 0) > 0
   const comingSoon = product?.status === 'coming-soon'
+
+  // One product view per product opened, priced at the default pack.
+  useEffect(() => {
+    if (!product) return
+    const shown = getDefaultVariant(product)
+    track('view_item', { product: product.slug, name: product.name, ...(shown && !comingSoon ? { variant: shown.size, value: shown.price } : {}) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.slug])
 
   useDocumentMeta(
     product ? productRouteMeta(product.slug)!.title : 'Product not found | Elegant Sip',
@@ -127,14 +144,19 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                   },
                   shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' },
                 },
-                hasMerchantReturnPolicy: {
-                  '@type': 'MerchantReturnPolicy',
-                  applicableCountry: 'IN',
-                  returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-                  merchantReturnDays: 30,
-                  returnMethod: 'https://schema.org/ReturnByMail',
-                  returnFees: 'https://schema.org/FreeReturn',
-                },
+                // Only while the shop offers its guarantee, with the days staff set.
+                ...(guarantee.enabled
+                  ? {
+                    hasMerchantReturnPolicy: {
+                      '@type': 'MerchantReturnPolicy',
+                      applicableCountry: 'IN',
+                      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                      merchantReturnDays: guarantee.days,
+                      returnMethod: 'https://schema.org/ReturnByMail',
+                      returnFees: 'https://schema.org/FreeReturn',
+                    },
+                  }
+                  : {}),
               })),
             },
           }
@@ -215,7 +237,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       quantity,
     )
     showToast(`${product.name} added to your cart`)
-    track('add_to_cart', { product: product.slug, quantity, source: 'product_detail' })
+    track('add_to_cart', { product: product.slug, name: product.name, variant: activeVariant.size, quantity, value: activeVariant.price * quantity, source: 'product_detail' })
     setTimeout(() => {
       setIsAdding(false)
       setIsAdded(true)
@@ -230,7 +252,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
       { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
-    track('add_to_cart', { product: product.slug, quantity, source: 'product_detail_buy_now' })
+    track('add_to_cart', { product: product.slug, name: product.name, variant: activeVariant.size, quantity, value: activeVariant.price * quantity, source: 'product_detail_buy_now' })
     navigate('/checkout')
   }
 
@@ -266,6 +288,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               {product.category}
             </span>
             <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight leading-[1.05] mb-4">{product.name}</h1>
+            <ProductGardenLine productSlug={product.slug} />
 
             {/* Rating */}
             {rating.count > 0 && (
@@ -402,9 +425,11 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               <li className="flex items-center gap-2">
                 <span className="text-[#4a7333]">✓</span> Free shipping on orders of {formatINR(FREE_SHIPPING_THRESHOLD)} or more
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-[#4a7333]">✓</span> The Elegant Sip Promise  30-day satisfaction guarantee
-              </li>
+              {guarantee.enabled && (
+                <li className="flex items-center gap-2">
+                  <span className="text-[#4a7333]">✓</span> The Elegant Sip Promise — {guarantee.days}-day satisfaction guarantee
+                </li>
+              )}
               <li className="flex items-center gap-2">
                 <span className="text-[#4a7333]">✓</span> Packed within weeks of harvest, dated on every pack
               </li>

@@ -16,15 +16,29 @@
 
 {
 	servers {
-		# In production this stack sits behind the server's own nginx, so every
-		# request reaches Caddy from a private Docker address. Trusting private
-		# ranges lets the visitor's real address through (nginx must send
-		# `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`).
-		# Without this the API sees nginx as the only visitor, and its rate
-		# limits apply to the whole shop at once instead of to each customer.
+		# Which peers may tell Caddy the visitor's address via X-Forwarded-For.
+		# Set CADDY_TRUSTED_PROXIES in .env to match how traffic reaches Caddy:
+		#
+		#   Behind the server's own nginx (WEB_PUBLISH_HTTP=127.0.0.1:8080):
+		#     every request arrives from the Docker bridge gateway (172.x.0.1),
+		#     so that range must be trusted or the API sees nginx as the only
+		#     visitor and its rate limits apply to the whole shop at once.
+		#     Use `172.16.0.0/12` (nginx must send
+		#     `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`).
+		#
+		#   Caddy directly on the internet (ports 80/443 published):
+		#     trust nobody — set it to an empty value. Otherwise any request
+		#     that Docker relays from its bridge gateway (IPv6, hairpin traffic)
+		#     would come from a trusted address, and a visitor could pick their
+		#     own X-Forwarded-For and dodge the per-IP rate limits.
+		#
+		# Unset keeps `private_ranges`, the historical behaviour. The value is a
+		# space-separated list of CIDRs/IPs, or `private_ranges`; anything else
+		# (including the word `none`) stops Caddy from starting.
+		#
 		# Strict mode reads the header right to left, so a value the visitor
 		# made up themselves is never mistaken for their address.
-		trusted_proxies static private_ranges
+		trusted_proxies static {$CADDY_TRUSTED_PROXIES:private_ranges}
 		trusted_proxies_strict
 	}
 }
@@ -46,6 +60,11 @@
 	# unchanged and know nothing about the prefix.
 	handle_path /api/* {
 		reverse_proxy api:4000 {
+			# A deploy replaces the API container, which takes a few seconds to
+			# boot and migrate. Hold requests until it answers instead of
+			# returning 502 to whoever is shopping at that moment.
+			lb_try_duration 30s
+			lb_try_interval 250ms
 			# One address, already resolved above. The API trusts this header,
 			# so it must never carry a value the visitor supplied.
 			header_up X-Forwarded-For {client_ip}
@@ -55,8 +74,31 @@
 	# Everything else is the storefront.
 	handle {
 		root * /srv
-		try_files {path} /index.html
-		file_server
+
+		# Every real tea has a prerendered /product/<slug>/index.html. Any
+		# other product URL still gets the app shell (it renders the
+		# not-found page) but with a real 404, so search engines drop it
+		# instead of indexing a "soft 404". Nested handles are exclusive, and
+		# the rewrite lives inside them so try_files below cannot run first.
+		@unknownProduct {
+			path_regexp ^/product/[^/]+/?$
+			not file {
+				root /srv
+				try_files {path}/index.html
+			}
+		}
+		handle @unknownProduct {
+			rewrite * /index.html
+			file_server {
+				status 404
+			}
+		}
+		# A route's prerendered shell first (/shop → /shop/index.html, as
+		# public/.htaccess does), then a real file, then the app shell.
+		handle {
+			try_files {path}/index.html {path} /index.html
+			file_server
+		}
 
 		# Fingerprinted assets can be cached forever — their names change when
 		# their contents do.
@@ -64,7 +106,9 @@
 		header @immutable Cache-Control "public, max-age=31536000, immutable"
 
 		# Prerendered HTML must be revalidated, or a deploy goes unnoticed.
-		@html path *.html /
+		# Matched on the requested path (before the rewrites above), so a
+		# route like /shop counts too: anything that is not fingerprinted.
+		@html not path /assets/* *.webp *.mp4 *.woff2
 		header @html Cache-Control "public, max-age=0, must-revalidate"
 
 		header {
@@ -76,6 +120,48 @@
 			# domain exists and is already correct the moment one does.
 			Strict-Transport-Security "max-age=31536000; includeSubDomains"
 			-Server
+
+			# Browser features nobody on this site needs are switched off.
+			# Payment (and camera, which Razorpay's iframe asks for with
+			# `allow="camera *"`, for card scanning) is delegated only to the
+			# Razorpay checkout. This header is enforced, not report-only.
+			Permissions-Policy `camera=("https://api.razorpay.com"), microphone=(), geolocation=(), payment=(self "https://checkout.razorpay.com" "https://api.razorpay.com")`
+
+			# Content-Security-Policy, REPORT-ONLY: the browser blocks nothing,
+			# it only posts violations to the API. After a week of clean
+			# reports, rename the header to Content-Security-Policy to enforce.
+			# Browsers that understand `report-to` use the Reporting-Endpoints
+			# group (JSON array, application/reports+json); older ones fall back
+			# to `report-uri` (application/csp-report). Both land on one route.
+			#
+			# Why each source is allowed (keep this list in step with the policy):
+			#   'self'                         storefront, /assets, videos, /api (same origin)
+			#   'unsafe-hashes' + sha256-Mht…  index.html <link onload="this.media='all'"> (font CSS swap)
+			#   sha256-XsE…                    `window.onload=()=>window.print()` in the
+			#                                  invoice and packing-slip print windows
+			#                                  (about:blank pop-ups inherit this policy)
+			#   *.googletagmanager.com         GTM-W5MN9LMR from www. (src/lib/tags.ts, after consent),
+			#                                  gtag.js for GA4 tags added in GTM, GA4 hits
+			#   *.google-analytics.com,        GA4 collection (connect + pixel fallback)
+			#   *.analytics.google.com
+			#   *.g.doubleclick.net,           GA4 with Google signals / remarketing
+			#   www.google.com, www.google.co.in
+			#   connect.facebook.net           Meta Pixel fbevents.js + its config script
+			#   www.facebook.com               Meta Pixel /tr beacons (img, fetch, and the
+			#                                  hidden-iframe form POST for large events)
+			#   checkout.razorpay.com          checkout.js (src/lib/razorpay.ts) and its frame
+			#   cdn.razorpay.com               Razorpay risk-detection script, UPI app icons
+			#   api.razorpay.com               the checkout iframe and its API calls
+			#   lumberjack*.razorpay.com       Razorpay checkout telemetry
+			#   fonts.googleapis.com           Google Fonts stylesheet (index.html)
+			#   fonts.gstatic.com              Google Fonts files
+			#   data: (img)                    the inline SVG favicon
+			#   style 'unsafe-inline'          React style={…} attributes, print-window <style>
+			# Google Ads conversion tags, if ever added in GTM, additionally need
+			# https://www.googleadservices.com and https://googleads.g.doubleclick.net
+			# in script-src, and https://td.doubleclick.net in frame-src.
+			Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc=' 'sha256-XsEvYQeI61UwT9Mz4WdasBY8eAeHqQfnMuYdrCWz23s=' https://*.googletagmanager.com https://connect.facebook.net https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com https://*.g.doubleclick.net https://www.google.com https://www.google.co.in https://www.facebook.com https://cdn.razorpay.com; media-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.g.doubleclick.net https://www.google.com https://www.google.co.in https://www.facebook.com https://connect.facebook.net https://api.razorpay.com https://lumberjack.razorpay.com https://lumberjack-cx.razorpay.com https://lumberjack-metrics.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://www.facebook.com; frame-ancestors 'self'; report-uri /api/v1/csp-report; report-to csp"
+			Reporting-Endpoints `csp="/api/v1/csp-report"`
 		}
 	}
 }

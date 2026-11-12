@@ -6,6 +6,7 @@ import { db } from '../db/client.js'
 import { gardenProducts, gardens, productVariants, products } from '../db/schema.js'
 import { stockLedger } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
+import { adminCatalogueRoutes } from './admin-catalogue.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Admin — the catalogue.
@@ -51,6 +52,9 @@ const skuFor = (slug: string, size: string) =>
   `${slug}--${size.split(' · ')[0].toLowerCase().replace(/\s+/g, '-')}`
 
 export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
+  // The staff list, retire/restore and offers; registered here so they sit inside the admin hook too.
+  await app.register(adminCatalogueRoutes)
+
   app.post(
     '/admin/products',
     {
@@ -171,15 +175,11 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Admin'],
         summary: 'Edit a product',
         description:
-          'Partial update — omitted fields are left alone. Editing a product never alters a past order: order lines carry a price snapshot taken at purchase.',
+          'Partial update — omitted fields are left alone. Editing a product never alters a past order: order lines carry a price snapshot taken at purchase. `archived: true` retires the tea (off the shop, cannot be ordered); `false` brings it back exactly as it was.',
         params: z.object({ slug: slugSchema }),
         body: z.object({
           name: z.string().trim().min(2).max(120).optional(),
           status: z.enum(['active', 'coming-soon']).optional(),
-          listed: z
-            .boolean()
-            .optional()
-            .describe('False hides the product from the storefront and the Meta feed. It stays in the database.'),
           description: z.string().trim().min(10).max(600).optional(),
           longDescription: z.string().trim().max(4000).nullable().optional(),
           imageSrc: imagePathSchema.optional(),
@@ -192,6 +192,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
           flavorProfile: flavorSchema.nullable().optional(),
           brewingGuide: brewingSchema.nullable().optional(),
           sortOrder: z.number().int().min(0).optional(),
+          archived: z.boolean().optional().describe('Retire (true) or bring back (false)'),
         }),
         response: { 200: z.object({ ok: z.literal(true) }), 400: problemSchema, 404: problemSchema },
       },
@@ -200,10 +201,15 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
       if (Object.keys(request.body).length === 0) {
         throw ApiError.badRequest('Send at least one field to change.')
       }
-      const now = new Date()
+      const { archived, ...fields } = request.body
       const rows = await db
         .update(products)
-        .set({ ...request.body, updatedAt: now, adminEditedAt: now })
+        .set({
+          ...fields,
+          // Retiring twice keeps the first date.
+          ...(archived === undefined ? {} : { archivedAt: archived ? sql`COALESCE(${products.archivedAt}, now())` : null }),
+          updatedAt: new Date(),
+        })
         .where(eq(products.slug, request.params.slug))
         .returning({ id: products.id })
       if (rows.length === 0) throw ApiError.notFound(`Product "${request.params.slug}"`)
@@ -256,7 +262,6 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         if (stock > 0) {
           await tx.insert(stockLedger).values({ variantId: variant.id, delta: stock, reason: 'seed' })
         }
-        await tx.update(products).set({ adminEditedAt: new Date() }).where(eq(products.id, product.id))
       })
 
       return { slug: product.slug, size, price, stock }
@@ -281,18 +286,14 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         }),
         response: {
           200: z.object({ slug: slugSchema, size: z.string(), price: paiseSchema, compareAtPrice: paiseSchema.nullable() }),
+          400: problemSchema,
           404: problemSchema,
         },
       },
     },
     async (request) => {
       const variant = await db
-        .select({
-          id: productVariants.id,
-          productId: productVariants.productId,
-          size: productVariants.size,
-          compareAtPrice: productVariants.compareAtPrice,
-        })
+        .select({ id: productVariants.id, size: productVariants.size, compareAtPrice: productVariants.compareAtPrice })
         .from(productVariants)
         .innerJoin(products, eq(productVariants.productId, products.id))
         .where(eq(products.slug, request.params.slug))
@@ -301,10 +302,10 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!variant) {
         throw ApiError.notFound(`Variant "${request.params.size}" of "${request.params.slug}"`)
       }
-      // Say it plainly instead of letting the database constraint fail.
+      // The database refuses this too; checking first gives staff a reason instead of a 500.
       const compareAt = request.body.compareAtPrice !== undefined ? request.body.compareAtPrice : variant.compareAtPrice
       if (compareAt !== null && compareAt <= request.body.price) {
-        throw ApiError.badRequest('The regular (crossed-out) price must be higher than the selling price, or left empty.')
+        throw ApiError.badRequest('The struck-out price must be higher than the selling price. Clear it to end the offer.')
       }
 
       const [updated] = await db
@@ -315,7 +316,6 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         })
         .where(eq(productVariants.id, variant.id))
         .returning({ price: productVariants.price, compareAtPrice: productVariants.compareAtPrice })
-      await db.update(products).set({ adminEditedAt: new Date() }).where(eq(products.id, variant.productId))
 
       return { slug: request.params.slug, size: variant.size, price: updated.price, compareAtPrice: updated.compareAtPrice }
     },

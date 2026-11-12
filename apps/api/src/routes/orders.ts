@@ -33,6 +33,10 @@ import { capturePayment } from '../lib/capture.js'
 import { sendEmail } from '../lib/email.js'
 import { env, paymentsEnabled } from '../env.js'
 import { getInvoiceView } from '../lib/invoice.js'
+import { customerRefunds } from '../lib/refunds.js'
+import { checkLowStock } from '../lib/low-stock.js'
+import { checkoutAdDetails } from '../lib/meta-purchase.js'
+import { getStoreSettings } from '../lib/settings.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Orders.
@@ -121,6 +125,10 @@ const orderDto = z.object({
       events: z.array(z.object({ at: z.string(), status: z.string(), location: z.string().nullable() })),
     })
     .nullable(),
+  /** Single-order view only. `requested` is asked of the gateway, not yet confirmed; failed attempts are not shown. */
+  refunds: z
+    .array(z.object({ amount: paiseSchema, status: z.enum(['requested', 'processed']), requestedAt: z.iso.datetime(), processedAt: z.iso.datetime().nullable() }))
+    .optional(),
 })
 
 /**
@@ -227,8 +235,9 @@ const toOrderDto = (row: OrderRow) => ({
     row.trackingNumber || row.trackingCarrier
       ? { carrier: row.trackingCarrier, number: row.trackingNumber }
       : null,
+  // A cancelled or refunded order shows no parcel, even one still returning to us.
   shipment:
-    row.shipment && row.shipment.status !== 'cancelled' && row.shipment.awb
+    row.shipment && row.shipment.status !== 'cancelled' && row.shipment.awb && !['cancelled', 'refunded'].includes(row.status)
       ? {
           status: row.shipment.status,
           courierName: row.shipment.courierName,
@@ -304,6 +313,8 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           shippingMethod: shippingMethodIdSchema.default('standard'),
           couponCode: z.string().trim().toUpperCase().max(32).optional(),
           notes: z.string().trim().max(500).optional(),
+          /** The customer accepted cookies; lets the payment webhook report the purchase to Meta. */
+          adConsent: z.boolean().optional(),
         }),
         headers: z
           .object({
@@ -334,9 +345,12 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!paymentsEnabled) {
         throw new ApiError(503, 'payments_unavailable', 'Checkout unavailable', 'Online checkout will be available soon. Please check back shortly.')
       }
-      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes } = request.body
-      if (!request.session) throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in before checking out.')
-      const userId = request.session.userId
+      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes, adConsent } = request.body
+      // Guests may check out only while staff have guest checkout switched on.
+      if (!request.session && !(await getStoreSettings()).guestCheckoutEnabled) {
+        throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in before checking out.')
+      }
+      const userId = request.session?.userId ?? null
       const idempotencyKey = request.headers['idempotency-key']
       const guestTokenHeader = request.headers['x-guest-access-token']
       const suppliedGuestAccessToken = typeof guestTokenHeader === 'string' ? guestTokenHeader : undefined
@@ -345,8 +359,10 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         if (prior) return prior
       }
 
-      const guestAccessToken = null
-      const guestAccessTokenHash = null
+      /* A guest reads the order back with this token, never by order number
+         alone. A retry reuses the browser's token so the same link keeps working. */
+      const guestAccessToken = userId ? null : suppliedGuestAccessToken ?? randomBytes(32).toString('base64url')
+      const guestAccessTokenHash = guestAccessToken ? createHash('sha256').update(guestAccessToken).digest('hex') : null
 
       const result = await db.transaction(async (tx) => {
         /* Lock the variant rows before reading stock. Ordered by id so two
@@ -365,6 +381,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             name: products.name,
             imageSrc: products.imageSrc,
             status: products.status,
+            archivedAt: products.archivedAt,
           })
           .from(productVariants)
           .innerJoin(products, eq(productVariants.productId, products.id))
@@ -391,7 +408,11 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
               `"${line.productSlug}" (${line.variantSize}) is no longer available. Please review your cart.`,
             )
           }
-          if (unavailableReason(v) === 'coming-soon') {
+          const blocked = unavailableReason(v)
+          if (blocked === 'retired') {
+            throw ApiError.conflict('product_retired', `${v.name} is no longer sold. Please remove it from your cart.`)
+          }
+          if (blocked === 'coming-soon') {
             throw ApiError.badRequest(`${v.name} has not been released yet and cannot be ordered.`)
           }
           if (v.stock < line.quantity) {
@@ -472,6 +493,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             tax: pricing.tax,
             total: pricing.total,
             notes: notes ?? null,
+            ...checkoutAdDetails(adConsent, request),
           })
           .returning()
 
@@ -534,6 +556,8 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
 
         return { order, items: priced, gatewayOrder, provider: gateway.name }
       })
+      // After commit, and not awaited: a staff email must not slow a checkout.
+      void checkLowStock(result.items.map((l) => l.variantId), { log: request.log })
 
       const dto = toOrderDto({
         ...result.order,
@@ -604,7 +628,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         // Do not confirm whether a guessed number exists.
         throw ApiError.notFound('That order')
       }
-      return toOrderDto(row)
+      return { ...toOrderDto(row), refunds: await customerRefunds(row.id) }
     },
   )
 
@@ -727,6 +751,7 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
       ['Total paid', formatPaise(row.total)],
       [`Includes GST (${TAX_RATE * 100}%)`, formatPaise(row.tax)],
     ],
+    action: { label: 'View your order', url: `${env.SITE_URL}/order/${encodeURIComponent(row.number)}` },
     footnote: `Delivering to ${row.shippingName}, ${row.shippingCity} ${row.shippingPostalCode}.`,
   })
 }

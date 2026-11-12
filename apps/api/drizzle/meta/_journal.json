@@ -89,15 +89,43 @@
     {
       "idx": 12,
       "version": "7",
-      "when": 1794389229357,
-      "tag": "0012_product_listed_and_launch_prices",
+      "when": 1794290534715,
+      "tag": "0012_otp_rate_limits",
       "breakpoints": true
     },
     {
       "idx": 13,
       "version": "7",
-      "when": 1794395620640,
-      "tag": "0013_product_images_and_admin_ownership",
+      "when": 1794290583280,
+      "tag": "0013_shipment_booking_lease",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794291517225,
+      "tag": "0014_seed_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794301701813,
+      "tag": "0015_admin_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794303441856,
+      "tag": "0016_meta_purchase_client",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794459124358,
+      "tag": "0017_product_gallery_images",
       "breakpoints": true
     }
   ]

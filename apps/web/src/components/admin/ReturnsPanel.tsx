@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 import { api, type AdminReturnRequest } from '../../lib/api'
+import { formatShortDate } from '../../lib/dates'
 import { cardClass, errorText, primaryButton } from './adminUi'
 import { useFeedback } from './ui/Feedback'
 import { Empty, Spinner } from './ui/controls'
@@ -66,7 +67,7 @@ export default function ReturnsPanel({
               <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${STATUS_TONE[item.status] ?? 'bg-stone-100'}`}>{item.status}</span>
             </div>
             <p className="mt-2 max-w-2xl text-sm text-[#1b261b]">“{item.reason}”</p>
-            <p className="mt-1 text-[11px] text-[#4a584a]">Requested {new Date(item.requestedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+            <p className="mt-1 text-[11px] text-[#4a584a]">Requested {formatShortDate(item.requestedAt)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updating === item.id && <Spinner className="h-4 w-4 text-[#4a7333]" />}
@@ -85,7 +86,7 @@ export default function ReturnsPanel({
                 Mark received
               </button>
             )}
-            {item.status === 'approved' && item.type === 'cancellation' && <span className="max-w-[200px] text-[11px] text-[#4a584a]">Refund is pending payment-gateway setup.</span>}
+            {item.status === 'approved' && item.type === 'cancellation' && <span className="max-w-[200px] text-[11px] text-[#4a584a]">Refund it from the order's Details.</span>}
           </div>
         </article>
       ))}
