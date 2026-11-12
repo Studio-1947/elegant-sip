@@ -213,8 +213,10 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
       <div className="fixed inset-0 z-0 h-full w-full overflow-hidden bg-black">
         <video
           ref={videoRef}
-          src="/video.mp4"
-          poster="/poster.webp"
+          // Every frame is a keyframe (encoded from video-sources/cover_elegant-original.mp4),
+          // so scrubbing in either direction lands on a frame instantly.
+          src="/cover_elegant.mp4"
+          poster="/cover_elegant-poster.webp"
           className="h-full w-full object-cover block"
           muted
           playsInline
