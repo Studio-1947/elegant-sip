@@ -9,7 +9,7 @@
 ###############################################################################
 
 # ── deps ─────────────────────────────────────────────────────────────────────
-FROM node:22-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
