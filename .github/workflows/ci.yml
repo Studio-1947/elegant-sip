@@ -149,6 +149,20 @@ jobs:
           npx wait-on http://localhost:4500 --timeout 30000
           npm run seo:check --workspace @elegantsip/web
 
+  compose:
+    name: Production compose file parses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # The server reads this file on every deploy. A merge that leaves it
+      # invalid (e.g. a key defined twice) must fail here, not on the VPS.
+      - name: Validate docker-compose.prod.yml
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          SITE_URL: https://elegantsip.in
+        run: docker compose -f docker-compose.prod.yml --env-file /dev/null config -q
+
   docker:
     name: Docker image builds
     runs-on: ubuntu-latest
