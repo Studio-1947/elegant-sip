@@ -29,6 +29,9 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
   // Only the threshold crossing lives in React state; raw progress would
   // re-render this whole subtree on every scroll frame.
   const [isContent, setIsContent] = useState(false)
+  // Seen earlier this session: land just past the intro instead of at its
+  // start. The intro itself always stays on the page, so scrolling back up
+  // plays it again (it used to be removed, leaving nothing above the content).
   const [hasSeenIntro] = useState(() => sessionStorage.getItem(INTRO_SEEN_KEY) === 'true')
   const { openQuiz } = useUi()
   const isCompact = useIsCompact()
@@ -37,15 +40,43 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
     sessionStorage.setItem(INTRO_SEEN_KEY, 'true')
   }
 
+  // Marked once the visitor has actually scrolled through (see onUpdate), not on arrival.
+
+  // A returning visitor starts at the content, already past the runway.
+  // Retried briefly: smooth scrolling (Lenis) and the browser's own scroll
+  // restore both start a moment after mount and can reset the position. Stops
+  // for good as soon as the visitor scrolls or touches anything.
   useEffect(() => {
-    if (!hasSeenIntro) markIntroSeen()
-    if (hasSeenIntro) onProgress(1)
-  }, [hasSeenIntro, onProgress])
+    if (!hasSeenIntro || isCompact) return
+    let userMoved = false
+    const stop = () => {
+      userMoved = true
+    }
+    const events = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const
+    events.forEach((e) => window.addEventListener(e, stop, { passive: true, once: true }))
+    const jump = () => {
+      if (userMoved) return
+      const track = document.getElementById('video-scroll-track')
+      if (!track) return
+      const target = track.getBoundingClientRect().bottom + window.scrollY
+      if (Math.abs(window.scrollY - target) < 40) return
+      ScrollTrigger.refresh()
+      setIsContent(true)
+      onProgress(1)
+      scrollToY(target, true)
+    }
+    const timers = [0, 250, 700, 1400].map((ms) => window.setTimeout(jump, ms))
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t))
+      events.forEach((e) => window.removeEventListener(e, stop))
+    }
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Scroll-driven video scrubbing via GSAP ScrollTrigger
   useGSAP(
     () => {
-      if (hasSeenIntro) return
       const video = videoRef.current
       if (!video) return
 
@@ -126,13 +157,13 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         video.removeEventListener('error', onVideoError)
       }
     },
-    { scope: containerRef, dependencies: [hasSeenIntro] },
+    { scope: containerRef },
   )
 
   // Video parallax: fade and scale the background as content takes over
   useGSAP(
     () => {
-      if (hasSeenIntro || !ready || !videoRef.current) return
+      if (!ready || !videoRef.current) return
 
       gsap.fromTo(
         videoRef.current,
@@ -151,7 +182,7 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
         },
       )
     },
-    { scope: containerRef, dependencies: [hasSeenIntro, ready] },
+    { scope: containerRef, dependencies: [ready] },
   )
 
   const handleSkipIntro = () => {
@@ -173,16 +204,6 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
       <Suspense fallback={<div className="min-h-screen bg-[#1b261b]" />}>
         <MobileHome />
       </Suspense>
-    )
-  }
-
-  if (hasSeenIntro) {
-    return (
-      <div className="bg-[#f9faf7] pt-20">
-        <Suspense fallback={null}>
-          <HeroScrollSection />
-        </Suspense>
-      </div>
     )
   }
 

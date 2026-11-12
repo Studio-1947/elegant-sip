@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -216,21 +216,17 @@ function MobileScrubHero({ openQuiz, onJourneyDone, skipVideo }: { openQuiz: () 
  */
 export default function MobileHome() {
   const { openQuiz } = useUi()
-  const [hasSeenIntro] = useState(() => sessionStorage.getItem('elegantsip-intro-seen') === 'true')
   // The floating quiz pill stays hidden until the scroll animation has played through.
   const [journeyDone, setJourneyDone] = useState(false)
   const pillRef = useRef<HTMLDivElement>(null)
   const pillCovering = useAvoidControls(pillRef, journeyDone)
 
-  useEffect(() => {
-    if (!hasSeenIntro) sessionStorage.setItem('elegantsip-intro-seen', 'true')
-  }, [hasSeenIntro])
-
   return (
     <div className="bg-[#f9faf7] pt-20">
       <MobileScrubHero
         openQuiz={openQuiz}
-        skipVideo={hasSeenIntro}
+        // The scroll-played video every visit, not only the first one in a session.
+        skipVideo={false}
         onJourneyDone={(done) => setJourneyDone((prev) => (prev === done ? prev : done))}
       />
 

@@ -35,16 +35,24 @@ const VerifyEmailPage = lazy(() => import('./auth/VerifyEmailPage'))
 const ResetPasswordPage = lazy(() => import('./auth/ResetPasswordPage'))
 const NotFoundPage = lazy(() => import('./NotFoundPage'))
 
-/** Only the homepage has a hero video to wait for; reduced motion skips the loader. */
+/**
+ * Only the homepage has a hero video to wait for. Reduced motion skips the
+ * loader, and so does a return visit this session: the page then opens past
+ * the intro, so there is nothing to wait for.
+ */
 function needsIntroLoader(): boolean {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  return !reduced && parseRoute(getRoute()).name === 'home'
+  let seen = false
+  try {
+    seen = sessionStorage.getItem('elegantsip-intro-seen') === 'true'
+  } catch {
+    // Storage blocked: treat as a first visit.
+  }
+  return !reduced && !seen && parseRoute(getRoute()).name === 'home'
 }
 
 export default function TeaVectorHomepage() {
   const route = useRoute()
-  // Re-renders every page once the live catalogue arrives from the API.
-  useLiveCatalogue()
   const { name: routeName, id: routeId } = parseRoute(route)
   const isHome = routeName === 'home'
   // Live prices, stock and retirements: re-renders the page tree when they land.
