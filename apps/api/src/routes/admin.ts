@@ -1,10 +1,10 @@
-import { and, desc, eq, isNull, lte, sql } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import type { FastifyBaseLogger } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { paiseSchema, problemSchema, slugSchema } from '@elegantsip/shared'
+import { paiseSchema, problemSchema } from '@elegantsip/shared'
 import { db } from '../db/client.js'
-import { productVariants, products } from '../db/schema.js'
+import { productVariants } from '../db/schema.js'
 import { adminAuditEvents, orders, returnRequests, shipments, stockLedger, users } from '../db/schema-commerce.js'
 import { releaseOrderHoldings } from './orders.js'
 import { ApiError } from '../lib/problem.js'
@@ -19,11 +19,15 @@ import { adminGardenRoutes } from './admin-gardens.js'
 import { adminSettingsRoutes } from './admin-settings.js'
 import { adminRefundRoutes } from './admin-refunds.js'
 import { capturedPayment, refundTotals } from '../lib/refunds.js'
-import { getStoreSettings } from '../lib/settings.js'
 import { getInvoiceView } from '../lib/invoice.js'
 import { cancelOrderWithShipment, sendDeliveredEmail, sendShippedEmail } from '../lib/fulfilment.js'
 import { env } from '../env.js'
 import { metaCapiLastError, metaCapiMode } from '../lib/meta-capi.js'
+import { sendCancelledEmail, sendReturnDecisionEmail } from '../lib/order-emails.js'
+import { adminOrderRoutes } from './admin-orders.js'
+import { adminInventoryRoutes } from './admin-inventory.js'
+import { adminCustomerRoutes } from './admin-customers.js'
+import { adminReportRoutes } from './admin-reports.js'
 
 /** The status changes staff may make by hand. Anything else is a 409. */
 const STAFF_TRANSITIONS: Record<string, readonly string[]> = {
@@ -34,6 +38,12 @@ const STAFF_TRANSITIONS: Record<string, readonly string[]> = {
   shipped: ['delivered', 'cancelled'],
   // Only a fully refunded order that never shipped; it keeps its refunded status (see cancelOrderAndRelease).
   refunded: ['cancelled'],
+}
+
+/** True when the order has captured money not yet refunded (or being refunded). */
+async function refundDueFor(orderId: string): Promise<boolean> {
+  const payment = await capturedPayment(orderId)
+  return payment ? (await refundTotals(payment.id, payment.amount)).refundable > 0 : false
 }
 
 /**
@@ -116,62 +126,10 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(adminGardenRoutes)
   await app.register(adminSettingsRoutes)
   await app.register(adminRefundRoutes)
-
-  app.get(
-    '/admin/orders',
-    {
-      schema: {
-        tags: ['Admin'],
-        summary: 'The order queue',
-        querystring: z.object({
-          status: z
-            .enum(['pending_payment', 'paid', 'packed', 'shipped', 'delivered', 'cancelled', 'refunded'])
-            .optional(),
-          limit: z.coerce.number().int().min(1).max(200).default(50),
-        }),
-        response: {
-          200: z.object({
-            orders: z.array(
-              z.object({
-                number: z.string(),
-                status: z.string(),
-                placedAt: z.iso.datetime(),
-                email: z.string(),
-                total: paiseSchema,
-                itemCount: z.number().int(),
-                shippingCity: z.string(),
-                trackingNumber: z.string().nullable(),
-                shipmentStatus: z.string().nullable(),
-              }),
-            ),
-          }),
-          401: problemSchema,
-          403: problemSchema,
-        },
-      },
-    },
-    async (request) => {
-      const rows = await db.query.orders.findMany({
-        where: request.query.status ? eq(orders.status, request.query.status) : undefined,
-        with: { items: true, shipment: true },
-        orderBy: desc(orders.placedAt),
-        limit: request.query.limit,
-      })
-      return {
-        orders: rows.map((o) => ({
-          number: o.number,
-          status: o.status,
-          placedAt: o.placedAt.toISOString(),
-          email: o.email,
-          total: o.total,
-          itemCount: o.items.reduce((a, i) => a + i.quantity, 0),
-          shippingCity: o.shippingCity,
-          trackingNumber: o.trackingNumber,
-          shipmentStatus: o.shipment?.status ?? null,
-        })),
-      }
-    },
-  )
+  await app.register(adminOrderRoutes)
+  await app.register(adminInventoryRoutes)
+  await app.register(adminCustomerRoutes)
+  await app.register(adminReportRoutes)
 
   app.get(
     '/admin/return-requests',
@@ -179,7 +137,25 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Admin'], summary: 'Cancellation and return queue',
         querystring: z.object({ status: z.enum(['requested', 'approved', 'rejected', 'received']).optional() }),
-        response: { 200: z.object({ requests: z.array(z.object({ id: z.string().uuid(), number: z.string(), type: z.string(), status: z.string(), reason: z.string(), requestedAt: z.iso.datetime() })) }) },
+        response: {
+          200: z.object({
+            requests: z.array(
+              z.object({
+                id: z.string().uuid(),
+                number: z.string(),
+                type: z.string(),
+                status: z.string(),
+                reason: z.string(),
+                staffNote: z.string().nullable(),
+                requestedAt: z.iso.datetime(),
+                orderStatus: z.string(),
+                email: z.string(),
+                customerName: z.string(),
+                total: paiseSchema,
+              }),
+            ),
+          }),
+        },
       },
     },
     async (request) => {
@@ -188,7 +164,21 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         with: { order: true },
         orderBy: desc(returnRequests.requestedAt),
       })
-      return { requests: rows.map((item) => ({ id: item.id, number: item.order.number, type: item.type, status: item.status, reason: item.reason, requestedAt: item.requestedAt.toISOString() })) }
+      return {
+        requests: rows.map((item) => ({
+          id: item.id,
+          number: item.order.number,
+          type: item.type,
+          status: item.status,
+          reason: item.reason,
+          staffNote: item.staffNote,
+          requestedAt: item.requestedAt.toISOString(),
+          orderStatus: item.order.status,
+          email: item.order.email,
+          customerName: item.order.shippingName,
+          total: item.order.total,
+        })),
+      }
     },
   )
 
@@ -197,9 +187,11 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       schema: {
         tags: ['Admin'], summary: 'Review a cancellation or return request',
+        description:
+          'Emails the customer the decision (approved, rejected, or return received). `refundDue` is true when the order still has captured money to refund — refund it from the order (POST /admin/orders/:number/refunds).',
         params: z.object({ id: z.string().uuid() }),
         body: z.object({ status: z.enum(['approved', 'rejected', 'received']), staffNote: z.string().trim().max(500).optional() }),
-        response: { 200: z.object({ ok: z.literal(true), restocked: z.boolean() }), 404: problemSchema, 409: problemSchema },
+        response: { 200: z.object({ ok: z.literal(true), restocked: z.boolean(), notified: z.boolean(), refundDue: z.boolean() }), 404: problemSchema, 409: problemSchema },
       },
     },
     async (request) => {
@@ -236,55 +228,10 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         }
       })
       if (restocked) await checkLowStock(item.order.items.flatMap((line) => (line.variantId ? [line.variantId] : [])), { log: request.log })
-      return { ok: true as const, restocked }
-    },
-  )
-
-  app.get(
-    '/admin/orders/:number',
-    {
-      schema: {
-        tags: ['Admin'],
-        summary: 'Full order detail for fulfilment staff',
-        params: z.object({ number: z.string().min(3).max(40) }),
-        response: {
-          200: z.object({
-            number: z.string(),
-            status: z.string(),
-            placedAt: z.iso.datetime(),
-            email: z.string(),
-            phone: z.string().nullable(),
-            notes: z.string().nullable(),
-            items: z.array(z.object({ productName: z.string(), variantSize: z.string(), quantity: z.number().int() })),
-            shipping: z.object({ name: z.string(), line1: z.string(), city: z.string(), postalCode: z.string(), state: z.string().nullable(), country: z.string() }),
-          }),
-          404: problemSchema,
-        },
-      },
-    },
-    async (request) => {
-      const order = await db.query.orders.findFirst({
-        where: eq(orders.number, request.params.number),
-        with: { items: true },
-      })
-      if (!order) throw ApiError.notFound(`Order ${request.params.number}`)
-      return {
-        number: order.number,
-        status: order.status,
-        placedAt: order.placedAt.toISOString(),
-        email: order.email,
-        phone: order.shippingPhone,
-        notes: order.notes,
-        items: order.items.map((item) => ({ productName: item.productName, variantSize: item.variantSize, quantity: item.quantity })),
-        shipping: {
-          name: order.shippingName,
-          line1: order.shippingLine1,
-          city: order.shippingCity,
-          postalCode: order.shippingPostalCode,
-          state: order.shippingState,
-          country: order.shippingCountry,
-        },
-      }
+      // Money goes back only for an approved cancellation or a return that has arrived.
+      const moneyBack = (item.type === 'cancellation' && status === 'approved') || status === 'received'
+      const { delivered } = await sendReturnDecisionEmail(item.order, { type: item.type, staffNote: staffNote ?? item.staffNote }, status)
+      return { ok: true as const, restocked, notified: delivered, refundDue: moneyBack ? await refundDueFor(item.order.id) : false }
     },
   )
 
@@ -301,6 +248,8 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
           status: z.enum(['packed', 'shipped', 'delivered', 'cancelled']).optional(),
           trackingCarrier: z.string().trim().max(60).optional(),
           trackingNumber: z.string().trim().max(60).optional(),
+          notifyCustomer: z.boolean().default(true).describe('Cancelling a paid order emails the customer unless this is false'),
+          reason: z.string().trim().max(300).optional().describe('Included in the cancellation email'),
         }),
         response: {
           // refundDue: a cancelled order whose captured payment is not yet fully refunded.
@@ -344,10 +293,14 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         }
         const cancelled = await cancelOrderAndRelease(order, [order.status], 'Cancelled by staff', request.log)
         if (!cancelled) throw ApiError.conflict('order_changed', 'The order changed while you were updating it. Reload and try again.')
-        const payment = await capturedPayment(order.id)
-        const refundDue = payment ? (await refundTotals(payment.id, payment.amount)).refundable > 0 : false
+        const refundDue = await refundDueFor(order.id)
         if (refundDue) request.log.info({ orderNumber: order.number }, 'paid order cancelled by staff; refund still due')
-        return { ok: true as const, notified: false, refundDue }
+        // An abandoned checkout was never confirmed to the customer, so it is not worth an email.
+        let notified = false
+        if (request.body.notifyCustomer && order.status !== 'pending_payment') {
+          notified = (await sendCancelledEmail(order, { refundDue, reason: request.body.reason })).delivered
+        }
+        return { ok: true as const, notified, refundDue }
       }
 
       // Only the first move to shipped stamps shippedAt and emails; correcting tracking later does neither.
@@ -406,87 +359,6 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       const invoice = await getInvoiceView(order.id)
       if (!invoice) throw ApiError.notFound(`An invoice for ${request.params.number}`)
       return { invoice }
-    },
-  )
-
-  app.post(
-    '/admin/stock',
-    {
-      schema: {
-        tags: ['Admin'],
-        summary: 'Adjust stock',
-        description:
-          'Applies a delta and records it in the append-only ledger, so the running total always has an explanation behind it.',
-        body: z.object({
-          productSlug: slugSchema,
-          variantSize: z.string().min(1),
-          delta: z.number().int().refine((n) => n !== 0, 'Delta must be non-zero'),
-          note: z.string().trim().max(200).optional(),
-        }),
-        response: {
-          200: z.object({ productSlug: slugSchema, variantSize: z.string(), stock: z.number().int() }),
-          400: problemSchema,
-          404: problemSchema,
-        },
-      },
-    },
-    async (request) => {
-      const { productSlug, variantSize, delta, note } = request.body
-      const variant = await db
-        .select({ id: productVariants.id, stock: productVariants.stock, size: productVariants.size })
-        .from(productVariants)
-        .innerJoin(products, eq(productVariants.productId, products.id))
-        .where(eq(products.slug, productSlug))
-        .then((rows) => rows.find((r) => r.size === variantSize))
-
-      if (!variant) throw ApiError.notFound(`Variant "${variantSize}" of "${productSlug}"`)
-      if (variant.stock + delta < 0) {
-        throw ApiError.badRequest(
-          `That would take stock to ${variant.stock + delta}. Current stock is ${variant.stock}.`,
-        )
-      }
-
-      const [updated] = await db.transaction(async (tx) => {
-        const rows = await tx
-          .update(productVariants)
-          .set({ stock: sql`${productVariants.stock} + ${delta}` })
-          .where(eq(productVariants.id, variant.id))
-          .returning({ stock: productVariants.stock })
-        await tx.insert(stockLedger).values({
-          variantId: variant.id,
-          delta,
-          reason: delta > 0 ? 'restock' : 'manual_adjustment',
-          note: note ?? null,
-        })
-        return rows
-      })
-      await checkLowStock([variant.id], { log: request.log })
-
-      return { productSlug, variantSize, stock: updated.stock }
-    },
-  )
-
-  app.get(
-    '/admin/stock/low',
-    {
-      schema: {
-        tags: ['Admin'],
-        summary: 'Low-stock variants of teas on sale, for the staff dashboard',
-        description: 'Without `threshold`, uses the low-stock threshold from the shop settings.',
-        querystring: z.object({ threshold: z.coerce.number().int().min(0).max(1000).optional() }),
-        response: { 200: z.object({ variants: z.array(z.object({ productSlug: slugSchema, productName: z.string(), size: z.string(), sku: z.string(), stock: z.number().int() })) }) },
-      },
-    },
-    async (request) => {
-      const threshold = request.query.threshold ?? (await getStoreSettings()).lowStockThreshold
-      const variants = await db
-        .select({ productSlug: products.slug, productName: products.name, size: productVariants.size, sku: productVariants.sku, stock: productVariants.stock })
-        .from(productVariants)
-        .innerJoin(products, eq(productVariants.productId, products.id))
-        // Coming-soon and retired teas aren't on sale, so they can't run low.
-        .where(and(lte(productVariants.stock, threshold), eq(products.status, 'active'), isNull(products.archivedAt)))
-        .orderBy(productVariants.stock, products.name, productVariants.size)
-      return { variants }
     },
   )
 

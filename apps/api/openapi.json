@@ -6030,6 +6030,69 @@
                             }
                           ]
                         },
+                        "returnRequest": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "cancellation",
+                                    "return"
+                                  ]
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "requested",
+                                    "approved",
+                                    "rejected",
+                                    "received"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "staffNote": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "requestedAt": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                "decidedAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "status",
+                                "reason",
+                                "staffNote",
+                                "requestedAt",
+                                "decidedAt"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
                         "refunds": {
                           "type": "array",
                           "items": {
@@ -6709,6 +6772,69 @@
                               }
                             ]
                           },
+                          "returnRequest": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "cancellation",
+                                      "return"
+                                    ]
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "requested",
+                                      "approved",
+                                      "rejected",
+                                      "received"
+                                    ]
+                                  },
+                                  "reason": {
+                                    "type": "string"
+                                  },
+                                  "staffNote": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "requestedAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                  },
+                                  "decidedAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "status",
+                                  "reason",
+                                  "staffNote",
+                                  "requestedAt",
+                                  "decidedAt"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "refunds": {
                             "type": "array",
                             "items": {
@@ -7202,6 +7328,69 @@
                             "expectedDeliveryAt",
                             "deliveredAt",
                             "events"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "returnRequest": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "cancellation",
+                                "return"
+                              ]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "requested",
+                                "approved",
+                                "rejected",
+                                "received"
+                              ]
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "staffNote": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "requestedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            "decidedAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "status",
+                            "reason",
+                            "staffNote",
+                            "requestedAt",
+                            "decidedAt"
                           ],
                           "additionalProperties": false
                         },
@@ -10684,6 +10873,11 @@
                           "type": "integer",
                           "minimum": 0,
                           "maximum": 9007199254740991
+                        },
+                        "weightGrams": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 50000
                         }
                       },
                       "required": [
@@ -11825,7 +12019,7 @@
     },
     "/v1/admin/products/{slug}/variants/{size}": {
       "patch": {
-        "summary": "Change a variant price",
+        "summary": "Change a variant price or packed weight",
         "tags": [
           "Admin"
         ],
@@ -11856,11 +12050,21 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "weightGrams": {
+                    "description": "Packed weight of one pack, for courier bookings. Null reads it from the size label again.",
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 50000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
-                },
-                "required": [
-                  "price"
-                ]
+                }
               }
             }
           }
@@ -11925,13 +12129,26 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "weightGrams": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
                     "slug",
                     "size",
                     "price",
-                    "compareAtPrice"
+                    "compareAtPrice",
+                    "weightGrams"
                   ],
                   "additionalProperties": false
                 }
@@ -16048,6 +16265,9 @@
                       "minimum": 0,
                       "maximum": 1000
                     },
+                    "newOrderAlerts": {
+                      "type": "boolean"
+                    },
                     "updatedAt": {
                       "anyOf": [
                         {
@@ -16089,6 +16309,7 @@
                     "guaranteeEnabled",
                     "guaranteeDays",
                     "lowStockThreshold",
+                    "newOrderAlerts",
                     "updatedAt",
                     "updatedBy"
                   ],
@@ -16233,6 +16454,9 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 1000
+                  },
+                  "newOrderAlerts": {
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false
@@ -16263,6 +16487,9 @@
                       "type": "integer",
                       "minimum": 0,
                       "maximum": 1000
+                    },
+                    "newOrderAlerts": {
+                      "type": "boolean"
                     },
                     "updatedAt": {
                       "anyOf": [
@@ -16305,6 +16532,7 @@
                     "guaranteeEnabled",
                     "guaranteeDays",
                     "lowStockThreshold",
+                    "newOrderAlerts",
                     "updatedAt",
                     "updatedBy"
                   ],
@@ -17628,6 +17856,7 @@
         "tags": [
           "Admin"
         ],
+        "description": "Newest first, filtered and paged. `total` counts every order matching the filters; `counts` is the whole shop by status (ignores the filters), for the dashboard tiles.",
         "parameters": [
           {
             "schema": {
@@ -17648,6 +17877,36 @@
           },
           {
             "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Order number, email, name, phone or PIN code"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "description": "Placed on or after this day (India time)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "description": "Placed on or before this day (India time)"
+          },
+          {
+            "schema": {
               "default": 50,
               "type": "integer",
               "minimum": 1,
@@ -17655,6 +17914,17 @@
             },
             "in": "query",
             "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "in": "query",
+            "name": "offset",
             "required": false
           }
         ],
@@ -17685,6 +17955,9 @@
                           "email": {
                             "type": "string"
                           },
+                          "customerName": {
+                            "type": "string"
+                          },
                           "total": {
                             "type": "integer",
                             "minimum": 0,
@@ -17710,6 +17983,9 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "hasRequest": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -17717,18 +17993,38 @@
                           "status",
                           "placedAt",
                           "email",
+                          "customerName",
                           "total",
                           "itemCount",
                           "shippingCity",
                           "trackingNumber",
-                          "shipmentStatus"
+                          "shipmentStatus",
+                          "hasRequest"
                         ],
                         "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "counts": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
                       }
                     }
                   },
                   "required": [
-                    "orders"
+                    "orders",
+                    "total",
+                    "counts"
                   ],
                   "additionalProperties": false
                 }
@@ -17844,26 +18140,86 @@
         }
       }
     },
-    "/v1/admin/return-requests": {
+    "/v1/admin/orders/export.csv": {
       "get": {
-        "summary": "Cancellation and return queue",
+        "summary": "Orders as a spreadsheet (CSV)",
         "tags": [
           "Admin"
         ],
+        "description": "Same filters as the order queue, every matching order (up to 10,000). Amounts in rupees.",
         "parameters": [
           {
             "schema": {
               "type": "string",
               "enum": [
-                "requested",
-                "approved",
-                "rejected",
-                "received"
+                "pending_payment",
+                "paid",
+                "packed",
+                "shipped",
+                "delivered",
+                "cancelled",
+                "refunded"
               ]
             },
             "in": "query",
             "name": "status",
             "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Order number, email, name, phone or PIN code"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "description": "Placed on or after this day (India time)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "description": "Placed on or before this day (India time)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/v1/admin/orders/{number}": {
+      "get": {
+        "summary": "The full order record",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Everything staff need for one order: lines with prices, totals, payment, invoice number, customer account, addresses, any cancellation or return request, and staff notes.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 40
+            },
+            "in": "path",
+            "name": "number",
+            "required": true
           }
         ],
         "responses": {
@@ -17874,48 +18230,511 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "requests": {
+                    "number": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending_payment",
+                        "paid",
+                        "packed",
+                        "shipped",
+                        "delivered",
+                        "cancelled",
+                        "refunded"
+                      ]
+                    },
+                    "placedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "paidAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "shippedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "cancelledAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "notes": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "staffNotes": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "customer": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "email"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "items": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                          },
-                          "number": {
+                          "productSlug": {
                             "type": "string"
                           },
-                          "type": {
+                          "productName": {
                             "type": "string"
                           },
-                          "status": {
+                          "variantSize": {
                             "type": "string"
                           },
-                          "reason": {
+                          "sku": {
                             "type": "string"
                           },
-                          "requestedAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "unitPrice": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
+                          },
+                          "lineTotal": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
                           }
                         },
                         "required": [
-                          "id",
-                          "number",
-                          "type",
-                          "status",
-                          "reason",
-                          "requestedAt"
+                          "productSlug",
+                          "productName",
+                          "variantSize",
+                          "sku",
+                          "quantity",
+                          "unitPrice",
+                          "lineTotal"
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "subtotal": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "discount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "couponCode": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "shippingMethod": {
+                      "type": "string"
+                    },
+                    "shippingFee": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "tax": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "refunded": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "shipping": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "line1": {
+                          "type": "string"
+                        },
+                        "city": {
+                          "type": "string"
+                        },
+                        "postalCode": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "country": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "line1",
+                        "city",
+                        "postalCode",
+                        "state",
+                        "country"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "billing": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "line1": {
+                          "type": "string"
+                        },
+                        "city": {
+                          "type": "string"
+                        },
+                        "postalCode": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "country": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "line1",
+                        "city",
+                        "postalCode",
+                        "state",
+                        "country"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "tracking": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "carrier": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "number": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "carrier",
+                            "number"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "payment": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "provider": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "method": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "amount": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991,
+                              "description": "Amount in paise (1 rupee = 100 paise)"
+                            },
+                            "providerOrderId": {
+                              "type": "string"
+                            },
+                            "providerPaymentId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "capturedAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "provider",
+                            "status",
+                            "method",
+                            "amount",
+                            "providerOrderId",
+                            "providerPaymentId",
+                            "capturedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "invoiceNumber": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "returnRequest": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "cancellation",
+                                "return"
+                              ]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "requested",
+                                "approved",
+                                "rejected",
+                                "received"
+                              ]
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "staffNote": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "requestedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "type",
+                            "status",
+                            "reason",
+                            "staffNote",
+                            "requestedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "addressEditable": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
-                    "requests"
+                    "number",
+                    "status",
+                    "placedAt",
+                    "paidAt",
+                    "shippedAt",
+                    "cancelledAt",
+                    "email",
+                    "phone",
+                    "notes",
+                    "staffNotes",
+                    "customer",
+                    "items",
+                    "subtotal",
+                    "discount",
+                    "couponCode",
+                    "shippingMethod",
+                    "shippingFee",
+                    "tax",
+                    "total",
+                    "refunded",
+                    "shipping",
+                    "billing",
+                    "tracking",
+                    "payment",
+                    "invoiceNumber",
+                    "returnRequest",
+                    "addressEditable"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
                   ],
                   "additionalProperties": false
                 }
@@ -17923,14 +18742,13 @@
             }
           }
         }
-      }
-    },
-    "/v1/admin/return-requests/{id}": {
+      },
       "patch": {
-        "summary": "Review a cancellation or return request",
+        "summary": "Advance an order",
         "tags": [
           "Admin"
         ],
+        "description": "Setting status to `shipped` with a tracking number emails the customer. Nothing is emailed unless the tracking details are actually present — the message would otherwise promise information it does not carry. The first move to `delivered` emails the customer too. `notified` is true only when an email was actually sent.",
         "requestBody": {
           "required": true,
           "content": {
@@ -17941,19 +18759,31 @@
                   "status": {
                     "type": "string",
                     "enum": [
-                      "approved",
-                      "rejected",
-                      "received"
+                      "packed",
+                      "shipped",
+                      "delivered",
+                      "cancelled"
                     ]
                   },
-                  "staffNote": {
+                  "trackingCarrier": {
                     "type": "string",
-                    "maxLength": 500
+                    "maxLength": 60
+                  },
+                  "trackingNumber": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "notifyCustomer": {
+                    "default": true,
+                    "description": "Cancelling a paid order emails the customer unless this is false",
+                    "type": "boolean"
+                  },
+                  "reason": {
+                    "description": "Included in the cancellation email",
+                    "type": "string",
+                    "maxLength": 300
                   }
-                },
-                "required": [
-                  "status"
-                ]
+                }
               }
             }
           }
@@ -17962,11 +18792,11 @@
           {
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              "minLength": 3,
+              "maxLength": 40
             },
             "in": "path",
-            "name": "id",
+            "name": "number",
             "required": true
           }
         ],
@@ -17984,13 +18814,16 @@
                         true
                       ]
                     },
-                    "restocked": {
+                    "notified": {
+                      "type": "boolean"
+                    },
+                    "refundDue": {
                       "type": "boolean"
                     }
                   },
                   "required": [
                     "ok",
-                    "restocked"
+                    "notified"
                   ],
                   "additionalProperties": false
                 }
@@ -18106,12 +18939,32 @@
         }
       }
     },
-    "/v1/admin/orders/{number}": {
-      "get": {
-        "summary": "Full order detail for fulfilment staff",
+    "/v1/admin/orders/{number}/staff-notes": {
+      "put": {
+        "summary": "Replace the internal staff notes on an order",
         "tags": [
           "Admin"
         ],
+        "description": "Staff-only; never shown to the customer. An empty string clears them.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "staffNotes": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "staffNotes"
+                ]
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "schema": {
@@ -18132,102 +18985,15 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "number": {
-                      "type": "string"
-                    },
-                    "status": {
-                      "type": "string"
-                    },
-                    "placedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                    },
-                    "email": {
-                      "type": "string"
-                    },
-                    "phone": {
+                    "staffNotes": {
                       "type": [
                         "string",
                         "null"
                       ]
-                    },
-                    "notes": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "productName": {
-                            "type": "string"
-                          },
-                          "variantSize": {
-                            "type": "string"
-                          },
-                          "quantity": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          }
-                        },
-                        "required": [
-                          "productName",
-                          "variantSize",
-                          "quantity"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "shipping": {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string"
-                        },
-                        "line1": {
-                          "type": "string"
-                        },
-                        "city": {
-                          "type": "string"
-                        },
-                        "postalCode": {
-                          "type": "string"
-                        },
-                        "state": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "country": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "name",
-                        "line1",
-                        "city",
-                        "postalCode",
-                        "state",
-                        "country"
-                      ],
-                      "additionalProperties": false
                     }
                   },
                   "required": [
-                    "number",
-                    "status",
-                    "placedAt",
-                    "email",
-                    "phone",
-                    "notes",
-                    "items",
-                    "shipping"
+                    "staffNotes"
                   ],
                   "additionalProperties": false
                 }
@@ -18288,13 +19054,15 @@
             }
           }
         }
-      },
+      }
+    },
+    "/v1/admin/orders/{number}/address": {
       "patch": {
-        "summary": "Advance an order",
+        "summary": "Correct the delivery address or phone",
         "tags": [
           "Admin"
         ],
-        "description": "Setting status to `shipped` with a tracking number emails the customer. Nothing is emailed unless the tracking details are actually present — the message would otherwise promise information it does not carry. The first move to `delivered` emails the customer too. `notified` is true only when an email was actually sent.",
+        "description": "Only before the parcel is booked with a courier or shipped — after that the courier holds the address. The GST place of supply on an issued invoice is not changed.",
         "requestBody": {
           "required": true,
           "content": {
@@ -18302,22 +19070,46 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "status": {
+                  "name": {
                     "type": "string",
-                    "enum": [
-                      "packed",
-                      "shipped",
-                      "delivered",
-                      "cancelled"
+                    "minLength": 2,
+                    "maxLength": 120
+                  },
+                  "line1": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 300
+                  },
+                  "city": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 80
+                  },
+                  "postalCode": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  },
+                  "state": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      {
+                        "type": "null"
+                      }
                     ]
                   },
-                  "trackingCarrier": {
-                    "type": "string",
-                    "maxLength": 60
-                  },
-                  "trackingNumber": {
-                    "type": "string",
-                    "maxLength": 60
+                  "phone": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\+?[\\d\\s-]{10,16}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 }
               }
@@ -18349,6 +19141,2105 @@
                       "enum": [
                         true
                       ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/orders/{number}/resend-confirmation": {
+      "post": {
+        "summary": "Email the order confirmation to the customer again",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 40
+            },
+            "in": "path",
+            "name": "number",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "delivered": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "delivered"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/stock": {
+      "post": {
+        "summary": "Adjust stock",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Applies a change and records it in the append-only ledger with a reason.\n\n`delta` adds or removes packs. `setTo` records a stock count: the variant row is locked, the difference from\nthe current total is computed and recorded, so an order placed meanwhile is not overwritten by stale numbers.\n`restock` must add stock; `damaged` and `sample` must remove it.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productSlug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+                  },
+                  "variantSize": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "delta": {
+                    "description": "Add (positive) or remove (negative) this many",
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "setTo": {
+                    "description": "Or: the counted stock on the shelf; the difference is recorded",
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000000
+                  },
+                  "reason": {
+                    "description": "Defaults to restock (+), manual_adjustment (−) or count_correction (setTo)",
+                    "type": "string",
+                    "enum": [
+                      "restock",
+                      "damaged",
+                      "sample",
+                      "count_correction",
+                      "manual_adjustment"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "productSlug",
+                  "variantSize"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "productSlug": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80,
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+                    },
+                    "variantSize": {
+                      "type": "string"
+                    },
+                    "stock": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "delta": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "productSlug",
+                    "variantSize",
+                    "stock",
+                    "delta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/stock/low": {
+      "get": {
+        "summary": "Low-stock variants of teas on sale, for the staff dashboard",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Without `threshold`, uses the low-stock threshold from the shop settings.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "in": "query",
+            "name": "threshold",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "variants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "productSlug": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80,
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                            "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+                          },
+                          "productName": {
+                            "type": "string"
+                          },
+                          "size": {
+                            "type": "string"
+                          },
+                          "sku": {
+                            "type": "string"
+                          },
+                          "stock": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "productSlug",
+                          "productName",
+                          "size",
+                          "sku",
+                          "stock"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "variants"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/inventory": {
+      "get": {
+        "summary": "Every pack with its stock",
+        "tags": [
+          "Admin"
+        ],
+        "description": "`stock` is what can still be sold. `held` is what unpaid checkouts are holding (already taken off `stock`; it comes back if they expire). `weightGrams` is the packed weight used for courier bookings — set, or read from the size label.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "threshold": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "variants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "productSlug": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80,
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                            "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+                          },
+                          "productName": {
+                            "type": "string"
+                          },
+                          "productStatus": {
+                            "type": "string"
+                          },
+                          "retired": {
+                            "type": "boolean"
+                          },
+                          "size": {
+                            "type": "string"
+                          },
+                          "sku": {
+                            "type": "string"
+                          },
+                          "price": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
+                          },
+                          "stock": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "held": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "weightGrams": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "weightIsSet": {
+                            "type": "boolean"
+                          },
+                          "low": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "productSlug",
+                          "productName",
+                          "productStatus",
+                          "retired",
+                          "size",
+                          "sku",
+                          "price",
+                          "stock",
+                          "held",
+                          "weightGrams",
+                          "weightIsSet",
+                          "low"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "threshold",
+                    "variants"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/stock/ledger": {
+      "get": {
+        "summary": "Stock history",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Every stock movement, newest first. Filter to one tea, or one pack of it.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "in": "query",
+            "name": "productSlug",
+            "required": false,
+            "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "in": "query",
+            "name": "size",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "seed",
+                "order_reserved",
+                "order_released",
+                "order_fulfilled",
+                "restock",
+                "damaged",
+                "sample",
+                "count_correction",
+                "manual_adjustment"
+              ]
+            },
+            "in": "query",
+            "name": "reason",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "productSlug": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80,
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                            "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
+                          },
+                          "productName": {
+                            "type": "string"
+                          },
+                          "size": {
+                            "type": "string"
+                          },
+                          "delta": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "orderNumber": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "at",
+                          "productSlug",
+                          "productName",
+                          "size",
+                          "delta",
+                          "reason",
+                          "note",
+                          "orderNumber"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "entries",
+                    "hasMore"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/customers": {
+      "get": {
+        "summary": "Customer accounts",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Newest first. Guest orders have no account; find them by email in the order search.",
+        "parameters": [
+          {
+            "schema": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Name, email or phone"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "customer",
+                "admin"
+              ]
+            },
+            "in": "query",
+            "name": "role",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "customers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "phone": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "customer",
+                              "admin"
+                            ]
+                          },
+                          "emailVerified": {
+                            "type": "boolean"
+                          },
+                          "mfaEnabled": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "orderCount": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "totalSpent": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
+                          },
+                          "lastOrderAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "email",
+                          "phone",
+                          "role",
+                          "emailVerified",
+                          "mfaEnabled",
+                          "createdAt",
+                          "orderCount",
+                          "totalSpent",
+                          "lastOrderAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "customers",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/customers/{id}": {
+      "get": {
+        "summary": "One customer: account, saved addresses and every order",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "customer",
+                        "admin"
+                      ]
+                    },
+                    "emailVerified": {
+                      "type": "boolean"
+                    },
+                    "mfaEnabled": {
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "orderCount": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "totalSpent": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "lastOrderAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "addresses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "line1": {
+                            "type": "string"
+                          },
+                          "city": {
+                            "type": "string"
+                          },
+                          "postalCode": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "phone": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "name",
+                          "line1",
+                          "city",
+                          "postalCode",
+                          "state",
+                          "phone"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "orders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "number": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "placedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "total": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
+                          }
+                        },
+                        "required": [
+                          "number",
+                          "status",
+                          "placedAt",
+                          "total"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "phone",
+                    "role",
+                    "emailVerified",
+                    "mfaEnabled",
+                    "createdAt",
+                    "orderCount",
+                    "totalSpent",
+                    "lastOrderAt",
+                    "addresses",
+                    "orders"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/customers/{id}/role": {
+      "patch": {
+        "summary": "Give or take away staff access",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Staff (`admin`) can use the whole staff page. You cannot change your own access, and the last member of staff cannot be removed. Takes effect on their next request.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "customer",
+                      "admin"
+                    ]
+                  }
+                },
+                "required": [
+                  "role"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "customer",
+                        "admin"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "role"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/contact-messages": {
+      "get": {
+        "summary": "Contact-form messages",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Newest first. Each was also emailed to the shop inbox; reply from there.",
+        "parameters": [
+          {
+            "schema": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Reference, name, email or subject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "reference": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "subject": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "hasAccount": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "reference",
+                          "name",
+                          "email",
+                          "subject",
+                          "message",
+                          "createdAt",
+                          "hasAccount"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "messages",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/newsletter-subscribers": {
+      "get": {
+        "summary": "Newsletter sign-ups",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Newest first. `active` excludes people who unsubscribed.",
+        "parameters": [
+          {
+            "schema": {
+              "default": 500,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5000
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "subscribers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "email": {
+                            "type": "string"
+                          },
+                          "subscribedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "unsubscribedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "email",
+                          "subscribedAt",
+                          "unsubscribedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "active": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "subscribers",
+                    "total",
+                    "active"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/reports/sales": {
+      "get": {
+        "summary": "Sales, refunds, GST and best sellers for a period",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Defaults to the last 30 days, today included. At most 366 days.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "from",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "to",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string"
+                    },
+                    "orders": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "units": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "gross": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "subtotal": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "discount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "shipping": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "tax": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "refunds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "net": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "averageOrder": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "description": "Amount in paise (1 rupee = 100 paise)"
+                    },
+                    "gst": {
+                      "type": "object",
+                      "properties": {
+                        "invoices": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "cgst": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991,
+                          "description": "Amount in paise (1 rupee = 100 paise)"
+                        },
+                        "sgst": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991,
+                          "description": "Amount in paise (1 rupee = 100 paise)"
+                        },
+                        "igst": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991,
+                          "description": "Amount in paise (1 rupee = 100 paise)"
+                        }
+                      },
+                      "required": [
+                        "invoices",
+                        "cgst",
+                        "sgst",
+                        "igst"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "byDay": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "day": {
+                            "type": "string"
+                          },
+                          "orders": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "gross": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
+                          }
+                        },
+                        "required": [
+                          "day",
+                          "orders",
+                          "gross"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "topProducts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "productSlug": {
+                            "type": "string"
+                          },
+                          "productName": {
+                            "type": "string"
+                          },
+                          "units": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "revenue": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
+                          }
+                        },
+                        "required": [
+                          "productSlug",
+                          "productName",
+                          "units",
+                          "revenue"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to",
+                    "orders",
+                    "units",
+                    "gross",
+                    "subtotal",
+                    "discount",
+                    "shipping",
+                    "tax",
+                    "refunds",
+                    "net",
+                    "averageOrder",
+                    "gst",
+                    "byDay",
+                    "topProducts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short human-readable summary"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "What went wrong and what to do about it — displayable as-is"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Correlates this response with the server logs"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/return-requests": {
+      "get": {
+        "summary": "Cancellation and return queue",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "requested",
+                "approved",
+                "rejected",
+                "received"
+              ]
+            },
+            "in": "query",
+            "name": "status",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "number": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "staffNote": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "requestedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "orderStatus": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "customerName": {
+                            "type": "string"
+                          },
+                          "total": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "number",
+                          "type",
+                          "status",
+                          "reason",
+                          "staffNote",
+                          "requestedAt",
+                          "orderStatus",
+                          "email",
+                          "customerName",
+                          "total"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "requests"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/return-requests/{id}": {
+      "patch": {
+        "summary": "Review a cancellation or return request",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Emails the customer the decision (approved, rejected, or return received). `refundDue` is true when the order still has captured money to refund — refund it from the order (POST /admin/orders/:number/refunds).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected",
+                      "received"
+                    ]
+                  },
+                  "staffNote": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "restocked": {
+                      "type": "boolean"
                     },
                     "notified": {
                       "type": "boolean"
@@ -18359,7 +21250,9 @@
                   },
                   "required": [
                     "ok",
-                    "notified"
+                    "restocked",
+                    "notified",
+                    "refundDue"
                   ],
                   "additionalProperties": false
                 }
@@ -18559,269 +21452,6 @@
                     "status",
                     "detail",
                     "requestId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/admin/stock": {
-      "post": {
-        "summary": "Adjust stock",
-        "tags": [
-          "Admin"
-        ],
-        "description": "Applies a delta and records it in the append-only ledger, so the running total always has an explanation behind it.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "productSlug": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 80,
-                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-                    "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
-                  },
-                  "variantSize": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "delta": {
-                    "type": "integer",
-                    "minimum": -9007199254740991,
-                    "maximum": 9007199254740991
-                  },
-                  "note": {
-                    "type": "string",
-                    "maxLength": 200
-                  }
-                },
-                "required": [
-                  "productSlug",
-                  "variantSize",
-                  "delta"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "productSlug": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 80,
-                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-                      "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
-                    },
-                    "variantSize": {
-                      "type": "string"
-                    },
-                    "stock": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    }
-                  },
-                  "required": [
-                    "productSlug",
-                    "variantSize",
-                    "stock"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
-                    },
-                    "title": {
-                      "type": "string",
-                      "description": "Short human-readable summary"
-                    },
-                    "status": {
-                      "type": "integer",
-                      "minimum": 400,
-                      "maximum": 599
-                    },
-                    "detail": {
-                      "type": "string",
-                      "description": "What went wrong and what to do about it — displayable as-is"
-                    },
-                    "errors": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "requestId": {
-                      "type": "string",
-                      "description": "Correlates this response with the server logs"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status",
-                    "detail",
-                    "requestId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "description": "Stable machine-readable slug, e.g. \"validation_error\", \"out_of_stock\""
-                    },
-                    "title": {
-                      "type": "string",
-                      "description": "Short human-readable summary"
-                    },
-                    "status": {
-                      "type": "integer",
-                      "minimum": 400,
-                      "maximum": 599
-                    },
-                    "detail": {
-                      "type": "string",
-                      "description": "What went wrong and what to do about it — displayable as-is"
-                    },
-                    "errors": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "requestId": {
-                      "type": "string",
-                      "description": "Correlates this response with the server logs"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status",
-                    "detail",
-                    "requestId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/admin/stock/low": {
-      "get": {
-        "summary": "Low-stock variants of teas on sale, for the staff dashboard",
-        "tags": [
-          "Admin"
-        ],
-        "description": "Without `threshold`, uses the low-stock threshold from the shop settings.",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 1000
-            },
-            "in": "query",
-            "name": "threshold",
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "variants": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "productSlug": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 80,
-                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-                            "description": "URL-safe identifier, e.g. \"first-flush-whole-leaf\""
-                          },
-                          "productName": {
-                            "type": "string"
-                          },
-                          "size": {
-                            "type": "string"
-                          },
-                          "sku": {
-                            "type": "string"
-                          },
-                          "stock": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          }
-                        },
-                        "required": [
-                          "productSlug",
-                          "productName",
-                          "size",
-                          "sku",
-                          "stock"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "variants"
                   ],
                   "additionalProperties": false
                 }

@@ -159,6 +159,8 @@ export const orders = pgTable(
     total: integer('total').notNull(),
 
     notes: text('notes'),
+    /** Internal notes from staff. Never shown to the customer. */
+    staffNotes: text('staff_notes'),
     /*
      * Meta Conversions API. Recorded only when the customer had accepted
      * cookies at checkout, so the payment webhook can report the purchase even
@@ -273,6 +275,8 @@ export const storeSettings = pgTable(
     guaranteeDays: integer('guarantee_days').notNull().default(30),
     /** Staff are emailed when a pack on sale falls to this many or fewer. */
     lowStockThreshold: integer('low_stock_threshold').notNull().default(5),
+    /** Staff are emailed when an order is paid. */
+    newOrderAlerts: boolean('new_order_alerts').notNull().default(true),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   },
@@ -475,6 +479,9 @@ export const stockReason = pgEnum('stock_reason', [
   'order_fulfilled',
   'manual_adjustment',
   'restock',
+  'damaged',
+  'sample',
+  'count_correction',
 ])
 
 /**

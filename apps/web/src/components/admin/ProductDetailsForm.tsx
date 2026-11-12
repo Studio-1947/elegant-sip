@@ -53,6 +53,8 @@ export default function ProductDetailsForm({ product, onSaved, notify }: { produ
   const [origin, setOrigin] = useState<Origin>(product.origin ?? EMPTY_ORIGIN)
   const [flavorOn, setFlavorOn] = useState(product.flavorProfile !== null)
   const [flavor, setFlavor] = useState<Flavor>(product.flavorProfile ?? EMPTY_FLAVOR)
+  // The catalogue DTO carries no position, so this starts empty and is only sent when filled.
+  const [position, setPosition] = useState('')
   const [busy, setBusy] = useState(false)
 
   const save = async () => {
@@ -66,6 +68,7 @@ export default function ProductDetailsForm({ product, onSaved, notify }: { produ
       tastingNotes.length > 8 && 'Up to 8 tasting notes.',
       tastingNotes.some((n) => n.length > 40) && 'Each tasting note must be 40 characters or fewer.',
       originOn && (origin.origin.trim().length < 2 || origin.estate.trim().length < 2) && 'Origin needs at least a region and an estate.',
+      position.trim() !== '' && !/^\d{1,6}$/.test(position.trim()) && 'Position in shop must be a whole number, 0 or more.',
     ].filter(Boolean)
     if (problems.length > 0) return notify({ tone: 'error', text: `${product.name}: ${problems[0]}` })
 
@@ -81,6 +84,7 @@ export default function ProductDetailsForm({ product, onSaved, notify }: { produ
       brewingGuide: brewingOn ? brewing : null,
       origin: originOn ? origin : null,
       flavorProfile: flavorOn ? flavor : null,
+      ...(position.trim() !== '' ? { sortOrder: Number(position.trim()) } : {}),
     }
     setBusy(true)
     try {
@@ -125,6 +129,9 @@ export default function ProductDetailsForm({ product, onSaved, notify }: { produ
           </select>
         </Field>
         <Field label="Harvest label" hint="Optional, e.g. Spring 2026.">{text(harvestLabel, setHarvestLabel, 60)}</Field>
+        <Field label="Position in shop" hint="Optional. Lower numbers show first in the shop grid; leave empty to keep its place.">
+          <input value={position} onChange={(e) => setPosition(e.target.value)} inputMode="numeric" placeholder="Unchanged" className={inputClass} />
+        </Field>
       </div>
       <Field label={`Short description (${description.trim().length}/600)`} hint="On cards and at the top of the product page.">
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className={inputClass} />

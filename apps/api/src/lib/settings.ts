@@ -16,6 +16,7 @@ export interface StoreSettings {
   guaranteeEnabled: boolean
   guaranteeDays: number
   lowStockThreshold: number
+  newOrderAlerts: boolean
 }
 
 /** The column defaults, i.e. how the shop behaved before these were settings. */
@@ -24,6 +25,7 @@ export const DEFAULT_STORE_SETTINGS: Readonly<StoreSettings> = Object.freeze({
   guaranteeEnabled: true,
   guaranteeDays: 30,
   lowStockThreshold: 5,
+  newOrderAlerts: true,
 })
 
 const CACHE_MS = 30_000
@@ -36,6 +38,7 @@ const pick = (row: StoreSettings): StoreSettings => ({
   guaranteeEnabled: row.guaranteeEnabled,
   guaranteeDays: row.guaranteeDays,
   lowStockThreshold: row.lowStockThreshold,
+  newOrderAlerts: row.newOrderAlerts,
 })
 
 /**
@@ -82,6 +85,7 @@ export async function readStoreSettingsRecord(): Promise<StoreSettingsRecord> {
       guaranteeEnabled: storeSettings.guaranteeEnabled,
       guaranteeDays: storeSettings.guaranteeDays,
       lowStockThreshold: storeSettings.lowStockThreshold,
+      newOrderAlerts: storeSettings.newOrderAlerts,
       updatedAt: storeSettings.updatedAt,
       updatedByName: users.name,
       updatedByEmail: users.email,
