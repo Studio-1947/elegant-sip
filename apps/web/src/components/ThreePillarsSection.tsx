@@ -6,7 +6,7 @@ const PILLARS = [
     title: 'Origin',
     imageSrc: '/origin.webp',
     imageAlt: 'Darjeeling tea terraces on a highland slope in morning mist',
-    text: 'Our buyers on the ground in the various tea gardens of Darjeeling buy directly from the growers who share our obsession with terroir and seasonal harvests.',
+    text: "Nestled among the misty Himalayan slopes, Darjeeling's tea gardens produce leaves of remarkable character. We work directly with growers who share our appreciation for the land, its seasons and its traditions.",
   },
   {
     title: 'Craft',
