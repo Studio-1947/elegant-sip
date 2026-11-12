@@ -374,10 +374,11 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 - Quantity sits beside Add to cart (proximity: it modifies that action).
                 - Both actions share one 56px height and radius; Add to cart is the
                   single filled button (hierarchy), Buy now the outlined alternative.
-                - Every target is at least 44px (Fitts). */}
-            <div ref={ctaRef} className="grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] gap-3 mb-8">
+                - Every target is at least 44px (Fitts).
+                - Below 340px wide the stepper takes its own row, so nothing is pushed off screen. */}
+            <div ref={ctaRef} className="grid grid-cols-1 min-[340px]:grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] gap-3 mb-8">
               {!comingSoon && (
-                <div className="flex items-center h-14 border border-[#1b261b]/20 rounded-xl bg-white" role="group" aria-label="Quantity">
+                <div className="flex items-center justify-between min-[340px]:justify-start h-14 border border-[#1b261b]/20 rounded-xl bg-white" role="group" aria-label="Quantity">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
@@ -400,7 +401,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               <button
                 onClick={handleAddToCart}
                 disabled={isAdding || !variantInStock || comingSoon}
-                className={`${comingSoon ? 'col-span-2 sm:col-span-3' : ''} h-14 px-5 rounded-xl text-xs font-bold tracking-wider uppercase whitespace-nowrap transition-all duration-300 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 ${!variantInStock || comingSoon
+                className={`${comingSoon ? 'min-[340px]:col-span-2 sm:col-span-3' : ''} h-14 px-5 rounded-xl text-xs font-bold tracking-wider uppercase whitespace-nowrap transition-all duration-300 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 ${!variantInStock || comingSoon
                     ? 'bg-[#1b261b]/10 text-[#4a584a] cursor-not-allowed'
                     : isAdded ? 'bg-[#8bb56e] text-white' : isAdding ? 'bg-[#1b261b]/50 text-white/50 cursor-wait' : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
                   }`}
@@ -413,7 +414,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 <button
                   onClick={handleBuyNow}
                   disabled={isAdding}
-                  className="col-span-2 sm:col-span-1 h-14 px-6 rounded-xl border-[1.5px] border-[#1b261b] text-[#1b261b] text-xs font-bold tracking-wider uppercase whitespace-nowrap transition-colors hover:bg-[#1b261b] hover:text-white active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                  className="min-[340px]:col-span-2 sm:col-span-1 h-14 px-6 rounded-xl border-[1.5px] border-[#1b261b] text-[#1b261b] text-xs font-bold tracking-wider uppercase whitespace-nowrap transition-colors hover:bg-[#1b261b] hover:text-white active:scale-[0.98] cursor-pointer disabled:opacity-50"
                 >
                   Buy now
                 </button>

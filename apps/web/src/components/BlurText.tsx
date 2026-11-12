@@ -13,6 +13,10 @@ import { onContentRevealed } from '../lib/contentReveal'
  *   • Inside the desktop ScrollExpand (marked with `data-reveal-gate`), the
  *     observer arms only after the pinned content is actually visible
  *     otherwise the animation would play while the section is still hidden.
+ *   • Kept gentle (UX audit): a light blur and short drift in one eased step,
+ *     a word stagger capped so a heading settles in well under a second, and
+ *     it starts just before the text scrolls in, so normal scrolling never
+ *     catches a heading half-blurred or a section still blank.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 type Snapshot = { filter: string; opacity: number; y: number }
@@ -44,11 +48,12 @@ export default function BlurText({
   animateBy = 'words',
   direction = 'top',
   threshold = 0.1,
-  rootMargin = '0px',
+  // Start a little before the text enters the viewport.
+  rootMargin = '0px 0px 15% 0px',
   animationFrom,
   animationTo,
   onAnimationComplete,
-  stepDuration = 0.35,
+  stepDuration = 0.5,
   as = 'p',
   inline = false,
 }: BlurTextProps) {
@@ -66,26 +71,25 @@ export default function BlurText({
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     const from: Snapshot = animationFrom ?? {
-      filter: 'blur(10px)',
+      filter: 'blur(4px)',
       opacity: 0,
-      y: direction === 'top' ? -50 : 50,
+      y: direction === 'top' ? -12 : 12,
     }
-    const steps: Snapshot[] = animationTo ?? [
-      { filter: 'blur(5px)', opacity: 0.5, y: direction === 'top' ? 5 : -5 },
-      { filter: 'blur(0px)', opacity: 1, y: 0 },
-    ]
+    const steps: Snapshot[] = animationTo ?? [{ filter: 'blur(0px)', opacity: 1, y: 0 }]
 
     const segments = Array.from(el.children) as HTMLElement[]
     gsap.set(segments, from)
 
     let tl: gsap.core.Timeline | null = null
     let observer: IntersectionObserver | null = null
+    // However many words, the stagger never adds more than a quarter second.
+    const stagger = segments.length > 1 ? Math.min(delay, 250 / (segments.length - 1)) / 1000 : 0
     const play = () => {
       tl = gsap.timeline({ onComplete: onAnimationComplete })
       segments.forEach((seg, i) => {
-        const at = (i * delay) / 1000
+        const at = i * stagger
         steps.forEach((step, s) => {
-          tl!.to(seg, { ...step, duration: stepDuration, ease: 'none' }, at + s * stepDuration)
+          tl!.to(seg, { ...step, duration: stepDuration, ease: 'power2.out' }, at + s * stepDuration)
         })
       })
     }

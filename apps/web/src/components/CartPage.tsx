@@ -86,10 +86,10 @@ export default function CartPage() {
             {cart.map((item) => (
               <div
                 key={`${item.productSlug}__${item.size}`}
-                className="flex items-center gap-6 p-4 md:p-6 bg-white border border-[#1b261b]/10 rounded-2xl shadow-[0_4px_20px_rgba(27,38,27,0.02)]"
+                className="flex items-center gap-3 sm:gap-6 p-4 md:p-6 bg-white border border-[#1b261b]/10 rounded-2xl shadow-[0_4px_20px_rgba(27,38,27,0.02)]"
               >
                 <Link to={`/product/${item.productSlug}`} className="flex-shrink-0">
-                  <div className="w-20 h-24 md:w-24 md:h-30 rounded-xl overflow-hidden bg-[#fdfdfd] border border-[#1b261b]/5">
+                  <div className="w-16 h-20 sm:w-20 sm:h-24 md:w-24 md:h-30 rounded-xl overflow-hidden bg-[#fdfdfd] border border-[#1b261b]/5">
                     <img
                       src={item.imageSrc}
                       alt={item.name}
@@ -101,9 +101,9 @@ export default function CartPage() {
                   </div>
                 </Link>
 
-                {/* Details */}
-                <div className="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
+                {/* Details. min-w-0 lets this column shrink on narrow phones instead of widening the page. */}
+                <div className="min-w-0 flex-grow flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="min-w-0">
                     <Link to={`/product/${item.productSlug}`} className="inline-block py-2.5 -my-2.5 hover:text-[#4a7333] transition-colors">
                       <h3 className="text-base md:text-lg font-bold">{item.name}</h3>
                     </Link>
@@ -116,8 +116,8 @@ export default function CartPage() {
                     </button>
                   </div>
 
-                  {/* Quantity & Price */}
-                  <div className="flex items-center gap-6 justify-between md:justify-end">
+                  {/* Quantity & Price: wraps rather than overflowing on the narrowest phones. */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-6 justify-between md:justify-end">
                     <div className="flex items-center h-11 border border-[#1b261b]/20 rounded-xl bg-[#f9faf7]">
                       <button
                         onClick={() => updateQuantity(item.productSlug, item.size, item.quantity - 1)}
@@ -135,7 +135,7 @@ export default function CartPage() {
                         +
                       </button>
                     </div>
-                    <span className="text-base md:text-lg font-bold min-w-[70px] text-right">
+                    <span className="text-base md:text-lg font-bold sm:min-w-[70px] text-right">
                       {formatINR(item.price * item.quantity)}
                     </span>
                   </div>

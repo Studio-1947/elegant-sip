@@ -7,6 +7,7 @@ import { useUi } from './UiContext'
 import { reportVideoProgress, markVideoFailed } from '../lib/videoLoading'
 import { shouldSkipHeavyMedia } from '../lib/network'
 import { scrollToTop } from '../lib/scroll'
+import { useAvoidControls } from '../lib/useAvoidControls'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 import HeroIntroSection from './HeroIntroSection'
@@ -218,6 +219,8 @@ export default function MobileHome() {
   const [hasSeenIntro] = useState(() => sessionStorage.getItem('elegantsip-intro-seen') === 'true')
   // The floating quiz pill stays hidden until the scroll animation has played through.
   const [journeyDone, setJourneyDone] = useState(false)
+  const pillRef = useRef<HTMLDivElement>(null)
+  const pillCovering = useAvoidControls(pillRef, journeyDone)
 
   useEffect(() => {
     if (!hasSeenIntro) sessionStorage.setItem('elegantsip-intro-seen', 'true')
@@ -279,11 +282,18 @@ export default function MobileHome() {
         </button>
       )}
 
-      {/* ── Floating Taste Matcher pill (appears after the scroll animation) ── */}
+      {/* ── Floating Taste Matcher pill (appears after the scroll animation) ──
+          It fades out whenever a link, button or field is underneath it, so it
+          never covers something a visitor needs to tap. */}
       {journeyDone && (
+        <div ref={pillRef} className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 animate-fade-in">
         <button
           onClick={openQuiz}
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-white/95 backdrop-blur-md border border-[#1b261b]/10 rounded-full pl-2 pr-5 py-2 shadow-[0_8px_30px_rgba(27,38,27,0.15)] cursor-pointer animate-fade-in"
+          tabIndex={pillCovering ? -1 : undefined}
+          aria-hidden={pillCovering || undefined}
+          className={`flex items-center gap-3 bg-white/95 backdrop-blur-md border border-[#1b261b]/10 rounded-full pl-2 pr-5 py-2 shadow-[0_8px_30px_rgba(27,38,27,0.15)] cursor-pointer transition-all duration-300 ${
+            pillCovering ? 'pointer-events-none translate-y-3 opacity-0' : 'opacity-100'
+          }`}
         >
           <span className="w-9 h-9 rounded-full bg-[#8bb56e]/15 flex items-center justify-center text-[#8bb56e]">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -295,6 +305,7 @@ export default function MobileHome() {
             <span className="block text-[11px] text-[#4a584a]">Find your perfect cup in 10s</span>
           </span>
         </button>
+        </div>
       )}
     </div>
   )

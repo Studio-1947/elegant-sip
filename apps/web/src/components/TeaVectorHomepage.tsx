@@ -62,7 +62,7 @@ export default function TeaVectorHomepage() {
   // Loader: holds until the hero video is actually buffered enough to scrub,
   // showing REAL download progress. Escape hatches so nobody is ever trapped:
   // buffering stall (browser chose partial preload — the clamped scrub handles
-  // the rest), video error, or a 25s hard cap. Only the homepage has a video;
+  // the rest), video error, or an 8s hard cap. Only the homepage has a video;
   // every other route paints immediately. Reduced-motion skips it entirely.
   useEffect(() => {
     if (!showIntroLoader) return
@@ -90,12 +90,13 @@ export default function TeaVectorHomepage() {
       // Stall covers the never-started case too: iOS Safari may not buffer at
       // all until playback is primed — without this, iPhones sat on the loader
       // until the hard cap. The buffered-clamped scrub handles whatever's left.
-      const stalled = Date.now() - lastChange > (lastValue > 0 ? 5000 : 4000)
+      // Nothing downloading at all gives up sooner, so nobody watches a frozen loader.
+      const stalled = Date.now() - lastChange > (lastValue > 0 ? 5000 : 2500)
       // Release at 15% buffered rather than fully buffered: seeks are already
       // clamped to the buffered range, so the playhead simply trails the
       // download instead of the visitor staring at an opaque loader.
       const enoughBuffered = fraction >= 0.35 && elapsed > 1200
-      if (enoughBuffered || stalled || elapsed > 10000) finish()
+      if (enoughBuffered || stalled || elapsed > 8000) finish()
     }, 150)
     return () => {
       window.clearInterval(poll)

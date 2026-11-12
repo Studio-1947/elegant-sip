@@ -102,7 +102,9 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Badges */}
         <div className="absolute top-3.5 left-3.5 z-20 flex flex-col items-start gap-2">
           {comingSoon ? (
-            <span className="bg-[#1b261b] text-white text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
+            // Outlined, unlike the solid badges on teas that can be bought now.
+            <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#1b261b]/30 text-[#1b261b] text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
+              <svg aria-hidden="true" className="h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="10" cy="10" r="7.5" /><path d="M10 6v4l2.5 2" /></svg>
               Coming Soon
             </span>
           ) : (

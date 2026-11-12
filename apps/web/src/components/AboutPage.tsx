@@ -87,7 +87,8 @@ export default function AboutPage() {
       {/* Values */}
       <div className="max-w-5xl mx-auto px-6 md:px-12 py-24 grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
-          { title: 'Origin', text: 'Each tea page says where the leaf was grown, and the Gardens page shows the gardens we buy from.' },
+          // Kept to what the shop can show today (UX audit): estates are named on a tea page only once confirmed.
+          { title: 'Origin', text: 'The Gardens page shows the Darjeeling gardens we buy from, and a tea page names its garden once that lot is confirmed.' },
           { title: 'Craft', text: 'Hand-rolled, shade-dried, slow-oxidized under the guidance of tea masters. No shortcuts.' },
           { title: 'Experience', text: 'Brewing cards with every order — temperature curves, steep counts, tasting notes.' },
         ].map((v) => (
