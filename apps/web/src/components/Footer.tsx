@@ -1,6 +1,7 @@
 import { Link } from '../lib/router'
 import { openConsentSettings, trackingConfigured } from '../lib/analytics'
 import { useUi } from './UiContext'
+import { FSSAI_LICENSE } from '../lib/site'
 
 export default function Footer() {
   const { openQuiz } = useUi()
@@ -100,6 +101,7 @@ export default function Footer() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
             <p className="text-white/70 md:text-[#4a584a] text-[11px] font-mono tracking-wider">
               © {year} Elegant Sip. All rights reserved. Est. 2024.
+              <span className="block sm:inline sm:ml-3">FSSAI Lic. No. {FSSAI_LICENSE}</span>
             </p>
             <nav aria-label="Legal links" className="flex items-center gap-4 text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
               <Link to="/privacy" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Privacy</Link>

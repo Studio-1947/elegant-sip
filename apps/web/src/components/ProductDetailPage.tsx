@@ -8,7 +8,7 @@ import { track } from '../lib/analytics'
 import { formatINR, RUPEE } from '../lib/currency'
 import PriceTag from './PriceTag'
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from '../lib/pricing'
-import { BRAND, absoluteUrl } from '../lib/site'
+import { BRAND, FSSAI_LICENSE, absoluteUrl } from '../lib/site'
 import { productRouteMeta } from '../lib/seoRoutes'
 import ProductCard from './ProductCard'
 import ProductTile from './ProductTile'
@@ -435,6 +435,8 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 <span className="text-[#4a7333]">✓</span> Packed within weeks of harvest, dated on every pack
               </li>
             </ul>
+            {/* Required where food is sold online (FSSAI e-commerce rules). */}
+            <p className="mt-4 text-[11px] font-mono tracking-wider text-[#4a584a]">FSSAI Lic. No. {FSSAI_LICENSE}</p>
           </div>
         </div>
 
