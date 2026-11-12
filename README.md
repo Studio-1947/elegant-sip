@@ -310,7 +310,19 @@ Before DNS is ready, use `http://187.127.185.82/...` instead. Swagger
 
 #### 7. Make a staff (admin) account
 
-Register on the site first, then:
+Set these in `.env` (sign-in is by email; password 10+ characters):
+
+```bash
+ADMIN_EMAIL=admin2@elegantsip.in
+ADMIN_PASSWORD=<from the password manager>
+```
+
+then `dc up -d api`. Every boot creates that account as a verified admin, or
+promotes it and resets its password to match `.env`. Check with
+`dc logs api | grep -i "admin account"`. Blank both to manage the account from
+the site instead; that never demotes it.
+
+To promote an account someone registered on the site instead:
 
 ```bash
 dc exec postgres psql -U elegantsip -d elegantsip \
@@ -734,3 +746,11 @@ Coupons: `SIP10` and `WELCOME10`, both 10%, hardcoded in `CartContext.tsx`.
   customers to WhatsApp. If that changes, update all four together.
 - Legal pages are templates written to match actual site behaviour — review with
   counsel before real commerce.
+
+cd /var/www/elegant-sip
+git fetch --prune origin main
+git checkout --detach origin/main
+docker compose -f docker-compose.prod.yml config -q && echo "compose OK"
+docker compose -f docker-compose.prod.yml up -d --build
+for i in $(seq 1 30); do curl -fsS https://elegantsip.in/api/ready && break; sleep 5; done; echo
+curl -fsS https://elegantsip.in/api/health; echo

@@ -97,6 +97,15 @@ const envSchema = z.object({
    */
   MFA_ENCRYPTION_KEY: blankAsUnset(z.string().trim().regex(/^[0-9a-fA-F]{64}$/, 'must be 64 hex characters (openssl rand -hex 32)')),
 
+  /*
+   * Staff account kept in step with these on every boot (db/seed-admin.ts).
+   * Validated there rather than here, so a typo skips the admin step with a
+   * logged error instead of taking the whole shop offline.
+   */
+  ADMIN_EMAIL: blankAsUnset(z.string()),
+  ADMIN_PASSWORD: blankAsUnset(z.string()),
+  ADMIN_NAME: blankAsUnset(z.string()),
+
   /* Phase 03+. Optional now so phases 00–02 run without payment credentials,
      but see assertPaymentsConfigured() — the code that needs them refuses to
      operate rather than half-working. */

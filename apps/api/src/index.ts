@@ -28,6 +28,12 @@ if (env.MIGRATE_ON_START) {
   app.log.info('database ready')
 }
 
+/* After migrations, so the users table exists on a first boot. A no-op unless ADMIN_EMAIL/ADMIN_PASSWORD are set. */
+{
+  const { seedAdmin } = await import('./db/seed-admin.js')
+  await seedAdmin(env, { info: (msg) => app.log.info(msg), error: (msg) => app.log.error(msg) })
+}
+
 /* Drain in-flight requests before exiting so a deploy never severs a payment. */
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {

@@ -112,6 +112,10 @@ services:
       INTERAKT_WEBHOOK_SECRET: ${INTERAKT_WEBHOOK_SECRET:-}
       # Encrypts staff authenticator secrets. Two-step sign-in cannot be turned on without it.
       MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:-}
+      # Staff account created/updated on every boot (apps/api/src/db/seed-admin.ts).
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-}
       AANGAN_INTERAKT_WEBHOOK_URL: ${AANGAN_INTERAKT_WEBHOOK_URL:-}
       API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
       SELLER_GSTIN: ${SELLER_GSTIN:-}
