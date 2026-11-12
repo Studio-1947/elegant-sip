@@ -142,12 +142,11 @@ services:
       META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-v24.0}
     volumes:
       - ops-status:/ops-status:ro
-    expose:
-      - '4000'
-    volumes:
       # Product photos uploaded in the admin. The web service mounts the same
       # volume read-only and serves it at /uploads/.
       - uploads:/data/uploads
+    expose:
+      - '4000'
 
   web:
     logging: *default-logging
