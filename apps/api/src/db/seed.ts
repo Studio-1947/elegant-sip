@@ -28,7 +28,7 @@ const PRODUCTS = [
     description:
       'The first pluck of spring, whole leaf — bright, floral, and carrying the muscatel character Darjeeling first flush is famous for.',
     longDescription:
-      "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in the Rungbong Valley, withered long and fired light, this tea brews pale gold rather than red. Each pack is whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
+      "The first flush is a race against the sun: leaves picked in the earliest weeks after winter dormancy, when the bush has stored a season's worth of aromatics. Grown above 3,500 ft in Darjeeling, withered long and fired light, this tea brews pale gold rather than red. Each pack is whole leaf, light in the cup, and best drunk without milk so nothing stands between you and the spring.",
     imageSrc: '/morningdew.webp',
     category: 'First Flush',
     tastingNotes: ['Floral', 'Muscatel', 'Bright finish'],
@@ -98,7 +98,7 @@ const PRODUCTS = [
     description:
       'A robust mixed broken grade from the Darjeeling spring harvest — strong, brisk, and happy to take milk.',
     longDescription:
-      'From the warmer, lower slopes below Kurseong, where the bush wakes earlier and grows faster. That makes a bolder, maltier cup with more colour and less of the ethereal floral note you get at altitude — which is exactly what you want in a tea that has to stand up to milk and sugar. The most versatile grade we sell, and the best value per cup.',
+      'From warmer, lower slopes in the Darjeeling foothills, where the bush wakes earlier and grows faster. That makes a bolder, maltier cup with more colour and less of the ethereal floral note you get at altitude — which is exactly what you want in a tea that has to stand up to milk and sugar. The most versatile grade we sell, and the best value per cup.',
     imageSrc: '/origin.webp',
     category: 'First Flush',
     tastingNotes: ['Malty', 'Strong', 'Milk-friendly'],
@@ -172,22 +172,22 @@ const GARDENS = [
   {
     slug: 'gopaldhara',
     name: 'Gopaldhara',
-    region: 'Rungbong Valley, Mirik · Darjeeling',
+    region: 'Mirik · Darjeeling',
     elevation: '3,500–7,000 ft',
     imageSrc: '/gopal-1024.webp',
     story: [
-      'Gopaldhara sits in the Rungbong Valley above Mirik, and its upper sections are among the highest planted land in Darjeeling — rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.',
+      'Gopaldhara sits above Mirik, and its upper sections are among the highest planted land in Darjeeling — rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.',
       'The first flush is a narrow window. After winter dormancy the bushes push a small quantity of tender two-leaves-and-a-bud, and the pluck runs for a few weeks in late February through April. That leaf is withered long and fired light, which is why a first flush brews pale gold rather than red, and why it should never meet milk.',
     ],
   },
   {
     slug: 'rohini',
     name: 'Rohini',
-    region: 'Kurseong Valley · Darjeeling',
+    region: 'Darjeeling',
     elevation: '1,500–4,500 ft',
     imageSrc: '/harvest.webp',
     story: [
-      'Rohini lies lower down the hill, on the slopes below Kurseong where the Darjeeling foothills warm earlier in the season. Lower elevation means the bushes wake sooner, so Rohini is often among the first gardens in the district to send out a first flush at all.',
+      'Rohini lies lower down the hill, on warmer slopes where the Darjeeling foothills heat up earlier in the season. Lower elevation means the bushes wake sooner, so Rohini is often among the first gardens in the district to send out a first flush at all.',
       'A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet.',
       'Nothing here is blended with leaf from outside the district.',
     ],

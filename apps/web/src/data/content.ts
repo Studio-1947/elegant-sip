@@ -65,7 +65,7 @@ export const FAQS: Faq[] = [
     category: "Brewing",
     question: "Where are your teas grown, really?",
     answer:
-      "Our teas are single-origin Darjeeling, bought direct from gardens in the Rungbong and Kurseong valleys — no auction houses and no blending across estates. The Gardens page has the details.",
+      "Our teas are single-origin Darjeeling. Our buyers on the ground in the various tea gardens of Darjeeling buy them direct — no auction houses and no blending across estates. The Gardens page has the details.",
   },
   {
     category: "Brewing",

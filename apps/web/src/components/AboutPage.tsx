@@ -4,7 +4,7 @@ import SkeletonImage from './SkeletonImage'
 
 const TIMELINE = [
   { year: '2024', title: 'The first harvest', text: 'Elegant Sip is founded on a single conviction: tea should name its garden the way wine names its vineyard.' },
-  { year: '2025', title: 'Direct relationships', text: 'Our buyers move into the Rungbong and Kurseong valleys during the first flush, buying whole lots straight from the gardens.' },
+  { year: '2025', title: 'Direct relationships', text: 'Our buyers on the ground in the various tea gardens of Darjeeling buy whole lots straight from the gardens during the first flush.' },
   { year: '2026', title: 'The collection grows', text: 'Four Darjeeling grades from the same first flush pluck, and a Taste Matcher that helps every palate find its cup.' },
 ]
 
@@ -19,7 +19,7 @@ export default function AboutPage() {
           src="/gopal-1024.webp"
           srcSet="/gopal-640.webp 640w, /gopal-1024.webp 1024w, /gopal-1920.webp 1920w"
           sizes="100vw"
-          alt="Terraced Darjeeling tea garden at the Gopaldhara estate, Rungbong Valley"
+          alt="Terraced Darjeeling tea garden at the Gopaldhara estate"
           width={1280}
           height={828}
           fetchPriority="high"
@@ -51,9 +51,9 @@ export default function AboutPage() {
             the last one paid.
           </p>
           <p>
-            So we built the system we wanted to buy from. Our buyers spend the harvest seasons on the
-            ground in the Rungbong and Kurseong valleys — tasting from the withering racks, walking the terraces,
-            and buying whole lots directly from the estates.
+            So we built the system we wanted to buy from. Our buyers on the ground in the various tea gardens of
+            Darjeeling spend the harvest seasons tasting from the withering racks, walking the terraces, and
+            buying whole lots directly from the estates.
           </p>
           <p>
             This is not charity; it's quality control. When a grower is paid properly, they can pick at

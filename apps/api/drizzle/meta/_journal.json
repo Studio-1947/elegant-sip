@@ -127,6 +127,13 @@
       "when": 1794459124358,
       "tag": "0017_product_gallery_images",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794471864823,
+      "tag": "0018_remove_valley_names",
+      "breakpoints": true
     }
   ]
 }

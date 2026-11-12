@@ -6,7 +6,7 @@ const PILLARS = [
     title: 'Origin',
     imageSrc: '/origin.webp',
     imageAlt: 'Darjeeling tea terraces on a highland slope in morning mist',
-    text: 'From the highland terraces of the Rungbong Valley to the warmer slopes below Kurseong, we buy directly from the Darjeeling growers who share our obsession with terroir and seasonal harvests.',
+    text: 'Our buyers on the ground in the various tea gardens of Darjeeling buy directly from the growers who share our obsession with terroir and seasonal harvests.',
   },
   {
     title: 'Craft',
