@@ -32,7 +32,7 @@ interface ProductsSectionProps {
    * Tablet and desktop always use the full card grid.
    */
   mobileLayout?: 'shelf' | 'grid'
-  /** Shown under the heading, above search and filters (e.g. a note to buyers on /shop). */
+  /** Shown under the heading, above the Taste Matcher prompt, search and filters. */
   notice?: ReactNode
 }
 
@@ -247,6 +247,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
           </div>
         </>
       )}
+
     </section>
   )
 }
