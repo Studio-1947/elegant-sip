@@ -34,9 +34,11 @@ interface ProductsSectionProps {
   mobileLayout?: 'shelf' | 'grid'
   /** Shown under the heading, above search and filters (e.g. a note to buyers on /shop). */
   notice?: ReactNode
+  /** Where `notice` sits: under the heading (shop) or under the product grid (homepage). */
+  noticePlacement?: 'above' | 'below'
 }
 
-export default function ProductsSection({ showHeading = true, headingLevel = 'h2', showFilters = false, searchQuery = '', mobileLayout = 'shelf', notice }: ProductsSectionProps) {
+export default function ProductsSection({ showHeading = true, headingLevel = 'h2', showFilters = false, searchQuery = '', mobileLayout = 'shelf', notice, noticePlacement = 'above' }: ProductsSectionProps) {
   const { openQuiz } = useUi()
   // Keep heading levels sequential below the section heading (no h1 → h3 skip).
   const SubHeading = headingLevel === 'h1' ? 'h2' : 'h3'
@@ -90,7 +92,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
         </div>
       )}
 
-      {notice}
+      {noticePlacement === 'above' && notice}
 
       {/* Taste Matcher — one tappable row on phones */}
       <button
@@ -247,6 +249,8 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
           </div>
         </>
       )}
+
+      {noticePlacement === 'below' && notice}
     </section>
   )
 }

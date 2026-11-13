@@ -5,6 +5,7 @@ import HarvestShowcaseSection from './HarvestShowcaseSection'
 import ThreePillarsSection from './ThreePillarsSection'
 import CanisterShowcaseSection from './CanisterShowcaseSection'
 import ProductsSection from './ProductsSection'
+import PackagingNotice from './PackagingNotice'
 import PackageShowcaseSection from './PackageShowcaseSection'
 import TestimonialsSection from './TestimonialsSection'
 import PhilosophyQuoteSection from './PhilosophyQuoteSection'
@@ -40,7 +41,7 @@ export default function HeroScrollSection() {
           <HarvestShowcaseSection />
           <ThreePillarsSection />
           <CanisterShowcaseSection />
-          <ProductsSection />
+          <ProductsSection notice={<PackagingNotice className="mt-10 md:mt-16" />} noticePlacement="below" />
           <PackageShowcaseSection />
           <TestimonialsSection />
           <PhilosophyQuoteSection />
