@@ -96,14 +96,17 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Bottom row */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-t border-white/10 md:border-[#1b261b]/10 pt-8 pb-14 md:pb-0">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
-            <p className="text-white/70 md:text-[#4a584a] text-[11px] font-mono tracking-wider">
-              © {year} Elegant Sip. All rights reserved. Est. 2024.
-              <span className="block sm:inline sm:ml-3">FSSAI Lic. No. {FSSAI_LICENSE}</span>
+        {/* Bottom rows: legal (copyright + links), then contact + credit.
+            Two rows of two keep every line whole at desktop widths, where one
+            row of three squeezed the copyright onto two lines. */}
+        <div className="border-t border-white/10 md:border-[#1b261b]/10 pt-8 pb-14 md:pb-0 flex flex-col gap-4 md:gap-3 text-[11px] font-mono tracking-wider">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            {/* Wraps as two whole pieces, each starting flush left. */}
+            <p className="flex flex-wrap gap-x-3 text-white/70 md:text-[#4a584a]">
+              <span>© {year} Elegant Sip. All rights reserved. Est. 2024.</span>
+              <span className="whitespace-nowrap">FSSAI Lic. No. {FSSAI_LICENSE}</span>
             </p>
-            <nav aria-label="Legal links" className="flex items-center gap-4 text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
+            <nav aria-label="Legal links" className="flex items-center gap-4 text-white/50 md:text-[#4a584a]">
               <Link to="/privacy" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Privacy</Link>
               <Link to="/terms" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Terms</Link>
               <Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping</Link>
@@ -114,7 +117,7 @@ export default function Footer() {
           </div>
           {/* No payment-network badges: Razorpay decides which methods are
               offered at checkout, so logos here could promise one it hides. */}
-          <div className="flex flex-col items-start md:items-end gap-2 md:whitespace-nowrap text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-white/50 md:text-[#4a584a]">
             <p>
               Questions about an order? Message us on{' '}
               <a
