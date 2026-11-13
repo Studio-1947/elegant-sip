@@ -114,15 +114,28 @@ export default function Footer() {
           </div>
           {/* No payment-network badges: Razorpay decides which methods are
               offered at checkout, so logos here could promise one it hides. */}
-          <p className="text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
-            Questions about an order? Message us on{' '}
-            <a
-              href="https://wa.me/917583995294"
-              className="underline underline-offset-2 hover:text-[#a8cf8a] md:hover:text-[#5f8f42] transition-colors"
-            >
-              WhatsApp
-            </a>
-          </p>
+          <div className="flex flex-col items-start md:items-end gap-2 md:whitespace-nowrap text-[11px] font-mono tracking-wider text-white/50 md:text-[#4a584a]">
+            <p>
+              Questions about an order? Message us on{' '}
+              <a
+                href="https://wa.me/917583995294"
+                className="underline underline-offset-2 hover:text-[#a8cf8a] md:hover:text-[#5f8f42] transition-colors"
+              >
+                WhatsApp
+              </a>
+            </p>
+            <p>
+              Designed and Developed by{' '}
+              <a
+                href="https://www.1947.io/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-[#a8cf8a] md:hover:text-[#5f8f42] transition-colors"
+              >
+                Studio 1947
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
