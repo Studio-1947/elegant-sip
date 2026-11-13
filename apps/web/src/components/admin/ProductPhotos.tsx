@@ -1,6 +1,7 @@
 import { useRef, useState, type CSSProperties } from 'react'
 import type { Product } from '@elegantsip/shared'
 import { api } from '../../lib/api'
+import { shrinkImage } from '../../lib/shrinkImage'
 import { errorText, type Notice } from './adminUi'
 import { useFeedback } from './ui/Feedback'
 import { Spinner } from './ui/controls'
@@ -43,7 +44,8 @@ export default function ProductPhotos({ product, onSaved, notify }: { product: P
     setBusy('upload')
     const added: string[] = []
     try {
-      for (const file of images) added.push((await api.admin.uploadProductPhoto(file)).src)
+      // Resized in the browser first: smaller, faster, and under the proxy's size limit.
+      for (const file of images) added.push((await api.admin.uploadProductPhoto(await shrinkImage(file))).src)
     } catch (cause) {
       notify({ tone: 'error', text: errorText(cause, 'Upload failed.') })
     } finally {

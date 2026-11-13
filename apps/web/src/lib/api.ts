@@ -86,10 +86,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     // A limit hit anywhere gets plain words, even when a proxy or the rate
     // limiter answers without our usual problem details.
     const limited = response.status === 429
+    // 413 usually comes from the reverse proxy (an HTML page, not JSON).
+    const tooLarge = response.status === 413
     throw new ApiClientError(
       response.status,
-      problem?.type ?? (limited ? 'rate_limited' : 'unknown_error'),
-      problem?.detail ?? (limited ? RATE_LIMITED_MESSAGE : 'Something went wrong. Please try again.'),
+      problem?.type ?? (limited ? 'rate_limited' : tooLarge ? 'too_large' : 'unknown_error'),
+      problem?.detail ??
+        (limited
+          ? RATE_LIMITED_MESSAGE
+          : tooLarge
+            ? 'That file is too large for the server to accept. Try a smaller photo.'
+            : 'Something went wrong. Please try again.'),
       problem?.errors,
       problem?.requestId,
     )
