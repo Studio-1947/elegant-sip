@@ -57,7 +57,7 @@ function customDataFrom(body: Body): MetaCustomData {
   }
   if (body.contents?.length) {
     data.content_ids = body.contents.map((c) => c.id)
-    data.content_type = 'product'
+    data.content_type = 'product_group'
     data.contents = body.contents
   }
   if (body.numItems !== undefined) data.num_items = body.numItems

@@ -6,7 +6,7 @@ import { db, sql } from '../db/client.js'
 import { products } from '../db/schema.js'
 import { env } from '../env.js'
 import { redis } from '../lib/sessions.js'
-import { META_FEED_COLUMNS, csvField } from '../lib/meta-feed.js'
+import { META_FEED_COLUMNS, csvField, feedTitle } from '../lib/meta-feed.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Meta feed, against the seeded database. Skips without the docker stack.
@@ -83,6 +83,17 @@ describe('csvField', () => {
   })
 })
 
+describe('feedTitle', () => {
+  it('adds brand, category, size and form', () => {
+    expect(feedTitle('Golden Needle', 'Black Tea', '100 g')).toBe('Elegant Sip Golden Needle Black Tea, 100 g Loose Leaf')
+  })
+
+  it('does not repeat a category or brand the name already carries', () => {
+    expect(feedTitle('Green Tea', 'Green Tea', '100 g')).toBe('Elegant Sip Green Tea, 100 g Loose Leaf')
+    expect(feedTitle('Elegant Sip Chamomile', 'herbal tea', '50 g')).toBe('Elegant Sip Chamomile herbal tea, 50 g Loose Leaf')
+  })
+})
+
 describe('GET /v1/feeds/meta.csv', () => {
   it('serves CSV with short caching and the exact column set', async () => {
     if (!available) return
@@ -102,6 +113,9 @@ describe('GET /v1/feeds/meta.csv', () => {
       expect(r.price).toMatch(/^\d+\.\d{2} INR$/)
       if (r.sale_price) expect(paise(r.sale_price)).toBeLessThan(paise(r.price))
       expect(r.link).toMatch(new RegExp(`^${env.SITE_URL.replace(/\/$/, '')}/product/[a-z0-9-]+$`))
+      // The pixel's content_ids are slugs, matched against item_group_id.
+      expect(r.link.endsWith(`/product/${r.item_group_id}`)).toBe(true)
+      expect(r.title).toMatch(/^Elegant Sip .+, .+ Loose Leaf$/)
       expect(r.image_link.startsWith(env.SITE_URL.replace(/\/$/, ''))).toBe(true)
       expect(r.description).not.toMatch(/\n/)
     }

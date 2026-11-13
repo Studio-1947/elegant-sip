@@ -7,10 +7,15 @@ import { regularPrice, unavailableReason, unitPrice } from './catalogue-pricing.
  * from the same rules checkout uses (catalogue-pricing.ts): `price` is the
  * regular price and `sale_price` is what checkout charges, sent only when it
  * is lower. Products with no price yet (coming soon) are left out entirely.
+ *
+ * `id` is the pack's SKU; `item_group_id` is the product slug. The pixel and
+ * Conversions API send slugs with content_type "product_group", which Meta
+ * matches against item_group_id, so events and catalogue items line up.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export const META_FEED_COLUMNS = [
   'id',
+  'item_group_id',
   'title',
   'description',
   'availability',
@@ -52,6 +57,18 @@ export const csvField = (value: string): string =>
 
 const absolute = (siteUrl: string, path: string) => new URL(path, siteUrl).toString()
 
+/**
+ * A searchable title: "Elegant Sip Golden Needle Black Tea, 100 g Loose Leaf".
+ * The category is left out when the name already says it ("Green Tea"), and
+ * the brand when the name already starts with it.
+ */
+export function feedTitle(name: string, category: string, size: string): string {
+  const lower = name.toLowerCase()
+  const brand = lower.startsWith(BRAND.toLowerCase()) ? '' : `${BRAND} `
+  const kind = lower.includes(category.toLowerCase()) ? '' : ` ${category}`
+  return `${brand}${name}${kind}, ${size} Loose Leaf`
+}
+
 /** Feed rows for every sellable-or-sold-out product. Coming-soon products are skipped. */
 export function metaFeedRows(items: FeedProduct[], siteUrl: string): Record<(typeof META_FEED_COLUMNS)[number], string>[] {
   return items
@@ -62,7 +79,8 @@ export function metaFeedRows(items: FeedProduct[], siteUrl: string): Record<(typ
       const description = (p.longDescription ?? p.description).replace(/\s*\n\s*/g, ' ').trim()
       return {
         id: p.variant.sku,
-        title: p.name,
+        item_group_id: p.slug,
+        title: feedTitle(p.name, p.category, p.variant.size),
         description,
         availability: p.variant.stock > 0 ? 'in stock' : 'out of stock',
         condition: 'new',

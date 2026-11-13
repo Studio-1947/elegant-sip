@@ -119,7 +119,7 @@ describe('POST /v1/events/meta', () => {
       value: 1722,
       currency: 'INR',
       content_ids: ['first-flush'],
-      content_type: 'product',
+      content_type: 'product_group',
       contents: [{ id: 'first-flush', quantity: 2 }],
       num_items: 2,
       order_id: PAID_ORDER,
