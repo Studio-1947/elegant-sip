@@ -35,11 +35,13 @@ function PackRow({ product, variant, onSaved, notify, index }: Props & { variant
         await api.admin.updateVariantPrice(product.slug, variant.size, { price: p, compareAtPrice: r })
       }
       if (s !== variant.stock) {
+        // A count, not a difference: an order placed since this form loaded must not make the shelf disagree with what was typed.
         await api.admin.adjustStock({
           productSlug: product.slug,
           variantSize: variant.size,
-          delta: s - variant.stock,
-          note: 'Set in admin product editor',
+          setTo: s,
+          reason: 'count_correction',
+          note: 'Set in product editor',
         })
       }
       notify({ tone: 'ok', text: `${label} saved: ${formatINR(p)}${r ? ` (was ${formatINR(r)})` : ''}, ${s} in stock.` })

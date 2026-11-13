@@ -64,7 +64,7 @@ export function Tabs<T extends string>({
         >
           {item.label}
           {item.badge ? (
-            <span className="min-w-[1.25rem] rounded-full bg-[#4a7333] px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">{item.badge}</span>
+            <span className="min-w-[1.25rem] rounded-full bg-[#4a7333] px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">{item.badge > 99 ? '99+' : item.badge}</span>
           ) : null}
         </button>
       ))}

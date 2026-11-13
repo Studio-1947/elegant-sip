@@ -125,6 +125,18 @@ const orderDto = z.object({
       events: z.array(z.object({ at: z.string(), status: z.string(), location: z.string().nullable() })),
     })
     .nullable(),
+  /** Single-order view only: the latest cancellation or return request and what staff decided. */
+  returnRequest: z
+    .object({
+      type: z.enum(['cancellation', 'return']),
+      status: z.enum(['requested', 'approved', 'rejected', 'received']),
+      reason: z.string(),
+      staffNote: z.string().nullable(),
+      requestedAt: z.iso.datetime(),
+      decidedAt: z.iso.datetime().nullable(),
+    })
+    .nullable()
+    .optional(),
   /** Single-order view only. `requested` is asked of the gateway, not yet confirmed; failed attempts are not shown. */
   refunds: z
     .array(z.object({ amount: paiseSchema, status: z.enum(['requested', 'processed']), requestedAt: z.iso.datetime(), processedAt: z.iso.datetime().nullable() }))
@@ -628,7 +640,21 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         // Do not confirm whether a guessed number exists.
         throw ApiError.notFound('That order')
       }
-      return { ...toOrderDto(row), refunds: await customerRefunds(row.id) }
+      const request_ = await db.query.returnRequests.findFirst({ where: eq(returnRequests.orderId, row.id) })
+      return {
+        ...toOrderDto(row),
+        refunds: await customerRefunds(row.id),
+        returnRequest: request_
+          ? {
+              type: request_.type,
+              status: request_.status,
+              reason: request_.reason,
+              staffNote: request_.staffNote,
+              requestedAt: request_.requestedAt.toISOString(),
+              decidedAt: request_.decidedAt?.toISOString() ?? null,
+            }
+          : null,
+      }
     },
   )
 
@@ -726,7 +752,20 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         throw ApiError.conflict('return_not_available', 'This order is not eligible for a cancellation or return request.')
       }
       const existing = await db.query.returnRequests.findFirst({ where: eq(returnRequests.orderId, order.id) })
-      if (existing) throw ApiError.conflict('return_already_requested', 'A cancellation or return request already exists for this order.')
+      /* One request per order at a time. After a rejection the customer may
+         ask again (e.g. with photos of damage); it reopens the same record. */
+      if (existing && existing.status !== 'rejected') {
+        throw ApiError.conflict('return_already_requested', 'A cancellation or return request already exists for this order.')
+      }
+      if (existing) {
+        const [reopened] = await db
+          .update(returnRequests)
+          .set({ type: request.body.type, reason: request.body.reason, status: 'requested', staffNote: null, requestedAt: new Date(), decidedAt: null, receivedAt: null })
+          .where(and(eq(returnRequests.id, existing.id), eq(returnRequests.status, 'rejected')))
+          .returning({ id: returnRequests.id })
+        if (!reopened) throw ApiError.conflict('return_already_requested', 'A cancellation or return request already exists for this order.')
+        return reply.status(201).send({ id: reopened.id, status: 'requested' as const })
+      }
       const [created] = await db.insert(returnRequests).values({ orderId: order.id, type: request.body.type, reason: request.body.reason }).returning({ id: returnRequests.id })
       return reply.status(201).send({ id: created.id, status: 'requested' as const })
     },
@@ -734,10 +773,10 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
 }
 
 /** Sends the confirmation email. Called from the webhook, never from checkout. */
-export async function sendOrderConfirmation(orderId: string): Promise<void> {
+export async function sendOrderConfirmation(orderId: string): Promise<{ delivered: boolean } | undefined> {
   const row = await db.query.orders.findFirst({ where: eq(orders.id, orderId), with: { items: true } })
   if (!row) return
-  await sendEmail({
+  return sendEmail({
     to: row.email,
     subject: `Order ${row.number} confirmed`,
     heading: 'Payment received — thank you',

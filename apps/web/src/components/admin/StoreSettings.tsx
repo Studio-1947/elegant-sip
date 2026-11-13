@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { ApiClientError, api, type AdminStoreSettings, type AdminStoreSettingsChange } from '../../lib/api'
 import { formatDateTime } from '../../lib/dates'
 
-type Draft = { guestCheckoutEnabled: boolean; guaranteeEnabled: boolean; guaranteeDays: string; lowStockThreshold: string }
+type Draft = { guestCheckoutEnabled: boolean; guaranteeEnabled: boolean; guaranteeDays: string; lowStockThreshold: string; newOrderAlerts: boolean }
 
 const toDraft = (s: AdminStoreSettings): Draft => ({
   guestCheckoutEnabled: s.guestCheckoutEnabled,
   guaranteeEnabled: s.guaranteeEnabled,
   guaranteeDays: String(s.guaranteeDays),
   lowStockThreshold: String(s.lowStockThreshold),
+  newOrderAlerts: s.newOrderAlerts,
 })
 
 /** A whole number in range, or the reason it is not. */
@@ -71,6 +72,7 @@ export default function StoreSettings({ onSaved }: { onSaved?: () => void }) {
     if (draft.guaranteeEnabled !== saved.guaranteeEnabled) change.guaranteeEnabled = draft.guaranteeEnabled
     if (days.value !== saved.guaranteeDays) change.guaranteeDays = days.value
     if (threshold.value !== saved.lowStockThreshold) change.lowStockThreshold = threshold.value
+    if (draft.newOrderAlerts !== saved.newOrderAlerts) change.newOrderAlerts = draft.newOrderAlerts
     if (Object.keys(change).length === 0) {
       setNotice('Nothing has changed.')
       return
@@ -99,7 +101,7 @@ export default function StoreSettings({ onSaved }: { onSaved?: () => void }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#4a7333]">Shop settings</span>
-          <h2 id="store-settings-heading" className="mt-1 text-lg font-bold uppercase tracking-tight">Checkout, guarantee &amp; stock</h2>
+          <h2 id="store-settings-heading" className="mt-1 text-lg font-bold uppercase tracking-tight">Checkout, guarantee, stock &amp; alerts</h2>
         </div>
         {saved?.updatedAt && (
           <span className="text-xs text-[#4a584a]">
@@ -138,6 +140,13 @@ export default function StoreSettings({ onSaved }: { onSaved?: () => void }) {
               </label>
             </span>
           </div>
+          <label className={`${toggleClass} md:col-span-2`}>
+            <input type="checkbox" checked={draft.newOrderAlerts} onChange={(event) => edit({ newOrderAlerts: event.target.checked })} className="mt-0.5 accent-[#4a7333]" />
+            <span>
+              <span className="block font-bold">Email the shop when an order is paid</span>
+              <span className="mt-0.5 block text-xs text-[#4a584a]">Sends a short summary of each new paid order to the shop inbox. Off: only problems are emailed.</span>
+            </span>
+          </label>
           <label className="block rounded-xl border border-[#1b261b]/10 bg-[#f9faf7] px-4 py-3 text-sm md:col-span-2">
             <span className="block font-bold">Low-stock threshold</span>
             <span className="mt-0.5 block text-xs text-[#4a584a]">A pack on sale with this many or fewer left is listed under Inventory attention.</span>

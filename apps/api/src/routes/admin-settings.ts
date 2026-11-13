@@ -6,7 +6,7 @@ import { readStoreSettingsRecord, updateStoreSettings } from '../lib/settings.js
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Admin — shop-wide settings (guest checkout, the satisfaction guarantee, the
- * low-stock threshold). Registered inside admin.ts, so the admin auth hook and
+ * low-stock threshold, new-order emails). Registered inside admin.ts, so the admin auth hook and
  * audit log cover it.
  * ──────────────────────────────────────────────────────────────────────────── */
 
@@ -15,6 +15,7 @@ const settingsSchema = z.object({
   guaranteeEnabled: z.boolean(),
   guaranteeDays: z.number().int().min(1).max(365),
   lowStockThreshold: z.number().int().min(0).max(1000),
+  newOrderAlerts: z.boolean(),
   updatedAt: z.iso.datetime().nullable(),
   updatedBy: z.object({ name: z.string(), email: z.string() }).nullable(),
 })
@@ -45,6 +46,7 @@ export const adminSettingsRoutes: FastifyPluginAsyncZod = async (app) => {
             guaranteeEnabled: z.boolean(),
             guaranteeDays: z.number().int().min(1, 'At least 1 day').max(365, 'At most 365 days'),
             lowStockThreshold: z.number().int().min(0, 'Cannot be negative').max(1000, 'At most 1,000'),
+            newOrderAlerts: z.boolean(),
           })
           .partial()
           .strict()

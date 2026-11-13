@@ -10,7 +10,8 @@ import type { Garden, Problem, Product } from '@elegantsip/shared'
  * ──────────────────────────────────────────────────────────────────────────── */
 
 // Production uses the same origin under /api. Vite proxies this path locally.
-const BASE = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '')
+export const API_BASE = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '')
+const BASE = API_BASE
 
 export class ApiClientError extends Error {
   constructor(
@@ -53,7 +54,7 @@ export function beacon(path: string, payload: unknown): void {
   }
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response
   try {
     response = await fetch(`${BASE}${path}`, {
@@ -225,6 +226,15 @@ export interface OrderView {
   } | null
   /** Only on the single-order view. */
   refunds?: OrderRefund[]
+  /** Only on the single-order view: the latest cancellation or return request and the decision. */
+  returnRequest?: {
+    type: 'cancellation' | 'return'
+    status: 'requested' | 'approved' | 'rejected' | 'received'
+    reason: string
+    staffNote: string | null
+    requestedAt: string
+    decidedAt: string | null
+  } | null
 }
 
 export interface PlaceOrderResult {
@@ -281,6 +291,27 @@ export interface AdminOrder {
   shippingCity: string
   trackingNumber: string | null
   shipmentStatus: string | null
+  customerName: string
+  /** An open cancellation or return request is waiting on staff. */
+  hasRequest: boolean
+}
+
+export interface AdminOrderQuery {
+  status?: AdminOrderStatus
+  q?: string
+  /** YYYY-MM-DD, India time. */
+  from?: string
+  to?: string
+  limit?: number
+  offset?: number
+}
+
+export interface AdminOrderPage {
+  orders: AdminOrder[]
+  /** Orders matching the filters. */
+  total: number
+  /** The whole shop by status, ignoring the filters. */
+  counts: Record<AdminOrderStatus, number>
 }
 
 export interface AdminConfig {
@@ -322,15 +353,59 @@ export interface CourierOption {
   rating: number | null
 }
 
+export interface AdminAddress {
+  name: string
+  line1: string
+  city: string
+  postalCode: string
+  state: string | null
+  country: string
+}
+
 export interface AdminOrderDetail {
   number: string
   status: AdminOrderStatus
   placedAt: string
+  paidAt: string | null
+  shippedAt: string | null
+  cancelledAt: string | null
   email: string
   phone: string | null
   notes: string | null
-  items: { productName: string; variantSize: string; quantity: number }[]
-  shipping: { name: string; line1: string; city: string; postalCode: string; state: string | null; country: string }
+  staffNotes: string | null
+  customer: { id: string; name: string; email: string } | null
+  items: { productSlug: string; productName: string; variantSize: string; sku: string; quantity: number; unitPrice: number; lineTotal: number }[]
+  subtotal: number
+  discount: number
+  couponCode: string | null
+  shippingMethod: string
+  shippingFee: number
+  tax: number
+  total: number
+  refunded: number
+  shipping: AdminAddress
+  billing: AdminAddress
+  tracking: { carrier: string | null; number: string | null } | null
+  payment: {
+    provider: string
+    status: string
+    method: string | null
+    amount: number
+    providerOrderId: string
+    providerPaymentId: string | null
+    capturedAt: string | null
+  } | null
+  invoiceNumber: string | null
+  returnRequest: {
+    id: string
+    type: 'cancellation' | 'return'
+    status: 'requested' | 'approved' | 'rejected' | 'received'
+    reason: string
+    staffNote: string | null
+    requestedAt: string
+  } | null
+  /** False once a courier is booked or the parcel has left. */
+  addressEditable: boolean
 }
 
 export interface AdminReturnRequest {
@@ -339,7 +414,12 @@ export interface AdminReturnRequest {
   type: 'cancellation' | 'return'
   status: 'requested' | 'approved' | 'rejected' | 'received'
   reason: string
+  staffNote: string | null
   requestedAt: string
+  orderStatus: AdminOrderStatus
+  email: string
+  customerName: string
+  total: number
 }
 
 export interface LowStockVariant {
@@ -386,6 +466,33 @@ export interface AdminProductEdit {
   images?: string[]
   /** True retires the tea; false brings it back. */
   archived?: boolean
+  /** Position in the shop grid; lower comes first. */
+  sortOrder?: number
+}
+
+export type StockReason = 'restock' | 'damaged' | 'sample' | 'count_correction' | 'manual_adjustment'
+
+export interface AdminNewProduct {
+  slug: string
+  name: string
+  status: Product['status']
+  description: string
+  longDescription?: string
+  imageSrc: string
+  category: string
+  tastingNotes?: string[]
+  harvestLabel?: string
+  gardenSlug?: string
+  variants: { size: string; price: number; stock: number; weightGrams?: number }[]
+}
+
+/** Query string for the order list and its CSV export. */
+export function orderParams(query: AdminOrderQuery): string {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== '') params.set(key, String(value))
+  }
+  return params.toString()
 }
 
 /** `end-offer`: price goes up to the regular price. `clear-compare-at`: price stays, struck-out price goes. */
@@ -443,6 +550,8 @@ export interface AdminStoreSettings {
   guaranteeEnabled: boolean
   guaranteeDays: number
   lowStockThreshold: number
+  /** Email the shop inbox when an order is paid. */
+  newOrderAlerts: boolean
   updatedAt: string | null
   updatedBy: { name: string; email: string } | null
 }
@@ -600,11 +709,8 @@ export const api = {
   },
 
   admin: {
-    /** Newest first. The API returns at most 200 per call. */
-    listOrders: (status?: AdminOrderStatus, limit = 50) =>
-      request<{ orders: AdminOrder[] }>(
-        `/v1/admin/orders?limit=${limit}${status ? `&status=${encodeURIComponent(status)}` : ''}`,
-      ),
+    /** Newest first, filtered and paged on the server (at most 200 per page). */
+    listOrders: (query: AdminOrderQuery = {}) => request<AdminOrderPage>(`/v1/admin/orders?${orderParams(query)}`),
     getOrder: (number: string) => request<AdminOrderDetail>(`/v1/admin/orders/${encodeURIComponent(number)}`),
     updateOrder: (
       number: string,
@@ -612,6 +718,10 @@ export const api = {
         status?: Extract<AdminOrderStatus, 'packed' | 'shipped' | 'delivered' | 'cancelled'>
         trackingCarrier?: string
         trackingNumber?: string
+        /** Cancelling a paid order emails the customer unless this is false. */
+        notifyCustomer?: boolean
+        /** Included in the cancellation email. */
+        reason?: string
       },
     ) =>
       // refundDue: the order was cancelled but its payment is not yet refunded.
@@ -622,13 +732,13 @@ export const api = {
     config: () => request<AdminConfig>('/v1/admin/config'),
     listReturnRequests: () => request<{ requests: AdminReturnRequest[] }>('/v1/admin/return-requests'),
     updateReturnRequest: (id: string, payload: { status: 'approved' | 'rejected' | 'received'; staffNote?: string }) =>
-      request<{ ok: true; restocked: boolean }>(`/v1/admin/return-requests/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+      request<{ ok: true; restocked: boolean; notified: boolean; refundDue: boolean }>(`/v1/admin/return-requests/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     /** Without a threshold the API uses the one in the shop settings. */
     lowStock: (threshold?: number) =>
       request<{ variants: LowStockVariant[] }>(`/v1/admin/stock/low${threshold === undefined ? '' : `?threshold=${threshold}`}`),
-    /** Positive delta restocks, negative writes off; either way it is recorded in the stock ledger. */
-    adjustStock: (payload: { productSlug: string; variantSize: string; delta: number; note?: string }) =>
-      post<{ productSlug: string; variantSize: string; stock: number }>('/v1/admin/stock', payload),
+    /** A delta (+ restock, − write-off) or a counted `setTo`; either way it is recorded in the stock ledger with a reason. */
+    adjustStock: (payload: { productSlug: string; variantSize: string; delta?: number; setTo?: number; reason?: StockReason; note?: string }) =>
+      post<{ productSlug: string; variantSize: string; stock: number; delta: number }>('/v1/admin/stock', payload),
     /** Every product, retired ones included (`archivedAt` set), read live. */
     products: () => request<{ products: Product[] }>('/v1/admin/products'),
     previewOffers: (action: OfferAction, productSlug?: string) =>
@@ -644,14 +754,16 @@ export const api = {
         body: file,
         headers: { 'Content-Type': file.type },
       }),
+    /** A new tea and its first packs. `coming-soon` teas are listed but cannot be ordered. */
+    createProduct: (payload: AdminNewProduct) => post<{ slug: string; variantCount: number }>('/v1/admin/products', payload),
     addVariant: (slug: string, payload: { size: string; price: number; stock: number }) =>
       post<{ slug: string; size: string; price: number; stock: number }>(`/v1/admin/products/${encodeURIComponent(slug)}/variants`, payload),
     /** Only for a pack that has never been ordered; the API refuses otherwise. */
     deleteVariant: (slug: string, size: string) =>
       request<{ ok: true }>(`/v1/admin/products/${encodeURIComponent(slug)}/variants/${encodeURIComponent(size)}`, { method: 'DELETE' }),
     /** Prices are integer paise. A null compareAtPrice ends the offer; omit it to leave it unchanged. */
-    updateVariantPrice: (slug: string, size: string, payload: { price: number; compareAtPrice?: number | null }) =>
-      request<{ slug: string; size: string; price: number; compareAtPrice: number | null }>(
+    updateVariantPrice: (slug: string, size: string, payload: { price?: number; compareAtPrice?: number | null; weightGrams?: number | null }) =>
+      request<{ slug: string; size: string; price: number; compareAtPrice: number | null; weightGrams: number | null }>(
         `/v1/admin/products/${encodeURIComponent(slug)}/variants/${encodeURIComponent(size)}`,
         { method: 'PATCH', body: JSON.stringify(payload) },
       ),

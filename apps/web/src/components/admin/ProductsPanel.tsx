@@ -3,7 +3,8 @@ import type { Product } from '@elegantsip/shared'
 import { api, type OfferAction } from '../../lib/api'
 import { formatINR } from '../../lib/currency'
 import { refreshCatalogue } from '../../lib/liveCatalogue'
-import { cardClass, errorText, quietButton } from './adminUi'
+import { cardClass, errorText, primaryButton, quietButton } from './adminUi'
+import AddProductForm from './AddProductForm'
 import ProductDetailsForm from './ProductDetailsForm'
 import ProductPacks from './ProductPacks'
 import ProductPhotos from './ProductPhotos'
@@ -25,8 +26,11 @@ import { Empty, Spinner, Switch, Tabs } from './ui/controls'
 type EditorTab = 'photos' | 'packs' | 'details'
 
 const stockOf = (p: Product) => p.variants.reduce((a, v) => a + v.stock, 0)
+/** Packs at or under the shop's low-stock threshold, counted only for a tea on sale. */
+const lowPacks = (p: Product, threshold: number) =>
+  p.status === 'active' && !p.archivedAt ? p.variants.filter((v) => v.stock <= threshold).length : 0
 
-export default function ProductsPanel() {
+export default function ProductsPanel({ active = true }: { active?: boolean }) {
   const { toast } = useFeedback()
   const [products, setProducts] = useState<Product[]>([])
   const [editing, setEditing] = useState<string | null>(null)
@@ -34,6 +38,8 @@ export default function ProductsPanel() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [offer, setOffer] = useState<{ action: OfferAction; slug?: string } | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [threshold, setThreshold] = useState<number | null>(null)
 
   // `loading` starts true; Reload sets it before calling this. State is only
   // set from the promise callbacks, never synchronously in the effect.
@@ -51,9 +57,19 @@ export default function ProductsPanel() {
     [toast],
   )
 
+  // Loads when the tab is first opened and again each time it is reopened, so
+  // stock changed in Inventory (or by orders) is never shown stale here.
   useEffect(() => {
-    void load()
-  }, [load])
+    if (active) void load()
+  }, [active, load])
+
+  // The same threshold as the low-stock list and alerts (Settings).
+  useEffect(() => {
+    api.storeSettings
+      .get()
+      .then((s) => setThreshold(s.lowStockThreshold))
+      .catch(() => setThreshold(null))
+  }, [])
 
   const toggleListed = async (p: Product, onSale: boolean) => {
     setBusy(p.slug)
@@ -83,6 +99,9 @@ export default function ProductsPanel() {
           Photos, packs, prices, stock and text for every tea. Checkout uses changes at once, the shop on the next page load, the Meta feed within 5 minutes.
         </p>
         <div className="flex flex-wrap gap-2">
+          <button onClick={() => setAdding(true)} className={primaryButton}>
+            + Add tea
+          </button>
           <button onClick={() => setOffer({ action: 'end-offer' })} className={quietButton}>
             End every offer…
           </button>
@@ -115,6 +134,7 @@ export default function ProductsPanel() {
           {products.map((p, i) => {
             const prices = p.variants.map((v) => v.price).filter((x) => x > 0)
             const stock = stockOf(p)
+            const low = threshold === null ? 0 : lowPacks(p, threshold)
             return (
               <article
                 key={p.slug}
@@ -147,7 +167,8 @@ export default function ProductsPanel() {
                   <div className="mt-auto flex items-end justify-between gap-2 pt-2">
                     <p className="text-xs text-[#4a584a]">
                       <b className="text-sm text-[#1b261b]">{prices.length ? formatINR(Math.min(...prices)) : '—'}</b>
-                      <span className={`ml-2 ${stock <= 5 ? 'font-semibold text-amber-700' : ''}`}>{stock} in stock</span>
+                      <span className="ml-2">{stock} in stock</span>
+                      {low > 0 && <span className="ml-2 font-semibold text-amber-700">· {low} pack{low === 1 ? '' : 's'} low</span>}
                     </p>
                     <button
                       onClick={() => {
@@ -205,6 +226,22 @@ export default function ProductsPanel() {
               {tab === 'details' && <ProductDetailsForm product={current} onSaved={saved} notify={toast} />}
             </div>
           </>
+        )}
+      </Modal>
+
+      <Modal open={adding} onClose={() => setAdding(false)} size="lg" eyebrow="New product" title="Add a tea">
+        {adding && (
+          <AddProductForm
+            onCancel={() => setAdding(false)}
+            onCreated={(slug) => {
+              setAdding(false)
+              toast({ tone: 'ok', title: 'Tea added', text: 'Add more photos, the brewing card and its garden here. New teas get their own search-engine page on the next deploy.' })
+              void load().then(() => {
+                setTab('photos')
+                setEditing(slug)
+              })
+            }}
+          />
         )}
       </Modal>
 

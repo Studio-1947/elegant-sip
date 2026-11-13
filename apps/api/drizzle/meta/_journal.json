@@ -134,6 +134,13 @@
       "when": 1794471864823,
       "tag": "0018_remove_valley_names",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794500082318,
+      "tag": "0019_admin_operations",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { alertStaff } from './alerts.js'
 import { issueInvoice } from './invoice.js'
 import { reportPurchaseFromServer } from './meta-purchase.js'
 import { sendOrderConfirmation } from '../routes/orders.js'
+import { alertNewOrder } from './order-emails.js'
 
 /**
  * Moves a pending order to `paid`. Shared by the webhook and the checkout
@@ -51,6 +52,11 @@ export async function capturePayment(
     await sendOrderConfirmation(input.orderId)
   } catch (err) {
     log.error({ err, orderNumber: input.orderNumber }, 'confirmation email failed')
+  }
+  try {
+    await alertNewOrder(input.orderId)
+  } catch (err) {
+    log.error({ err, orderNumber: input.orderNumber }, 'new-order staff alert failed')
   }
 
   log.info({ orderNumber: input.orderNumber }, 'order paid')

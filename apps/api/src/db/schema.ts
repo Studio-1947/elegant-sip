@@ -101,6 +101,8 @@ export const productVariants = pgTable(
     /** Paise. Regular price shown struck out during an offer; null = no offer. */
     compareAtPrice: integer('compare_at_price'),
     stock: integer('stock').notNull().default(0),
+    /** Packed weight of one pack in grams, for courier bookings. Null = read it from the size label ("250 g"). */
+    weightGrams: integer('weight_grams'),
     sortOrder: integer('sort_order').notNull().default(0),
     /** When staff were last emailed that this pack ran low; cleared once restocked above the threshold. */
     lowStockAlertedAt: timestamp('low_stock_alerted_at', { withTimezone: true }),
@@ -112,6 +114,7 @@ export const productVariants = pgTable(
     // Stock can never be driven below zero, whatever the application does.
     check('product_variants_stock_non_negative', sql`${t.stock} >= 0`),
     check('product_variants_price_non_negative', sql`${t.price} >= 0`),
+    check('product_variants_weight_positive', sql`${t.weightGrams} IS NULL OR ${t.weightGrams} > 0`),
     // A struck-out price lower than the selling price would advertise a fake saving.
     check(
       'product_variants_compare_at_above_price',

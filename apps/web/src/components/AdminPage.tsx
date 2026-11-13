@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { useAuth } from './AuthContext'
-import { api, type AdminConfig, type AdminOrder, type AdminOrderStatus, type AdminReturnRequest, type LowStockVariant } from '../lib/api'
+import { api, type AdminConfig, type AdminOrderPage, type AdminOrderStatus, type AdminReturnRequest, type LowStockVariant } from '../lib/api'
 import { Link, useDocumentMeta } from '../lib/router'
 import OrdersPanel from './admin/OrdersPanel'
 import ProductsPanel from './admin/ProductsPanel'
@@ -12,17 +12,23 @@ import GardenEditor from './admin/GardenEditor'
 import StoreSettings from './admin/StoreSettings'
 import EmailOutbox from './admin/EmailOutbox'
 import AuditLog from './admin/AuditLog'
+import OrderDetailModal from './admin/OrderDetailModal'
+import InventoryPanel from './admin/InventoryPanel'
+import CustomersPanel from './admin/CustomersPanel'
+import ReportsPanel from './admin/ReportsPanel'
+import MessagesPanel from './admin/MessagesPanel'
 import { cardClass, errorText, quietButton } from './admin/adminUi'
 import { FeedbackProvider, useFeedback } from './admin/ui/Feedback'
 import Modal from './admin/ui/Modal'
 import { Spinner, Tabs } from './admin/ui/controls'
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Staff dashboard. Orders, returns and the product catalogue, behind the
- * admin role (the API checks it again on every request).
+ * Staff dashboard: orders, returns, products, inventory, customers, reports,
+ * reviews, gardens, messages and settings, behind the admin role (the API
+ * checks it again on every request).
  * ──────────────────────────────────────────────────────────────────────────── */
 
-type Section = 'orders' | 'returns' | 'products' | 'reviews' | 'gardens' | 'settings'
+type Section = 'orders' | 'returns' | 'products' | 'inventory' | 'customers' | 'reports' | 'reviews' | 'gardens' | 'messages' | 'settings'
 
 function Gate({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -58,7 +64,9 @@ function Dashboard() {
   const { toast } = useFeedback()
   const [section, setSection] = useState<Section>('orders')
   const [orderFilter, setOrderFilter] = useState<'' | AdminOrderStatus>('')
-  const [orders, setOrders] = useState<AdminOrder[]>([])
+  const [counts, setCounts] = useState<AdminOrderPage['counts'] | null>(null)
+  const [ordersKey, setOrdersKey] = useState(0)
+  const [openOrder, setOpenOrder] = useState<string | null>(null)
   const [config, setConfig] = useState<AdminConfig | null>(null)
   const [requests, setRequests] = useState<AdminReturnRequest[]>([])
   const [lowStock, setLowStock] = useState<LowStockVariant[]>([])
@@ -66,14 +74,14 @@ function Dashboard() {
   const [statusOpen, setStatusOpen] = useState(false)
   const [stockOpen, setStockOpen] = useState(false)
 
-  // The latest 200 orders, filtered in the browser so the filter chips and
-  // counts are instant. `loading` starts true; Refresh sets it first.
+  // Tile counts come from the server for the whole shop; the order list pages
+  // itself. `loading` starts true; Refresh sets it first.
   const load = useCallback(
     () =>
       // Low stock uses the threshold from Shop settings.
-      Promise.all([api.admin.listOrders(undefined, 200), api.admin.config(), api.admin.listReturnRequests(), api.admin.lowStock()])
+      Promise.all([api.admin.listOrders({ limit: 1 }), api.admin.config(), api.admin.listReturnRequests(), api.admin.lowStock()])
         .then(([o, c, r, l]) => {
-          setOrders(o.orders)
+          setCounts(o.counts)
           setConfig(c)
           setRequests(r.requests)
           setLowStock(l.variants)
@@ -98,11 +106,18 @@ function Dashboard() {
 
   const refresh = () => {
     setLoading(true)
+    setOrdersKey((k) => k + 1)
     void load()
   }
+  // After an order or request changes: tiles, request list and the open list.
+  const changed = useCallback(() => {
+    setOrdersKey((k) => k + 1)
+    void load()
+  }, [load])
+  const closeOrder = useCallback(() => setOpenOrder(null), [])
 
-  const toPack = orders.filter((o) => o.status === 'paid').length
-  const toShip = orders.filter((o) => o.status === 'packed').length
+  const toPack = counts?.paid ?? 0
+  const toShip = counts?.packed ?? 0
   const awaiting = requests.filter((r) => r.status === 'requested').length
 
   const checks = config
@@ -167,8 +182,12 @@ function Dashboard() {
               { value: 'orders', label: 'Orders', badge: toPack + toShip },
               { value: 'returns', label: 'Returns', badge: awaiting },
               { value: 'products', label: 'Products' },
+              { value: 'inventory', label: 'Inventory', badge: lowStock.length },
+              { value: 'customers', label: 'Customers' },
+              { value: 'reports', label: 'Reports' },
               { value: 'reviews', label: 'Reviews' },
               { value: 'gardens', label: 'Gardens' },
+              { value: 'messages', label: 'Messages' },
               { value: 'settings', label: 'Settings' },
             ]}
           />
@@ -176,15 +195,12 @@ function Dashboard() {
 
         <div key={section} className="adm-rise">
           {section === 'orders' && (
-            <OrdersPanel
-              orders={orders}
-              loading={loading}
-              reload={refresh}
-              filter={orderFilter}
-              onFilter={setOrderFilter}
-              onUpdated={(number, patch) => setOrders((all) => all.map((o) => (o.number === number ? { ...o, ...patch } : o)))}
-            />
+            <OrdersPanel filter={orderFilter} onFilter={setOrderFilter} counts={counts} refreshKey={ordersKey} onChanged={changed} onOpen={setOpenOrder} />
           )}
+          {section === 'inventory' && <InventoryPanel />}
+          {section === 'customers' && <CustomersPanel onOpenOrder={setOpenOrder} />}
+          {section === 'reports' && <ReportsPanel />}
+          {section === 'messages' && <MessagesPanel />}
           {section === 'reviews' && <ReviewQueue />}
           {section === 'gardens' && <GardenEditor />}
           {section === 'settings' && (
@@ -195,14 +211,16 @@ function Dashboard() {
             </div>
           )}
           {section === 'returns' && (
-            <ReturnsPanel requests={requests} onUpdated={(id, status) => setRequests((all) => all.map((r) => (r.id === id ? { ...r, status } : r)))} />
+            <ReturnsPanel requests={requests} onChanged={changed} onOpen={setOpenOrder} />
           )}
         </div>
         {/* Kept mounted so the product list is not refetched on every tab switch. */}
         <div hidden={section !== 'products'} className={section === 'products' ? 'adm-rise' : ''}>
-          <ProductsPanel />
+          <ProductsPanel active={section === 'products'} />
         </div>
       </div>
+
+      <OrderDetailModal number={openOrder} onClose={closeOrder} onChanged={changed} />
 
       <Modal open={statusOpen} onClose={() => setStatusOpen(false)} size="sm" eyebrow="Setup" title="System status">
         <ul className="space-y-2">
@@ -228,11 +246,11 @@ function Dashboard() {
           <button
             onClick={() => {
               setStockOpen(false)
-              setSection('products')
+              setSection('inventory')
             }}
             className={quietButton}
           >
-            Update stock in Products →
+            Open inventory →
           </button>
         }
       >

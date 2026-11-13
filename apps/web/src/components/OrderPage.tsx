@@ -129,7 +129,11 @@ export default function OrderPage({ id }: { id?: string }) {
   const method = SHIPPING_METHODS.find((m) => m.id === order.shippingMethod)
   const taxAddedOnTop = order.tax > 0 && order.total === order.subtotal - order.discount + order.shippingFee + order.tax
   const placedOn = formatDate(order.placedAt)
-  const canRequestService = Boolean(user && ['paid', 'packed', 'shipped', 'delivered'].includes(order.status))
+  const serviceRequest = order.returnRequest ?? null
+  // A rejected request may be followed by a new one; anything else is still being handled.
+  const canRequestService = Boolean(
+    user && ['paid', 'packed', 'shipped', 'delivered'].includes(order.status) && (!serviceRequest || serviceRequest.status === 'rejected'),
+  )
 
   const submitServiceRequest = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -137,8 +141,13 @@ export default function OrderPage({ id }: { id?: string }) {
     setRequestMessage(null)
     try {
       await api.orders.requestReturn(order.number, { type: requestType, reason: requestReason })
-      setRequestMessage('Your request has been sent to the Elegant Sip team. We will contact you after review.')
+      setRequestMessage(null)
       setRequestReason('')
+      // Show the request as the team will see it.
+      setOrder({
+        ...order,
+        returnRequest: { type: requestType, status: 'requested', reason: requestReason, staffNote: null, requestedAt: new Date().toISOString(), decidedAt: null },
+      })
     } catch (cause) {
       setRequestMessage(cause instanceof ApiClientError ? cause.message : 'We could not submit your request.')
     } finally {
@@ -375,9 +384,10 @@ export default function OrderPage({ id }: { id?: string }) {
             )}
           </div>
         </div>
+        {serviceRequest && <ServiceRequestStatus request={serviceRequest} />}
         {canRequestService && (
           <form onSubmit={submitServiceRequest} className="mt-6 bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8">
-            <h2 className="text-sm font-bold uppercase tracking-wide">Need help with this order?</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide">{serviceRequest ? 'Send a new request' : 'Need help with this order?'}</h2>
             <p className="mt-2 text-xs leading-relaxed text-[#4a584a]">Request a cancellation or return. A staff member reviews every request; accepted physical returns are inspected before any stock is restored.</p>
             <div className="mt-5 flex flex-wrap gap-3 text-xs">
               <label className="flex items-center gap-2"><input type="radio" checked={requestType === 'return'} onChange={() => setRequestType('return')} /> Return</label>
@@ -407,4 +417,33 @@ function timelineFor(order: OrderView) {
     { label: 'Shipped', complete: shipped, date: order.shippedAt, detail: shipped ? (order.tracking?.number ? `Tracking: ${order.tracking.number}` : 'With the courier.') : order.tracking?.number ? `Courier booked (tracking ${order.tracking.number}), waiting for pickup.` : 'Tracking will appear here when dispatched.' },
     { label: 'Delivered', complete: delivered, date: delivered ? (order.shipment?.deliveredAt ?? null) : null, detail: delivered ? 'Delivered.' : order.shipment?.expectedDeliveryAt && !isShipmentProblem(order.shipment.status) ? `Expected by ${formatShortDate(order.shipment.expectedDeliveryAt)}.` : 'Awaiting delivery confirmation.' },
   ]
+}
+
+const REQUEST_STATUS: Record<NonNullable<OrderView['returnRequest']>['status'], { label: string; tone: string; text: (type: string) => string }> = {
+  requested: { label: 'Under review', tone: 'bg-amber-50 text-amber-900 ring-amber-200', text: (type) => `We have your ${type} request and will email you once the team has looked at it.` },
+  approved: {
+    label: 'Approved',
+    tone: 'bg-[#8bb56e]/10 text-[#315b26] ring-[#8bb56e]/30',
+    text: (type) => (type === 'cancellation' ? 'Your order is cancelled. The refund goes back to your original payment method.' : 'Please send the tea back to us — reply to our email for the address. We refund once it arrives.'),
+  },
+  received: { label: 'Return received', tone: 'bg-[#8bb56e]/10 text-[#315b26] ring-[#8bb56e]/30', text: () => 'Your parcel reached us. The refund goes back to your original payment method.' },
+  rejected: { label: 'Not accepted', tone: 'bg-stone-100 text-stone-800 ring-stone-200', text: (type) => `We could not accept this ${type} request. Reply to our email, or send a new request below with more detail.` },
+}
+
+/** The customer's cancellation or return request and what the team decided. */
+function ServiceRequestStatus({ request }: { request: NonNullable<OrderView['returnRequest']> }) {
+  const status = REQUEST_STATUS[request.status]
+  return (
+    <section role="status" className={`mt-6 rounded-2xl p-6 ring-1 md:p-8 ${status.tone}`}>
+      <h2 className="text-sm font-bold uppercase tracking-wide">
+        Your {request.type} request · {status.label}
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed">{status.text(request.type)}</p>
+      {request.staffNote && <p className="mt-2 text-sm leading-relaxed"><b>From the team:</b> {request.staffNote}</p>}
+      <p className="mt-3 text-xs opacity-75">
+        Sent {formatShortDate(request.requestedAt)}
+        {request.decidedAt ? ` · decided ${formatShortDate(request.decidedAt)}` : ''}: “{request.reason}”
+      </p>
+    </section>
+  )
 }

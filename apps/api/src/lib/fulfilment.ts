@@ -3,6 +3,7 @@ import type { FastifyBaseLogger } from 'fastify'
 import { normaliseIndianMobile } from '@elegantsip/shared'
 import { db } from '../db/client.js'
 import { orders, shipments, type ShipmentEvent } from '../db/schema-commerce.js'
+import { productVariants } from '../db/schema.js'
 import { env } from '../env.js'
 import { alertStaff } from './alerts.js'
 import { sendEmail } from './email.js'
@@ -154,8 +155,21 @@ async function loadOrder(orderNumber: string) {
   return order
 }
 
-const weightFor = (items: { variantSize: string; quantity: number }[]) =>
-  items.reduce((sum, item) => sum + packGrams(item.variantSize) * item.quantity, 0) + env.SHIP_PACKAGING_WEIGHT_GRAMS
+/** Parcel weight: each pack's set weight, else the grams in its size label, plus the packaging. */
+async function weightFor(items: { variantId: string | null; variantSize: string; quantity: number }[]) {
+  const ids = items.flatMap((item) => (item.variantId ? [item.variantId] : []))
+  const set = ids.length
+    ? new Map(
+        (await db.select({ id: productVariants.id, grams: productVariants.weightGrams }).from(productVariants).where(inArray(productVariants.id, ids))).map(
+          (row) => [row.id, row.grams],
+        ),
+      )
+    : new Map<string, number | null>()
+  return (
+    items.reduce((sum, item) => sum + ((item.variantId && set.get(item.variantId)) || packGrams(item.variantSize)) * item.quantity, 0) +
+    env.SHIP_PACKAGING_WEIGHT_GRAMS
+  )
+}
 
 /**
  * Couriers bill the greater of actual and volumetric weight (L×B×H cm / 5000
@@ -168,7 +182,7 @@ export const chargeableGrams = (actualGrams: number) =>
 export async function courierRates(orderNumber: string) {
   const provider = requireProvider()
   const order = await loadOrder(orderNumber)
-  const weightGrams = weightFor(order.items)
+  const weightGrams = await weightFor(order.items)
   try {
     const result = await provider.courierOptions({
       deliveryPostcode: order.shippingPostalCode,
@@ -333,7 +347,7 @@ export async function bookShipment(
   const state = order.shippingState ?? order.billingState
   if (!state) throw ApiError.conflict('state_required', 'The delivery address has no state, which couriers require.')
 
-  const weightGrams = weightFor(order.items)
+  const weightGrams = await weightFor(order.items)
   let row = await claimBooking(order.id, provider.name, weightGrams)
   const lease = row.bookingStartedAt!
   try {

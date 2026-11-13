@@ -89,6 +89,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
                 size: z.string().trim().min(1).max(60).describe('e.g. "200 g"'),
                 price: paiseSchema,
                 stock: z.number().int().min(0).default(0),
+                weightGrams: z.number().int().min(1).max(50_000).optional(),
               }),
             )
             .min(1)
@@ -144,6 +145,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
               sku: skuFor(fields.slug, v.size),
               price: v.price,
               stock: v.stock,
+              weightGrams: v.weightGrams ?? null,
               sortOrder: i,
             })),
           )
@@ -273,19 +275,29 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       schema: {
         tags: ['Admin'],
-        summary: 'Change a variant price',
+        summary: 'Change a variant price or packed weight',
         description:
           'Stock is deliberately not settable here — use `POST /admin/stock`, which records the movement in the ledger. Writing stock directly would leave an unexplained jump in the running total.',
         params: z.object({ slug: slugSchema, size: z.string().min(1).max(60) }),
-        body: z.object({
-          price: paiseSchema,
-          compareAtPrice: paiseSchema
-            .nullable()
-            .optional()
-            .describe('Regular price to show struck out during an offer. Null ends the offer; omit to leave it unchanged.'),
-        }),
+        body: z
+          .object({
+            price: paiseSchema.optional(),
+            compareAtPrice: paiseSchema
+              .nullable()
+              .optional()
+              .describe('Regular price to show struck out during an offer. Null ends the offer; omit to leave it unchanged.'),
+            weightGrams: z
+              .number()
+              .int()
+              .min(1)
+              .max(50_000)
+              .nullable()
+              .optional()
+              .describe('Packed weight of one pack, for courier bookings. Null reads it from the size label again.'),
+          })
+          .refine((b) => Object.keys(b).length > 0, 'Send at least one field to change.'),
         response: {
-          200: z.object({ slug: slugSchema, size: z.string(), price: paiseSchema, compareAtPrice: paiseSchema.nullable() }),
+          200: z.object({ slug: slugSchema, size: z.string(), price: paiseSchema, compareAtPrice: paiseSchema.nullable(), weightGrams: z.number().int().nullable() }),
           400: problemSchema,
           404: problemSchema,
         },
@@ -293,7 +305,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) => {
       const variant = await db
-        .select({ id: productVariants.id, size: productVariants.size, compareAtPrice: productVariants.compareAtPrice })
+        .select({ id: productVariants.id, size: productVariants.size, price: productVariants.price, compareAtPrice: productVariants.compareAtPrice })
         .from(productVariants)
         .innerJoin(products, eq(productVariants.productId, products.id))
         .where(eq(products.slug, request.params.slug))
@@ -303,21 +315,23 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         throw ApiError.notFound(`Variant "${request.params.size}" of "${request.params.slug}"`)
       }
       // The database refuses this too; checking first gives staff a reason instead of a 500.
+      const price = request.body.price ?? variant.price
       const compareAt = request.body.compareAtPrice !== undefined ? request.body.compareAtPrice : variant.compareAtPrice
-      if (compareAt !== null && compareAt <= request.body.price) {
+      if (compareAt !== null && compareAt <= price) {
         throw ApiError.badRequest('The struck-out price must be higher than the selling price. Clear it to end the offer.')
       }
 
       const [updated] = await db
         .update(productVariants)
         .set({
-          price: request.body.price,
+          price,
           ...(request.body.compareAtPrice !== undefined ? { compareAtPrice: request.body.compareAtPrice } : {}),
+          ...(request.body.weightGrams !== undefined ? { weightGrams: request.body.weightGrams } : {}),
         })
         .where(eq(productVariants.id, variant.id))
-        .returning({ price: productVariants.price, compareAtPrice: productVariants.compareAtPrice })
+        .returning({ price: productVariants.price, compareAtPrice: productVariants.compareAtPrice, weightGrams: productVariants.weightGrams })
 
-      return { slug: request.params.slug, size: variant.size, price: updated.price, compareAtPrice: updated.compareAtPrice }
+      return { slug: request.params.slug, size: variant.size, ...updated }
     },
   )
 }
