@@ -41,7 +41,7 @@ export default function HeroScrollSection() {
           <HarvestShowcaseSection />
           <ThreePillarsSection />
           <CanisterShowcaseSection />
-          <ProductsSection notice={<PackagingNotice className="mt-10 md:mt-16" />} noticePlacement="below" />
+          <ProductsSection notice={<PackagingNotice className="mb-8 md:mb-12" />} />
           <PackageShowcaseSection />
           <TestimonialsSection />
           <PhilosophyQuoteSection />

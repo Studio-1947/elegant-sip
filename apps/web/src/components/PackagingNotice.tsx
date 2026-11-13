@@ -1,7 +1,8 @@
 /**
- * A note to buyers while the packaging changes over, shown on the shop page
- * and under the homepage collection. Remove once the new packs are standard.
- * `className` sets the spacing around it, which differs by where it sits.
+ * A note to buyers while the packaging changes over, shown under the Our
+ * Collections heading (above the Taste Matcher prompt) on the shop page and
+ * the homepage. Remove once the new packs are standard.
+ * `className` sets the spacing around it.
  */
 export default function PackagingNotice({ className = '' }: { className?: string }) {
   return (
