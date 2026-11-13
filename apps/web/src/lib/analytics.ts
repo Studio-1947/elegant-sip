@@ -230,7 +230,8 @@ function sendToMeta(event: AnalyticsEvent, props: Record<string, unknown>) {
   const lines = linesOf(props)
   const value = typeof props.value === 'number' ? { value: rupees(props.value), currency: 'INR' } : {}
   const contents = lines.length
-    ? { content_ids: lines.map((l) => l.id), content_type: 'product', contents: lines.map((l) => ({ id: l.id, quantity: l.quantity })) }
+    ? // Line IDs are product slugs, which the Meta feed sends as item_group_id.
+      { content_ids: lines.map((l) => l.id), content_type: 'product_group', contents: lines.map((l) => ({ id: l.id, quantity: l.quantity })) }
     : {}
   const server: MetaServerPayload = {
     ...(typeof props.value === 'number' ? { value: rupees(props.value) } : {}),

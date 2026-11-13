@@ -37,7 +37,8 @@ export interface MetaCustomData {
   value?: number
   currency?: 'INR'
   content_ids?: string[]
-  content_type?: 'product'
+  /** Slugs are sent as content_ids; the feed's item_group_id is the slug. */
+  content_type?: 'product_group'
   contents?: { id: string; quantity: number }[]
   num_items?: number
   order_id?: string

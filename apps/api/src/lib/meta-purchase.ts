@@ -38,7 +38,7 @@ export async function purchaseData(number: string): Promise<MetaCustomData | nul
     value: order.total / 100,
     currency: 'INR',
     content_ids: items.map((i) => i.slug),
-    content_type: 'product',
+    content_type: 'product_group',
     contents: items.map((i) => ({ id: i.slug, quantity: i.quantity })),
     num_items: items.reduce((sum, i) => sum + i.quantity, 0),
     order_id: number,
