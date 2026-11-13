@@ -95,12 +95,12 @@ describe('feedTitle', () => {
 })
 
 describe('GET /v1/feeds/meta.csv', () => {
-  it('serves CSV with short caching and the exact column set', async () => {
+  it('serves uncached CSV with the exact column set', async () => {
     if (!available) return
     const { res, header, records } = await fetchFeed()
     expect(res.statusCode).toBe(200)
     expect(res.headers['content-type']).toBe('text/csv; charset=utf-8')
-    expect(res.headers['cache-control']).toBe('public, max-age=300')
+    expect(res.headers['cache-control']).toBe('no-cache')
     expect(header).toEqual([...META_FEED_COLUMNS])
     expect(records.length).toBeGreaterThan(0)
 
