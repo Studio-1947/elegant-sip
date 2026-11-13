@@ -20,7 +20,8 @@ export const feedRoutes: FastifyPluginAsyncZod = async (app) => {
           '',
           'One row per product, for the pack the product page opens on. `sale_price` is exactly',
           'what checkout charges for one pack and is sent only when lower than `price`.',
-          'Coming-soon and retired products are omitted. Cached for 5 minutes.',
+          'Coming-soon and retired products are omitted. Not cached: opening the link straight',
+          'after an admin edit always shows the new figures.',
         ].join('\n'),
         produces: ['text/csv'],
         response: { 200: z.string() },
@@ -52,7 +53,8 @@ export const feedRoutes: FastifyPluginAsyncZod = async (app) => {
 
       return reply
         .header('Content-Type', 'text/csv; charset=utf-8')
-        .header('Cache-Control', 'public, max-age=300')
+        // A handful of rows, fetched rarely: always fresh beats a stale price after an edit.
+        .header('Cache-Control', 'no-cache')
         .send(metaFeedCsv(items, env.SITE_URL))
     },
   )
