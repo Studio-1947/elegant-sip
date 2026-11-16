@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
       <AuthCard
         eyebrow="Reset password"
         title="Link incomplete"
-        body="This address is missing its reset token. Open the link from your email exactly as it was sent — some mail clients cut long links in half."
+        body="This address is missing its reset token. Open the link from your email exactly as it was sent. Some mail clients cut long links in half."
         tone="warn"
       >
         <Link to="/" className="es-btn-secondary">

@@ -182,7 +182,7 @@ export default function TeaVectorHomepage() {
   const [announcement, setAnnouncement] = useState('')
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setAnnouncement(document.title ? `${document.title} — page loaded` : 'Page loaded')
+      setAnnouncement(document.title ? `${document.title}, page loaded` : 'Page loaded')
     }, 400)
     return () => window.clearTimeout(timer)
   }, [route])

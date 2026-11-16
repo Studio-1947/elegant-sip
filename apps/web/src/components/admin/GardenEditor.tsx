@@ -115,7 +115,7 @@ export default function GardenEditor() {
     ...catalogue.map((p) => ({ slug: p.slug, name: p.name, note: '' })),
     ...(current?.products ?? [])
       .filter((p) => !listed.has(p.slug))
-      .map((p) => ({ slug: p.slug, name: p.name, note: p.archived ? 'retired — not shown' : 'not in the shop list' })),
+      .map((p) => ({ slug: p.slug, name: p.name, note: p.archived ? 'retired, not shown' : 'not in the shop list' })),
   ]
 
   const toggleProduct = (slug: string) =>
@@ -273,7 +273,7 @@ export default function GardenEditor() {
               )}
             </div>
             <label className={label}>
-              Story — leave a blank line between paragraphs
+              Story (leave a blank line between paragraphs)
               <textarea className={`${input} min-h-48 font-sans`} value={draft.storyText} onChange={(e) => setDraft((d) => ({ ...d, storyText: e.target.value }))} />
             </label>
             <fieldset>

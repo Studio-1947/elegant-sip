@@ -366,7 +366,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
             {/* Scarcity — an honest lot count, in the brand's voice */}
             {variantInStock && activeVariant.stock <= 5 && (
               <p className="text-xs font-mono text-[#b0782e] mb-6">
-                Only {activeVariant.stock} left in this lot — when it's gone, it's gone until next harvest.
+                Only {activeVariant.stock} left in this lot. When it's gone, it's gone until next harvest.
               </p>
             )}
 
@@ -428,7 +428,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
               </li>
               {guarantee.enabled && (
                 <li className="flex items-center gap-2">
-                  <span className="text-[#4a7333]">✓</span> The Elegant Sip Promise — {guarantee.days}-day satisfaction guarantee
+                  <span className="text-[#4a7333]">✓</span> The Elegant Sip Promise: {guarantee.days}-day satisfaction guarantee
                 </li>
               )}
               <li className="flex items-center gap-2">

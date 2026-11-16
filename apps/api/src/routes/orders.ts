@@ -554,7 +554,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
               502,
               'gateway_unavailable',
               'Payment unavailable',
-              'We could not start payment just now. Nothing has been charged — please try again shortly.',
+              'We could not start payment just now. Nothing has been charged. Please try again shortly.',
             )
           })
 
@@ -779,9 +779,9 @@ export async function sendOrderConfirmation(orderId: string): Promise<{ delivere
   return sendEmail({
     to: row.email,
     subject: `Order ${row.number} confirmed`,
-    heading: 'Payment received — thank you',
+    heading: 'Payment received. Thank you',
     body: [
-      `Thank you — we have your order and payment for ${row.number}.`,
+      `Thank you. We have your order and payment for ${row.number}.`,
       'We pack to order rather than from a warehouse shelf, so allow a day or two before the courier collects. You will get tracking as soon as it ships.',
     ],
     facts: [

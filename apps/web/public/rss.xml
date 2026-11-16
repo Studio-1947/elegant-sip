@@ -3,15 +3,39 @@
   <channel>
     <title>The Elegant Sip Journal</title>
     <link>https://elegantsip.in/#/journal</link>
-    <description>Craft, sourcing, and the ritual of brewing  notes from the gardens behind Elegant Sip's single-origin teas.</description>
+    <description>Craft, sourcing, and the ritual of brewing. Notes from the gardens behind Elegant Sip's single-origin teas.</description>
     <language>en-us</language>
     <atom:link href="https://elegantsip.in/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Reading the Seasons: First, Second and Autumn Flush</title>
+      <link>https://elegantsip.in/#/journal/reading-the-seasons</link>
+      <guid isPermaLink="false">reading-the-seasons</guid>
+      <pubDate>Tue, 20 Oct 2026 08:00:00 GMT</pubDate>
+      <description>One garden can give you three very different teas in a single year. A simple guide to what each flush tastes like, and how to brew it.</description>
+      <category>Seasons</category>
+    </item>
+    <item>
+      <title>Why Altitude Shapes the Cup</title>
+      <link>https://elegantsip.in/#/journal/why-altitude-matters</link>
+      <guid isPermaLink="false">why-altitude-matters</guid>
+      <pubDate>Fri, 14 Aug 2026 08:00:00 GMT</pubDate>
+      <description>Cool nights, thin air and slow growth. What height does to a tea leaf, and why so much of the best Darjeeling is grown high up.</description>
+      <category>Origin</category>
+    </item>
+    <item>
+      <title>Keeping Your Tea Fresh at Home</title>
+      <link>https://elegantsip.in/#/journal/keeping-tea-fresh</link>
+      <guid isPermaLink="false">keeping-tea-fresh</guid>
+      <pubDate>Sat, 30 May 2026 08:00:00 GMT</pubDate>
+      <description>Light, air, heat and strong smells are what fade a good tea. A few easy habits that keep every cup tasting the way it did on day one.</description>
+      <category>Care</category>
+    </item>
     <item>
       <title>The Art of the First Flush</title>
       <link>https://elegantsip.in/#/journal/art-of-first-flush</link>
       <guid isPermaLink="false">art-of-first-flush</guid>
       <pubDate>Thu, 12 Mar 2026 08:00:00 GMT</pubDate>
-      <description>The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices  and the most patience.</description>
+      <description>The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices, and the most patience.</description>
       <category>Craft</category>
     </item>
     <item>

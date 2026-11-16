@@ -33,7 +33,7 @@ function resultMessage(result: AdminRefundResult): string {
   else if (result.refund.status === 'processed') parts.push(`Refunded ${amount}.`)
   else parts.push(`Refund of ${amount} requested; Razorpay has not confirmed it yet.`)
   if (result.emailed === true) parts.push('The customer was emailed.')
-  if (result.emailed === false) parts.push('The refund email was not sent — let the customer know yourself.')
+  if (result.emailed === false) parts.push('The refund email was not sent. Let the customer know yourself.')
   if (result.advice) parts.push(result.advice)
   return parts.join(' ')
 }

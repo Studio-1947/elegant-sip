@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from '../lib/router'
 import { useCart } from './CartContext'
+import { getProduct } from '../data/products'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { useIsMobile } from '../lib/useMediaQuery'
@@ -23,7 +24,10 @@ interface SiteHeaderProps {
 
 /** Fixed site header: brand, desktop nav, cart/wishlist/account actions, mobile menu. */
 export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderProps) {
-  const { cartCount } = useCart()
+  const { cartCount, wishlist } = useCart()
+  // Counted the way the wishlist page lists them, so a saved product that has
+  // since been removed from the catalogue doesn't inflate the badge.
+  const wishlistCount = wishlist.filter((slug) => getProduct(slug)).length
   const { user, logout } = useAuth()
   const { openLogin, openCart } = useUi()
   const isMobile = useIsMobile()
@@ -148,12 +152,22 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
           {/* Wishlist (in the mobile menu on phones) */}
           <Link
             to="/wishlist"
-            aria-label="Wishlist"
-            className={`hidden md:block transition-colors relative p-2 ${isNavbar ? 'text-[#1b261b] hover:text-[#4a7333]' : 'text-white hover:text-[#a8cf8a]'}`}
+            aria-label={wishlistCount > 0 ? `Wishlist, ${wishlistCount} ${wishlistCount === 1 ? 'item' : 'items'}` : 'Wishlist'}
+            className={`hidden md:block transition-colors relative p-2 ${routeName === 'wishlist'
+                ? 'text-[#4a7333]'
+                : isNavbar
+                  ? 'text-[#1b261b] hover:text-[#4a7333]'
+                  : 'text-white hover:text-[#a8cf8a]'
+              }`}
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
+            {wishlistCount > 0 ? (
+              <span aria-hidden="true" className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#8bb56e] text-white text-[11px] font-mono font-bold flex items-center justify-center rounded-full px-1 border border-white">
+                {wishlistCount}
+              </span>
+            ) : null}
           </Link>
 
           {/* Cart — opens the drawer on phones, the full page on larger screens */}
@@ -271,7 +285,7 @@ export default function SiteHeader({ isNavbar, routeName, route }: SiteHeaderPro
                 className={`md:hidden py-3.5 text-xs font-mono tracking-widest uppercase border-b border-[#1b261b]/5 transition-colors ${routeName === 'wishlist' ? 'text-[#4a7333] font-bold' : 'text-[#1b261b] hover:text-[#4a7333]'
                   }`}
               >
-                Wishlist
+                Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ''}
               </Link>
               {!user && (
                 <button

@@ -19,10 +19,10 @@ type Decision = 'approved' | 'rejected' | 'received'
 const EXPLAIN: Record<Decision, (item: AdminReturnRequest) => string> = {
   approved: (item) =>
     item.type === 'cancellation'
-      ? 'The order is cancelled and its stock goes back on sale. The customer is emailed that the refund will follow — then refund it from the order.'
+      ? 'The order is cancelled and its stock goes back on sale. The customer is emailed that the refund will follow. Then refund it from the order.'
       : 'The customer is emailed to send the tea back. Mark it received when the parcel arrives.',
   rejected: () => 'The customer is emailed that it was not accepted, with your note. They can send a new request from their order page.',
-  received: () => 'The packs go back into stock and the customer is emailed that the refund will follow — then refund it from the order.',
+  received: () => 'The packs go back into stock and the customer is emailed that the refund will follow. Then refund it from the order.',
 }
 
 /** Customer return and cancellation requests: open ones first, each decision emailed to the customer. */

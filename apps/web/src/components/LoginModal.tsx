@@ -371,7 +371,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           <div className="space-y-4">
             {!challengeId ? (
               <form onSubmit={(e) => void sendWhatsAppCode(e)} noValidate className="space-y-4">
-                <p className="text-xs text-[#4a584a] leading-relaxed">New here? Verify your WhatsApp number to create an account. Already registered? The same code signs you in.</p>
+                <p className="text-xs text-[#4a584a] leading-relaxed">New here? Verify your WhatsApp number to create an account.</p>
                 <div>
                   <label htmlFor="auth-phone" className={labelClass}>WhatsApp number</label>
                   <div className="flex">
@@ -585,8 +585,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         {whatsappAvailable && !registered && !mfaChallenge && mode === 'signin' && !whatsapp && <button onClick={() => { touched.current = true; setWhatsapp(true); setError(null) }} className="w-full mt-4 border border-[#4a7333]/40 text-[#4a7333] text-xs font-bold tracking-widest uppercase py-3 rounded-lg cursor-pointer">Continue with WhatsApp</button>}
 
         <p className="text-[11px] text-[#4a584a] mt-6 leading-relaxed">
-          We use your details only to run your account and deliver your orders, and we never sell
-          them or send them to analytics. See our{' '}
+          By continuing, you agree to our{' '}
+          <a href="/terms" className="text-[#4a7333] font-semibold underline underline-offset-2">Terms &amp; Conditions</a>{' '}
+          and{' '}
           <a href="/privacy" className="text-[#4a7333] font-semibold underline underline-offset-2">Privacy Policy</a>.
         </p>
       </div>

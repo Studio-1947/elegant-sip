@@ -156,7 +156,7 @@ export default function ShipmentPanel({
           {[...shipment.events].reverse().map((event) => (
             <li key={`${event.at}-${event.status}`} className="text-xs">
               <p className="font-bold">{event.status}{event.location ? ` · ${event.location}` : ''}</p>
-              <p className="text-[#4a584a]">{formatWhen(event.at)}{event.detail && event.detail !== event.status ? ` — ${event.detail}` : ''}</p>
+              <p className="text-[#4a584a]">{formatWhen(event.at)}{event.detail && event.detail !== event.status ? `: ${event.detail}` : ''}</p>
             </li>
           ))}
         </ol>

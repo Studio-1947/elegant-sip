@@ -138,7 +138,7 @@ function NameCard({ user }: { user: User }) {
           <p className="block text-xs font-medium">WhatsApp number</p>
           <p className="mt-1.5 text-sm font-mono">{user.phone ? (local ? `+91 ${formatIndianMobile(local)}` : user.phone) : 'Not linked'}</p>
           <p className="mt-1.5 text-[11px] text-[#4a584a]">
-            Your number is checked with a WhatsApp code, so it is not typed in here. Use WhatsApp sign-in above to link {user.phone ? 'a different' : 'a'} number.
+            {user.phone ? 'This is the number you use to sign in with WhatsApp.' : 'Your number is checked with a WhatsApp code, so it is not typed in here. Use WhatsApp sign-in above to link a number.'}
           </p>
         </div>
       </div>
@@ -502,7 +502,7 @@ function AddCredentialsCard({ user, onAdded }: { user: User; onAdded: (notice: S
         )}
       </div>
       <button type="submit" disabled={busy} className={`${primaryButton} mt-5`}>
-        {challengeId ? (busy ? 'Saving…' : 'Add email and password') : busy ? 'Sending…' : 'Send WhatsApp code'}
+        {challengeId ? (busy ? 'Saving…' : 'Add email and password') : busy ? 'Sending…' : 'Verify email'}
       </button>
       {challengeId && (
         <button type="button" onClick={() => { setChallengeId(null); setStatus(null) }} disabled={busy} className={`${linkButton} mt-3 block`}>
@@ -639,7 +639,7 @@ function TwoStepCard({ email }: { email: string }) {
     body = (
       <div>
         <p className="text-xs leading-relaxed text-[#1b261b]">
-          Save these recovery codes now — this is the only time they are shown. Each one signs you in once if you lose your phone.
+          Save these recovery codes now. This is the only time they are shown. Each one signs you in once if you lose your phone.
         </p>
         <ul className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-[#1b261b]/10 bg-[#f9faf7] p-4 font-mono text-sm" aria-label="Recovery codes">
           {recoveryCodes.map((item) => <li key={item}>{item}</li>)}
@@ -775,7 +775,7 @@ function SignOutEverywhereCard({ onSignedOut }: { onSignedOut?: () => void }) {
 
   return (
     <div className={cardClass}>
-      <h3 id="settings-sessions-heading" className={headingClass}>Signed-in devices</h3>
+      <h3 id="settings-sessions-heading" className={headingClass}>Sign out everywhere</h3>
       <p className={introClass}>Lost a phone, or signed in on a shared computer? End every session at once.</p>
       {confirming ? (
         <div role="group" aria-labelledby="settings-sessions-confirm" className="rounded-xl border border-red-700/25 bg-red-50 p-4">
@@ -792,7 +792,7 @@ function SignOutEverywhereCard({ onSignedOut }: { onSignedOut?: () => void }) {
           </div>
         </div>
       ) : (
-        <button ref={triggerRef} type="button" onClick={() => { setStatus(null); setConfirming(true) }} className="rounded-lg border border-[#1b261b]/20 px-5 py-3 text-xs font-bold uppercase tracking-widest text-[#1b261b] transition-colors hover:border-red-700 hover:text-red-700">
+        <button ref={triggerRef} type="button" onClick={() => { setStatus(null); setConfirming(true) }} className="rounded-lg border border-red-700/30 px-5 py-3 text-xs font-bold uppercase tracking-widest text-red-700 transition-colors hover:border-red-700 hover:bg-red-50">
           Sign out of all devices
         </button>
       )}
@@ -812,7 +812,7 @@ export default function AccountSettingsSection({ onSignedOutEverywhere }: { onSi
   return (
     <section id="settings" aria-labelledby="account-settings-heading" className="scroll-mt-28 mt-12">
       <h2 id="account-settings-heading" className="text-lg font-bold uppercase tracking-wide mb-2">Account settings</h2>
-      <p className="text-xs text-[#4a584a] mb-6 max-w-2xl leading-relaxed">Your name, sign-in details and signed-in devices.</p>
+      <p className="text-xs text-[#4a584a] mb-6 max-w-2xl leading-relaxed">Your name, sign-in details, and signing out of every device.</p>
       {credentialsNotice && (
         <div className="mb-4 rounded-xl border border-[#4a7333]/25 bg-[#4a7333]/8 px-4 py-3" role="status">
           <p className="text-xs leading-relaxed text-[#315b26]">{credentialsNotice.text}</p>

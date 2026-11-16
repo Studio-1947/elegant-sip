@@ -13,9 +13,21 @@ async function submit() {
   render(<ContactPage />)
   await user.type(screen.getByLabelText('Name'), 'Asha Rai')
   await user.type(screen.getByLabelText('Email'), 'asha@example.com')
+  await user.selectOptions(screen.getByLabelText('Subject'), 'Order question')
   await user.type(screen.getByLabelText('Message'), 'Where is my parcel, please?')
   await user.click(screen.getByRole('button', { name: 'Send Message' }))
 }
+
+it('starts with no subject chosen and will not send until one is', async () => {
+  const user = userEvent.setup()
+  render(<ContactPage />)
+  expect((screen.getByLabelText('Subject') as HTMLSelectElement).value).toBe('')
+  await user.type(screen.getByLabelText('Name'), 'Asha Rai')
+  await user.type(screen.getByLabelText('Email'), 'asha@example.com')
+  await user.type(screen.getByLabelText('Message'), 'Where is my parcel, please?')
+  await user.click(screen.getByRole('button', { name: 'Send Message' }))
+  expect(api.contact.send).not.toHaveBeenCalled()
+})
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -41,6 +53,6 @@ describe('ContactPage', () => {
     api.contact.send.mockResolvedValue({ delivered: false, retrying: true, reference: 'ES-C-ABCDEF' })
     await submit()
     await screen.findByRole('heading', { name: 'Saved, not sent yet' })
-    expect(document.body.textContent).toContain('it will keep trying automatically')
+    expect(document.body.textContent).toContain('It will keep trying automatically')
   })
 })
