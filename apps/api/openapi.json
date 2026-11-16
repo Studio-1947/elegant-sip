@@ -5346,7 +5346,7 @@
         "tags": [
           "Catalogue"
         ],
-        "description": "Built live from the database on every request, so a price change in the admin reaches\nMeta on its next scheduled fetch with no sync or redeploy.\n\nOne row per product, for the pack the product page opens on. `sale_price` is exactly\nwhat checkout charges for one pack and is sent only when lower than `price`.\nComing-soon and retired products are omitted. Cached for 5 minutes.",
+        "description": "Built live from the database on every request, so a price change in the admin reaches\nMeta on its next scheduled fetch with no sync or redeploy.\n\nOne row per product, for the pack the product page opens on. `sale_price` is exactly\nwhat checkout charges for one pack and is sent only when lower than `price`.\nComing-soon and retired products are omitted. Not cached: opening the link straight\nafter an admin edit always shows the new figures.",
         "responses": {
           "200": {
             "description": "Default Response",
