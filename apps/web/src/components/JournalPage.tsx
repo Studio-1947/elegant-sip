@@ -208,7 +208,10 @@ export default function JournalPage() {
                 </div>
                 <h2 className="font-bold text-lg tracking-tight leading-snug mb-3 group-hover:text-[#4a7333] transition-colors">{article.title}</h2>
                 <p className="text-xs text-[#4a584a] leading-relaxed flex-grow">{article.excerpt}</p>
-                <span className="text-[11px] font-mono tracking-widest uppercase text-[#4a7333] mt-5">Read →</span>
+                <span className="mt-5 inline-flex items-center gap-2 self-start text-xs font-bold tracking-widest uppercase text-[#4a7333] border-b-2 border-[#8bb56e]/50 pb-1 transition-colors group-hover:text-[#1b261b] group-hover:border-[#4a7333]">
+                  Read more
+                  <span aria-hidden="true" className="text-base leading-none transition-transform duration-300 group-hover:translate-x-1">→</span>
+                </span>
               </div>
             </Link>
           ))}

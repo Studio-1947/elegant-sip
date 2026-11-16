@@ -7,9 +7,11 @@ import SkeletonImage from './SkeletonImage'
 const SIZES = '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 85vw'
 
 /**
- * The card's image box. Cards hold still: a grid where every card cross-fades
- * on its own timer read as flicker (UX audit). Hovering a card shows its second
- * photo, usually the loose leaf, and the dots switch between all of them.
+ * The card's image box. Cards hold still and show only their first photo: a
+ * grid where every card cross-fades on its own timer read as flicker (UX
+ * audit), and so did swapping to the second photo on hover, since sweeping the
+ * pointer across the grid set off one fade after another. The dots are the
+ * only way to switch photos, and only when the shopper chooses to.
  * `children` are the overlays (badges, wishlist button).
  */
 export default function ProductCardGallery({ product, children }: { product: Product; children?: ReactNode }) {
@@ -19,13 +21,11 @@ export default function ProductCardGallery({ product, children }: { product: Pro
   const [index, setIndex] = useState(0)
   // Extra photos are only fetched once the card has been on screen.
   const [armed, setArmed] = useState(false)
-  const [hovering, setHovering] = useState(false)
-  const [loaded, setLoaded] = useState<Set<number>>(() => new Set([0]))
 
   useEffect(() => {
     const box = boxRef.current
     if (!many || !box) return
-    // Fetch the extra photos once the card is near the screen, so a hover is instant.
+    // Fetch the extra photos once the card is near the screen, so a dot tap is instant.
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) setArmed(true)
     }, { rootMargin: '200px' })
@@ -33,10 +33,8 @@ export default function ProductCardGallery({ product, children }: { product: Pro
     return () => observer.disconnect()
   }, [many])
 
-  // On hover, the first photo gives way to the second, once it has loaded.
-  const shown = hovering && index === 0 && loaded.has(1) ? 1 : index
+  const shown = index
 
-  const markLoaded = (i: number) => setLoaded((prev) => (prev.has(i) ? prev : new Set(prev).add(i)))
   const fade = (i: number) =>
     `w-full h-full object-cover transition-[opacity,transform] duration-700 ease-out group-hover:scale-105 ${
       i === shown ? 'opacity-100' : 'opacity-0'
@@ -46,8 +44,6 @@ export default function ProductCardGallery({ product, children }: { product: Pro
     <div
       ref={boxRef}
       className="relative aspect-[4/5] bg-[#f5f0e6] overflow-hidden"
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
     >
       <Link to={`/product/${product.slug}`} aria-label={`View ${product.name}`} className="block w-full h-full">
         <SkeletonImage
@@ -74,7 +70,6 @@ export default function ProductCardGallery({ product, children }: { product: Pro
                 alt={i === shown ? describeProductImage(product, src) : ''}
                 width={800}
                 height={1000}
-                onLoad={() => markLoaded(i)}
                 className={`absolute inset-0 ${fade(i)}`}
               />
             )

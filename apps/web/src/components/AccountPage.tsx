@@ -107,7 +107,10 @@ export default function AccountPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
           <div>
             <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-2">My Account</span>
-            <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight">Hello, {user.name.split(' ')[0]}</h1>
+            {/* WhatsApp sign-ups get a stand-in name until they add their own; never greet them with it. */}
+            <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight">
+              {user.nameIsPlaceholder ? 'Hello there' : `Hello, ${user.name.split(' ')[0]}`}
+            </h1>
             {!user.emailIsPlaceholder && !user.email.endsWith('.invalid') && <p className="text-xs font-mono text-[#4a584a] mt-3">{user.email}</p>}
           </div>
           <button

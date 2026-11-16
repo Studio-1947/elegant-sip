@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
 import { useCart } from './CartContext'
-import { getDefaultVariant, type Product } from '../data/products'
+import { getDefaultVariant, isBestSeller, type Product } from '../data/products'
 import { Link, navigate } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
@@ -96,7 +96,7 @@ export default function ProductCard({ product }: { product: Product }) {
               )}
               {totalStock > 0 && (
                 <span className="bg-white/90 border border-[#b0782e]/40 text-[#b0782e] text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-1.5 rounded-md">
-                  Limited lot
+                  {isBestSeller(product) ? 'Best selling' : 'Limited lot'}
                 </span>
               )}
             </>

@@ -89,6 +89,14 @@ export function applyLiveCatalogue(live: readonly Product[]): void {
 }
 
 /** Main photo first, then the gallery photos set in the admin, in order. */
+/**
+ * Teas the shop names as its best sellers. Set by hand by the shop owner: this
+ * is a claim the business stands behind, not something computed from orders,
+ * so change it here when the best sellers change.
+ */
+const BEST_SELLERS: ReadonlySet<string> = new Set(['first-flush', 'golden-needle'])
+export const isBestSeller = (product: Product): boolean => BEST_SELLERS.has(product.slug)
+
 export const getProductImages = (product: Product): string[] => [product.imageSrc, ...(product.images ?? [])]
 
 /** Alt text for a product photo, read from its filename suffix. */

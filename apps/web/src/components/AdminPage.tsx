@@ -149,7 +149,7 @@ function Dashboard() {
             <span className="inline-flex items-center gap-2 rounded-full bg-[#1b261b] px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] text-white">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#8bb56e]" /> Staff only
             </span>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Hello{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋</h1>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Hello{user?.name && !user.nameIsPlaceholder ? `, ${user.name.split(' ')[0]}` : ''} 👋</h1>
             <p className="mt-1.5 text-sm text-[#4a584a]">Here's what needs you today.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

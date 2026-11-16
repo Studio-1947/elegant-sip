@@ -775,7 +775,7 @@ function SignOutEverywhereCard({ onSignedOut }: { onSignedOut?: () => void }) {
 
   return (
     <div className={cardClass}>
-      <h3 id="settings-sessions-heading" className={headingClass}>Signed-in devices</h3>
+      <h3 id="settings-sessions-heading" className={headingClass}>Sign out everywhere</h3>
       <p className={introClass}>Lost a phone, or signed in on a shared computer? End every session at once.</p>
       {confirming ? (
         <div role="group" aria-labelledby="settings-sessions-confirm" className="rounded-xl border border-red-700/25 bg-red-50 p-4">
@@ -792,7 +792,7 @@ function SignOutEverywhereCard({ onSignedOut }: { onSignedOut?: () => void }) {
           </div>
         </div>
       ) : (
-        <button ref={triggerRef} type="button" onClick={() => { setStatus(null); setConfirming(true) }} className="rounded-lg border border-[#1b261b]/20 px-5 py-3 text-xs font-bold uppercase tracking-widest text-[#1b261b] transition-colors hover:border-red-700 hover:text-red-700">
+        <button ref={triggerRef} type="button" onClick={() => { setStatus(null); setConfirming(true) }} className="rounded-lg border border-red-700/30 px-5 py-3 text-xs font-bold uppercase tracking-widest text-red-700 transition-colors hover:border-red-700 hover:bg-red-50">
           Sign out of all devices
         </button>
       )}
@@ -812,7 +812,7 @@ export default function AccountSettingsSection({ onSignedOutEverywhere }: { onSi
   return (
     <section id="settings" aria-labelledby="account-settings-heading" className="scroll-mt-28 mt-12">
       <h2 id="account-settings-heading" className="text-lg font-bold uppercase tracking-wide mb-2">Account settings</h2>
-      <p className="text-xs text-[#4a584a] mb-6 max-w-2xl leading-relaxed">Your name, sign-in details and signed-in devices.</p>
+      <p className="text-xs text-[#4a584a] mb-6 max-w-2xl leading-relaxed">Your name, sign-in details, and signing out of every device.</p>
       {credentialsNotice && (
         <div className="mb-4 rounded-xl border border-[#4a7333]/25 bg-[#4a7333]/8 px-4 py-3" role="status">
           <p className="text-xs leading-relaxed text-[#315b26]">{credentialsNotice.text}</p>

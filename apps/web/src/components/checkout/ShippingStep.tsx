@@ -67,7 +67,7 @@ export default function ShippingStep({
       {user ? (
         prefilled && (
           <div className="bg-[#8bb56e]/5 border border-[#8bb56e]/20 rounded-xl p-4 mb-6 text-xs text-[#4a584a]">
-            Welcome back, {user.name.split(' ')[0]}  we've prefilled your details from your last order.
+            {user.nameIsPlaceholder ? 'Welcome back.' : `Welcome back, ${user.name.split(' ')[0]}.`} We've prefilled your details from your last order.
           </div>
         )
       ) : (
