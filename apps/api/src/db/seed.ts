@@ -7,6 +7,7 @@ import { and, eq, inArray, sql as drizzleSql } from 'drizzle-orm'
 import { db, sql } from './client.js'
 import { NEW_RANGE } from './seed-new-range.js'
 import { coupons, gardenProducts, gardens, journalPosts, productVariants, products, seedState } from './schema.js'
+import { JOURNAL_BODIES } from './journal-articles.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Seed — the real catalogue, migrated out of the storefront's TypeScript.
@@ -203,7 +204,7 @@ const JOURNAL = [
     category: 'Seasons',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-10-20T08:00:00Z'),
-    readTime: '5 min read',
+    readTime: '4 min read',
     imageSrc: '/hero-1920.webp',
     imageAlt: 'A Darjeeling tea garden seen through pine branches',
   },
@@ -215,7 +216,7 @@ const JOURNAL = [
     category: 'Origin',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-08-14T08:00:00Z'),
-    readTime: '4 min read',
+    readTime: '3 min read',
     imageSrc: '/gopal.webp',
     imageAlt: 'A tea garden on a Darjeeling ridge lined with tall pines',
   },
@@ -227,7 +228,7 @@ const JOURNAL = [
     category: 'Care',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-05-30T08:00:00Z'),
-    readTime: '3 min read',
+    readTime: '2 min read',
     imageSrc: '/package.webp',
     imageAlt: 'An Elegant Sip tea box with the snow-capped Himalaya behind it',
   },
@@ -239,7 +240,7 @@ const JOURNAL = [
     category: 'Craft',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-03-12T08:00:00Z'),
-    readTime: '4 min read',
+    readTime: '3 min read',
     imageSrc: '/cover_elegant-poster.webp',
     imageAlt: 'Fresh tea shoots catching the early morning sun',
   },
@@ -251,7 +252,7 @@ const JOURNAL = [
     category: 'Brewing',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-01-28T08:00:00Z'),
-    readTime: '5 min read',
+    readTime: '3 min read',
     imageSrc: '/experience.webp',
     imageAlt: 'A freshly brewed cup beside a jar of Morning Dew on a hillside ledge',
   },
@@ -263,7 +264,7 @@ const JOURNAL = [
     category: 'Sourcing',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2025-11-05T08:00:00Z'),
-    readTime: '6 min read',
+    readTime: '3 min read',
     imageSrc: '/shopimg.webp',
     imageAlt: 'Pluckers at work on a Darjeeling tea slope under heavy clouds',
   },
@@ -445,8 +446,8 @@ export async function seed() {
   for (const post of JOURNAL) {
     await db
       .insert(journalPosts)
-      .values({ ...post, body: [] })
-      .onConflictDoUpdate({ target: journalPosts.slug, set: { title: post.title, excerpt: post.excerpt, imageSrc: post.imageSrc, imageAlt: post.imageAlt } })
+      .values({ ...post, body: JOURNAL_BODIES[post.slug] ?? [] })
+      .onConflictDoUpdate({ target: journalPosts.slug, set: { title: post.title, excerpt: post.excerpt, readTime: post.readTime, imageSrc: post.imageSrc, imageAlt: post.imageAlt, body: JOURNAL_BODIES[post.slug] ?? [] } })
   }
   console.log(`  journal      ${JOURNAL.length}`)
 

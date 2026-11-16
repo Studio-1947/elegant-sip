@@ -178,7 +178,7 @@ describe('account settings: WhatsApp-only accounts', () => {
     expect(screen.queryByRole('button', { name: 'Resend confirmation email' })).toBeNull()
     // Without WhatsApp codes they cannot be added here, and the card says so.
     expect(screen.getByText(/no email address or password yet/)).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Send WhatsApp code' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Verify email' })).toBeNull()
     // The stand-in name is not prefilled as if it were theirs.
     expect((screen.getByLabelText('Full name') as HTMLInputElement).value).toBe('')
     expect(screen.getAllByText('+91 98765 43210').length).toBeGreaterThan(0)
@@ -195,12 +195,12 @@ describe('account settings: WhatsApp-only accounts', () => {
 
     await user.type(screen.getByLabelText('Email'), 'asha@example.com')
     await user.type(screen.getByLabelText('Choose a password'), 'short')
-    await user.click(screen.getByRole('button', { name: 'Send WhatsApp code' }))
+    await user.click(screen.getByRole('button', { name: 'Verify email' }))
     expect(await screen.findByText('Use at least 10 characters.')).toBeTruthy()
     expect(credentialsApi.requestCode).not.toHaveBeenCalled()
 
     await user.type(screen.getByLabelText('Choose a password'), '-but-longer-now')
-    await user.click(screen.getByRole('button', { name: 'Send WhatsApp code' }))
+    await user.click(screen.getByRole('button', { name: 'Verify email' }))
     expect(await screen.findByText(/We sent a 6-digit code to \+91 98765 43210/)).toBeTruthy()
     await user.type(screen.getByLabelText('6-digit WhatsApp code'), '123456')
     await user.click(screen.getByRole('button', { name: 'Add email and password' }))

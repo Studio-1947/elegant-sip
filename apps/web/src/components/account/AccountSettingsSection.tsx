@@ -502,7 +502,7 @@ function AddCredentialsCard({ user, onAdded }: { user: User; onAdded: (notice: S
         )}
       </div>
       <button type="submit" disabled={busy} className={`${primaryButton} mt-5`}>
-        {challengeId ? (busy ? 'Saving…' : 'Add email and password') : busy ? 'Sending…' : 'Send WhatsApp code'}
+        {challengeId ? (busy ? 'Saving…' : 'Add email and password') : busy ? 'Sending…' : 'Verify email'}
       </button>
       {challengeId && (
         <button type="button" onClick={() => { setChallengeId(null); setStatus(null) }} disabled={busy} className={`${linkButton} mt-3 block`}>
