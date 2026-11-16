@@ -196,6 +196,42 @@ const GARDENS = [
 
 const JOURNAL = [
   {
+    slug: 'reading-the-seasons',
+    title: 'Reading the Seasons: First, Second and Autumn Flush',
+    excerpt:
+      'One garden can give you three very different teas in a single year. A simple guide to what each flush tastes like, and how to brew it.',
+    category: 'Seasons',
+    author: 'The Elegant Sip Tasting Team',
+    publishedAt: new Date('2026-10-20T08:00:00Z'),
+    readTime: '5 min read',
+    imageSrc: '/hero-1920.webp',
+    imageAlt: 'A Darjeeling tea garden seen through pine branches',
+  },
+  {
+    slug: 'why-altitude-matters',
+    title: 'Why Altitude Shapes the Cup',
+    excerpt:
+      'Cool nights, thin air and slow growth. What height does to a tea leaf, and why so much of the best Darjeeling is grown high up.',
+    category: 'Origin',
+    author: 'The Elegant Sip Tasting Team',
+    publishedAt: new Date('2026-08-14T08:00:00Z'),
+    readTime: '4 min read',
+    imageSrc: '/gopal.webp',
+    imageAlt: 'A tea garden on a Darjeeling ridge lined with tall pines',
+  },
+  {
+    slug: 'keeping-tea-fresh',
+    title: 'Keeping Your Tea Fresh at Home',
+    excerpt:
+      'Light, air, heat and strong smells are what fade a good tea. A few easy habits that keep every cup tasting the way it did on day one.',
+    category: 'Care',
+    author: 'The Elegant Sip Tasting Team',
+    publishedAt: new Date('2026-05-30T08:00:00Z'),
+    readTime: '3 min read',
+    imageSrc: '/package.webp',
+    imageAlt: 'An Elegant Sip tea box with the snow-capped Himalaya behind it',
+  },
+  {
     slug: 'art-of-first-flush',
     title: 'The Art of the First Flush',
     excerpt:
@@ -204,8 +240,8 @@ const JOURNAL = [
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-03-12T08:00:00Z'),
     readTime: '4 min read',
-    imageSrc: '/origin.webp',
-    imageAlt: 'Highland tea terraces at first light',
+    imageSrc: '/cover_elegant-poster.webp',
+    imageAlt: 'Fresh tea shoots catching the early morning sun',
   },
   {
     slug: 'field-guide-to-steeping',
@@ -216,8 +252,8 @@ const JOURNAL = [
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-01-28T08:00:00Z'),
     readTime: '5 min read',
-    imageSrc: '/craft.webp',
-    imageAlt: 'Tea leaves being hand-processed',
+    imageSrc: '/experience.webp',
+    imageAlt: 'A freshly brewed cup beside a jar of Morning Dew on a hillside ledge',
   },
   {
     slug: 'from-mist-to-cup',
@@ -228,8 +264,8 @@ const JOURNAL = [
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2025-11-05T08:00:00Z'),
     readTime: '6 min read',
-    imageSrc: '/harvest.webp',
-    imageAlt: 'Tea plantation at harvest',
+    imageSrc: '/shopimg.webp',
+    imageAlt: 'Pluckers at work on a Darjeeling tea slope under heavy clouds',
   },
 ]
 
@@ -410,7 +446,7 @@ export async function seed() {
     await db
       .insert(journalPosts)
       .values({ ...post, body: [] })
-      .onConflictDoUpdate({ target: journalPosts.slug, set: { title: post.title, excerpt: post.excerpt } })
+      .onConflictDoUpdate({ target: journalPosts.slug, set: { title: post.title, excerpt: post.excerpt, imageSrc: post.imageSrc, imageAlt: post.imageAlt } })
   }
   console.log(`  journal      ${JOURNAL.length}`)
 
