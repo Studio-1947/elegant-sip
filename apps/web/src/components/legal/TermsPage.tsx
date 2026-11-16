@@ -94,7 +94,7 @@ export default function TermsPage() {
             live up to your expectations, tell us within{' '}
             <strong className="text-[#1b261b]">{guarantee.days} days of delivery</strong> and we will replace it or
             refund it. You do not need to return the tea, provide a reason, or complete a form. This
-            is a binding commitment, not marketing copy — it is stated here precisely because it is
+            is a binding commitment, not marketing copy. It is stated here precisely because it is
             promised elsewhere on this site.
           </p>
         )}
@@ -160,7 +160,7 @@ export default function TermsPage() {
 
       <Section title="8. Intellectual property">
         <p>
-          All Site content — text, images, logos, design, and the Elegant Sip name and branding
+          All Site content (text, images, logos, design, and the Elegant Sip name and branding)
           belongs to us or our licensors. You may not copy, reproduce, or use it commercially
           without our written permission.
         </p>

@@ -8,15 +8,15 @@ import { useScrollReveal } from '../lib/useScrollReveal'
 const GOLDEN_RULES = [
   {
     title: 'Temperature is everything',
-    text: 'Ninety percent of disappointing tea is a temperature problem. White and green teas want about 80 °C, and first flush about 90 °C — a rolling boil scorches their aromatics into bitterness. Second and autumn flush take 95 °C.',
+    text: 'Ninety percent of disappointing tea is a temperature problem. White and green teas want about 80 °C, and first flush about 90 °C. A rolling boil scorches their aromatics into bitterness. Second and autumn flush take 95 °C.',
   },
   {
     title: 'Time with intention',
-    text: 'An extra minute is not "stronger" — it is astringent. Measure the leaf, time the steep, and adjust from the card, not from habit.',
+    text: 'An extra minute is not "stronger". It is astringent. Measure the leaf, time the steep, and adjust from the card, not from habit.',
   },
   {
     title: 'The re-steep is the point',
-    text: 'Whole leaf is designed to be steeped again. The first steep is the introduction; the second is often the masterpiece. Resteeping is not thrift — it is the intended experience.',
+    text: 'Whole leaf is designed to be steeped again. The first steep is the introduction; the second is often the masterpiece. Resteeping is not thrift. It is the intended experience.',
   },
 ]
 
@@ -54,7 +54,7 @@ export default function BrewingGuidePage() {
           '@type': 'HowToStep',
           position: 1,
           name: 'Measure the leaf',
-          text: 'Use one teaspoon of leaf per 240 ml cup of water, and two for bulky white teas such as Silver Needle. Measure rather than estimate — whole leaves and buds take up far more room than they weigh.',
+          text: 'Use one teaspoon of leaf per 240 ml cup of water, and two for bulky white teas such as Silver Needle. Measure rather than estimate: whole leaves and buds take up far more room than they weigh.',
         },
         {
           '@type': 'HowToStep',
@@ -72,7 +72,7 @@ export default function BrewingGuidePage() {
           '@type': 'HowToStep',
           position: 4,
           name: 'Taste before adding anything',
-          text: 'Drink first flush, white and green teas plain — milk buries the character that makes them worth buying. Second flush, autumn flush and Golden Needle can take a splash of milk.',
+          text: 'Drink first flush, white and green teas plain. Milk buries the character that makes them worth buying. Second flush, autumn flush and Golden Needle can take a splash of milk.',
         },
         {
           '@type': 'HowToStep',
@@ -95,7 +95,7 @@ export default function BrewingGuidePage() {
             From Leaf to <span className="text-[#4a7333]">Golden Cup</span>
           </h1>
           <p className="text-[#4a584a] text-sm md:text-base leading-relaxed">
-            The same brewing card that ships with every pack — temperature, time, leaf amount, and
+            The same brewing card that ships with every pack: temperature, time, leaf amount, and
             steep counts, tuned to each tea. Follow it once, then adjust to your palate.
           </p>
         </div>

@@ -120,22 +120,37 @@ export default function AccountPage() {
 
         {/* Quick links */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
-          <Link to="/wishlist" className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 hover:border-[#8bb56e] transition-colors group">
-            <h2 className="text-sm font-bold uppercase tracking-wide mb-1 group-hover:text-[#4a7333] transition-colors">Wishlist</h2>
-            <p className="text-xs text-[#4a584a]">{wishlist.length} {wishlist.length === 1 ? 'tea' : 'teas'} saved for later</p>
+          <Link to="/wishlist" className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 hover:border-[#8bb56e] transition-colors group flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wide mb-1 group-hover:text-[#4a7333] transition-colors">Wishlist</h2>
+              <p className="text-xs text-[#4a584a]">{wishlist.length} {wishlist.length === 1 ? 'tea' : 'teas'} saved for later</p>
+            </div>
+            <span aria-hidden="true" className="shrink-0 w-11 h-11 rounded-full bg-[#8bb56e]/10 text-[#4a7333] flex items-center justify-center transition-colors group-hover:bg-[#8bb56e] group-hover:text-white">
+              <svg className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              </svg>
+            </span>
           </Link>
-          <Link to="/shop" className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 hover:border-[#8bb56e] transition-colors group">
-            <h2 className="text-sm font-bold uppercase tracking-wide mb-1 group-hover:text-[#4a7333] transition-colors">The Collection</h2>
-            <p className="text-xs text-[#4a584a]">Browse teas from named gardens</p>
+          <Link to="/shop" className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 hover:border-[#8bb56e] transition-colors group flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wide mb-1 group-hover:text-[#4a7333] transition-colors">The Collection</h2>
+              <p className="text-xs text-[#4a584a]">Browse teas from named gardens</p>
+            </div>
+            <span aria-hidden="true" className="shrink-0 w-11 h-11 rounded-full bg-[#8bb56e]/10 text-[#4a7333] flex items-center justify-center transition-colors group-hover:bg-[#8bb56e] group-hover:text-white">
+              <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 17 17 7M8.5 7H17v8.5" />
+              </svg>
+            </span>
           </Link>
         </div>
 
-        <section className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 mb-12">
+        {/* Only offered to accounts without a linked number; WhatsApp sign-ups already have one. */}
+        {!user.phone && <section className="bg-white border border-[#1b261b]/10 rounded-2xl p-6 mb-12">
           <h2 className="text-sm font-bold uppercase tracking-wide mb-1">WhatsApp sign-in</h2>
           <p className="text-xs text-[#4a584a] mb-4">Link your number once, then use a WhatsApp OTP instead of your password.</p>
           {!phoneChallenge ? <div className="flex flex-col sm:flex-row gap-3"><div className="flex flex-1"><span aria-hidden="true" className="inline-flex items-center rounded-l-lg border border-r-0 border-[#1b261b]/15 bg-[#1b261b]/[0.04] px-3 text-sm font-mono text-[#4a584a]">+91</span><input value={phone} onChange={(e) => setPhone(phoneInputDigits(e.target.value))} placeholder="98765 43210" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={16} aria-label="WhatsApp number (10-digit Indian mobile)" className="flex-1 min-w-0 border border-[#1b261b]/15 rounded-r-lg px-4 py-3 text-sm" /></div><button onClick={() => void requestWhatsAppLink()} disabled={phoneBusy} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">{phoneBusy ? 'Sending…' : 'Link WhatsApp'}</button></div> : <div className="flex flex-col sm:flex-row gap-3"><input value={phoneCode} onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" inputMode="numeric" className="flex-1 border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm tracking-[0.25em]" /><button onClick={() => void verifyWhatsAppLink()} disabled={phoneBusy || phoneCode.length !== 6} className="bg-[#1b261b] text-white text-xs font-bold uppercase tracking-widest rounded-lg px-5 py-3">Verify number</button></div>}
           {phoneMessage && <p role="status" className="text-xs text-[#4a584a] mt-3">{phoneMessage}</p>}
-        </section>
+        </section>}
 
         <AddressBookSection />
 

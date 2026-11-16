@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { useCart } from './CartContext'
-import { getDefaultVariant, isInStock, type Product } from '../data/products'
+import { getDefaultVariant, type Product } from '../data/products'
 import { Link, navigate } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
@@ -8,12 +8,15 @@ import PriceTag from './PriceTag'
 import { FREE_SHIPPING_THRESHOLD } from '../lib/pricing'
 import ProductCardGallery from './ProductCardGallery'
 import { useUi } from './UiContext'
+import AnimatedAddToCartButton from './AnimatedAddToCartButton'
+import HeartBurst from './HeartBurst'
 
 export default function ProductCard({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
-  const [isAdding, setIsAdding] = useState(false)
-  const [isAdded, setIsAdded] = useState(false)
+  // Bumped on each heart tap to replay its animation; `heartAdded` picks pop or deflate.
+  const [heartTaps, setHeartTaps] = useState(0)
+  const [heartAdded, setHeartAdded] = useState(false)
   const { addToCart, toggleWishlist, isWishlisted } = useCart()
   const { showToast } = useUi()
 
@@ -25,44 +28,19 @@ export default function ProductCard({ product }: { product: Product }) {
   // Selected quality tier drives the price, quantity cap, and add-to-cart.
   const activeVariant = product.variants.find((v) => v.size === selectedSize) ?? getDefaultVariant(product)
   const variantInStock = activeVariant.stock > 0
-  const inStock = isInStock(product)
   const hasMultipleSizes = product.variants.length > 1
   const comingSoon = product.status === 'coming-soon'
   const totalStock = product.variants.reduce((acc, v) => acc + v.stock, 0)
 
-  // Tracked so pending state flips are cancelled if the card unmounts mid-add
-  // (navigating away, filtering the grid) instead of setting state on a dead
-  // component.
-  const timers = useRef<number[]>([])
-  useEffect(
-    () => () => {
-      timers.current.forEach((t) => window.clearTimeout(t))
-      timers.current = []
-    },
-    [],
-  )
-
   const handleAddToCart = () => {
-    if (isAdded) {
-      navigate('/cart')
-      return
-    }
     if (!variantInStock || comingSoon) return
-    setIsAdding(true)
     addToCart(
       { productSlug: product.slug, name: product.name, price: activeVariant.price, imageSrc: product.imageSrc, size: activeVariant.size },
       quantity,
     )
     showToast(`${product.name} added to your cart`)
     track('add_to_cart', { product: product.slug, name: product.name, variant: activeVariant.size, quantity, value: activeVariant.price * quantity, source: 'product_card' })
-    timers.current.push(
-      window.setTimeout(() => {
-        setIsAdding(false)
-        setIsAdded(true)
-        setQuantity(1)
-        timers.current.push(window.setTimeout(() => setIsAdded(false), 2000))
-      }, 800),
-    )
+    setQuantity(1)
   }
 
   const handleBuyNow = () => {
@@ -90,6 +68,8 @@ export default function ProductCard({ product }: { product: Product }) {
   }
 
   const handleWishlist = () => {
+    setHeartAdded(!wishlisted)
+    setHeartTaps((n) => n + 1)
     toggleWishlist(product.slug)
     showToast(wishlisted ? `${product.name} removed from your wishlist` : `${product.name} saved to your wishlist`)
     track('wishlist_toggle', { product: product.slug })
@@ -134,27 +114,24 @@ export default function ProductCard({ product }: { product: Product }) {
               : 'bg-white/85 text-[#1b261b] border-white/40 hover:bg-white'
           }`}
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8">
+          <svg
+            key={heartTaps}
+            aria-hidden="true"
+            className={`w-4 h-4 ${heartTaps === 0 ? '' : heartAdded ? 'heart-pop' : 'heart-unpop'}`}
+            viewBox="0 0 24 24"
+            fill={wishlisted ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
+          {heartAdded && <HeartBurst pop={heartTaps} radius={28} />}
         </button>
 
       </ProductCardGallery>
 
       {/* ── Info block ── */}
-      <div className="@container p-5 md:p-6 flex flex-col flex-grow">
-        {/* Eyebrow */}
-        <span className="flex items-center gap-1.5 text-[11px] font-mono tracking-[0.1em] sm:tracking-[0.15em] uppercase text-[#4a584a] mb-2 whitespace-nowrap overflow-hidden">
-          <span className="text-[#b0782e] text-[7px]" aria-hidden="true">●</span>
-          {/* Herbal blends are not Darjeeling single-origin tea, so they must not say so. */}
-          {product.category === 'Herbal Tea' ? ('Herbal · Caffeine free') : (
-            <>
-              {/* Narrow cards (e.g. three-up beside a product page) drop the region rather than cut it mid-word */}
-              <span className="hidden @[14rem]:inline">Darjeeling ·&nbsp;</span>Single Origin
-            </>
-          )}
-        </span>
-
+      <div className="p-5 md:p-6 flex flex-col flex-grow">
         {/* Name, then price on its own fixed-height row, so every card lines up
             whatever the name length or whether the tea is priced yet. */}
         <Link to={`/product/${product.slug}`} className="hover:text-[#4a7333] transition-colors mb-1.5">
@@ -262,47 +239,33 @@ export default function ProductCard({ product }: { product: Product }) {
               </button>
             </div>
           )}
-          <button
-            onClick={handleAddToCart}
-            disabled={isAdding || !variantInStock || comingSoon}
-            className={`flex-grow whitespace-nowrap text-[11px] font-bold tracking-normal uppercase py-3 px-2 rounded-lg transition-all duration-300 active:scale-[0.98] cursor-pointer ${
-              !variantInStock || comingSoon
-                ? 'bg-[#1b261b]/10 text-[#4a584a] cursor-not-allowed'
-                : isAdded
-                ? 'bg-[#8bb56e] text-white'
-                : isAdding
-                ? 'bg-[#1b261b]/50 text-white/50 cursor-wait'
-                : 'bg-[#1b261b] hover:bg-[#2b3a2b] text-white'
-            }`}
-          >
-            {comingSoon
-              ? 'Coming Soon'
-              : !inStock
-              ? 'Sold Out'
-              : !variantInStock
-              ? 'Sold Out'
-              : isAdding
-              ? 'Adding...'
-              : isAdded
-              ? 'Go to Cart'
-              : 'Add to Cart'}
-          </button>
+          {comingSoon || !variantInStock ? (
+            <button
+              disabled
+              className="flex-grow whitespace-nowrap text-[11px] font-bold tracking-normal uppercase py-3 px-2 rounded-lg bg-[#1b261b]/10 text-[#4a584a] cursor-not-allowed"
+            >
+              {comingSoon ? 'Coming Soon' : 'Sold Out'}
+            </button>
+          ) : (
+            <AnimatedAddToCartButton
+              onClick={handleAddToCart}
+              // The toast already announces the add through its own live region.
+              announcement={null}
+              className="flex-grow h-full"
+              // Matches the Buy now button beside it (rounded-lg).
+              radius={8}
+              labelClassName="text-[11px] font-bold tracking-normal uppercase"
+            />
+          )}
           {!comingSoon && variantInStock && (
             <button
               onClick={handleBuyNow}
-              disabled={isAdding}
-              className="flex items-center justify-center text-center whitespace-nowrap border border-[#1b261b]/25 px-3 rounded-lg text-[11px] font-bold tracking-normal uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333] disabled:opacity-50"
+              className="flex items-center justify-center text-center whitespace-nowrap border border-[#1b261b]/25 px-3 rounded-lg text-[11px] font-bold tracking-normal uppercase text-[#1b261b] transition-colors hover:border-[#4a7333] hover:text-[#4a7333]"
             >
               Buy now
             </button>
           )}
         </div>
-
-        {/* Status for assistive tech — the visual button label changes, but a
-          screen reader gets no announcement without a live region. */}
-      <span aria-live="polite" className="sr-only">
-        {isAdded ? `${product.name} added to your cart` : ''}
-      </span>
 
       {/* Footer microcopy */}
         <p className="text-[11px] text-[#4a584a] text-center mt-3 whitespace-nowrap overflow-hidden text-ellipsis">

@@ -244,7 +244,7 @@ export default function OrderPage({ id }: { id?: string }) {
           <div className="mb-6 flex flex-col gap-3 rounded-lg border border-[#b0782e]/30 bg-[#b0782e]/8 px-4 py-3 text-xs text-[#4a584a] sm:flex-row sm:items-center sm:justify-between">
             <p>
               This order is awaiting payment. If you have already paid, it will update here shortly; otherwise pay now
-              to keep your teas — unpaid orders are released after a short while.
+              to keep your teas. Unpaid orders are released after a short while.
             </p>
             <button
               type="button"
@@ -424,7 +424,7 @@ const REQUEST_STATUS: Record<NonNullable<OrderView['returnRequest']>['status'], 
   approved: {
     label: 'Approved',
     tone: 'bg-[#8bb56e]/10 text-[#315b26] ring-[#8bb56e]/30',
-    text: (type) => (type === 'cancellation' ? 'Your order is cancelled. The refund goes back to your original payment method.' : 'Please send the tea back to us — reply to our email for the address. We refund once it arrives.'),
+    text: (type) => (type === 'cancellation' ? 'Your order is cancelled. The refund goes back to your original payment method.' : 'Please send the tea back to us. Reply to our email for the address. We refund once it arrives.'),
   },
   received: { label: 'Return received', tone: 'bg-[#8bb56e]/10 text-[#315b26] ring-[#8bb56e]/30', text: () => 'Your parcel reached us. The refund goes back to your original payment method.' },
   rejected: { label: 'Not accepted', tone: 'bg-stone-100 text-stone-800 ring-stone-200', text: (type) => `We could not accept this ${type} request. Reply to our email, or send a new request below with more detail.` },

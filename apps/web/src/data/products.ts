@@ -95,7 +95,7 @@ export const getProductImages = (product: Product): string[] => [product.imageSr
 export const describeProductImage = (product: Product, src: string): string => {
   if (src.endsWith('-leaf.webp')) return `Close-up of ${product.name} dry tea leaves`
   if (src.endsWith('-pile.webp')) return `${product.name} loose leaf tea`
-  return `${product.name} — loose-leaf Darjeeling tea in an Elegant Sip pack`
+  return `${product.name}, loose-leaf Darjeeling tea in an Elegant Sip pack`
 }
 export const GARDENS: Garden[] = snapshot.gardens as Garden[]
 export const JOURNAL: JournalPost[] = snapshot.journal as JournalPost[]

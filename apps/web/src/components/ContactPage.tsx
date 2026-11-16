@@ -17,7 +17,7 @@ export default function ContactPage() {
   const [sent, setSent] = useState<{ delivered: boolean; retrying: boolean; reference: string } | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', subject: 'Order question', message: '' })
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +59,7 @@ export default function ContactPage() {
             ) : (
               <>
                 We saved your message, but our mail service could not pass it to the team just now
-                {sent.retrying ? ' — it will keep trying automatically' : ''}. If it is urgent, please email us
+                {sent.retrying ? '. It will keep trying automatically' : ''}. If it is urgent, please email us
                 directly at{' '}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold text-[#4a7333] underline underline-offset-2">
                   {CONTACT_EMAIL}
@@ -91,7 +91,7 @@ export default function ContactPage() {
           <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-tight mb-6">Write to Us</h1>
           <p className="text-sm text-[#4a584a] leading-relaxed mb-10">
             Questions about an order, a sourcing curiosity, a wholesale inquiry, or a tea recommendation
-            for a special occasion — we read everything.
+            for a special occasion. We read everything.
           </p>
 
           <div className="space-y-6">
@@ -119,7 +119,7 @@ export default function ContactPage() {
               </svg>
               <div>
                 <p className="text-xs font-mono uppercase tracking-widest text-[#4a584a] mb-1">Wholesale & gifting</p>
-                <p className="text-sm">Corporate gifting and wholesale inquiries welcome — mention it in your message.</p>
+                <p className="text-sm">Corporate gifting and wholesale inquiries welcome. Mention it in your message.</p>
               </div>
             </div>
           </div>
@@ -150,12 +150,18 @@ export default function ContactPage() {
           </div>
           <div>
             <label htmlFor="ct-subject" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Subject</label>
+            {/* The browser's own arrow is hidden (appearance-none) and drawn here
+                instead, so it sits inside the field at the same inset as the text. */}
+            <div className="relative">
             <select
               id="ct-subject"
+              required
               value={form.subject}
               onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-              className="w-full bg-[#f9faf7] border border-[#1b261b]/15 rounded-lg px-4 py-3 text-sm focus:border-[#8bb56e] transition-colors cursor-pointer"
+              className={`w-full appearance-none bg-[#f9faf7] border border-[#1b261b]/15 rounded-lg pl-4 pr-11 py-3 text-sm focus:border-[#8bb56e] transition-colors cursor-pointer ${form.subject ? 'text-[#1b261b]' : 'text-[#4a584a]'}`}
             >
+              {/* Nothing is chosen until the visitor picks a subject. */}
+              <option value="" disabled hidden></option>
               <option>Order question</option>
               <option>Returns & refunds</option>
               <option>Brewing advice</option>
@@ -163,6 +169,10 @@ export default function ContactPage() {
               <option>Wholesale</option>
               <option>Something else</option>
             </select>
+            <svg aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a584a]" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m5 7.5 5 5 5-5" />
+            </svg>
+            </div>
           </div>
           <div>
             <label htmlFor="ct-message" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Message</label>

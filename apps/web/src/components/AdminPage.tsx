@@ -122,7 +122,7 @@ function Dashboard() {
 
   const checks = config
     ? [
-        { label: 'Payments', ready: config.paymentsLive, value: config.paymentsLive ? 'Razorpay live' : config.paymentProvider === 'razorpay' ? 'Razorpay test mode' : `${config.paymentProvider} — not live` },
+        { label: 'Payments', ready: config.paymentsLive, value: config.paymentsLive ? 'Razorpay live' : config.paymentProvider === 'razorpay' ? 'Razorpay test mode' : `${config.paymentProvider} (not live)` },
         { label: 'Customer email', ready: config.emailConfigured, value: config.emailConfigured ? 'Configured' : 'Not configured' },
         { label: 'GST invoice', ready: config.gstinConfigured, value: config.gstinConfigured ? 'GSTIN configured' : 'GSTIN needed' },
         { label: 'Shipping', ready: config.shippingLive, value: config.shippingLive ? 'Shiprocket live' : config.shippingProvider === 'fake' ? 'Shiprocket test mode' : 'Manual tracking' },

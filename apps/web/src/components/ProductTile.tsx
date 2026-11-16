@@ -7,6 +7,7 @@ import { formatINR } from '../lib/currency'
 import { percentOff } from '../lib/pricing'
 import SkeletonImage from './SkeletonImage'
 import { useUi } from './UiContext'
+import HeartBurst from './HeartBurst'
 
 /**
  * Compact product tile for phones — two per row in the shop, a swipeable shelf
@@ -21,6 +22,9 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
   const { addToCart, toggleWishlist, isWishlisted } = useCart()
   const { showToast } = useUi()
   const [added, setAdded] = useState(false)
+  // Bumped on each heart tap to replay its animation; `heartAdded` picks pop or deflate.
+  const [heartTaps, setHeartTaps] = useState(0)
+  const [heartAdded, setHeartAdded] = useState(false)
   const timer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
@@ -48,6 +52,8 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
   }
 
   const handleWishlist = () => {
+    setHeartAdded(!wishlisted)
+    setHeartTaps((n) => n + 1)
     toggleWishlist(product.slug)
     showToast(wishlisted ? `${product.name} removed from your wishlist` : `${product.name} saved to your wishlist`)
     track('wishlist_toggle', { product: product.slug })
@@ -88,13 +94,22 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
           className={`absolute top-1 right-1 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer`}
         >
           <span
-            className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors ${
+            className={`relative w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors ${
               wishlisted ? 'bg-[#8bb56e] text-white' : 'bg-white/85 text-[#1b261b]'
             }`}
           >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <svg
+              key={heartTaps}
+              className={`w-3.5 h-3.5 ${heartTaps === 0 ? '' : heartAdded ? 'heart-pop' : 'heart-unpop'}`}
+              viewBox="0 0 24 24"
+              fill={wishlisted ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
+            {heartAdded && <HeartBurst pop={heartTaps} radius={19} />}
           </span>
         </button>
       </div>

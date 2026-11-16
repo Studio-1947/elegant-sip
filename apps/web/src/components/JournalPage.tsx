@@ -174,7 +174,7 @@ export default function JournalPage() {
           <BlurText as="span" inline text="the Garden" delay={120} className="text-[#4a7333]" />
         </h1>
         <p className="text-[#4a584a] text-sm md:text-base max-w-2xl leading-relaxed mb-10">
-          Craft, sourcing, and the ritual of brewing — written by the people who buy, taste, and pack every lot.
+          Craft, sourcing, and the ritual of brewing, written by the people who buy, taste, and pack every lot.
         </p>
 
         {/* Category filter */}

@@ -22,7 +22,7 @@ export default function NewsletterSection() {
       await api.newsletter.subscribe(email)
     } catch (err) {
       setErrorMsg(
-        err instanceof ApiClientError ? err.message : 'Something went wrong — please try again in a moment.',
+        err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again in a moment.',
       )
       setStatus('error')
       return
@@ -49,7 +49,7 @@ export default function NewsletterSection() {
             {COUPONS_ENABLED ? (
               <>
                 <p className="text-white/70 text-sm leading-relaxed mb-6">
-                  You're in. Enjoy 10% off your first order with the code below — just enter it at checkout.
+                  You're in. Enjoy 10% off your first order with the code below. Just enter it at checkout.
                 </p>
                 <p className="inline-block bg-[#8bb56e]/15 border border-[#8bb56e]/40 rounded-lg px-6 py-3 text-[#8bb56e] font-mono font-bold tracking-[0.2em] text-lg select-all">
                   WELCOME10
@@ -57,7 +57,7 @@ export default function NewsletterSection() {
               </>
             ) : (
               <p className="text-white/70 text-sm leading-relaxed">
-                You're in. Every tea is already 25% off right now — no code needed.
+                You're in. Every tea is already 25% off right now, no code needed.
               </p>
             )}
           </div>

@@ -159,7 +159,7 @@ export const pricingRoutes: FastifyPluginAsyncZod = async (app) => {
             productSlug: row.slug,
             variantSize: row.size,
             reason: 'quantity_reduced',
-            message: `Only ${row.stock} of ${row.name} (${row.size}) left — the quantity has been reduced.`,
+            message: `Only ${row.stock} of ${row.name} (${row.size}) left, so the quantity has been reduced.`,
           })
         }
 

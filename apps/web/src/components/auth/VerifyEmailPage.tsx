@@ -58,7 +58,7 @@ export default function VerifyEmailPage() {
       <AuthCard
         eyebrow="Confirm your email"
         title="Link incomplete"
-        body="This address is missing its confirmation token. Open the link from your email exactly as it was sent — some mail clients cut long links in half."
+        body="This address is missing its confirmation token. Open the link from your email exactly as it was sent. Some mail clients cut long links in half."
       >
         <Link to="/" className="es-btn-secondary">
           Back to the shop
@@ -95,7 +95,7 @@ export default function VerifyEmailPage() {
     <AuthCard
       eyebrow="Confirm your email"
       title="Email confirmed"
-      body="Thank you — your address is confirmed and your account is ready."
+      body="Thank you. Your address is confirmed and your account is ready."
     >
       <Link to="/shop" className="es-btn-primary">
         Start shopping

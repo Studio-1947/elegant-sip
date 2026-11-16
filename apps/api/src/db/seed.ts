@@ -176,7 +176,7 @@ const GARDENS = [
     elevation: '3,500–7,000 ft',
     imageSrc: '/gopal-1024.webp',
     story: [
-      'Gopaldhara sits above Mirik, and its upper sections are among the highest planted land in Darjeeling — rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.',
+      'Gopaldhara sits above Mirik, and its upper sections are among the highest planted land in Darjeeling, rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.',
       'The first flush is a narrow window. After winter dormancy the bushes push a small quantity of tender two-leaves-and-a-bud, and the pluck runs for a few weeks in late February through April. That leaf is withered long and fired light, which is why a first flush brews pale gold rather than red, and why it should never meet milk.',
     ],
   },
@@ -188,7 +188,7 @@ const GARDENS = [
     imageSrc: '/harvest.webp',
     story: [
       'Rohini lies lower down the hill, on warmer slopes where the Darjeeling foothills heat up earlier in the season. Lower elevation means the bushes wake sooner, so Rohini is often among the first gardens in the district to send out a first flush at all.',
-      'A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet.',
+      'A warmer, faster-growing leaf makes a bolder cup: more body, more malt, less of the ethereal floral top note you get at 7,000 feet.',
       'Nothing here is blended with leaf from outside the district.',
     ],
   },
@@ -199,7 +199,7 @@ const JOURNAL = [
     slug: 'art-of-first-flush',
     title: 'The Art of the First Flush',
     excerpt:
-      'The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices — and the most patience.',
+      'The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices, and the most patience.',
     category: 'Craft',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-03-12T08:00:00Z'),

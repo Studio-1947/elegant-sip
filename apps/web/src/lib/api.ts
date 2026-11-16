@@ -32,7 +32,7 @@ export class ApiClientError extends Error {
 }
 
 const NETWORK_MESSAGE =
-  'We could not reach the shop. Check your connection and try again — nothing has been charged.'
+  'We could not reach the shop. Check your connection and try again. Nothing has been charged.'
 const RATE_LIMITED_MESSAGE = 'Too many attempts. Please wait a minute and try again.'
 
 /**

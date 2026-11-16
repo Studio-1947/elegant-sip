@@ -138,7 +138,7 @@ function NameCard({ user }: { user: User }) {
           <p className="block text-xs font-medium">WhatsApp number</p>
           <p className="mt-1.5 text-sm font-mono">{user.phone ? (local ? `+91 ${formatIndianMobile(local)}` : user.phone) : 'Not linked'}</p>
           <p className="mt-1.5 text-[11px] text-[#4a584a]">
-            Your number is checked with a WhatsApp code, so it is not typed in here. Use WhatsApp sign-in above to link {user.phone ? 'a different' : 'a'} number.
+            {user.phone ? 'This is the number you use to sign in with WhatsApp.' : 'Your number is checked with a WhatsApp code, so it is not typed in here. Use WhatsApp sign-in above to link a number.'}
           </p>
         </div>
       </div>
@@ -639,7 +639,7 @@ function TwoStepCard({ email }: { email: string }) {
     body = (
       <div>
         <p className="text-xs leading-relaxed text-[#1b261b]">
-          Save these recovery codes now — this is the only time they are shown. Each one signs you in once if you lose your phone.
+          Save these recovery codes now. This is the only time they are shown. Each one signs you in once if you lose your phone.
         </p>
         <ul className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-[#1b261b]/10 bg-[#f9faf7] p-4 font-mono text-sm" aria-label="Recovery codes">
           {recoveryCodes.map((item) => <li key={item}>{item}</li>)}
