@@ -41,7 +41,7 @@ export default function AboutPage() {
       <div className="max-w-3xl mx-auto px-6 md:px-12 py-24">
         <p className="text-lg md:text-xl font-light leading-relaxed mb-10 text-[#2b3a2b]">
           Most tea is sold as a number in an auction lot. We think that's backwards. Elegant Sip exists
-          to put a name — a garden, a grower, a harvest morning — on every cup.
+          to put a name (a garden, a grower, a harvest morning) on every cup.
         </p>
         <div className="space-y-6 text-sm text-[#4a584a] leading-relaxed">
           <p>
@@ -90,7 +90,7 @@ export default function AboutPage() {
           // Kept to what the shop can show today (UX audit): estates are named on a tea page only once confirmed.
           { title: 'Origin', text: 'The Gardens page shows the Darjeeling gardens we buy from, and a tea page names its garden once that lot is confirmed.' },
           { title: 'Craft', text: 'Hand-rolled, shade-dried, slow-oxidized under the guidance of tea masters. No shortcuts.' },
-          { title: 'Experience', text: 'Brewing cards with every order — temperature curves, steep counts, tasting notes.' },
+          { title: 'Experience', text: 'Brewing cards with every order: temperature curves, steep counts, tasting notes.' },
         ].map((v) => (
           <div key={v.title} className="bg-white border border-[#1b261b]/10 rounded-2xl p-8">
             <h3 className="text-lg font-bold uppercase tracking-wide mb-3 text-[#4a7333]">{v.title}</h3>

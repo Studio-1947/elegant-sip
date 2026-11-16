@@ -165,10 +165,12 @@ export default function CartPage() {
               Order Summary
             </h2>
 
-            {/* Coupon — hidden while the 25% offer runs, since nothing may stack on it */}
+            {/* Coupon — hidden while the 25% offer runs, since nothing may stack on it.
+                The note mentions only the sale: with no promo field on the page,
+                talking about promo codes raises a question nobody asked. */}
             {!COUPONS_ENABLED ? (
               <p className="mb-6 text-[11px] font-mono text-[#4a7333] bg-[#8bb56e]/10 border border-[#8bb56e]/30 rounded-lg px-4 py-2.5">
-                25% off is already applied to every tea. Promo codes can’t be combined with it.
+                25% off is already applied to every tea in your cart.
               </p>
             ) : (
             <div className="mb-6">

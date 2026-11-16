@@ -207,7 +207,7 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         body: [
           `Hello ${user.name},`,
           'The password on your account was just changed, and every other signed-in device was signed out.',
-          'If this was not you, reset your password now — whoever did it has been signed out already.',
+          'If this was not you, reset your password now. Whoever did it has been signed out already.',
         ],
         action: { label: 'Go to my account', url: `${env.SITE_URL}/account` },
       })
@@ -282,7 +282,7 @@ export const profileRoutes: FastifyPluginAsyncZod = async (app) => {
         body: [
           `Hello ${user.name},`,
           `The address on your account was changed to ${newEmail}.`,
-          'If this was not you, contact us immediately — this address will no longer receive account emails.',
+          'If this was not you, contact us immediately. This address will no longer receive account emails.',
         ],
       })
 

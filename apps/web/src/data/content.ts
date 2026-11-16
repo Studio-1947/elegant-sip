@@ -15,7 +15,7 @@ export interface Faq {
 }
 
 const guaranteeAnswer = (days: number) =>
-  `The Elegant Sip Promise: if any tea doesn't live up to your expectations, tell us within ${days} days and we'll replace it or refund you — no return shipping, no questions, no forms. We'd rather you find your perfect cup than force a box. This is written into our Terms, not just our marketing.`
+  `The Elegant Sip Promise: if any tea doesn't live up to your expectations, tell us within ${days} days and we'll replace it or refund you. No return shipping, no questions, no forms. We'd rather you find your perfect cup than force a box. This is written into our Terms, not just our marketing.`
 
 export const FAQS: Faq[] = [
   {
@@ -28,7 +28,7 @@ export const FAQS: Faq[] = [
     category: "Orders & Shipping",
     question: "Do you ship internationally?",
     answer:
-      "We ship within India today. We're still finalising which countries we can serve properly, so rather than promise a rate we can't yet stand behind, message us on WhatsApp with your address and we'll quote the actual shipping and tell you what duties to expect. Any customs duties or import taxes are set by your country and are payable by you on arrival — they are not collected at our checkout.",
+      "We ship within India today. We're still finalising which countries we can serve properly, so rather than promise a rate we can't yet stand behind, message us on WhatsApp with your address and we'll quote the actual shipping and tell you what duties to expect. Any customs duties or import taxes are set by your country and are payable by you on arrival. They are not collected at our checkout.",
   },
   {
     category: "Orders & Shipping",
@@ -47,13 +47,13 @@ export const FAQS: Faq[] = [
     category: "Returns & Guarantee",
     question: "How fresh is the tea when it arrives?",
     answer:
-      "We pack in small batches close to harvest, in light-proof packaging, and the pack date is printed on every pack. First flush is a seasonal tea — when a lot is gone it's gone until the next spring, and we'd rather sell out than sell you last year's leaf.",
+      "We pack in small batches close to harvest, in light-proof packaging, and the pack date is printed on every pack. First flush is a seasonal tea: when a lot is gone it's gone until the next spring, and we'd rather sell out than sell you last year's leaf.",
   },
   {
     category: "Brewing",
     question: "What's the best way to brew Darjeeling first flush?",
     answer:
-      "Cooler water than you think: around 90 °C, not a rolling boil, and steep 3–4 minutes. Skip the milk — the muscatel aromatics are the whole point, and milk buries them. Every product page carries the exact brewing card for that tea.",
+      "Cooler water than you think: around 90 °C, not a rolling boil, and steep 3–4 minutes. Skip the milk. The muscatel aromatics are the whole point, and milk buries them. Every product page carries the exact brewing card for that tea.",
   },
   {
     category: "Brewing",
@@ -65,13 +65,13 @@ export const FAQS: Faq[] = [
     category: "Brewing",
     question: "Where are your teas grown, really?",
     answer:
-      "Our teas are single-origin Darjeeling. Our buyers on the ground in the various tea gardens of Darjeeling buy them direct — no auction houses and no blending across estates. The Gardens page has the details.",
+      "Our teas are single-origin Darjeeling. Our buyers on the ground in the various tea gardens of Darjeeling buy them direct, with no auction houses and no blending across estates. The Gardens page has the details.",
   },
   {
     category: "Brewing",
     question: "What's the difference between first, second and autumn flush?",
     answer:
-      "The flush is the season the leaf was picked. First flush (spring) is light, floral and bright, and best drunk plain. Second flush (early summer) is fuller and fruitier — the classic muscatel Darjeeling — and can take a splash of milk. Autumn flush is mellow, smooth and coppery, and takes milk well.",
+      "The flush is the season the leaf was picked. First flush (spring) is light, floral and bright, and best drunk plain. Second flush (early summer) is fuller and fruitier (the classic muscatel Darjeeling) and can take a splash of milk. Autumn flush is mellow, smooth and coppery, and takes milk well.",
   },
 ]
 

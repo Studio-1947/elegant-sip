@@ -86,7 +86,7 @@ export default function ProductReviews({ productSlug, reviews, rating, onAdded }
 
       {submitted && (
         <div className="bg-[#4a7333]/8 border border-[#4a7333]/25 rounded-xl p-4 mb-6 text-xs text-[#45523f]">
-          Thank you — your review has been received and will appear once we have read it.
+          Thank you. Your review has been received and will appear once we have read it.
         </div>
       )}
 

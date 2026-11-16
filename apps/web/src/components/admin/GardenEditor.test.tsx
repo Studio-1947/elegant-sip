@@ -40,7 +40,7 @@ describe('GardenEditor', () => {
     render(<GardenEditor />)
     fireEvent.click(await screen.findByRole('button', { name: /Gopaldhara/ }))
 
-    expect(screen.getByText(/retired — not shown/)).toBeTruthy()
+    expect(screen.getByText(/retired, not shown/)).toBeTruthy()
     fireEvent.change(screen.getByLabelText(/Story/), { target: { value: 'New first.\n\nNew second.' } })
     fireEvent.click(screen.getByLabelText(/Old Fannings/)) // untick the retired tea
     await waitFor(() => expect(screen.getByLabelText(/First Flush/)).toBeTruthy())

@@ -12,13 +12,13 @@ const PILLARS = [
     title: 'Craft',
     imageSrc: '/craft.webp',
     imageAlt: 'Freshly plucked Darjeeling tea leaves being withered by hand',
-    text: 'First flush is withered long and fired light, so the leaf keeps the aromatics that make it worth buying. No blending across estates, no anonymity — just the grade the garden actually produced.',
+    text: 'First flush is withered long and fired light, so the leaf keeps the aromatics that make it worth buying. No blending across estates, no anonymity, just the grade the garden actually produced.',
   },
   {
     title: 'Experience',
     imageSrc: '/experience.webp',
     imageAlt: 'A brewed cup of first flush Darjeeling beside loose leaves',
-    text: 'Brewing is ritual. Every product page carries the exact card for that grade — temperature, steep time, leaf amount and steep count — so each cup unfolds exactly as the leaves intended.',
+    text: 'Brewing is ritual. Every product page carries the exact card for that grade (temperature, steep time, leaf amount and steep count), so each cup unfolds exactly as the leaves intended.',
   },
 ]
 

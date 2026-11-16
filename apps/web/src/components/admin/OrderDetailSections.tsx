@@ -113,7 +113,7 @@ export function DeliveryCard({ detail, onSaved }: { detail: AdminOrderDetail; on
         <>
           <AddressLines address={detail.shipping} phone={detail.phone} />
           {!detail.addressEditable && !['cancelled', 'refunded'].includes(detail.status) && (
-            <p className="mt-2 text-[11px] text-[#4a584a]">Booked with the courier — change it with them.</p>
+            <p className="mt-2 text-[11px] text-[#4a584a]">Booked with the courier. Change it with them.</p>
           )}
         </>
       )}
@@ -218,7 +218,7 @@ export function StaffNotes({ detail, onSaved }: { detail: AdminOrderDetail; onSa
   }
   return (
     <Card title="Staff notes · not shown to the customer" className="mt-4">
-      <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} rows={3} placeholder="e.g. Gift — leave the invoice out of the box" className={`${inputClass} mt-0 resize-y`} aria-label="Staff notes" />
+      <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} rows={3} placeholder="e.g. Gift, leave the invoice out of the box" className={`${inputClass} mt-0 resize-y`} aria-label="Staff notes" />
       <div className="mt-2 flex justify-end">
         <button onClick={() => void save()} disabled={!dirty || busy} className={quietButton}>
           {busy ? <Spinner className="h-3.5 w-3.5" /> : null} {dirty ? 'Save notes' : 'Saved ✓'}

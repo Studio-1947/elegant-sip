@@ -179,7 +179,7 @@ export async function getInvoiceView(orderId: string): Promise<InvoiceView | nul
     hsn: HSN_TEA,
     taxRatePercent: TAX_RATE * 100,
     lines: lines.map((l) => ({
-      description: `${l.productName} — ${l.variantSize}`,
+      description: `${l.productName} · ${l.variantSize}`,
       quantity: l.quantity,
       unitPrice: formatPaise(l.unitPrice),
       lineTotal: formatPaise(l.lineTotal),

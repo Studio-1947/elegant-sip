@@ -263,7 +263,7 @@ export default function CheckoutPage() {
       setOrderError(
         err instanceof ApiClientError
           ? err.message
-          : 'We could not place that order. Nothing has been charged — please try again.',
+          : 'We could not place that order. Nothing has been charged. Please try again.',
       )
       window.scrollTo(0, 0)
     } finally {

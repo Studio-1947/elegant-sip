@@ -89,13 +89,21 @@ export function applyLiveCatalogue(live: readonly Product[]): void {
 }
 
 /** Main photo first, then the gallery photos set in the admin, in order. */
+/**
+ * Teas the shop names as its best sellers. Set by hand by the shop owner: this
+ * is a claim the business stands behind, not something computed from orders,
+ * so change it here when the best sellers change.
+ */
+const BEST_SELLERS: ReadonlySet<string> = new Set(['first-flush', 'golden-needle'])
+export const isBestSeller = (product: Product): boolean => BEST_SELLERS.has(product.slug)
+
 export const getProductImages = (product: Product): string[] => [product.imageSrc, ...(product.images ?? [])]
 
 /** Alt text for a product photo, read from its filename suffix. */
 export const describeProductImage = (product: Product, src: string): string => {
   if (src.endsWith('-leaf.webp')) return `Close-up of ${product.name} dry tea leaves`
   if (src.endsWith('-pile.webp')) return `${product.name} loose leaf tea`
-  return `${product.name} — loose-leaf Darjeeling tea in an Elegant Sip pack`
+  return `${product.name}, loose-leaf Darjeeling tea in an Elegant Sip pack`
 }
 export const GARDENS: Garden[] = snapshot.gardens as Garden[]
 export const JOURNAL: JournalPost[] = snapshot.journal as JournalPost[]
