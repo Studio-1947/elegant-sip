@@ -159,6 +159,15 @@ const envSchema = z.object({
   META_CAPI_ACCESS_TOKEN: blankAsUnset(z.string().trim().min(20)),
   /** From Events Manager → Test events. Set only while testing; such events never count. */
   META_CAPI_TEST_EVENT_CODE: blankAsUnset(z.string().trim().max(64)),
+  /*
+   * A second pixel that receives the same server events: Studio 1947's
+   * "Elegant Sip New", connected to the catalogue. Must match the storefront's
+   * VITE_META_PIXEL_ID_SECONDARY. Its token comes from that pixel's own
+   * Events Manager; without it, this pixel gets browser events only.
+   */
+  META_PIXEL_ID_SECONDARY: z.string().trim().regex(/^\d*$/, 'must be the numeric pixel (dataset) ID').default('1692896069094831'),
+  META_CAPI_ACCESS_TOKEN_SECONDARY: blankAsUnset(z.string().trim().min(20)),
+  META_CAPI_TEST_EVENT_CODE_SECONDARY: blankAsUnset(z.string().trim().max(64)),
   META_GRAPH_API_VERSION: z.string().trim().regex(/^v\d+\.\d+$/, 'like v24.0').default('v24.0'),
 })
 
