@@ -12,6 +12,7 @@ import PhilosophyQuoteSection from './PhilosophyQuoteSection'
 import StatsBarSection from './StatsBarSection'
 import TrustBadgesSection from './TrustBadgesSection'
 import NewsletterSection from './NewsletterSection'
+import GoogleReviewsSection from './GoogleReviewsSection'
 import Footer from './Footer'
 
 /**
@@ -47,6 +48,7 @@ export default function HeroScrollSection() {
           <PhilosophyQuoteSection />
           <StatsBarSection />
           <TrustBadgesSection />
+          <GoogleReviewsSection />
           <NewsletterSection />
           <Footer />
         </div>
