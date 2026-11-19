@@ -1,0 +1,12 @@
+{
+  "name": "Elegant Sip",
+  "short_name": "Elegant Sip",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#3b3e19",
+  "theme_color": "#3b3e19",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

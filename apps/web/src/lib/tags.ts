@@ -9,6 +9,11 @@
  * that tag off entirely:
  *   VITE_GTM_ID=GTM-XXXXXXX
  *   VITE_META_PIXEL_ID=1234567890
+ *   VITE_META_PIXEL_ID_SECONDARY=1234567890
+ *
+ * Two Meta pixels load: Elegant Sip's own and Studio 1947's ("Elegant Sip
+ * New"). Every fbq('track') call reaches every initialised pixel, so each
+ * event goes to both without further code.
  *
  * Every Meta event is also posted to our own API, which forwards it to Meta's
  * Conversions API with the same event ID (apps/api/src/routes/events.ts).
@@ -31,9 +36,13 @@ const envId = (value: unknown, fallback: string) => (typeof value === 'string' ?
 
 export const GTM_ID = envId(import.meta.env.VITE_GTM_ID, 'GTM-W5MN9LMR')
 export const META_PIXEL_ID = envId(import.meta.env.VITE_META_PIXEL_ID, '1702510334659568')
+/** Studio 1947's pixel, connected to the catalogue. The API sends it the
+ *  server copy of each event too, once META_CAPI_ACCESS_TOKEN_SECONDARY is set. */
+export const META_PIXEL_ID_SECONDARY = envId(import.meta.env.VITE_META_PIXEL_ID_SECONDARY, '1692896069094831')
+const META_PIXEL_IDS = [...new Set([META_PIXEL_ID, META_PIXEL_ID_SECONDARY].filter(Boolean))]
 
 /** True when at least one marketing tag is configured, so the banner must ask. */
-export const marketingTagsConfigured = () => Boolean(GTM_ID || META_PIXEL_ID)
+export const marketingTagsConfigured = () => Boolean(GTM_ID || META_PIXEL_IDS.length)
 
 let loaded = false
 
@@ -84,8 +93,10 @@ function loadMetaPixel(w: TagWindow) {
   const fbq = w.fbq
   // No automatic scraping of page text, metadata or button clicks: Meta gets
   // only the events we send on purpose. Must be set before init.
-  fbq('set', 'autoConfig', false, META_PIXEL_ID)
-  fbq('init', META_PIXEL_ID)
+  for (const id of META_PIXEL_IDS) {
+    fbq('set', 'autoConfig', false, id)
+    fbq('init', id)
+  }
   // This first PageView is the only manual one. The pixel itself counts later
   // in-app navigations (it watches history.pushState), and dedupes them.
   fbq('track', 'PageView')
@@ -97,7 +108,7 @@ export function loadMarketingTags() {
   loaded = true
   const w = window as TagWindow
   if (GTM_ID) loadGtm(w)
-  if (META_PIXEL_ID) loadMetaPixel(w)
+  if (META_PIXEL_IDS.length) loadMetaPixel(w)
 }
 
 export const marketingTagsLoaded = () => loaded
@@ -105,7 +116,7 @@ export const marketingTagsLoaded = () => loaded
 /** Sends a Meta standard event, if the pixel has loaded. */
 export function metaTrack(event: string, data: Record<string, unknown>, eventId?: string) {
   const w = window as TagWindow
-  if (!loaded || !META_PIXEL_ID || !w.fbq) return
+  if (!loaded || !META_PIXEL_IDS.length || !w.fbq) return
   if (eventId) w.fbq('track', event, data, { eventID: eventId })
   else w.fbq('track', event, data)
 }

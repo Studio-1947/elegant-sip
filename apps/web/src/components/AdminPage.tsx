@@ -23,7 +23,7 @@ import Modal from './admin/ui/Modal'
 import { Spinner, Tabs } from './admin/ui/controls'
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Staff dashboard: orders, returns, products, inventory, customers, reports,
+ * Sxtaff dashboard: orders, returns, products, inventory, customers, reports,
  * reviews, gardens, messages and settings, behind the admin role (the API
  * checks it again on every request).
  * ──────────────────────────────────────────────────────────────────────────── */
