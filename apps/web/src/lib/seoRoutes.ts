@@ -47,7 +47,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/about': {
     title: pageTitle('Our Story'),
     description:
-      'Elegant Sip is a Darjeeling tea brand buying direct from the garden — no auction houses, no middlemen, no blending.',
+      'Elegant Sip is a Darjeeling tea brand buying direct from the garden: no auction houses, no middlemen, no blending.',
     priority: 0.6,
     changefreq: 'monthly',
   },
@@ -68,7 +68,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/journal': {
     title: pageTitle('The Journal'),
     description:
-      'Craft, sourcing and the ritual of brewing — notes from the Darjeeling gardens behind our single-origin teas.',
+      'Craft, sourcing and the ritual of brewing: notes from the Darjeeling gardens behind our single-origin teas.',
     priority: 0.7,
     changefreq: 'weekly',
   },

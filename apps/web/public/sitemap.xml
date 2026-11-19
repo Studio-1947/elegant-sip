@@ -65,6 +65,21 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://elegantsip.in/#/journal/reading-the-seasons</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://elegantsip.in/#/journal/why-altitude-matters</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://elegantsip.in/#/journal/keeping-tea-fresh</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://elegantsip.in/#/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

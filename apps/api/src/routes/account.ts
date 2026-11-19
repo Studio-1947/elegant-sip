@@ -210,7 +210,7 @@ export const accountRoutes: FastifyPluginAsyncZod = async (app) => {
         to: env.CONTACT_INBOX,
         // Hitting Reply in the shop inbox answers the customer, not the shop itself.
         replyTo: email,
-        subject: `[${reference}] ${subject} — from ${name}`,
+        subject: `[${reference}] ${subject} (from ${name})`,
         heading: 'New message from the site',
         body: [message],
         facts: [

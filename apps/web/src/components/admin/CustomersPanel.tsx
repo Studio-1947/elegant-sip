@@ -130,7 +130,7 @@ export default function CustomersPanel({ onOpenOrder }: { onOpenOrder: (number: 
           ))}
         </div>
       </div>
-      <p className="mb-4 text-xs text-[#4a584a]">Guest checkouts have no account — find those orders by email in Orders.</p>
+      <p className="mb-4 text-xs text-[#4a584a]">Guest checkouts have no account. Find those orders by email in Orders.</p>
 
       {!current ? (
         <div className="space-y-3">
@@ -230,7 +230,7 @@ export default function CustomersPanel({ onOpenOrder }: { onOpenOrder: (number: 
               <p>
                 <b>{shown.orderCount}</b> paid order{shown.orderCount === 1 ? '' : 's'} · <b>{formatINR(shown.totalSpent)}</b>
               </p>
-              {shown.role === 'admin' && <p className="text-xs text-[#4a584a]">Two-step sign-in: {shown.mfaEnabled ? 'on' : 'off — ask them to turn it on'}</p>}
+              {shown.role === 'admin' && <p className="text-xs text-[#4a584a]">Two-step sign-in: {shown.mfaEnabled ? 'on' : 'off (ask them to turn it on)'}</p>}
             </section>
 
             <section className="rounded-2xl bg-white p-4 ring-1 ring-[#1b261b]/[0.07]">

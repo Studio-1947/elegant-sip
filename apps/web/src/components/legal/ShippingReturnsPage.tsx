@@ -24,7 +24,7 @@ export default function ShippingReturnsPage() {
         </p>
         <p>
           Customs duties and import taxes are set by your country, not by us. They are payable by
-          you on arrival and are <strong>not</strong> calculated or collected at our checkout — we
+          you on arrival and are <strong>not</strong> calculated or collected at our checkout. We
           would rather tell you that up front than surprise you at your door.
         </p>
       </Section>
@@ -40,7 +40,7 @@ export default function ShippingReturnsPage() {
         <Section title={`The ${guarantee.days}-day taste guarantee`}>
           <p>
             The Elegant Sip Promise: if any tea doesn't live up to your expectations, tell us within
-            {' '}{guarantee.days} days and we'll replace it or refund you — no return shipping, no questions, no forms.
+            {' '}{guarantee.days} days and we'll replace it or refund you. No return shipping, no questions, no forms.
             We'd rather you find your perfect cup than force a box.
           </p>
           <p>

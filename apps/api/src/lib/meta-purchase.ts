@@ -3,7 +3,7 @@ import type { FastifyBaseLogger, FastifyRequest } from 'fastify'
 import { db } from '../db/client.js'
 import { orderItems, orders } from '../db/schema-commerce.js'
 import { env } from '../env.js'
-import { buildServerEvent, isMetaCookie, metaCapiActive, sendMetaEvents, type MetaCustomData } from './meta-capi.js'
+import { buildServerEvent, isMetaCookie, metaCapiMode, sendMetaEvents, type MetaCustomData } from './meta-capi.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Purchases reported to Meta from the server.
@@ -53,7 +53,7 @@ export function checkoutAdDetails(
   adConsent: boolean | undefined,
   request: Pick<FastifyRequest, 'ip' | 'headers' | 'cookies'>,
 ) {
-  if (!adConsent || !metaCapiActive()) return {}
+  if (!adConsent || metaCapiMode() === 'off') return {}
   const fbp = request.cookies._fbp
   const fbc = request.cookies._fbc
   return {
@@ -71,7 +71,7 @@ export function checkoutAdDetails(
  */
 export async function reportPurchaseFromServer(orderId: string, log: FastifyBaseLogger): Promise<void> {
   try {
-    if (!metaCapiActive()) return
+    if (metaCapiMode() === 'off') return
     // Claimed in one statement, so a webhook and a verify call racing report it once.
     const [order] = await db
       .update(orders)

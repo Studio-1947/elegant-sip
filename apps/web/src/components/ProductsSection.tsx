@@ -32,7 +32,7 @@ interface ProductsSectionProps {
    * Tablet and desktop always use the full card grid.
    */
   mobileLayout?: 'shelf' | 'grid'
-  /** Shown under the heading, above search and filters (e.g. a note to buyers on /shop). */
+  /** Shown under the heading, above the Taste Matcher prompt, search and filters. */
   notice?: ReactNode
 }
 
@@ -154,7 +154,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search teas — first flush, white, muscatel…"
+              placeholder="Search teas: first flush, white, muscatel…"
               className="w-full bg-white border border-[#1b261b]/10 rounded-full pl-11 pr-4 py-3 text-sm focus:border-[#8bb56e] transition-colors placeholder:text-[#1b261b]/30"
             />
           </div>
@@ -200,7 +200,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
 
       {visibleProducts.length === 0 ? (
         <p className="max-w-6xl mx-auto text-center text-sm text-[#4a584a] bg-white border border-[#1b261b]/10 rounded-2xl py-14 px-6">
-          No teas match your search. Try a different word — or take the Taste Matcher above.
+          No teas match your search. Try a different word, or take the Taste Matcher above.
         </p>
       ) : (
         <>
@@ -247,6 +247,7 @@ export default function ProductsSection({ showHeading = true, headingLevel = 'h2
           </div>
         </>
       )}
+
     </section>
   )
 }

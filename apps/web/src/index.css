@@ -307,3 +307,71 @@ h3 {
   .adm-progress { animation: none; transform: scaleX(0); }
   .adm-spin { animation-duration: 2.4s; }
 }
+
+/* Wishlist heart: pops with a ring and a burst of dots when a tea is saved,
+   deflates slightly when it is removed. See HeartBurst.tsx. */
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  15% { transform: scale(0.7); }
+  45% { transform: scale(1.35); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+@keyframes heart-unpop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.75); }
+  100% { transform: scale(1); }
+}
+
+@keyframes heart-ring {
+  0% { transform: scale(0.6); opacity: 0.9; border-width: 3px; }
+  100% { transform: scale(1.5); opacity: 0; border-width: 0.5px; }
+}
+
+@keyframes heart-dot {
+  0% { transform: rotate(var(--heart-a)) translateY(0) scale(0); opacity: 1; }
+  35% { transform: rotate(var(--heart-a)) translateY(calc(var(--heart-r) * -0.7)) scale(1); opacity: 1; }
+  100% { transform: rotate(var(--heart-a)) translateY(calc(var(--heart-r) * -1)) scale(0.2); opacity: 0; }
+}
+
+.heart-pop {
+  animation: heart-pop 500ms cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+
+.heart-unpop {
+  animation: heart-unpop 260ms ease-out both;
+}
+
+.heart-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid #8bb56e;
+  pointer-events: none;
+  animation: heart-ring 550ms ease-out both;
+}
+
+.heart-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: heart-dot 550ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heart-pop,
+  .heart-unpop {
+    animation: none;
+  }
+
+  .heart-ring,
+  .heart-dot {
+    display: none;
+  }
+}

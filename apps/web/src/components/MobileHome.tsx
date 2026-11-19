@@ -16,6 +16,7 @@ import HarvestShowcaseSection from './HarvestShowcaseSection'
 import ThreePillarsSection from './ThreePillarsSection'
 import CanisterShowcaseSection from './CanisterShowcaseSection'
 import ProductsSection from './ProductsSection'
+import PackagingNotice from './PackagingNotice'
 import PackageShowcaseSection from './PackageShowcaseSection'
 import TestimonialsSection from './TestimonialsSection'
 import PhilosophyQuoteSection from './PhilosophyQuoteSection'
@@ -257,7 +258,7 @@ export default function MobileHome() {
       <HarvestShowcaseSection />
       <ThreePillarsSection />
       <CanisterShowcaseSection />
-      <ProductsSection />
+      <ProductsSection notice={<PackagingNotice className="mb-8 md:mb-12" />} />
       <PackageShowcaseSection />
       <TestimonialsSection />
       <PhilosophyQuoteSection />

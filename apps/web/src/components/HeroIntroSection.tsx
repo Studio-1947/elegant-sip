@@ -16,7 +16,7 @@ export default function HeroIntroSection() {
         <BlurText as="span" text="Tells a Story" delay={120} className="justify-center text-[#4a7333]" />
       </h2>
       <p className="text-[#4a584a] text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-light">
-        Elegant Sip is more than a tea brand — it's a sensory journey from the
+        Elegant Sip is more than a tea brand. It's a sensory journey from the
         mist-covered highlands to your cup. We buy single-origin leaves straight
         from the garden, and never blend across estates.
       </p>

@@ -2,7 +2,7 @@ import type { FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { env, isProduction } from '../env.js'
-import { META_EVENTS, buildServerEvent, metaCapiActive, sendMetaEvents, type MetaCustomData } from '../lib/meta-capi.js'
+import { META_EVENTS, buildServerEvent, metaCapiMode, sendMetaEvents, type MetaCustomData } from '../lib/meta-capi.js'
 import { purchaseData } from '../lib/meta-purchase.js'
 import { limit } from './auth-shared.js'
 
@@ -68,7 +68,7 @@ type RelayRequest = Pick<FastifyRequest<{ Body: Body }>, 'body' | 'ip' | 'header
 
 async function relay(request: RelayRequest): Promise<void> {
   const body = request.body
-  if (!metaCapiActive() || !onThisSite(body.url)) return
+  if (metaCapiMode() === 'off' || !onThisSite(body.url)) return
 
   let customData: MetaCustomData
   let eventId = body.eventId

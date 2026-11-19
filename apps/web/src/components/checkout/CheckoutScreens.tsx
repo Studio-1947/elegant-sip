@@ -74,12 +74,12 @@ export function OrderConfirmedScreen({
             <>
               Razorpay has passed on your payment for order{' '}
               <span className="font-mono font-bold text-[#1b261b]">{orderNumber}</span> and we are waiting for the bank to
-              confirm it. This usually takes a minute. Please don't pay again — your order page updates by itself.
+              confirm it. This usually takes a minute. Please don't pay again. Your order page updates by itself.
             </>
           ) : awaitingPayment ? (
             <>
               Order <span className="font-mono font-bold text-[#1b261b]">{orderNumber}</span> is not paid yet. Your teas
-              are held for a short while — pay now to confirm the order. If it isn't paid, it is cancelled automatically.
+              are held for a short while. Pay now to confirm the order. If it isn't paid, it is cancelled automatically.
             </>
           ) : (
             <>

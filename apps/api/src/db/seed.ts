@@ -7,6 +7,7 @@ import { and, eq, inArray, sql as drizzleSql } from 'drizzle-orm'
 import { db, sql } from './client.js'
 import { NEW_RANGE } from './seed-new-range.js'
 import { coupons, gardenProducts, gardens, journalPosts, productVariants, products, seedState } from './schema.js'
+import { JOURNAL_BODIES } from './journal-articles.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Seed — the real catalogue, migrated out of the storefront's TypeScript.
@@ -176,7 +177,7 @@ const GARDENS = [
     elevation: '3,500–7,000 ft',
     imageSrc: '/gopal-1024.webp',
     story: [
-      'Gopaldhara sits above Mirik, and its upper sections are among the highest planted land in Darjeeling — rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.',
+      'Gopaldhara sits above Mirik, and its upper sections are among the highest planted land in Darjeeling, rising past 7,000 feet. Altitude is the whole story here: at that height the bush grows slowly, the internodes shorten, and the leaf concentrates the aromatics that give Darjeeling first flush its muscatel signature.',
       'The first flush is a narrow window. After winter dormancy the bushes push a small quantity of tender two-leaves-and-a-bud, and the pluck runs for a few weeks in late February through April. That leaf is withered long and fired light, which is why a first flush brews pale gold rather than red, and why it should never meet milk.',
     ],
   },
@@ -188,7 +189,7 @@ const GARDENS = [
     imageSrc: '/harvest.webp',
     story: [
       'Rohini lies lower down the hill, on warmer slopes where the Darjeeling foothills heat up earlier in the season. Lower elevation means the bushes wake sooner, so Rohini is often among the first gardens in the district to send out a first flush at all.',
-      'A warmer, faster-growing leaf makes a bolder cup — more body, more malt, less of the ethereal floral top note you get at 7,000 feet.',
+      'A warmer, faster-growing leaf makes a bolder cup: more body, more malt, less of the ethereal floral top note you get at 7,000 feet.',
       'Nothing here is blended with leaf from outside the district.',
     ],
   },
@@ -196,16 +197,52 @@ const GARDENS = [
 
 const JOURNAL = [
   {
+    slug: 'reading-the-seasons',
+    title: 'Reading the Seasons: First, Second and Autumn Flush',
+    excerpt:
+      'One garden can give you three very different teas in a single year. A simple guide to what each flush tastes like, and how to brew it.',
+    category: 'Seasons',
+    author: 'The Elegant Sip Tasting Team',
+    publishedAt: new Date('2026-10-20T08:00:00Z'),
+    readTime: '4 min read',
+    imageSrc: '/hero-1920.webp',
+    imageAlt: 'A Darjeeling tea garden seen through pine branches',
+  },
+  {
+    slug: 'why-altitude-matters',
+    title: 'Why Altitude Shapes the Cup',
+    excerpt:
+      'Cool nights, thin air and slow growth. What height does to a tea leaf, and why so much of the best Darjeeling is grown high up.',
+    category: 'Origin',
+    author: 'The Elegant Sip Tasting Team',
+    publishedAt: new Date('2026-08-14T08:00:00Z'),
+    readTime: '3 min read',
+    imageSrc: '/gopal.webp',
+    imageAlt: 'A tea garden on a Darjeeling ridge lined with tall pines',
+  },
+  {
+    slug: 'keeping-tea-fresh',
+    title: 'Keeping Your Tea Fresh at Home',
+    excerpt:
+      'Light, air, heat and strong smells are what fade a good tea. A few easy habits that keep every cup tasting the way it did on day one.',
+    category: 'Care',
+    author: 'The Elegant Sip Tasting Team',
+    publishedAt: new Date('2026-05-30T08:00:00Z'),
+    readTime: '2 min read',
+    imageSrc: '/package.webp',
+    imageAlt: 'An Elegant Sip tea box with the snow-capped Himalaya behind it',
+  },
+  {
     slug: 'art-of-first-flush',
     title: 'The Art of the First Flush',
     excerpt:
-      'The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices — and the most patience.',
+      'The first harvest of spring is a race against the sun. Why the earliest pluck of the year commands the highest prices, and the most patience.',
     category: 'Craft',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-03-12T08:00:00Z'),
-    readTime: '4 min read',
-    imageSrc: '/origin.webp',
-    imageAlt: 'Highland tea terraces at first light',
+    readTime: '3 min read',
+    imageSrc: '/cover_elegant-poster.webp',
+    imageAlt: 'Fresh tea shoots catching the early morning sun',
   },
   {
     slug: 'field-guide-to-steeping',
@@ -215,9 +252,9 @@ const JOURNAL = [
     category: 'Brewing',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2026-01-28T08:00:00Z'),
-    readTime: '5 min read',
-    imageSrc: '/craft.webp',
-    imageAlt: 'Tea leaves being hand-processed',
+    readTime: '3 min read',
+    imageSrc: '/experience.webp',
+    imageAlt: 'A freshly brewed cup beside a jar of Morning Dew on a hillside ledge',
   },
   {
     slug: 'from-mist-to-cup',
@@ -227,9 +264,9 @@ const JOURNAL = [
     category: 'Sourcing',
     author: 'The Elegant Sip Tasting Team',
     publishedAt: new Date('2025-11-05T08:00:00Z'),
-    readTime: '6 min read',
-    imageSrc: '/harvest.webp',
-    imageAlt: 'Tea plantation at harvest',
+    readTime: '3 min read',
+    imageSrc: '/shopimg.webp',
+    imageAlt: 'Pluckers at work on a Darjeeling tea slope under heavy clouds',
   },
 ]
 
@@ -409,8 +446,8 @@ export async function seed() {
   for (const post of JOURNAL) {
     await db
       .insert(journalPosts)
-      .values({ ...post, body: [] })
-      .onConflictDoUpdate({ target: journalPosts.slug, set: { title: post.title, excerpt: post.excerpt } })
+      .values({ ...post, body: JOURNAL_BODIES[post.slug] ?? [] })
+      .onConflictDoUpdate({ target: journalPosts.slug, set: { title: post.title, excerpt: post.excerpt, readTime: post.readTime, imageSrc: post.imageSrc, imageAlt: post.imageAlt, body: JOURNAL_BODIES[post.slug] ?? [] } })
   }
   console.log(`  journal      ${JOURNAL.length}`)
 
