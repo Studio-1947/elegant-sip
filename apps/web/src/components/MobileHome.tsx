@@ -21,6 +21,7 @@ import TestimonialsSection from './TestimonialsSection'
 import PhilosophyQuoteSection from './PhilosophyQuoteSection'
 import StatsBarSection from './StatsBarSection'
 import NewsletterSection from './NewsletterSection'
+import GoogleReviewsSection from './GoogleReviewsSection'
 import Footer from './Footer'
 
 const TICKER_ITEMS = ['Direct from Garden', 'Single-Origin', 'Freshly Packed', 'Small-Batch Craft']
@@ -262,6 +263,7 @@ export default function MobileHome() {
       <TestimonialsSection />
       <PhilosophyQuoteSection />
       <StatsBarSection />
+      <GoogleReviewsSection />
       <NewsletterSection />
       <Footer />
 
