@@ -121,31 +121,78 @@ export function buildServerEvent(input: ServerEventInput): MetaServerEvent | nul
 
 export type MetaCapiMode = 'off' | 'test' | 'live'
 
-export function metaCapiMode(): MetaCapiMode {
-  if (!env.META_PIXEL_ID || !env.META_CAPI_ACCESS_TOKEN) return 'off'
-  if (env.META_CAPI_TEST_EVENT_CODE) return 'test'
-  // A development server takes fake payments: its events must never reach the
+/*
+ * Every event goes to each pixel that has an access token: Elegant Sip's own
+ * (the one the storefront's browser pixel uses, so Meta pairs the two copies)
+ * and, optionally, Studio 1947's "Elegant Sip New" pixel. The second gets the
+ * server copy only. Each pixel is switched on, tested and reports failures on
+ * its own, so a bad token on one never stops the other.
+ */
+export type MetaPixel = 'primary' | 'secondary'
+
+interface PixelConfig {
+  /** Prefixed to this pixel's errors on the admin page. Empty for the main pixel. */
+  label: string
+  pixelId?: string
+  token?: string
+  testEventCode?: string
+}
+
+function pixelConfig(pixel: MetaPixel): PixelConfig {
+  return pixel === 'primary'
+    ? { label: '', pixelId: env.META_PIXEL_ID, token: env.META_CAPI_ACCESS_TOKEN, testEventCode: env.META_CAPI_TEST_EVENT_CODE }
+    : {
+        label: 'Studio 1947 pixel',
+        pixelId: env.META_PIXEL_ID_SECONDARY,
+        token: env.META_CAPI_ACCESS_TOKEN_SECONDARY,
+        testEventCode: env.META_CAPI_TEST_EVENT_CODE_SECONDARY,
+      }
+}
+
+const PIXELS: readonly MetaPixel[] = ['primary', 'secondary']
+
+/** Whether server events go to this pixel (the main one by default). */
+export function metaCapiMode(pixel: MetaPixel = 'primary'): MetaCapiMode {
+  const config = pixelConfig(pixel)
+  if (!config.pixelId || !config.token) return 'off'
+  if (config.testEventCode) return 'test'
+  // A development server takes fake payments: its events must never reach a
   // live pixel and skew real ad results. Locally, only test events are sent.
   return env.NODE_ENV === 'development' ? 'off' : 'live'
 }
 
-/** The latest failure, cleared by the next success. For the admin page. */
-let lastError: { at: Date; message: string } | null = null
-export const metaCapiLastError = () => lastError
+/** True when at least one pixel takes server events, so they are worth building. */
+export const metaCapiActive = () => PIXELS.some((pixel) => metaCapiMode(pixel) !== 'off')
 
-/** Logs a failure at most once a minute, so a dead token does not flood the logs. */
-let lastWarnAt = 0
-function fail(log: FastifyBaseLogger, message: string, details: Record<string, unknown> = {}) {
-  lastError = { at: new Date(), message }
-  if (Date.now() - lastWarnAt < 60_000) return
-  lastWarnAt = Date.now()
-  log.warn({ metaCapi: { message, ...details } }, 'meta conversions api: events not delivered')
+/** Each pixel's latest failure, cleared by its next success. For the admin page. */
+const lastErrors = new Map<MetaPixel, { at: Date; message: string }>()
+
+/** The main pixel's latest failure, else the second pixel's, labelled as such. */
+export function metaCapiLastError(): { at: Date; message: string } | null {
+  for (const pixel of PIXELS) {
+    const error = lastErrors.get(pixel)
+    if (!error) continue
+    const { label } = pixelConfig(pixel)
+    return label ? { at: error.at, message: `${label}: ${error.message}` } : error
+  }
+  return null
 }
 
-/** Sends events to Meta. Resolves to whether Meta accepted them; never throws. */
-export async function sendMetaEvents(events: MetaServerEvent[], log: FastifyBaseLogger): Promise<boolean> {
-  if (metaCapiMode() === 'off' || events.length === 0) return false
-  const endpoint = `https://graph.facebook.com/${env.META_GRAPH_API_VERSION}/${env.META_PIXEL_ID}/events`
+/** Logs a failure at most once a minute per pixel, so a dead token does not flood the logs. */
+const lastWarnAt = new Map<MetaPixel, number>()
+function fail(pixel: MetaPixel, log: FastifyBaseLogger, message: string, details: Record<string, unknown> = {}) {
+  lastErrors.set(pixel, { at: new Date(), message })
+  if (Date.now() - (lastWarnAt.get(pixel) ?? 0) < 60_000) return
+  lastWarnAt.set(pixel, Date.now())
+  log.warn(
+    { metaCapi: { pixel, pixelId: pixelConfig(pixel).pixelId, message, ...details } },
+    'meta conversions api: events not delivered',
+  )
+}
+
+async function sendToPixel(pixel: MetaPixel, events: MetaServerEvent[], log: FastifyBaseLogger): Promise<boolean> {
+  const config = pixelConfig(pixel)
+  const endpoint = `https://graph.facebook.com/${env.META_GRAPH_API_VERSION}/${config.pixelId}/events`
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -153,21 +200,32 @@ export async function sendMetaEvents(events: MetaServerEvent[], log: FastifyBase
       // The token goes in the body, never the URL, so it cannot end up in a log line.
       body: JSON.stringify({
         data: events,
-        access_token: env.META_CAPI_ACCESS_TOKEN,
-        ...(env.META_CAPI_TEST_EVENT_CODE ? { test_event_code: env.META_CAPI_TEST_EVENT_CODE } : {}),
+        access_token: config.token,
+        ...(config.testEventCode ? { test_event_code: config.testEventCode } : {}),
       }),
       signal: AbortSignal.timeout(5_000),
     })
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as { error?: { message?: unknown; code?: unknown } } | null
       const message = typeof body?.error?.message === 'string' ? body.error.message.slice(0, 300) : `HTTP ${response.status}`
-      fail(log, message, { status: response.status, code: body?.error?.code })
+      fail(pixel, log, message, { status: response.status, code: body?.error?.code })
       return false
     }
-    lastError = null
+    lastErrors.delete(pixel)
     return true
   } catch (err) {
-    fail(log, err instanceof Error ? err.message : 'request failed')
+    fail(pixel, log, err instanceof Error ? err.message : 'request failed')
     return false
   }
+}
+
+/**
+ * Sends events to every pixel that takes them, in parallel. Resolves to
+ * whether all of them accepted (false when none is on); never throws.
+ */
+export async function sendMetaEvents(events: MetaServerEvent[], log: FastifyBaseLogger): Promise<boolean> {
+  const targets = PIXELS.filter((pixel) => metaCapiMode(pixel) !== 'off')
+  if (targets.length === 0 || events.length === 0) return false
+  const results = await Promise.all(targets.map((pixel) => sendToPixel(pixel, events, log)))
+  return results.every(Boolean)
 }
