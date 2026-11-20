@@ -1,5 +1,7 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { googleListing, googleReviews, type GoogleReview } from '../data/googleReviews'
+import { useDialog } from '../lib/useDialog'
 import { useIsMobile } from '../lib/useMediaQuery'
 import { useScrollReveal } from '../lib/useScrollReveal'
 import StarRating from './reviews/StarRating'
@@ -236,6 +238,15 @@ function ReviewColumns({ reviews }: { reviews: GoogleReview[] }) {
 }
 
 function ReviewCard({ review: r }: { review: GoogleReview }) {
+  const [viewing, setViewing] = useState<number | null>(null)
+
+  // A plain click opens the photo over the page; Cmd/Ctrl/Shift-click still opens a tab.
+  const openPhoto = (e: MouseEvent<HTMLAnchorElement>, index: number) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    e.preventDefault()
+    setViewing(index)
+  }
+
   return (
     <figure className="m-0 bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-7">
       <figcaption className="flex items-center gap-3">
@@ -257,13 +268,103 @@ function ReviewCard({ review: r }: { review: GoogleReview }) {
               rel="noreferrer"
               className="rounded-lg overflow-hidden"
               aria-label={`Open photo ${i + 1} from ${r.author}'s review`}
+              onClick={(e) => openPhoto(e, i)}
             >
               <img src={photo.thumb} alt="" width={64} height={64} loading="lazy" className="w-16 h-16 object-cover bg-[#8bb56e]/15 transition-transform duration-300 hover:scale-105" />
             </a>
           ))}
         </div>
       )}
+      {viewing !== null && r.photos && (
+        <PhotoViewer review={r} index={viewing} onIndex={setViewing} onClose={() => setViewing(null)} />
+      )}
     </figure>
+  )
+}
+
+/**
+ * A reviewer's photo, large, over the page: ✕, Escape or a click outside
+ * closes it; arrows (and the arrow keys) step through that review's photos.
+ * Drawn on <body>: the homepage's content sits inside a transformed container,
+ * which would otherwise trap a fixed layer inside it.
+ */
+function PhotoViewer({
+  review: r,
+  index,
+  onIndex,
+  onClose,
+}: {
+  review: GoogleReview
+  index: number
+  onIndex: (index: number) => void
+  onClose: () => void
+}) {
+  // Focus trap, focus restoration, Escape and scroll lock.
+  const dialogRef = useDialog(true, onClose)
+  const photos = r.photos ?? []
+  const many = photos.length > 1
+  const step = (delta: number) => onIndex((index + delta + photos.length) % photos.length)
+  const photo = photos[index]
+  if (!photo) return null
+
+  return createPortal(
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10"
+      onKeyDown={(e) => {
+        if (!many) return
+        if (e.key === 'ArrowLeft') step(-1)
+        if (e.key === 'ArrowRight') step(1)
+      }}
+    >
+      <div className="absolute inset-0 bg-[#060b08]/90 backdrop-blur-sm cursor-pointer" onClick={onClose} />
+      <div role="dialog" aria-modal="true" aria-label={`Photo ${index + 1} of ${photos.length} from ${r.author}'s review`} className="relative z-10 flex flex-col items-center max-w-5xl w-full">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close photo"
+          className="absolute -top-2 right-0 md:-top-4 md:-right-4 z-20 w-11 h-11 rounded-full bg-white/90 text-[#1b261b] flex items-center justify-center text-lg font-bold shadow-sm hover:bg-white transition-colors cursor-pointer"
+        >
+          ✕
+        </button>
+        <div className="relative w-full flex items-center justify-center">
+          <img
+            key={photo.full}
+            src={photo.full}
+            alt={`Photo ${index + 1} from ${r.author}'s review`}
+            className="max-h-[80vh] max-w-full w-auto h-auto rounded-xl object-contain shadow-2xl bg-[#1b261b]"
+          />
+          {many && (
+            <>
+              <ViewerArrow direction="prev" onClick={() => step(-1)} />
+              <ViewerArrow direction="next" onClick={() => step(1)} />
+            </>
+          )}
+        </div>
+        <p className="mt-4 text-xs font-mono uppercase tracking-wider text-white/70" aria-live="polite">
+          {r.author}
+          {many && ` · ${index + 1} of ${photos.length}`}
+        </p>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+/** The product gallery's arrows, for the photo viewer. */
+function ViewerArrow({ direction, onClick }: { direction: 'prev' | 'next'; onClick: () => void }) {
+  const prev = direction === 'prev'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={prev ? 'Previous photo' : 'Next photo'}
+      className={`absolute top-1/2 -translate-y-1/2 ${prev ? 'left-2 md:-left-6' : 'right-2 md:-right-6'} z-10 w-11 h-11 rounded-full bg-white/90 border border-[#1b261b]/10 text-[#1b261b] flex items-center justify-center shadow-sm hover:bg-white transition-colors cursor-pointer`}
+    >
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d={prev ? 'M15 18l-6-6 6-6' : 'M9 6l6 6-6 6'} />
+      </svg>
+    </button>
   )
 }
 

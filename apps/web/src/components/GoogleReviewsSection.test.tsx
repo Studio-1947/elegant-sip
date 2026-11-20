@@ -112,4 +112,26 @@ describe('GoogleReviewsSection', () => {
       tall.mockRestore()
     }
   })
+
+  it('opens a photo large in the page, steps through the review\'s photos, and closes', () => {
+    const two: GoogleReview = {
+      id: 'p',
+      author: 'Pema T.',
+      rating: 5,
+      when: '2 months ago',
+      text: 'Look at these leaves.',
+      photos: [
+        { thumb: '/reviews/p-1-thumb.webp', full: '/reviews/p-1.webp' },
+        { thumb: '/reviews/p-2-thumb.webp', full: '/reviews/p-2.webp' },
+      ],
+    }
+    render(<GoogleReviewsSection reviews={[two]} />)
+    fireEvent.click(screen.getByRole('link', { name: "Open photo 1 from Pema T.'s review" }), { button: 0 })
+    const viewer = screen.getByRole('dialog', { name: "Photo 1 of 2 from Pema T.'s review" })
+    expect(within(viewer).getByRole('img').getAttribute('src')).toBe('/reviews/p-1.webp')
+    fireEvent.click(within(viewer).getByRole('button', { name: 'Next photo' }))
+    expect(within(screen.getByRole('dialog')).getByRole('img').getAttribute('src')).toBe('/reviews/p-2.webp')
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close photo' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
 })
