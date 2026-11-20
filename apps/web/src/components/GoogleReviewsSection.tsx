@@ -7,6 +7,9 @@ import StarRating from './reviews/StarRating'
 /** Reviews shown at first, and added by each "Show more reviews". */
 const PAGE = 6
 
+/** How far below the top of the screen the rating card rides (under the site header). */
+const FOLLOW_TOP = 112
+
 /**
  * Topics to filter by, as Google groups this listing's reviews. Each counts the
  * reviews whose own words match, so a chip's number is always what it shows.
@@ -93,11 +96,12 @@ function GoogleReviewsShowcase({ reviews }: { reviews: GoogleReview[] }) {
 
 /** The big number, the stars, how the ratings spread, and the way to Google. Stays in view beside the reviews on wide screens. */
 function RatingSummary({ reviews }: { reviews: GoogleReview[] }) {
+  const ref = useFollowWithinParent<HTMLElement>(FOLLOW_TOP)
   const counts = [5, 4, 3, 2, 1].map((stars) => ({ stars, count: reviews.filter((r) => Math.round(r.rating) === stars).length }))
   const most = Math.max(1, ...counts.map((c) => c.count))
 
   return (
-    <aside aria-label="Google rating" className="lg:sticky lg:top-28 bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8">
+    <aside ref={ref} aria-label="Google rating" className="relative will-change-transform bg-white border border-[#1b261b]/10 rounded-2xl p-6 md:p-8">
       <div className="flex items-center gap-4">
         <p className="text-6xl md:text-7xl font-bold tracking-tight text-[#1b261b] leading-none">{googleListing.rating.toFixed(1)}</p>
         <div>
@@ -137,6 +141,61 @@ function RatingSummary({ reviews }: { reviews: GoogleReview[] }) {
       </a>
     </aside>
   )
+}
+
+/**
+ * Keeps an element in view while its parent scrolls past, from the parent's
+ * top to its bottom, in both directions; on wide screens only (where the card
+ * sits beside the reviews).
+ *
+ * Not CSS position: sticky. The homepage's content sits inside the hero's
+ * ScrollTrigger pin, which, once the pin ends, shifts that content down with
+ * a transform. Sticky positions from the unshifted layout, so the card stuck
+ * at the bottom of its range. Measuring on screen includes the shift.
+ */
+function useFollowWithinParent<T extends HTMLElement>(top: number) {
+  const ref = useRef<T>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    const parent = el?.parentElement
+    if (!el || !parent || typeof window.matchMedia !== 'function') return
+    const wide = window.matchMedia('(min-width: 1024px)')
+    let frame = 0
+
+    const place = () => {
+      frame = 0
+      if (!wide.matches) {
+        el.style.transform = ''
+        return
+      }
+      const room = parent.offsetHeight - el.offsetHeight
+      const offset = Math.max(0, Math.min(room, top - parent.getBoundingClientRect().top))
+      el.style.transform = offset > 0 ? `translateY(${Math.round(offset)}px)` : ''
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(place)
+    }
+
+    place()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    wide.addEventListener('change', schedule)
+    // "Show more reviews" and "Read more" change how far it can travel.
+    const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule)
+    ro?.observe(parent)
+
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      wide.removeEventListener('change', schedule)
+      ro?.disconnect()
+      el.style.transform = ''
+    }
+  }, [top])
+
+  return ref
 }
 
 function TopicChip({ label, count, pressed, onClick }: { label: string; count: number; pressed: boolean; onClick: () => void }) {
