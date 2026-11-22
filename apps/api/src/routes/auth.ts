@@ -32,6 +32,7 @@ import {
   toPublicUser,
 } from './auth-shared.js'
 import { mfaRoutes } from './mfa.js'
+import { googleAuthRoutes } from './google-auth.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Identity.
@@ -49,6 +50,7 @@ import { mfaRoutes } from './mfa.js'
 
 export const authRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(mfaRoutes)
+  await app.register(googleAuthRoutes)
 
   app.post(
       '/auth/register',

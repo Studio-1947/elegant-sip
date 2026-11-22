@@ -168,6 +168,13 @@ const envSchema = z.object({
   META_PIXEL_ID_SECONDARY: z.string().trim().regex(/^\d*$/, 'must be the numeric pixel (dataset) ID').default('1692896069094831'),
   META_CAPI_ACCESS_TOKEN_SECONDARY: blankAsUnset(z.string().trim().min(20)),
   META_CAPI_TEST_EVENT_CODE_SECONDARY: blankAsUnset(z.string().trim().max(64)),
+  /*
+   * "Continue with Google" (routes/google-auth.ts): the OAuth client ID from
+   * Google Cloud, a Web application with this site as an authorised
+   * JavaScript origin. Unset hides the button. No client secret is needed.
+   */
+  GOOGLE_CLIENT_ID: blankAsUnset(z.string().trim().regex(/^[\w-]+\.apps\.googleusercontent\.com$/, 'like 1234-abc.apps.googleusercontent.com')),
+
   META_GRAPH_API_VERSION: z.string().trim().regex(/^v\d+\.\d+$/, 'like v24.0').default('v24.0'),
 })
 

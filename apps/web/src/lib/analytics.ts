@@ -6,6 +6,7 @@ import {
   metaServerEvent,
   metaTrack,
   newMetaEventId,
+  umamiTrack,
   type MetaServerPayload,
 } from './tags'
 
@@ -284,6 +285,8 @@ export function track(event: AnalyticsEvent, props: Record<string, unknown> = {}
   if (provider === 'ga4' || (GTM_ID && marketingTagsLoaded())) pushToDataLayer(event, props)
 
   sendToMeta(event, props)
+  // Umami: our event names, money in rupees like everywhere outside the store.
+  umamiTrack(GA_NAMES[event] ?? event, flatProps(props))
 
   if (import.meta.env.DEV) {
     console.info(`[analytics] ${event}`, props)

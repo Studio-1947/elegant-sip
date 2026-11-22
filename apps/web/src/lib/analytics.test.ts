@@ -8,10 +8,11 @@ vi.mock('./tags', () => ({
   metaTrack: vi.fn(),
   metaServerEvent: vi.fn(),
   newMetaEventId: () => 'evt-test-1',
+  umamiTrack: vi.fn(),
 }))
 
 import { clearTrackingCookies, hasAnalyticsConsent, purchaseProps, readConsent, setAnalyticsConsent, track } from './analytics'
-import { loadMarketingTags, metaServerEvent, metaTrack } from './tags'
+import { loadMarketingTags, metaServerEvent, metaTrack, umamiTrack } from './tags'
 
 const dataLayer = () => (window as { dataLayer?: unknown[] }).dataLayer ?? []
 const lastEvent = () => dataLayer()[dataLayer().length - 1] as Record<string, unknown>
@@ -122,6 +123,9 @@ describe('events after Accept', () => {
     track('signup', { method: 'email' })
     expect(lastEvent()).toEqual({ event: 'sign_up', method: 'email' })
     expect(metaTrack).toHaveBeenCalledWith('CompleteRegistration', {}, 'evt-test-1')
+    // Umami gets the same names, money in rupees, no line items.
+    expect(umamiTrack).toHaveBeenCalledWith('add_payment_info', { value: 861, currency: 'INR' })
+    expect(umamiTrack).toHaveBeenCalledWith('sign_up', { method: 'email' })
   })
 })
 

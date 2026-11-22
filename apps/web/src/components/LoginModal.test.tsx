@@ -6,11 +6,19 @@ const api = vi.hoisted(() => ({
   auth: { methods: vi.fn(), requestWhatsApp: vi.fn(), forgotPassword: vi.fn(), loginWithCode: vi.fn() },
 }))
 vi.mock('../lib/api', async (importOriginal) => ({ ...(await importOriginal<typeof import('../lib/api')>()), api }))
-const auth = vi.hoisted(() => ({ login: vi.fn(), loginWithWhatsApp: vi.fn(), register: vi.fn(), applyUser: vi.fn() }))
+const auth = vi.hoisted(() => ({ login: vi.fn(), loginWithWhatsApp: vi.fn(), loginWithGoogle: vi.fn(), register: vi.fn(), applyUser: vi.fn() }))
 vi.mock('./AuthContext', () => ({ useAuth: () => auth }))
 vi.mock('../lib/analytics', () => ({ track: vi.fn() }))
 vi.mock('./TeaDiscoveryQuizModal', () => ({ default: () => null }))
 vi.mock('./CartDrawer', () => ({ default: () => null }))
+// Google's real button needs Google's script; this stand-in hands back a token when pressed.
+vi.mock('./GoogleSignInButton', () => ({
+  default: ({ clientId, onCredential }: { clientId: string; onCredential: (credential: string) => void }) => (
+    <button type="button" data-client-id={clientId} onClick={() => onCredential('google-id-token')}>
+      Continue with Google
+    </button>
+  ),
+}))
 
 import LoginModal from './LoginModal'
 import { UiProvider, useUi } from './UiContext'
@@ -251,5 +259,36 @@ describe('login box: two-step sign-in', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('That sign-in has expired. Enter your email and password again.')
     expect(screen.getByLabelText('Password')).toBeTruthy()
     expect(screen.queryByLabelText('Authenticator code')).toBeNull()
+  })
+})
+
+describe('login box: Google', () => {
+  it('has no Google button while Google sign-in is off', async () => {
+    api.auth.methods.mockResolvedValue({ whatsapp: false, googleClientId: null })
+    renderModal()
+    await waitFor(() => expect(api.auth.methods).toHaveBeenCalled())
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).toBeNull()
+  })
+
+  it('signs in with the token from Google, then closes', async () => {
+    api.auth.methods.mockResolvedValue({ whatsapp: false, googleClientId: '1234-test.apps.googleusercontent.com' })
+    auth.loginWithGoogle.mockResolvedValue(undefined)
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(<LoginModal isOpen onClose={onClose} />)
+    const button = await screen.findByRole('button', { name: 'Continue with Google' })
+    expect(button.getAttribute('data-client-id')).toBe('1234-test.apps.googleusercontent.com')
+    await user.click(button)
+    expect(auth.loginWithGoogle).toHaveBeenCalledWith('google-id-token')
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+  })
+
+  it('shows the server\'s reason when Google sign-in is refused', async () => {
+    api.auth.methods.mockResolvedValue({ whatsapp: false, googleClientId: '1234-test.apps.googleusercontent.com' })
+    auth.loginWithGoogle.mockRejectedValue(new ApiClientError(403, 'mfa_required', 'This account uses two-step sign-in. Sign in with your email, password and authenticator code instead.'))
+    const user = userEvent.setup()
+    renderModal()
+    await user.click(await screen.findByRole('button', { name: 'Continue with Google' }))
+    expect(await screen.findByText(/This account uses two-step sign-in/)).toBeTruthy()
   })
 })

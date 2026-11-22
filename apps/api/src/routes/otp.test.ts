@@ -87,13 +87,13 @@ describe('GET /v1/auth/methods', () => {
     if (!available) return
     const on = await app.inject({ method: 'GET', url: '/v1/auth/methods' })
     expect(on.statusCode).toBe(200)
-    expect(on.json()).toEqual({ whatsapp: true })
+    expect(on.json()).toMatchObject({ whatsapp: true })
     expect(on.headers['cache-control']).toBe('public, max-age=60')
 
     const saved = env.AUTH_OTP_PROVIDER
     env.AUTH_OTP_PROVIDER = 'disabled'
     try {
-      expect((await app.inject({ method: 'GET', url: '/v1/auth/methods' })).json()).toEqual({ whatsapp: false })
+      expect((await app.inject({ method: 'GET', url: '/v1/auth/methods' })).json()).toMatchObject({ whatsapp: false })
       // And a request then fails before spending anything or calling out.
       const phone = freshPhone()
       const { res } = await requestCode(phone)
