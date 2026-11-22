@@ -11,6 +11,7 @@ import { ApiError } from '../lib/problem.js'
 import { SESSION_COOKIE, createSession, sessionCookieOptions } from '../lib/sessions.js'
 import { ARGON2, isPlaceholderEmail, limit, ownEmailSchema, passwordSchema, PLACEHOLDER_EMAIL_DOMAIN, PLACEHOLDER_NAME, publicUserSchema, sendVerificationEmail, toPublicUser } from './auth-shared.js'
 import { revokeEmailVerifications } from './profile.js'
+import { googleAuthAvailable } from './google-auth.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * The per-IP limits on these routes stop one machine, not one attacker: many
@@ -172,10 +173,10 @@ async function consume(id: string, code: string, purpose: 'phone_login' | 'phone
 }
 
 export const otpRoutes: FastifyPluginAsyncZod = async (app) => {
-  app.get('/auth/methods', { schema: { tags: ['Auth'], summary: 'Sign-in methods currently available', response: { 200: z.object({ whatsapp: z.boolean() }) } } }, async (_request, reply) => {
+  app.get('/auth/methods', { schema: { tags: ['Auth'], summary: 'Sign-in methods currently available', response: { 200: z.object({ whatsapp: z.boolean(), googleClientId: z.string().nullable() }) } } }, async (_request, reply) => {
     // Configuration only changes on deploy; a minute of caching is harmless.
     reply.header('Cache-Control', 'public, max-age=60')
-    return { whatsapp: otpAvailable() }
+    return { whatsapp: otpAvailable(), googleClientId: googleAuthAvailable() ? env.GOOGLE_CLIENT_ID! : null }
   })
   app.post('/auth/whatsapp/request', { config: limit(IP_CODE_REQUESTS, '10 minutes'), schema: { tags: ['Auth'], body: z.object({ phone: phoneSchema }), response: { 200: response } } }, async (request) => {
     const phone = normalisePhone(request.body.phone)

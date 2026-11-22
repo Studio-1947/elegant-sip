@@ -1,7 +1,7 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * Marketing tags: Google Tag Manager and the Meta Pixel.
+ * Marketing tags: Google Tag Manager, the Meta Pixel and Umami.
  *
- * Neither script is in index.html. They load only after the visitor accepts
+ * None of these scripts is in index.html. They load only after the visitor accepts
  * the consent banner (now, or on a previous visit), so nothing reaches Google
  * or Meta from a visitor who declined or has not decided.
  *
@@ -10,6 +10,10 @@
  *   VITE_GTM_ID=GTM-XXXXXXX
  *   VITE_META_PIXEL_ID=1234567890
  *   VITE_META_PIXEL_ID_SECONDARY=1234567890
+ *   VITE_UMAMI_WEBSITE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+ *
+ * Umami (cloud.umami.is) records page views, clicks for its heatmaps, and the
+ * same named events as the other tags (see track() in analytics.ts).
  *
  * Two Meta pixels load: Elegant Sip's own and Studio 1947's ("Elegant Sip
  * New"). Every fbq('track') call reaches every initialised pixel, so each
@@ -30,11 +34,13 @@ type Fbq = ((...args: unknown[]) => void) & {
   version: string
 }
 
-type TagWindow = Window & { dataLayer?: unknown[]; fbq?: Fbq; _fbq?: Fbq }
+type TagWindow = Window & { dataLayer?: unknown[]; fbq?: Fbq; _fbq?: Fbq; umami?: { track: (event: string, data?: Record<string, unknown>) => void } }
 
 const envId = (value: unknown, fallback: string) => (typeof value === 'string' ? value.trim() : fallback)
 
 export const GTM_ID = envId(import.meta.env.VITE_GTM_ID, 'GTM-W5MN9LMR')
+/** Umami Cloud website "Elegant Sip": page views, heatmaps and events. */
+export const UMAMI_WEBSITE_ID = envId(import.meta.env.VITE_UMAMI_WEBSITE_ID, 'b3abfd89-90c2-4f53-aff1-452960b0d9c5')
 export const META_PIXEL_ID = envId(import.meta.env.VITE_META_PIXEL_ID, '1702510334659568')
 /** Studio 1947's pixel, connected to the catalogue. The API sends it the
  *  server copy of each event too, once META_CAPI_ACCESS_TOKEN_SECONDARY is set. */
@@ -42,7 +48,7 @@ export const META_PIXEL_ID_SECONDARY = envId(import.meta.env.VITE_META_PIXEL_ID_
 const META_PIXEL_IDS = [...new Set([META_PIXEL_ID, META_PIXEL_ID_SECONDARY].filter(Boolean))]
 
 /** True when at least one marketing tag is configured, so the banner must ask. */
-export const marketingTagsConfigured = () => Boolean(GTM_ID || META_PIXEL_IDS.length)
+export const marketingTagsConfigured = () => Boolean(GTM_ID || META_PIXEL_IDS.length || UMAMI_WEBSITE_ID)
 
 let loaded = false
 
@@ -109,6 +115,24 @@ export function loadMarketingTags() {
   const w = window as TagWindow
   if (GTM_ID) loadGtm(w)
   if (META_PIXEL_IDS.length) loadMetaPixel(w)
+  if (UMAMI_WEBSITE_ID) loadUmami()
+}
+
+/** Umami's own snippet. It counts the store's in-app page changes by itself. */
+function loadUmami() {
+  const script = document.createElement('script')
+  script.defer = true
+  script.src = 'https://cloud.umami.is/script.js'
+  script.dataset.websiteId = UMAMI_WEBSITE_ID
+  // Only the live site's visits count; previews and localhost stay out of the stats.
+  script.dataset.domains = 'elegantsip.in,www.elegantsip.in'
+  document.head.appendChild(script)
+}
+
+/** Sends a named event to Umami, if it has loaded. */
+export function umamiTrack(event: string, data: Record<string, unknown>) {
+  if (!loaded || !UMAMI_WEBSITE_ID) return
+  ;(window as TagWindow).umami?.track(event, data)
 }
 
 export const marketingTagsLoaded = () => loaded

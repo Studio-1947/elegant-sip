@@ -98,6 +98,13 @@ export default function PrivacyPage() {
             don't choose, nothing is sent to Google or Meta and the site works the same.
           </li>
           <li>
+            We also use <strong className="text-[#1b261b]">Umami</strong>, a website analytics service,
+            to see which pages are visited and, through heatmaps, where on a page people click and
+            scroll. It too loads only once you accept the cookie banner, and receives the same shop
+            events listed below. Like any website request, it also sees your IP address and browser
+            type.
+          </li>
+          <li>
             Once you accept, Google and Meta set their own cookies and receive: the pages you view,
             the products you view or add to your cart (product, quantity and price), checkout steps,
             and, when you buy, the order value and number of items. Like any website request, they

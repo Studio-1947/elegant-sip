@@ -30,6 +30,8 @@ interface AuthContextType {
   /** With two-step sign-in on, resolves to the code challenge and no one is signed in yet. */
   login: (email: string, password: string) => Promise<LoginResult>
   loginWithWhatsApp: (challengeId: string, code: string) => Promise<void>
+  /** Signs in with the ID token from Google's button. */
+  loginWithGoogle: (credential: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   /** Ends every session for this account; throws if the server refused. */
@@ -93,6 +95,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(toUser(session))
   }, [])
 
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    const { user: session } = await api.auth.loginWithGoogle(credential)
+    setUser(toUser(session))
+  }, [])
+
   const register = useCallback(async (name: string, email: string, password: string) => {
     await api.auth.register({ name, email, password })
     /* Registration deliberately does not sign you in: the address is not
@@ -123,8 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applyUser = useCallback((session: SessionUser) => setUser(toUser(session)), [])
 
   const value = useMemo(
-    () => ({ user, loading, login, loginWithWhatsApp, register, logout, logoutEverywhere, refresh, applyUser }),
-    [user, loading, login, loginWithWhatsApp, register, logout, logoutEverywhere, refresh, applyUser],
+    () => ({ user, loading, login, loginWithWhatsApp, loginWithGoogle, register, logout, logoutEverywhere, refresh, applyUser }),
+    [user, loading, login, loginWithWhatsApp, loginWithGoogle, register, logout, logoutEverywhere, refresh, applyUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

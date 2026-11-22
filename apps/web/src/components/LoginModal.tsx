@@ -6,6 +6,7 @@ import { AUTH_MAX as MAX, MIN_PASSWORD, emailError, nameError, newPasswordError 
 import { track } from '../lib/analytics'
 import { useDialog } from '../lib/useDialog'
 import { cachedAuthMethods, loadAuthMethods } from '../lib/authMethods'
+import GoogleSignInButton from './GoogleSignInButton'
 
 interface LoginModalProps {
   isOpen: boolean
@@ -50,13 +51,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [error, setError] = useState<string | null>(null)
-  const { login, loginWithWhatsApp, register, applyUser } = useAuth()
+  const { login, loginWithWhatsApp, loginWithGoogle, register, applyUser } = useAuth()
   const [submitting, setSubmitting] = useState(false)
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   // WhatsApp is offered (and opened first) only when the server can send codes.
   const [whatsappAvailable, setWhatsappAvailable] = useState(() => cachedAuthMethods()?.whatsapp ?? false)
   const [whatsapp, setWhatsapp] = useState(whatsappAvailable)
+  // "Continue with Google" shows only when the server names its client ID.
+  const [googleClientId, setGoogleClientId] = useState(() => cachedAuthMethods()?.googleClientId ?? null)
   /** Set once the visitor does anything, so a late answer never yanks the form away. */
   const touched = useRef(false)
   const [phone, setPhone] = useState('')
@@ -84,6 +87,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     void loadAuthMethods().then((methods) => {
       if (!live) return
       setWhatsappAvailable(methods.whatsapp)
+      setGoogleClientId(methods.googleClientId)
       if (methods.whatsapp && !touched.current) setWhatsapp(true)
     })
     return () => {
@@ -300,6 +304,22 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       onClose()
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'That code could not be verified.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const signInWithGoogle = async (credential: string) => {
+    if (submitting) return
+    touched.current = true
+    setError(null)
+    setSubmitting(true)
+    try {
+      await loginWithGoogle(credential)
+      track('login', { method: 'google' })
+      onClose()
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Google sign-in failed. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -580,6 +600,16 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             {submitting ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
+        )}
+
+        {googleClientId && !registered && !mfaChallenge && !whatsapp && (
+          <div className="mt-4">
+            <GoogleSignInButton
+              clientId={googleClientId}
+              text={mode === 'signin' ? 'continue_with' : 'signup_with'}
+              onCredential={(credential) => void signInWithGoogle(credential)}
+            />
+          </div>
         )}
 
         {whatsappAvailable && !registered && !mfaChallenge && mode === 'signin' && !whatsapp && <button onClick={() => { touched.current = true; setWhatsapp(true); setError(null) }} className="w-full mt-4 border border-[#4a7333]/40 text-[#4a7333] text-xs font-bold tracking-widest uppercase py-3 rounded-lg cursor-pointer">Continue with WhatsApp</button>}

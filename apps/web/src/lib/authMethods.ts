@@ -6,10 +6,13 @@ import { api } from './api'
  * WhatsApp codes need an Interakt account; until it is configured the login
  * box must open on email, not on a WhatsApp form that can only fail. Fetched
  * once per page load and shared; any failure counts as "WhatsApp off".
+ * Google sign-in shows only when the server names its OAuth client ID.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export interface AuthMethods {
   whatsapp: boolean
+  /** Google's OAuth client ID, when "Continue with Google" is on. */
+  googleClientId: string | null
 }
 
 let cached: AuthMethods | null = null
@@ -21,8 +24,11 @@ export function loadAuthMethods(): Promise<AuthMethods> {
   if (cached) return Promise.resolve(cached)
   pending ??= api.auth
     .methods()
-    .then((methods) => ({ whatsapp: methods.whatsapp === true }))
-    .catch(() => ({ whatsapp: false }))
+    .then((methods) => ({
+      whatsapp: methods.whatsapp === true,
+      googleClientId: typeof methods.googleClientId === 'string' && methods.googleClientId ? methods.googleClientId : null,
+    }))
+    .catch(() => ({ whatsapp: false, googleClientId: null }))
     .then((methods) => {
       cached = methods
       return methods

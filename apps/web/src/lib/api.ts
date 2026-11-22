@@ -612,7 +612,7 @@ export const api = {
   auth: {
     me: () => request<{ user: SessionUser | null }>('/v1/auth/me'),
     /** Which sign-in methods the server can serve right now. */
-    methods: () => request<{ whatsapp: boolean }>('/v1/auth/methods'),
+    methods: () => request<{ whatsapp: boolean; googleClientId?: string | null }>('/v1/auth/methods'),
     register: (payload: { name: string; email: string; password: string }) =>
       post<{ ok: true }>('/v1/auth/register', payload),
     /** Accounts with two-step sign-in answer with a challenge; finish with `loginWithCode`. */
@@ -628,6 +628,8 @@ export const api = {
     verifyEmail: (token: string) => post<{ ok: true }>('/v1/auth/verify-email', { token }),
     requestWhatsApp: (phone: string) => post<{ ok: true; challengeId?: string }>('/v1/auth/whatsapp/request', { phone }),
     verifyWhatsApp: (challengeId: string, code: string) => post<{ user: SessionUser }>('/v1/auth/whatsapp/verify', { challengeId, code }),
+    /** The ID token Google's button hands back. */
+    loginWithGoogle: (credential: string) => post<{ user: SessionUser }>('/v1/auth/google', { credential }),
     /** Display name only; email and password have their own routes. */
     updateName: (name: string) =>
       request<{ user: SessionUser }>('/v1/auth/me', { method: 'PATCH', body: JSON.stringify({ name }) }),
