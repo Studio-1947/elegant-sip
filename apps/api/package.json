@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^22.13.1",
+    "@types/node": "^26.6.6",
     "@types/nodemailer": "^8.0.1",
     "@types/pdfkit": "^0.17.6",
     "drizzle-kit": "^0.31.10",
