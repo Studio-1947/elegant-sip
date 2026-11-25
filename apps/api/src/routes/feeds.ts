@@ -40,7 +40,7 @@ export const feedRoutes: FastifyPluginAsyncZod = async (app) => {
         if (!variant) continue
         items.push({
           slug: p.slug,
-          name: p.name,
+          name: p.fullName,
           status: p.status,
           description: p.description,
           longDescription: p.longDescription,

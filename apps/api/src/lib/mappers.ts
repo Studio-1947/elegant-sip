@@ -33,7 +33,9 @@ export function toProductDto(row: ProductRow): Product {
   return {
     id: row.id,
     slug: row.slug,
-    name: row.name,
+    name: row.fullName,
+    teaName: row.name,
+    variety: row.variety?.trim() || null,
     status: row.status,
     fromPrice: comingSoon || prices.length === 0 ? null : Math.min(...prices),
     description: row.description,

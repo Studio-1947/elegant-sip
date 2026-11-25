@@ -195,6 +195,31 @@ describe('admin product editor', () => {
     expect(row).toContain(`${env.SITE_URL.replace(/\/$/, '')}/products/green-tea-alt.webp,${env.SITE_URL.replace(/\/$/, '')}/products/green-tea.webp`)
   })
 
+  it('keeps the tea name and its category apart, and shows them joined wherever the full name is used', async () => {
+    if (!available) return
+    try {
+      const res = await patchProduct({ name: 'Emerald Fresh', variety: 'Green Tea' })
+      expect(res.statusCode, res.body).toBe(200)
+
+      const listed = (await app.inject({ method: 'GET', url: '/v1/products' })).json().products.find((p: { slug: string }) => p.slug === SLUG)
+      expect(listed.teaName).toBe('Emerald Fresh')
+      expect(listed.variety).toBe('Green Tea')
+      // Lists, the cart, orders and feeds keep the full name.
+      expect(listed.name).toBe('Emerald Fresh | Green Tea')
+      const feed = await app.inject({ method: 'GET', url: '/v1/feeds/meta.csv' })
+      expect(feed.body.split('\n').find((line) => line.startsWith('P019-S100'))).toContain('Emerald Fresh | Green Tea')
+
+      // A blank category clears it, and the full name is just the tea's name again.
+      expect((await patchProduct({ variety: '' })).statusCode).toBe(200)
+      const cleared = (await app.inject({ method: 'GET', url: '/v1/products' })).json().products.find((p: { slug: string }) => p.slug === SLUG)
+      expect(cleared.variety).toBeNull()
+      expect(cleared.name).toBe('Emerald Fresh')
+    } finally {
+      // The seed does not own this field, so put it back by hand.
+      await db.update(products).set({ variety: null }).where(eq(products.slug, SLUG))
+    }
+  })
+
   it('refuses a photo path that is not on this site', async () => {
     if (!available) return
     for (const imageSrc of ['https://example.com/x.webp', '/../etc/passwd.png', '/products/x.exe']) {

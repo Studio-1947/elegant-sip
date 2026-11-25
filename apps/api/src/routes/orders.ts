@@ -390,7 +390,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             sku: productVariants.sku,
             productId: products.id,
             slug: products.slug,
-            name: products.name,
+            name: products.fullName,
             imageSrc: products.imageSrc,
             status: products.status,
             archivedAt: products.archivedAt,

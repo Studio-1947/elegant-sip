@@ -3517,6 +3517,15 @@
                           "name": {
                             "type": "string"
                           },
+                          "teaName": {
+                            "type": "string"
+                          },
+                          "variety": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "status": {
                             "type": "string",
                             "enum": [
@@ -3868,6 +3877,15 @@
                     },
                     "name": {
                       "type": "string"
+                    },
+                    "teaName": {
+                      "type": "string"
+                    },
+                    "variety": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -10624,6 +10642,15 @@
                           "name": {
                             "type": "string"
                           },
+                          "teaName": {
+                            "type": "string"
+                          },
+                          "variety": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "status": {
                             "type": "string",
                             "enum": [
@@ -10954,7 +10981,20 @@
                   "name": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 120
+                    "maxLength": 120,
+                    "description": "The tea's own name, like \"Morning Dew\""
+                  },
+                  "variety": {
+                    "description": "The product's category, like \"First Flush\"; shown as \"Morning Dew | First Flush\" in orders and feeds. Blank or null clears it.",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "status": {
                     "default": "active",
@@ -11717,6 +11757,18 @@
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 120
+                  },
+                  "variety": {
+                    "description": "The product's category, like \"First Flush\"; shown as \"Morning Dew | First Flush\" in orders and feeds. Blank or null clears it.",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "status": {
                     "type": "string",

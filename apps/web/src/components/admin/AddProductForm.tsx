@@ -40,6 +40,7 @@ export default function AddProductForm({ onCreated, onCancel }: { onCreated: (sl
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugTouched, setSlugTouched] = useState(false)
+  const [variety, setVariety] = useState('')
   const [category, setCategory] = useState('')
   const [status, setStatus] = useState<'active' | 'coming-soon'>('active')
   const [description, setDescription] = useState('')
@@ -75,7 +76,8 @@ export default function AddProductForm({ onCreated, onCancel }: { onCreated: (sl
     const tastingNotes = notes.split(',').map((n) => n.trim()).filter(Boolean)
     if (name.trim().length < 2) return 'Give the tea a name (at least 2 characters).'
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return 'The web address may use only lowercase letters, numbers and single hyphens.'
-    if (category.trim().length < 2) return 'Give it a category, e.g. Black Tea.'
+    if (name.includes(' | ')) return 'Put the part after " | " in Category instead.'
+    if (category.trim().length < 2) return 'Give it a tea type, e.g. Black Tea.'
     if (description.trim().length < 10 || description.trim().length > 600) return 'The short description needs 10 to 600 characters.'
     if (!imageSrc) return 'Upload a main photo.'
     if (tastingNotes.length > 8 || tastingNotes.some((n) => n.length > 40)) return 'Up to 8 tasting notes, each 40 characters or fewer.'
@@ -101,6 +103,7 @@ export default function AddProductForm({ onCreated, onCancel }: { onCreated: (sl
     return {
       slug,
       name: name.trim(),
+      ...(variety.trim() ? { variety: variety.trim() } : {}),
       status,
       description: description.trim(),
       imageSrc,
@@ -129,12 +132,12 @@ export default function AddProductForm({ onCreated, onCancel }: { onCreated: (sl
   return (
     <form onSubmit={(e) => { e.preventDefault(); void submit() }} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Name">
+        <Field label="Tea name" hint="e.g. Morning Dew.">
           <input
             value={name}
             onChange={(e) => {
               setName(e.target.value)
-              if (!slugTouched) setSlug(slugify(e.target.value))
+              if (!slugTouched) setSlug(slugify(`${e.target.value} ${variety}`))
             }}
             maxLength={120}
             autoFocus
@@ -144,7 +147,18 @@ export default function AddProductForm({ onCreated, onCancel }: { onCreated: (sl
         <Field label="Web address" hint={slug ? `elegantsip.in/product/${slug}` : 'Filled in from the name; cannot be changed later.'}>
           <input value={slug} onChange={(e) => { setSlugTouched(true); setSlug(e.target.value.toLowerCase()) }} maxLength={80} className={`${inputClass} font-mono`} />
         </Field>
-        <Field label="Category" hint="Also the shop filter, e.g. Black Tea.">
+        <Field label="Category" hint="Optional, e.g. First Flush. Shown above the name on product cards.">
+          <input
+            value={variety}
+            onChange={(e) => {
+              setVariety(e.target.value)
+              if (!slugTouched) setSlug(slugify(`${name} ${e.target.value}`))
+            }}
+            maxLength={60}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Tea type" hint="Also the shop filter, e.g. Black Tea.">
           <input value={category} onChange={(e) => setCategory(e.target.value)} maxLength={60} className={inputClass} />
         </Field>
         <Field label="Status" hint="Coming soon is listed but can't be bought.">

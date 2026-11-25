@@ -51,6 +51,15 @@ const imagePathSchema = z
 const skuFor = (slug: string, size: string) =>
   `${slug}--${size.split(' · ')[0].toLowerCase().replace(/\s+/g, '-')}`
 
+/** A product's category, shown with its name: "First Flush". Blank clears it. */
+const varietySchema = z
+  .string()
+  .trim()
+  .max(60)
+  .nullable()
+  .transform((v) => (v ? v : null))
+  .describe('The product\'s category, like "First Flush"; shown as "Morning Dew | First Flush" in orders and feeds. Blank or null clears it.')
+
 export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
   // The staff list, retire/restore and offers; registered here so they sit inside the admin hook too.
   await app.register(adminCatalogueRoutes)
@@ -70,7 +79,8 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         ].join('\n'),
         body: z.object({
           slug: slugSchema,
-          name: z.string().trim().min(2).max(120),
+          name: z.string().trim().min(2).max(120).describe('The tea\'s own name, like "Morning Dew"'),
+          variety: varietySchema.optional(),
           status: z.enum(['active', 'coming-soon']).default('active'),
           description: z.string().trim().min(10).max(600),
           longDescription: z.string().trim().max(4000).optional(),
@@ -120,6 +130,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
           .values({
             slug: fields.slug,
             name: fields.name,
+            variety: fields.variety ?? null,
             status: fields.status,
             description: fields.description,
             longDescription: fields.longDescription ?? null,
@@ -181,6 +192,7 @@ export const adminProductRoutes: FastifyPluginAsyncZod = async (app) => {
         params: z.object({ slug: slugSchema }),
         body: z.object({
           name: z.string().trim().min(2).max(120).optional(),
+          variety: varietySchema.optional(),
           status: z.enum(['active', 'coming-soon']).optional(),
           description: z.string().trim().min(10).max(600).optional(),
           longDescription: z.string().trim().max(4000).nullable().optional(),

@@ -58,7 +58,7 @@ export const adminReviewRoutes: FastifyPluginAsyncZod = async (app) => {
         .select({
           id: reviews.id,
           productSlug: products.slug,
-          productName: products.name,
+          productName: products.fullName,
           authorName: reviews.authorName,
           rating: reviews.rating,
           body: reviews.body,

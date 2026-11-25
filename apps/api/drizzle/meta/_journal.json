@@ -148,6 +148,13 @@
       "when": 1794808017306,
       "tag": "0020_remove_em_dashes",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795588703832,
+      "tag": "0021_product_variety",
+      "breakpoints": true
     }
   ]
 }

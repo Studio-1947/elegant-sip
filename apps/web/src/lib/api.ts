@@ -458,6 +458,8 @@ export interface AdminReview {
 /** The fields the admin page edits; the API accepts more (see PATCH /v1/admin/products/{slug}). */
 export interface AdminProductEdit {
   name?: string
+  /** The category shown with the name, "First Flush"; null clears it. */
+  variety?: string | null
   status?: Product['status']
   description?: string
   longDescription?: string | null
@@ -482,6 +484,7 @@ export type StockReason = 'restock' | 'damaged' | 'sample' | 'count_correction' 
 export interface AdminNewProduct {
   slug: string
   name: string
+  variety?: string | null
   status: Product['status']
   description: string
   longDescription?: string

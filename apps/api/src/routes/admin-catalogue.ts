@@ -81,7 +81,7 @@ export const adminCatalogueRoutes: FastifyPluginAsyncZod = async (app) => {
       .select({
         id: productVariants.id,
         productSlug: products.slug,
-        productName: products.name,
+        productName: products.fullName,
         archivedAt: products.archivedAt,
         size: productVariants.size,
         price: productVariants.price,

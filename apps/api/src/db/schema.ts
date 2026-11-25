@@ -35,7 +35,14 @@ export const products = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     slug: text('slug').notNull().unique(),
+    /** The tea's own name, like "Morning Dew". */
     name: text('name').notNull(),
+    /** Shown as "Category" in the admin and on the product card, like "First Flush". Optional. */
+    variety: text('variety'),
+    /** "Morning Dew | First Flush": what orders, invoices, emails, feeds and the cart show. Kept by Postgres. */
+    fullName: text('full_name')
+      .notNull()
+      .generatedAlwaysAs(sql`CASE WHEN coalesce(btrim(variety), '') = '' THEN name ELSE name || ' | ' || btrim(variety) END`),
     status: productStatus('status').notNull().default('active'),
     description: text('description').notNull(),
     longDescription: text('long_description'),

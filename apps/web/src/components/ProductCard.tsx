@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
 import { useCart } from './CartContext'
-import { getDefaultVariant, isBestSeller, type Product } from '../data/products'
+import { getDefaultVariant, isBestSeller, teaNameOf, varietyOf, type Product } from '../data/products'
 import { Link, navigate } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
@@ -132,10 +132,15 @@ export default function ProductCard({ product }: { product: Product }) {
 
       {/* ── Info block ── */}
       <div className="p-5 md:p-6 flex flex-col flex-grow">
-        {/* Name, then price on its own fixed-height row, so every card lines up
-            whatever the name length or whether the tea is priced yet. */}
+        {/* Category above the tea's name (as on ProductTile), then price on its own
+            fixed-height row, so every card lines up whatever the name length or
+            whether the tea is priced yet. The label row keeps its height when a
+            tea has no category. */}
+        <span className="text-[11px] font-mono tracking-[0.12em] uppercase text-[#4a7333] mb-1 min-h-[1lh] whitespace-nowrap overflow-hidden text-ellipsis">
+          {varietyOf(product)}
+        </span>
         <Link to={`/product/${product.slug}`} className="hover:text-[#4a7333] transition-colors mb-1.5">
-          <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide leading-snug line-clamp-2 min-h-[2lh]" title={product.name}>{product.name}</h3>
+          <h3 className="text-[#1b261b] text-lg lg:text-xl font-bold font-sans tracking-wide leading-snug line-clamp-2 min-h-[2lh]" title={product.name}>{teaNameOf(product)}</h3>
         </Link>
         <div className="flex items-center h-8 mb-1">
           {comingSoon ? (
@@ -147,29 +152,28 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Star rating — only when real reviews exist. */}
-        <div className="flex items-center gap-2 mb-3.5 min-h-[18px]">
-          {rating.count > 0 ? (
-            <>
-              <div
-                role="img"
-                className="flex gap-0.5 text-[#4a7333] text-xs"
-                aria-label={`Rated ${rating.average} out of 5 stars from ${rating.count} ${rating.count === 1 ? 'review' : 'reviews'}`}
-              >
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} aria-hidden="true" className="w-3 h-3" viewBox="0 0 20 20" fill={i < Math.round(rating.average) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
-                  </svg>
-                ))}
-              </div>
-              <span className="text-[11px] font-mono text-[#4a584a]">
-                {rating.average} · {rating.count} {rating.count === 1 ? 'review' : 'reviews'}
-              </span>
-            </>
-          ) : (
-            <span className="text-[11px] font-mono text-[#4a584a]">Not yet reviewed</span>
-          )}
-        </div>
+        {/* Star rating, only when real reviews exist. */}
+        {rating.count > 0 && (
+          <div className="flex items-center gap-2 mb-2">
+            <div
+              role="img"
+              className="flex gap-0.5 text-[#4a7333] text-xs"
+              aria-label={`Rated ${rating.average} out of 5 stars from ${rating.count} ${rating.count === 1 ? 'review' : 'reviews'}`}
+            >
+              {[...Array(5)].map((_, i) => (
+                <svg key={i} aria-hidden="true" className="w-3 h-3" viewBox="0 0 20 20" fill={i < Math.round(rating.average) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+                </svg>
+              ))}
+            </div>
+            <span className="text-[11px] font-mono text-[#4a584a]">
+              {rating.average} · {rating.count} {rating.count === 1 ? 'review' : 'reviews'}
+            </span>
+          </div>
+        )}
+
+        {/* A short description, two lines on every card so the rows line up. */}
+        <p className="text-[13px] text-[#4a584a] leading-relaxed line-clamp-2 min-h-[2lh] mb-3.5">{product.description}</p>
 
         {/* Tasting-note chips */}
         {product.tastingNotes && product.tastingNotes.length > 0 && (
