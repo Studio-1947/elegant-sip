@@ -150,7 +150,7 @@ export default function Footer() {
               <Link to="/terms" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Terms</Link>
               <Link to="/shipping" className="hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Shipping</Link>
               {trackingConfigured() && (
-                <button type="button" onClick={openConsentSettings} className="cursor-pointer hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Cookies</button>
+                <button type="button" onClick={openConsentSettings} className="cursor-pointer hover:text-[#a8cf8a] md:hover:text-[#4a7333] transition-colors">Cookie preferences</button>
               )}
             </nav>
           </div>
