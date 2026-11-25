@@ -40,7 +40,7 @@ const envId = (value: unknown, fallback: string) => (typeof value === 'string' ?
 
 export const GTM_ID = envId(import.meta.env.VITE_GTM_ID, 'GTM-W5MN9LMR')
 /** Umami Cloud website "Elegant Sip": page views, heatmaps and events. */
-export const UMAMI_WEBSITE_ID = envId(import.meta.env.VITE_UMAMI_WEBSITE_ID, 'b3abfd89-90c2-4f53-aff1-452960b0d9c5')
+export const UMAMI_WEBSITE_ID = envId(import.meta.env.VITE_UMAMI_WEBSITE_ID, 'a58210f2-5964-4c30-b9e4-d584886d0644')
 export const META_PIXEL_ID = envId(import.meta.env.VITE_META_PIXEL_ID, '1702510334659568')
 /** Studio 1947's pixel, connected to the catalogue. The API sends it the
  *  server copy of each event too, once META_CAPI_ACCESS_TOKEN_SECONDARY is set. */
