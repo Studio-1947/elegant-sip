@@ -1,4 +1,5 @@
 import type { Garden, Problem, Product } from '@elegantsip/shared'
+import type { Attribution } from './attribution'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * API client.
@@ -673,6 +674,8 @@ export const api = {
       notes?: string
       /** True only when the visitor accepted the cookie banner. */
       adConsent?: boolean
+      /** Where the customer came from; see lib/attribution.ts. */
+      attribution?: Attribution
     }, requestKeys: { idempotencyKey: string; guestAccessToken?: string } ) =>
       request<PlaceOrderResult>('/v1/orders', {
         method: 'POST',

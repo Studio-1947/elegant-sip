@@ -53,7 +53,7 @@ const req = (method: 'GET' | 'POST' | 'PATCH' | 'PUT', url: string, payload?: ob
 const get = (url: string, cookie = staff) => req('GET', url, undefined, cookie)
 
 /** Places an order as the buyer and pays it through the fake gateway. */
-async function placeAndPay(quantity = 2) {
+async function placeAndPay(quantity = 2, attribution?: object) {
   const res = await app.inject({
     method: 'POST',
     url: '/v1/orders',
@@ -64,6 +64,7 @@ async function placeAndPay(quantity = 2) {
       email: buyerEmail,
       shipping: { name: 'Ops Buyer', line1: '12 Mall Road', city: 'Darjeeling', postalCode: '734101', state: 'West Bengal', country: 'India' },
       shippingMethod: 'standard',
+      ...(attribution ? { attribution } : {}),
     },
   })
   expect(res.statusCode, res.body).toBe(200)
@@ -315,6 +316,21 @@ describe('customers, staff access, reports and inboxes', () => {
     expect(report.topProducts.map((p: { productSlug: string }) => p.productSlug)).toContain(SLUG)
     expect(report.gst.invoices).toBeGreaterThanOrEqual(1)
     expect((await get('/v1/admin/reports/sales?from=2026-02-01&to=2026-01-01')).statusCode).toBe(400)
+  })
+
+  it('reports sales by where the customer came from', async () => {
+    if (!available) return
+    const campaign = `${TAG}-campaign`
+    await placeAndPay(1, { source: 'instagram', medium: 'paid_social', campaign, click: 'meta', landingPath: '/shop' })
+    const stored = await db.query.orders.findFirst({ where: eq(orders.number, placed[placed.length - 1]) })
+    expect(stored?.attribution).toEqual({ source: 'instagram', medium: 'paid_social', campaign, click: 'meta', landingPath: '/shop' })
+
+    const report = (await get('/v1/admin/reports/sales')).json()
+    const row = report.bySource.find((s: { campaign: string | null }) => s.campaign === campaign)
+    expect(row).toMatchObject({ source: 'instagram', medium: 'paid_social', orders: 1 })
+    expect(row.revenue).toBeGreaterThan(0)
+    // Orders with nothing recorded still count, as direct or unknown.
+    expect(report.bySource.some((s: { source: string }) => s.source === 'Direct or unknown')).toBe(true)
   })
 
   it('shows the contact inbox and newsletter list', async () => {

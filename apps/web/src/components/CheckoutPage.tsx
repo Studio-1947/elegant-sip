@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { cartLines, hasAnalyticsConsent, purchaseProps, track } from '../lib/analytics'
+import { storedAttribution } from '../lib/attribution'
 import { rememberPendingPurchase } from '../lib/pendingPurchase'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
 import { api, ApiClientError, type PlaceOrderResult, type SavedAddress } from '../lib/api'
@@ -237,6 +238,11 @@ export default function CheckoutPage() {
         ...(notes ? { notes } : {}),
         // Lets the payment confirmation report the purchase to Meta, as the pixel would.
         ...(hasAnalyticsConsent() === true ? { adConsent: true } : {}),
+        // Where the customer came from, for our own sales-by-source report (not sent to ad platforms).
+        ...(() => {
+          const attribution = storedAttribution()
+          return attribution ? { attribution } : {}
+        })(),
       }, { idempotencyKey: attempt.idempotencyKey, ...(user ? {} : { guestAccessToken: attempt.guestAccessToken }) })
 
       if (user && saveAddress) {

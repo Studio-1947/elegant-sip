@@ -12,8 +12,12 @@
  *   VITE_META_PIXEL_ID_SECONDARY=1234567890
  *   VITE_UMAMI_WEBSITE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
  *
- * Umami (cloud.umami.is) records page views, clicks for its heatmaps, and the
- * same named events as the other tags (see track() in analytics.ts).
+ * Umami (cloud.umami.is) is the exception: it sets no cookies, keeps no
+ * identifier that follows a visitor across sites and shares nothing with an
+ * ad platform, so it runs for every visitor, before and whatever the cookie
+ * choice (loadAnalytics). It records page views and the same named events as
+ * the other tags (see track() in analytics.ts). Google and Meta still wait
+ * for Accept.
  *
  * Two Meta pixels load: Elegant Sip's own and Studio 1947's ("Elegant Sip
  * New"). Every fbq('track') call reaches every initialised pixel, so each
@@ -48,7 +52,8 @@ export const META_PIXEL_ID_SECONDARY = envId(import.meta.env.VITE_META_PIXEL_ID_
 const META_PIXEL_IDS = [...new Set([META_PIXEL_ID, META_PIXEL_ID_SECONDARY].filter(Boolean))]
 
 /** True when at least one marketing tag is configured, so the banner must ask. */
-export const marketingTagsConfigured = () => Boolean(GTM_ID || META_PIXEL_IDS.length || UMAMI_WEBSITE_ID)
+/** Umami needs no consent, so only Google and Meta make the banner ask. */
+export const marketingTagsConfigured = () => Boolean(GTM_ID || META_PIXEL_IDS.length)
 
 let loaded = false
 
@@ -115,11 +120,18 @@ export function loadMarketingTags() {
   const w = window as TagWindow
   if (GTM_ID) loadGtm(w)
   if (META_PIXEL_IDS.length) loadMetaPixel(w)
-  if (UMAMI_WEBSITE_ID) loadUmami()
 }
 
-/** Umami's own snippet. It counts the store's in-app page changes by itself. */
-function loadUmami() {
+let analyticsLoaded = false
+
+/**
+ * Cookie-free analytics (Umami), loaded once on startup for every visitor,
+ * without waiting for the consent banner. Its own snippet counts the store's
+ * in-app page changes by itself.
+ */
+export function loadAnalytics() {
+  if (analyticsLoaded || typeof window === 'undefined' || !UMAMI_WEBSITE_ID) return
+  analyticsLoaded = true
   const script = document.createElement('script')
   script.defer = true
   script.src = 'https://cloud.umami.is/script.js'
@@ -131,7 +143,7 @@ function loadUmami() {
 
 /** Sends a named event to Umami, if it has loaded. */
 export function umamiTrack(event: string, data: Record<string, unknown>) {
-  if (!loaded || !UMAMI_WEBSITE_ID) return
+  if (!analyticsLoaded) return
   ;(window as TagWindow).umami?.track(event, data)
 }
 

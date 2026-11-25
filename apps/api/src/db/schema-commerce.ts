@@ -118,6 +118,21 @@ export const orderStatus = pgEnum('order_status', [
   'refunded',
 ])
 
+/** See orders.attribution. Every field optional; short strings only. */
+export interface OrderAttribution {
+  source?: string
+  medium?: string
+  campaign?: string
+  content?: string
+  term?: string
+  /** An ad click arrived with the visit (its ID itself is not kept). */
+  click?: 'meta' | 'google'
+  /** The referring site's host, when there were no tags. */
+  referrer?: string
+  /** The first page of that visit. */
+  landingPath?: string
+}
+
 export const orders = pgTable(
   'orders',
   {
@@ -166,6 +181,13 @@ export const orders = pgTable(
      * cookies at checkout, so the payment webhook can report the purchase even
      * if they never return to the site. Meta's own cookie IDs, nothing else.
      */
+    /*
+     * Where the customer came from before buying: the link's utm_* tags, a
+     * Meta or Google ad click, or the referring website. First-party, for the
+     * admin's "Sales by source" report only; never sent to an ad platform.
+     * Null when the visit was direct or the browser kept nothing.
+     */
+    attribution: jsonb('attribution').$type<OrderAttribution | null>(),
     adConsent: boolean('ad_consent').notNull().default(false),
     metaFbp: text('meta_fbp'),
     metaFbc: text('meta_fbc'),
