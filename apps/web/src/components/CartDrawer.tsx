@@ -200,7 +200,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 onClick={onClose}
                 className="block w-full text-center text-[11px] font-mono tracking-widest uppercase text-[#4a584a] hover:text-[#4a7333] transition-colors mt-3"
               >
-                View full cart · coupons & notes
+                View full cart · add a note
               </Link>
             </div>
           </>

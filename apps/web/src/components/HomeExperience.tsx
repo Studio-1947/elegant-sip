@@ -236,8 +236,8 @@ export default function HomeExperience({ onProgress, ready }: HomeExperienceProp
           >
             Skip Intro →
           </button>
-          <Link to="/cart" className="rounded-full border border-white/40 bg-white/90 px-5 py-2.5 text-[11px] font-mono font-bold uppercase tracking-widest text-[#1b261b] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-colors hover:bg-white">
-            View Cart
+          <Link to="/shop" className="rounded-full border border-white/40 bg-white/90 px-5 py-2.5 text-[11px] font-mono font-bold uppercase tracking-widest text-[#1b261b] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-colors hover:bg-white">
+            Shop Now
           </Link>
         </div>
       )}

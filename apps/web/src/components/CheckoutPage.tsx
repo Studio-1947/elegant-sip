@@ -10,7 +10,10 @@ import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib
 import { api, ApiClientError, type PlaceOrderResult, type SavedAddress } from '../lib/api'
 import { formatINR } from '../lib/currency'
 import {
+  ADDRESS_LINE_MAX,
+  addressLine,
   EMAIL_PATTERN,
+  splitAddressLine,
   EMPTY_FORM,
   FIELD_IDS,
   GENERIC_POSTAL,
@@ -118,7 +121,7 @@ export default function CheckoutPage() {
 
   const selectSavedAddress = (address: SavedAddress) => {
     const parts = address.name.trim().split(/\s+/)
-    setForm((current) => ({ ...current, phone: address.phone ?? current.phone, email: current.email || (user && !user.emailIsPlaceholder ? user.email : ''), firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), address: address.line1, city: address.city, state: address.state ?? '', zip: address.postalCode, country: address.country }))
+    setForm((current) => ({ ...current, phone: address.phone ?? current.phone, email: current.email || (user && !user.emailIsPlaceholder ? user.email : ''), firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), ...splitAddressLine(address.line1), city: address.city, state: address.state ?? '', zip: address.postalCode, country: address.country }))
     setErrors({})
     setPrefilled(true)
   }
@@ -142,7 +145,7 @@ export default function CheckoutPage() {
   /** Move focus to the first field that failed, so the error is discoverable. */
   const focusFirstError = (next: Partial<Record<keyof FormState, string>>) => {
     const order: (keyof FormState)[] = [
-      'email', 'phone', 'firstName', 'lastName', 'address', 'city', 'zip',
+      'email', 'phone', 'firstName', 'lastName', 'address', 'landmark', 'city', 'state', 'zip',
     ]
     const first = order.find((field) => next[field])
     if (!first) return
@@ -158,7 +161,10 @@ export default function CheckoutPage() {
     if (!form.firstName.trim()) next.firstName = 'Enter your first name.'
     if (!form.lastName.trim()) next.lastName = 'Enter your last name.'
     if (!form.address.trim()) next.address = 'Enter your street address.'
+    else if (addressLine(form.address, form.landmark).length > ADDRESS_LINE_MAX) next.landmark = 'Shorten the address or landmark: together they can be up to 200 characters.'
     if (!form.city.trim()) next.city = 'Enter your city.'
+    // The state decides the GST split on the invoice.
+    if (form.country === 'India' && !form.state.trim()) next.state = 'Enter your state.'
     const postal = POSTAL_RULES[form.country] ?? GENERIC_POSTAL
     if (!postal.pattern.test(form.zip.trim())) next.zip = postal.hint
     if (!asGuest && !sameAsShipping && !selectedBillingAddress) setBillingAddressError('Choose a billing address from your address book.')
@@ -205,10 +211,10 @@ export default function CheckoutPage() {
       const attempt = checkoutAttempt()
       const shipping = {
         name: `${form.firstName} ${form.lastName}`.trim(),
-        line1: form.address,
+        line1: addressLine(form.address, form.landmark),
         city: form.city,
         postalCode: form.zip,
-        state: form.state || undefined,
+        state: form.state.trim() || undefined,
         country: 'India' as const,
         phone: form.phone.trim(),
       }
@@ -247,7 +253,7 @@ export default function CheckoutPage() {
 
       if (user && saveAddress) {
         // A failed save must not turn a successful checkout into an apparent failure.
-        void api.account.saveAddress({ label: 'Checkout address', name: `${form.firstName} ${form.lastName}`.trim(), line1: form.address, city: form.city, postalCode: form.zip, state: form.state || undefined, country: 'India', phone: form.phone.trim() || undefined, isDefaultShipping: !savedAddresses.some((address) => address.isDefaultShipping), isDefaultBilling: sameAsShipping && !savedAddresses.some((address) => address.isDefaultBilling) }).catch(() => {})
+        void api.account.saveAddress({ label: 'Checkout address', name: `${form.firstName} ${form.lastName}`.trim(), line1: addressLine(form.address, form.landmark), city: form.city, postalCode: form.zip, state: form.state || undefined, country: 'India', phone: form.phone.trim() || undefined, isDefaultShipping: !savedAddresses.some((address) => address.isDefaultShipping), isDefaultBilling: sameAsShipping && !savedAddresses.some((address) => address.isDefaultBilling) }).catch(() => {})
       }
 
       localStorage.removeItem('elegant_sip_order_notes')
