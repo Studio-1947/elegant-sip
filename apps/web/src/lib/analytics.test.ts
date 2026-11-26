@@ -32,11 +32,27 @@ afterEach(() => {
 })
 
 describe('consent', () => {
-  it('sends nothing before the visitor accepts', () => {
+  it('sends nothing to Google or Meta before the visitor accepts', () => {
     track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
     expect(metaTrack).not.toHaveBeenCalled()
     expect(metaServerEvent).not.toHaveBeenCalled()
     expect(dataLayer()).toHaveLength(0)
+  })
+
+  it('counts every event in cookie-free Umami, whatever the cookie choice', () => {
+    track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
+    expect(umamiTrack).toHaveBeenCalledWith('add_to_cart', { product: 'first-flush', quantity: 1, value: 861, currency: 'INR' })
+    localStorage.setItem('elegant_sip_consent', 'denied')
+    track('view_item', { product: 'first-flush' })
+    expect(umamiTrack).toHaveBeenLastCalledWith('view_item', { product: 'first-flush' })
+    expect(metaTrack).not.toHaveBeenCalled()
+  })
+
+  it('never gives Umami the order number', () => {
+    track('purchase', purchaseProps({ number: 'ES-1001', total: 86_100, items: [] }))
+    const [, data] = (umamiTrack as ReturnType<typeof vi.fn>).mock.calls[0] as [string, Record<string, unknown>]
+    expect(data).not.toHaveProperty('order')
+    expect(data).toMatchObject({ value: 861, currency: 'INR' })
   })
 
   it('records the choice with a date, and asks again after a year', () => {

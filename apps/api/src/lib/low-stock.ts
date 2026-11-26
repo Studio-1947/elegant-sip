@@ -49,7 +49,7 @@ export async function checkLowStock(
     if (marked.length === 0) return 0
 
     const names = await db
-      .select({ id: products.id, name: products.name })
+      .select({ id: products.id, name: products.fullName })
       .from(products)
       .where(inArray(products.id, [...new Set(marked.map((v) => v.productId))]))
     const nameOf = new Map(names.map((p) => [p.id, p.name]))

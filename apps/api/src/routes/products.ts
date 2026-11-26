@@ -128,7 +128,7 @@ export const productRoutes: FastifyPluginAsyncZod = async (app) => {
           publishedAt: reviews.publishedAt,
           verified: reviews.verified,
           productSlug: products.slug,
-          productName: products.name,
+          productName: products.fullName,
         })
         .from(reviews)
         .innerJoin(products, eq(products.id, reviews.productId))

@@ -1,4 +1,5 @@
 import type { Garden, Problem, Product } from '@elegantsip/shared'
+import type { Attribution } from './attribution'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * API client.
@@ -458,6 +459,8 @@ export interface AdminReview {
 /** The fields the admin page edits; the API accepts more (see PATCH /v1/admin/products/{slug}). */
 export interface AdminProductEdit {
   name?: string
+  /** The category shown with the name, "First Flush"; null clears it. */
+  variety?: string | null
   status?: Product['status']
   description?: string
   longDescription?: string | null
@@ -482,6 +485,7 @@ export type StockReason = 'restock' | 'damaged' | 'sample' | 'count_correction' 
 export interface AdminNewProduct {
   slug: string
   name: string
+  variety?: string | null
   status: Product['status']
   description: string
   longDescription?: string
@@ -670,6 +674,8 @@ export const api = {
       notes?: string
       /** True only when the visitor accepted the cookie banner. */
       adConsent?: boolean
+      /** Where the customer came from; see lib/attribution.ts. */
+      attribution?: Attribution
     }, requestKeys: { idempotencyKey: string; guestAccessToken?: string } ) =>
       request<PlaceOrderResult>('/v1/orders', {
         method: 'POST',

@@ -23,6 +23,32 @@ export const POSTAL_RULES: Record<string, { pattern: RegExp; hint: string }> = {
 }
 export const GENERIC_POSTAL = { pattern: /^[A-Za-z\d][A-Za-z\d\s-]{1,9}$/, hint: 'Enter a valid postal code.' }
 
+/** India's 28 states and 8 union territories, offered as suggestions in the State field. */
+export const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana',
+  'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
+  'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi',
+  'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry',
+]
+
+/** The address line sent to the courier: the street address, then the landmark if one was given. */
+export const addressLine = (address: string, landmark: string): string => {
+  const street = address.trim()
+  const near = landmark.trim()
+  return near ? `${street}, Landmark: ${near}` : street
+}
+
+/** The reverse of addressLine, for a saved address: its street address and landmark. */
+export const splitAddressLine = (line: string): { address: string; landmark: string } => {
+  const at = line.lastIndexOf(', Landmark: ')
+  return at < 0 ? { address: line, landmark: '' } : { address: line.slice(0, at), landmark: line.slice(at + ', Landmark: '.length) }
+}
+
+/** Longest street address + landmark the order accepts (the address line holds 200 characters). */
+export const ADDRESS_LINE_MAX = 200
+
 /** Shared with the newsletter form — one email rule for the whole site. */
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
@@ -35,6 +61,7 @@ export const FIELD_IDS: Record<string, string> = {
   address: 'co-address',
   city: 'co-city',
   state: 'co-state',
+  landmark: 'co-landmark',
   zip: 'co-zip',
   country: 'co-country',
 }
@@ -46,6 +73,8 @@ export interface FormState {
   firstName: string
   lastName: string
   address: string
+  /** Optional. Couriers in India lean on it; sent as part of the address line. */
+  landmark: string
   city: string
   /** Indian state — decides the CGST/SGST vs IGST split on the invoice. */
   state: string
@@ -59,6 +88,7 @@ export const EMPTY_FORM: FormState = {
   firstName: '',
   lastName: '',
   address: '',
+  landmark: '',
   city: '',
   state: '',
   zip: '',

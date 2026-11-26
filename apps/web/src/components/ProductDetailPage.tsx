@@ -14,6 +14,7 @@ import ProductCard from './ProductCard'
 import ProductTile from './ProductTile'
 import ProductInfoCards from './ProductInfoCards'
 import ProductReviews from './ProductReviews'
+import ProductFaq from './ProductFaq'
 import ProductGardenLine from './ProductGardenLine'
 import { useUi } from './UiContext'
 import { useStoreSettings } from '../lib/storeSettings'
@@ -432,7 +433,7 @@ export default function ProductDetailPage({ id }: { id?: string }) {
                 </li>
               )}
               <li className="flex items-center gap-2">
-                <span className="text-[#4a7333]">✓</span> Packed within weeks of harvest, dated on every pack
+                <span className="text-[#4a7333]">✓</span> Packed in small batches within weeks of harvest
               </li>
             </ul>
             {/* Required where food is sold online (FSSAI e-commerce rules). */}
@@ -508,6 +509,9 @@ export default function ProductDetailPage({ id }: { id?: string }) {
             </div>
           </div>
         )}
+
+        {/* FAQ, under "You May Also Love" */}
+        <ProductFaq />
       </div>
 
       {/* Phone buy bar — docks in the thumb zone once the main buttons scroll away */}

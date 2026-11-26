@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from './CartContext'
-import { getDefaultVariant, type Product } from '../data/products'
+import { getDefaultVariant, teaNameOf, varietyOf, type Product } from '../data/products'
 import { Link, navigate } from '../lib/router'
 import { track } from '../lib/analytics'
 import { formatINR } from '../lib/currency'
@@ -117,11 +117,11 @@ export default function ProductTile({ product, sizes = '45vw' }: { product: Prod
       {/* Text — fixed slots so neighbouring tiles line up */}
       <div className="flex flex-col flex-grow pt-3">
         <span className="text-[11px] font-mono tracking-[0.12em] uppercase text-[#4a584a] mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
-          {product.category}
+          {varietyOf(product) ?? product.category}
         </span>
         <Link to={href} className="mb-1.5">
           <h3 className="text-[#1b261b] text-[15px] font-bold leading-snug line-clamp-2 min-h-[2lh]" title={product.name}>
-            {product.name}
+            {teaNameOf(product)}
           </h3>
         </Link>
 

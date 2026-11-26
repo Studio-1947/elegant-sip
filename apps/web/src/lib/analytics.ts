@@ -1,5 +1,6 @@
 import {
   GTM_ID,
+  loadAnalytics,
   loadMarketingTags,
   marketingTagsConfigured,
   marketingTagsLoaded,
@@ -141,6 +142,8 @@ export function setAnalyticsConsent(granted: boolean) {
 
 /** Loads tags on startup for a visitor who accepted on an earlier visit. */
 export function initAnalytics() {
+  // Cookie-free, so for everyone; Google and Meta only after Accept.
+  loadAnalytics()
   if (hasAnalyticsConsent() === true) loadMarketingTags()
 }
 
@@ -272,7 +275,14 @@ function sendToMeta(event: AnalyticsEvent, props: Record<string, unknown>) {
 }
 
 export function track(event: AnalyticsEvent, props: Record<string, unknown> = {}) {
-  // Events only fire once the visitor has accepted the consent banner.
+  // Umami is cookie-free, so it hears every event, whatever the cookie choice.
+  // It gets our names and money in rupees, never anything that points to a
+  // person: the order number is left out.
+  const forUmami = flatProps(props)
+  delete forUmami.order
+  umamiTrack(GA_NAMES[event] ?? event, forUmami)
+
+  // Everything else only once the visitor has accepted the consent banner.
   if (hasAnalyticsConsent() !== true) return
   const provider = analyticsProvider()
 
@@ -285,8 +295,6 @@ export function track(event: AnalyticsEvent, props: Record<string, unknown> = {}
   if (provider === 'ga4' || (GTM_ID && marketingTagsLoaded())) pushToDataLayer(event, props)
 
   sendToMeta(event, props)
-  // Umami: our event names, money in rupees like everywhere outside the store.
-  umamiTrack(GA_NAMES[event] ?? event, flatProps(props))
 
   if (import.meta.env.DEV) {
     console.info(`[analytics] ${event}`, props)

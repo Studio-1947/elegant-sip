@@ -3,6 +3,7 @@ import { api, ApiClientError, type ReviewView } from '../lib/api'
 import { formatDate } from '../lib/dates'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
+import GoogleReviewsStrip from './reviews/GoogleReviewsStrip'
 
 interface ProductReviewsProps {
   productSlug: string
@@ -67,7 +68,7 @@ export default function ProductReviews({ productSlug, reviews, rating, onAdded }
         <div>
           <span className="text-[#4a7333] text-xs font-mono tracking-[0.3em] uppercase block mb-2">Customer Reviews</span>
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight">
-            {rating.count > 0 ? `${rating.average} / 5 from ${rating.count} reviews` : 'Reviews'}
+            {rating.count > 0 ? `${rating.average} / 5 from ${rating.count} reviews` : 'What Tea Lovers Say'}
           </h2>
         </div>
         <button
@@ -151,12 +152,11 @@ export default function ProductReviews({ productSlug, reviews, rating, onAdded }
         </form>
       )}
 
-      {reviews.length === 0 ? (
-        <p className="text-sm text-[#4a584a] bg-white border border-[#1b261b]/10 rounded-2xl p-6">
-          No reviews yet for this tea. Be the first to tell us how it tastes.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* What customers say about the shop on Google, then this tea's own reviews once any are published. */}
+      <GoogleReviewsStrip />
+
+      {reviews.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           {reviews.map((review) => (
             <div key={review.id} className="bg-white border border-[#1b261b]/10 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-3">

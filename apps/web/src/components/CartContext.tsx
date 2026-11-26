@@ -327,14 +327,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCouponError(null)
   }, [])
 
+  /*
+   * What the cart shows for each line: the server's price and full name from
+   * the latest quote, else the live catalogue (once it has loaded), never the
+   * build-time snapshot the stored cart was checked against. Otherwise a
+   * refreshed cart could list old prices and names while its total, which is
+   * always the server's, says something else.
+   */
+  const shownCart = useMemo(
+    () =>
+      cart.map((item) => {
+        const priced = quote?.items.find((q) => q.productSlug === item.productSlug && q.variantSize === item.size)
+        if (priced) return { ...item, name: priced.productName, price: priced.unitPrice }
+        const live = getVariant(item.productSlug, item.size)
+        const product = getProduct(item.productSlug)
+        return { ...item, name: product?.name ?? item.name, price: live?.price ?? item.price }
+      }),
+    [cart, quote],
+  )
+
   const cartCount = cart.reduce((a, i) => a + i.quantity, 0)
   // Optimistic subtotal for instant feedback; the quote is authoritative.
-  const cartTotal = quote?.subtotal ?? cart.reduce((a, i) => a + i.price * i.quantity, 0)
+  const cartTotal = quote?.subtotal ?? shownCart.reduce((a, i) => a + i.price * i.quantity, 0)
   const discount = quote?.discount ?? 0
 
   const value = useMemo(
     () => ({
-      cart,
+      cart: shownCart,
       addToCart,
       updateQuantity,
       removeFromCart,
@@ -355,7 +374,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       toCartLines,
     }),
     [
-      cart,
+      shownCart,
       addToCart,
       updateQuantity,
       removeFromCart,

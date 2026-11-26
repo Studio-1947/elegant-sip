@@ -47,7 +47,7 @@ export const FAQS: Faq[] = [
     category: "Returns & Guarantee",
     question: "How fresh is the tea when it arrives?",
     answer:
-      "We pack in small batches close to harvest, in light-proof packaging, and the pack date is printed on every pack. First flush is a seasonal tea: when a lot is gone it's gone until the next spring, and we'd rather sell out than sell you last year's leaf.",
+      "We pack in small batches close to harvest, in light-proof packaging. First flush is a seasonal tea: when a lot is gone it's gone until the next spring, and we'd rather sell out than sell you last year's leaf.",
   },
   {
     category: "Brewing",

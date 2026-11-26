@@ -68,7 +68,12 @@ export const brewingGuideSchema = z.object({
 export const productSchema = z.object({
   id: z.string().uuid(),
   slug: slugSchema,
+  /** The full name, "Morning Dew | First Flush": what lists, the cart and orders show. */
   name: z.string(),
+  /** The tea's own name, "Morning Dew". Absent in snapshots made before it existed. */
+  teaName: z.string().optional(),
+  /** Its category, "First Flush"; null when it has none. Absent in older snapshots. */
+  variety: z.string().nullable().optional(),
   status: productStatusSchema,
   /** Lowest variant price — the card's "from" figure. Null when coming soon. */
   fromPrice: paiseSchema.nullable(),

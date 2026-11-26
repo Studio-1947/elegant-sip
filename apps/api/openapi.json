@@ -3517,6 +3517,15 @@
                           "name": {
                             "type": "string"
                           },
+                          "teaName": {
+                            "type": "string"
+                          },
+                          "variety": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "status": {
                             "type": "string",
                             "enum": [
@@ -3868,6 +3877,15 @@
                     },
                     "name": {
                       "type": "string"
+                    },
+                    "teaName": {
+                      "type": "string"
+                    },
+                    "variety": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -5919,6 +5937,47 @@
                   },
                   "adConsent": {
                     "type": "boolean"
+                  },
+                  "attribution": {
+                    "description": "Where the customer came from (utm tags, ad click or referring site). Stored for the admin sales-by-source report; never sent to an ad platform.",
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      "medium": {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      "campaign": {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      "content": {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      "term": {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      "click": {
+                        "type": "string",
+                        "enum": [
+                          "meta",
+                          "google"
+                        ]
+                      },
+                      "referrer": {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      "landingPath": {
+                        "type": "string",
+                        "maxLength": 300
+                      }
+                    }
                   }
                 },
                 "required": [
@@ -10624,6 +10683,15 @@
                           "name": {
                             "type": "string"
                           },
+                          "teaName": {
+                            "type": "string"
+                          },
+                          "variety": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "status": {
                             "type": "string",
                             "enum": [
@@ -10954,7 +11022,20 @@
                   "name": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 120
+                    "maxLength": 120,
+                    "description": "The tea's own name, like \"Morning Dew\""
+                  },
+                  "variety": {
+                    "description": "The product's category, like \"First Flush\"; shown as \"Morning Dew | First Flush\" in orders and feeds. Blank or null clears it.",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "status": {
                     "default": "active",
@@ -11717,6 +11798,18 @@
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 120
+                  },
+                  "variety": {
+                    "description": "The product's category, like \"First Flush\"; shown as \"Morning Dew | First Flush\" in orders and feeds. Blank or null clears it.",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "status": {
                     "type": "string",
@@ -21253,6 +21346,49 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "bySource": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string"
+                          },
+                          "medium": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "campaign": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "orders": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "revenue": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Amount in paise (1 rupee = 100 paise)"
+                          }
+                        },
+                        "required": [
+                          "source",
+                          "medium",
+                          "campaign",
+                          "orders",
+                          "revenue"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Paid, not-cancelled orders by where the customer came from; \"Direct or unknown\" when nothing was recorded."
                     }
                   },
                   "required": [
@@ -21270,7 +21406,8 @@
                     "averageOrder",
                     "gst",
                     "byDay",
-                    "topProducts"
+                    "topProducts",
+                    "bySource"
                   ],
                   "additionalProperties": false
                 }

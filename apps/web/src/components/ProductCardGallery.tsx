@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { describeProductImage, getProductImages, type Product } from '../data/products'
 import { Link } from '../lib/router'
 import { buildSrcSet } from '../lib/responsiveImages'
@@ -6,19 +6,56 @@ import SkeletonImage from './SkeletonImage'
 
 const SIZES = '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 85vw'
 
+/** How often every card moves to its next photo, together. */
+const STEP_MS = 4000
+/** After a dot tap, how many shared steps (12 s) that card keeps the shopper's choice before rejoining. */
+const HOLD_STEPS = 3
+
+/* One clock for every card on the page. Cards on their own timers read as
+   flicker (UX audit): here they all change photo at the same moment, so the
+   grid moves as one slideshow. Paused while the tab is hidden; never ticks for
+   visitors who prefer reduced motion. */
+let tick = 0
+let timer = 0
+const tickListeners = new Set<() => void>()
+
+function startClock() {
+  if (timer || typeof window === 'undefined') return
+  if (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  timer = window.setInterval(() => {
+    if (document.hidden) return
+    tick += 1
+    tickListeners.forEach((listener) => listener())
+  }, STEP_MS)
+}
+
+function subscribeTick(listener: () => void) {
+  tickListeners.add(listener)
+  startClock()
+  return () => {
+    tickListeners.delete(listener)
+    if (tickListeners.size === 0 && timer) {
+      window.clearInterval(timer)
+      timer = 0
+    }
+  }
+}
+
+const getTick = () => tick
+
 /**
- * The card's image box. Cards hold still and show only their first photo: a
- * grid where every card cross-fades on its own timer read as flicker (UX
- * audit), and so did swapping to the second photo on hover, since sweeping the
- * pointer across the grid set off one fade after another. The dots are the
- * only way to switch photos, and only when the shopper chooses to.
+ * The card's image box. Every card with more than one photo steps through
+ * them on the shared clock above, in step with the rest of the grid. Tapping
+ * a dot shows that photo and holds it a while before the card rejoins.
  * `children` are the overlays (badges, wishlist button).
  */
 export default function ProductCardGallery({ product, children }: { product: Product; children?: ReactNode }) {
   const images = getProductImages(product)
   const many = images.length > 1
   const boxRef = useRef<HTMLDivElement>(null)
-  const [index, setIndex] = useState(0)
+  const shared = useSyncExternalStore(many ? subscribeTick : () => () => {}, getTick, () => 0)
+  // A dot the shopper tapped, and the shared step it was tapped on.
+  const [picked, setPicked] = useState<{ index: number; at: number } | null>(null)
   // Extra photos are only fetched once the card has been on screen.
   const [armed, setArmed] = useState(false)
 
@@ -33,7 +70,10 @@ export default function ProductCardGallery({ product, children }: { product: Pro
     return () => observer.disconnect()
   }, [many])
 
-  const shown = index
+  // The shopper's pick holds for a few shared steps, then the card rejoins the others.
+  const holding = picked !== null && shared - picked.at < HOLD_STEPS
+  // Until its extra photos are fetched (card near the screen), a card keeps its first one.
+  const shown = holding ? picked.index : many && armed ? shared % images.length : 0
 
   const fade = (i: number) =>
     `w-full h-full object-cover transition-[opacity,transform] duration-700 ease-out group-hover:scale-105 ${
@@ -86,7 +126,7 @@ export default function ProductCardGallery({ product, children }: { product: Pro
               type="button"
               onClick={() => {
                 setArmed(true)
-                setIndex(i)
+                setPicked({ index: i, at: shared })
               }}
               aria-label={`Show image ${i + 1}`}
               aria-current={i === shown}

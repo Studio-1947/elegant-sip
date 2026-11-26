@@ -3,7 +3,7 @@ import { useAuth } from '../AuthContext'
 import { useUi } from '../UiContext'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../../lib/pricing'
 import { formatINR } from '../../lib/currency'
-import { COUNTRIES, type FormState } from './checkoutData'
+import { COUNTRIES, INDIAN_STATES, type FormState } from './checkoutData'
 import { type SavedAddress } from '../../lib/api'
 import { usePincodeLookup } from '../../lib/usePincodeLookup'
 import LocalityPicker from '../LocalityPicker'
@@ -99,34 +99,51 @@ export default function ShippingStep({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="co-first" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">First Name</label>
-            <input id="co-first" type="text" autoComplete="given-name" {...fieldProps('firstName')} value={form.firstName} onChange={(e) => setField('firstName', e.target.value)} placeholder="Avery" className={inputClass('firstName')} />
+            <input id="co-first" type="text" autoComplete="given-name" {...fieldProps('firstName')} value={form.firstName} onChange={(e) => setField('firstName', e.target.value)} placeholder="Priya" className={inputClass('firstName')} />
             {errors.firstName && <p id="co-first-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.firstName}</p>}
           </div>
           <div>
             <label htmlFor="co-last" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Last Name</label>
-            <input id="co-last" type="text" autoComplete="family-name" {...fieldProps('lastName')} value={form.lastName} onChange={(e) => setField('lastName', e.target.value)} placeholder="Chen" className={inputClass('lastName')} />
+            <input id="co-last" type="text" autoComplete="family-name" {...fieldProps('lastName')} value={form.lastName} onChange={(e) => setField('lastName', e.target.value)} placeholder="Sharma" className={inputClass('lastName')} />
             {errors.lastName && <p id="co-last-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.lastName}</p>}
           </div>
         </div>
         <div>
           <label htmlFor="co-address" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Address</label>
-          <input id="co-address" type="text" autoComplete="street-address" {...fieldProps('address')} value={form.address} onChange={(e) => setField('address', e.target.value)} placeholder="Street address" className={inputClass('address')} />
+          <input id="co-address" type="text" autoComplete="street-address" {...fieldProps('address')} value={form.address} onChange={(e) => setField('address', e.target.value)} placeholder="House no., building, street, area" className={inputClass('address')} />
           {errors.address && <p id="co-address-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.address}</p>}
+        </div>
+        <div>
+          <label htmlFor="co-landmark" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">
+            Landmark <span className="normal-case tracking-normal">(optional)</span>
+          </label>
+          <input id="co-landmark" type="text" {...fieldProps('landmark')} value={form.landmark} onChange={(e) => setField('landmark', e.target.value)} maxLength={80} placeholder="Near Hill Cart Road petrol pump" className={inputClass('landmark')} />
+          {errors.landmark && <p id="co-landmark-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.landmark}</p>}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="co-city" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">City</label>
-            <input id="co-city" type="text" autoComplete="address-level2" {...fieldProps('city')} value={form.city} onChange={(e) => setField('city', e.target.value)} placeholder="Portland" className={inputClass('city')} />
+            <input id="co-city" type="text" autoComplete="address-level2" {...fieldProps('city')} value={form.city} onChange={(e) => setField('city', e.target.value)} placeholder="Siliguri" className={inputClass('city')} />
             {errors.city && <p id="co-city-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.city}</p>}
           </div>
           <div>
-            <label htmlFor="co-zip" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">Postal / ZIP</label>
+            <label htmlFor="co-zip" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">PIN Code</label>
             <input id="co-zip" type="text" autoComplete="postal-code" inputMode="numeric" {...fieldProps('zip')} value={form.zip} onChange={(e) => updatePincode(e.target.value)} placeholder={form.country === 'India' ? '734101' : ''} className={inputClass('zip')} />
             {errors.zip && <p id="co-zip-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.zip}</p>}
             {lookupStatus === 'loading' && <p role="status" className="mt-1.5 text-[11px] text-[#4a584a]">Finding your locality…</p>}
             {lookupStatus === 'empty' && <p className="mt-1.5 text-[11px] text-[#4a584a]">No locality was found for this PIN. Please enter your city manually.</p>}
             {lookupStatus === 'unavailable' && <p className="mt-1.5 text-[11px] text-[#4a584a]">Location suggestions are unavailable right now. You can still enter your city manually.</p>}
           </div>
+        </div>
+        <div>
+          <label htmlFor="co-state" className="block text-[11px] font-mono tracking-widest uppercase text-[#4a584a] mb-1.5">State</label>
+          <input id="co-state" type="text" autoComplete="address-level1" list="co-state-list" {...fieldProps('state')} value={form.state} onChange={(e) => setField('state', e.target.value)} placeholder="West Bengal" className={inputClass('state')} />
+          <datalist id="co-state-list">
+            {INDIAN_STATES.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+          {errors.state && <p id="co-state-error" role="alert" className="text-[11px] text-red-700 mt-1">{errors.state}</p>}
         </div>
         <LocalityPicker
           status={lookupStatus}

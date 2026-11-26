@@ -104,12 +104,12 @@ export const adminInventoryRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const threshold = request.query.threshold ?? (await getStoreSettings()).lowStockThreshold
       const variants = await db
-        .select({ productSlug: products.slug, productName: products.name, size: productVariants.size, sku: productVariants.sku, stock: productVariants.stock })
+        .select({ productSlug: products.slug, productName: products.fullName, size: productVariants.size, sku: productVariants.sku, stock: productVariants.stock })
         .from(productVariants)
         .innerJoin(products, eq(productVariants.productId, products.id))
         // Coming-soon and retired teas aren't on sale, so they can't run low.
         .where(and(lte(productVariants.stock, threshold), eq(products.status, 'active'), isNull(products.archivedAt)))
-        .orderBy(productVariants.stock, products.name, productVariants.size)
+        .orderBy(productVariants.stock, products.fullName, productVariants.size)
       return { variants }
     },
   )
@@ -152,7 +152,7 @@ export const adminInventoryRoutes: FastifyPluginAsyncZod = async (app) => {
           .select({
             id: productVariants.id,
             productSlug: products.slug,
-            productName: products.name,
+            productName: products.fullName,
             productStatus: products.status,
             archivedAt: products.archivedAt,
             size: productVariants.size,
@@ -240,7 +240,7 @@ export const adminInventoryRoutes: FastifyPluginAsyncZod = async (app) => {
           id: stockLedger.id,
           at: stockLedger.createdAt,
           productSlug: products.slug,
-          productName: products.name,
+          productName: products.fullName,
           size: productVariants.size,
           delta: stockLedger.delta,
           reason: stockLedger.reason,

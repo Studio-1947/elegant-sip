@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { Product } from '@elegantsip/shared'
 import { api, type AdminProductEdit } from '../../lib/api'
+import { teaNameOf, varietyOf } from '../../data/products'
 import { errorText, inputClass, labelClass, primaryButton, type Notice } from './adminUi'
 import { Spinner } from './ui/controls'
 
@@ -39,7 +40,9 @@ function Optional({ title, on, setOn, children }: { title: string; on: boolean; 
 
 /** Text, category, status and the optional info cards. Saved together with one button. */
 export default function ProductDetailsForm({ product, onSaved, notify }: { product: Product; onSaved: () => void; notify: (n: Notice) => void }) {
-  const [name, setName] = useState(product.name)
+  // product.name is the full "Morning Dew | First Flush"; the two parts are edited apart.
+  const [name, setName] = useState(teaNameOf(product))
+  const [variety, setVariety] = useState(varietyOf(product) ?? '')
   const [category, setCategory] = useState(product.category)
   const [status, setStatus] = useState(product.status)
   const [description, setDescription] = useState(product.description)
@@ -60,8 +63,9 @@ export default function ProductDetailsForm({ product, onSaved, notify }: { produ
   const save = async () => {
     const tastingNotes = notes.split(',').map((n) => n.trim()).filter(Boolean)
     const problems = [
-      name.trim().length < 2 && 'Name needs at least 2 characters.',
-      category.trim().length < 2 && 'Category needs at least 2 characters.',
+      name.trim().length < 2 && 'Tea name needs at least 2 characters.',
+      name.includes(' | ') && 'Put the part after " | " in Category instead.',
+      category.trim().length < 2 && 'Tea type needs at least 2 characters.',
       description.trim().length < 10 && 'Short description needs at least 10 characters.',
       description.trim().length > 600 && 'Short description must be 600 characters or fewer.',
       longDescription.trim().length > 4000 && 'Full description must be 4,000 characters or fewer.',
@@ -74,6 +78,7 @@ export default function ProductDetailsForm({ product, onSaved, notify }: { produ
 
     const payload: AdminProductEdit = {
       name: name.trim(),
+      variety: variety.trim() || null,
       category: category.trim(),
       status,
       description: description.trim(),
@@ -111,8 +116,9 @@ export default function ProductDetailsForm({ product, onSaved, notify }: { produ
       className="space-y-4"
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Name">{text(name, setName, 120)}</Field>
-        <Field label="Category" hint="Also the shop filter, e.g. Black Tea.">{text(category, setCategory, 60)}</Field>
+        <Field label="Tea name" hint="e.g. Morning Dew.">{text(name, setName, 120)}</Field>
+        <Field label="Category" hint="Optional, e.g. First Flush. Shown above the name on product cards.">{text(variety, setVariety, 60)}</Field>
+        <Field label="Tea type" hint="Also the shop filter, e.g. Black Tea.">{text(category, setCategory, 60)}</Field>
         <Field label="Status" hint="Coming soon can't be bought, whatever its price.">
           <select value={status} onChange={(e) => setStatus(e.target.value as Product['status'])} className={inputClass}>
             <option value="active">On sale</option>

@@ -80,6 +80,8 @@ export interface SalesReport {
   gst: { invoices: number; cgst: number; sgst: number; igst: number }
   byDay: { day: string; orders: number; gross: number }[]
   topProducts: { productSlug: string; productName: string; units: number; revenue: number }[]
+  /** Paid orders by where the customer came from (utm tags, ad click or referring site). */
+  bySource: { source: string; medium: string | null; campaign: string | null; orders: number; revenue: number }[]
 }
 
 const qs = (query: Record<string, string | number | undefined>) => {

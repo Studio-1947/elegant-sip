@@ -9,10 +9,13 @@ import { UiProvider } from './components/UiContext'
 import { migrateLegacyHashUrl } from './lib/router'
 import { initAnalytics } from './lib/analytics'
 import { stashUrlToken } from './lib/urlSecrets'
+import { captureAttribution } from './lib/attribution'
 
 // Old `/#/shop` links (bookmarks, the pre-history-router sitemap, anything
 // already shared) resolve to `/shop` before React mounts.
 migrateLegacyHashUrl()
+// Where this visit came from (ad tags, ad click or referring site), for our own sales-by-source report.
+captureAttribution()
 // Reset and confirmation tokens leave the address bar before any tag can read it.
 stashUrlToken()
 // Google Tag Manager and the Meta Pixel load only for visitors who have accepted.

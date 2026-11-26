@@ -11,7 +11,7 @@ import { productVariants, products } from '../db/schema.js'
 /** Columns every pricing decision needs, for a products ⋈ product_variants select. */
 export const variantPricingColumns = {
   slug: products.slug,
-  name: products.name,
+  name: products.fullName,
   imageSrc: products.imageSrc,
   status: products.status,
   archivedAt: products.archivedAt,

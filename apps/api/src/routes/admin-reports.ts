@@ -45,6 +45,9 @@ export const adminReportRoutes: FastifyPluginAsyncZod = async (app) => {
             gst: z.object({ invoices: z.number().int(), cgst: paiseSchema, sgst: paiseSchema, igst: paiseSchema }),
             byDay: z.array(z.object({ day: z.string(), orders: z.number().int(), gross: paiseSchema })),
             topProducts: z.array(z.object({ productSlug: z.string(), productName: z.string(), units: z.number().int(), revenue: paiseSchema })),
+            bySource: z
+              .array(z.object({ source: z.string(), medium: z.string().nullable(), campaign: z.string().nullable(), orders: z.number().int(), revenue: paiseSchema }))
+              .describe('Paid, not-cancelled orders by where the customer came from; "Direct or unknown" when nothing was recorded.'),
           }),
           400: problemSchema,
         },
@@ -61,7 +64,7 @@ export const adminReportRoutes: FastifyPluginAsyncZod = async (app) => {
       const paidInPeriod = and(isNotNull(orders.paidAt), gte(orders.paidAt, start), lt(orders.paidAt, end))
       const [paid, [refunded], [gst], top] = await Promise.all([
         db
-          .select({ id: orders.id, paidAt: orders.paidAt, status: orders.status, subtotal: orders.subtotal, discount: orders.discount, shippingFee: orders.shippingFee, tax: orders.tax, total: orders.total })
+          .select({ id: orders.id, paidAt: orders.paidAt, status: orders.status, attribution: orders.attribution, subtotal: orders.subtotal, discount: orders.discount, shippingFee: orders.shippingFee, tax: orders.tax, total: orders.total })
           .from(orders)
           .where(paidInPeriod),
         db
@@ -112,6 +115,22 @@ export const adminReportRoutes: FastifyPluginAsyncZod = async (app) => {
         }
       }
 
+      // Sales by source: utm_source, else the ad platform clicked, else the referring site.
+      const sources = new Map<string, { source: string; medium: string | null; campaign: string | null; orders: number; revenue: number }>()
+      for (const o of paid) {
+        if (o.status === 'cancelled') continue
+        const a = o.attribution
+        const source = a?.source || (a?.click === 'meta' ? 'facebook' : a?.click === 'google' ? 'google' : '') || a?.referrer || 'Direct or unknown'
+        const medium = a?.medium || (a?.click ? 'paid' : a?.referrer && !a?.source ? 'referral' : null)
+        const campaign = a?.campaign || null
+        const key = JSON.stringify([source.toLowerCase(), medium?.toLowerCase() ?? null, campaign?.toLowerCase() ?? null])
+        const row = sources.get(key) ?? { source, medium, campaign, orders: 0, revenue: 0 }
+        row.orders += 1
+        row.revenue += o.total
+        sources.set(key, row)
+      }
+      const bySource = [...sources.values()].sort((x, y) => y.revenue - x.revenue || y.orders - x.orders).slice(0, 25)
+
       return {
         from,
         to,
@@ -128,6 +147,7 @@ export const adminReportRoutes: FastifyPluginAsyncZod = async (app) => {
         gst,
         byDay: [...days].map(([day, v]) => ({ day, ...v })),
         topProducts: top,
+        bySource,
       }
     },
   )

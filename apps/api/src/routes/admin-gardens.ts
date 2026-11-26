@@ -50,7 +50,7 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 async function findGarden(slug: string) {
   const row = await db.query.gardens.findFirst({
     where: eq(gardens.slug, slug),
-    with: { productLinks: { with: { product: { columns: { slug: true, name: true, archivedAt: true } } } } },
+    with: { productLinks: { with: { product: { columns: { slug: true, fullName: true, archivedAt: true } } } } },
   })
   if (!row) throw ApiError.notFound(`Garden "${slug}"`)
   return {
@@ -63,7 +63,7 @@ async function findGarden(slug: string) {
     story: row.story ?? [],
     sortOrder: row.sortOrder,
     products: row.productLinks
-      .map((l) => ({ slug: l.product.slug, name: l.product.name, archived: l.product.archivedAt !== null }))
+      .map((l) => ({ slug: l.product.slug, name: l.product.fullName, archived: l.product.archivedAt !== null }))
       .sort((a, b) => a.name.localeCompare(b.name)),
   }
 }

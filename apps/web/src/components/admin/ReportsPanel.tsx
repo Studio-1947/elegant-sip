@@ -138,6 +138,7 @@ export default function ReportsPanel() {
         ['GST', 'IGST', '', (r.gst.igst / 100).toFixed(2)],
         ...r.byDay.map((d) => ['Day', d.day, d.orders, (d.gross / 100).toFixed(2)]),
         ...r.topProducts.map((p) => ['Top tea', p.productName, p.units, (p.revenue / 100).toFixed(2)]),
+        ...(r.bySource ?? []).map((s) => ['Source', [s.source, s.medium, s.campaign].filter(Boolean).join(' / '), s.orders, (s.revenue / 100).toFixed(2)]),
       ],
     )
 
@@ -239,6 +240,41 @@ export default function ReportsPanel() {
                       <td className="px-4 py-2.5">{p.productName}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums">{p.units}</td>
                       <td className="px-4 py-2.5 text-right font-semibold tabular-nums">{formatINR(p.revenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+
+          <section className={`overflow-hidden ${cardClass}`}>
+            <h3 className="px-4 pt-4 text-[10px] font-mono uppercase tracking-[0.16em] text-[#4a7333]">Sales by source</h3>
+            <p className="px-4 pt-1 text-xs text-[#4a584a]">
+              Where customers came from before buying: the ad or link tags (utm_source, utm_campaign), a Meta or Google ad click, or the
+              site that sent them. Counted for every order, whatever the cookie choice.
+            </p>
+            {(current.bySource ?? []).length === 0 ? (
+              <Empty title="No sales in this period" />
+            ) : (
+              <table className="mt-2 w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] font-mono uppercase tracking-wider text-[#4a584a]">
+                    <th className="px-4 py-2 font-normal">Source</th>
+                    <th className="px-4 py-2 font-normal">Campaign</th>
+                    <th className="px-4 py-2 text-right font-normal">Orders</th>
+                    <th className="px-4 py-2 text-right font-normal">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1b261b]/[0.07]">
+                  {current.bySource.map((s) => (
+                    <tr key={`${s.source}|${s.medium}|${s.campaign}`}>
+                      <td className="px-4 py-2.5">
+                        {s.source}
+                        {s.medium && <span className="ml-1.5 text-xs text-[#4a584a]">{s.medium}</span>}
+                      </td>
+                      <td className="px-4 py-2.5 text-[#4a584a]">{s.campaign ?? 'None'}</td>
+                      <td className="px-4 py-2.5 text-right tabular-nums">{s.orders}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold tabular-nums">{formatINR(s.revenue)}</td>
                     </tr>
                   ))}
                 </tbody>

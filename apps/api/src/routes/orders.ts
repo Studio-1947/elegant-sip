@@ -25,6 +25,7 @@ import {
   returnRequests,
   shipments,
   stockLedger,
+  type OrderAttribution,
 } from '../db/schema-commerce.js'
 import { ApiError } from '../lib/problem.js'
 import { unavailableReason, unitPrice } from '../lib/catalogue-pricing.js'
@@ -54,6 +55,27 @@ import { getStoreSettings } from '../lib/settings.js'
  * signed webhook says so; see webhooks.ts. The browser's return trip is not
  * evidence of anything.
  * ──────────────────────────────────────────────────────────────────────────── */
+
+/** A short label from a link or referrer: printable, trimmed, at most 100 characters. */
+const tag = z.string().max(300).transform((v) => v.replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '').trim().slice(0, 100))
+
+const attributionSchema = z.object({
+  source: tag.optional(),
+  medium: tag.optional(),
+  campaign: tag.optional(),
+  content: tag.optional(),
+  term: tag.optional(),
+  click: z.enum(['meta', 'google']).optional(),
+  referrer: tag.optional(),
+  landingPath: z.string().max(300).transform((v) => (v.startsWith('/') ? v.slice(0, 200) : '')).optional(),
+})
+
+/** Drops empty fields; null when nothing is left, so a direct visit stores nothing. */
+function cleanAttribution(input: z.infer<typeof attributionSchema> | undefined): OrderAttribution | null {
+  if (!input) return null
+  const kept = Object.fromEntries(Object.entries(input).filter(([, v]) => typeof v === 'string' && v !== '')) as OrderAttribution
+  return kept.source || kept.medium || kept.campaign || kept.click || kept.referrer ? kept : null
+}
 
 const addressSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -327,6 +349,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           notes: z.string().trim().max(500).optional(),
           /** The customer accepted cookies; lets the payment webhook report the purchase to Meta. */
           adConsent: z.boolean().optional(),
+          attribution: attributionSchema.optional().describe('Where the customer came from (utm tags, ad click or referring site). Stored for the admin sales-by-source report; never sent to an ad platform.'),
         }),
         headers: z
           .object({
@@ -357,7 +380,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!paymentsEnabled) {
         throw new ApiError(503, 'payments_unavailable', 'Checkout unavailable', 'Online checkout will be available soon. Please check back shortly.')
       }
-      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes, adConsent } = request.body
+      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes, adConsent, attribution } = request.body
       // Guests may check out only while staff have guest checkout switched on.
       if (!request.session && !(await getStoreSettings()).guestCheckoutEnabled) {
         throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in before checking out.')
@@ -390,7 +413,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             sku: productVariants.sku,
             productId: products.id,
             slug: products.slug,
-            name: products.name,
+            name: products.fullName,
             imageSrc: products.imageSrc,
             status: products.status,
             archivedAt: products.archivedAt,
@@ -505,6 +528,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
             tax: pricing.tax,
             total: pricing.total,
             notes: notes ?? null,
+            attribution: cleanAttribution(attribution),
             ...checkoutAdDetails(adConsent, request),
           })
           .returning()

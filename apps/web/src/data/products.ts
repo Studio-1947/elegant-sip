@@ -63,6 +63,8 @@ export function applyLiveCatalogue(live: readonly Product[]): void {
       // Words and photos edited in the admin product editor.
       Object.assign(shown, {
         name: fresh.name,
+        teaName: fresh.teaName,
+        variety: fresh.variety,
         description: fresh.description,
         longDescription: fresh.longDescription,
         imageSrc: fresh.imageSrc,
@@ -109,6 +111,12 @@ export const GARDENS: Garden[] = snapshot.gardens as Garden[]
 export const JOURNAL: JournalPost[] = snapshot.journal as JournalPost[]
 
 /* ── Product helpers ──────────────────────────────────────────────────────── */
+
+/** The tea's own name, "Morning Dew". Older snapshots only carry the full name. */
+export const teaNameOf = (p: Pick<Product, 'name' | 'teaName'>): string => p.teaName?.trim() || p.name
+
+/** Its category, "First Flush", or null when it has none. */
+export const varietyOf = (p: Pick<Product, 'variety'>): string | null => p.variety?.trim() || null
 
 export const getProduct = (slug: string | undefined): Product | undefined =>
   slug ? PRODUCTS.find((p) => p.slug === slug) : undefined

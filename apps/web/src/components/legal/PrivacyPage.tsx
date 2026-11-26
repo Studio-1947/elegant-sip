@@ -98,11 +98,21 @@ export default function PrivacyPage() {
             don't choose, nothing is sent to Google or Meta and the site works the same.
           </li>
           <li>
-            We also use <strong className="text-[#1b261b]">Umami</strong>, a website analytics service,
-            to see which pages are visited and, through heatmaps, where on a page people click and
-            scroll. It too loads only once you accept the cookie banner, and receives the same shop
-            events listed below. Like any website request, it also sees your IP address and browser
-            type.
+            We also use <strong className="text-[#1b261b]">Umami</strong>, a privacy-friendly website
+            analytics service, to count visits: which pages are viewed, where visitors come from, and
+            shop steps such as viewing a tea, adding it to the cart and checking out (product, price
+            and quantity). Umami sets no cookies, does not recognise you across other websites and
+            shares nothing with advertisers, so it runs for every visitor whatever your cookie choice.
+            It never receives your name, email, phone number, address or order number. Like any
+            website request, it sees your IP address and browser type, which it uses only to count
+            unique visits and does not store.
+          </li>
+          <li>
+            When you arrive from an ad or another website, we note where you came from: the
+            campaign tags in the link (such as utm_source), whether it was a Meta or Google ad (not
+            the ad's click ID), or the referring site. This is kept in your browser for 30 days and
+            saved with your order if you buy, so we can see which ads and links lead to sales. It
+            stays with us and is never sent to Google, Meta or anyone else.
           </li>
           <li>
             Once you accept, Google and Meta set their own cookies and receive: the pages you view,
