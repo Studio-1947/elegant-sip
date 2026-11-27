@@ -18,41 +18,37 @@ beforeEach(() => {
 })
 afterEach(() => vi.useRealTimers())
 
-const banner = () => screen.queryByRole('dialog', { name: 'Cookie consent' })
-
-describe('cookie banner', () => {
-  it('waits a few seconds before asking, instead of covering the page on arrival', () => {
-    render(<ConsentBanner />)
-    expect(banner()).toBeNull()
-    act(() => vi.advanceTimersByTime(8000))
-    expect(banner()).toBeTruthy()
+const panel = () => screen.queryByRole('dialog', { name: 'Cookie preferences' })
+const openPreferences = () =>
+  act(() => {
+    window.dispatchEvent(new Event('elegantsip:consent-open'))
   })
 
-  it('asks sooner once the visitor moves to another page', () => {
+describe('cookie preferences', () => {
+  it('never pops up by itself: nobody is asked or kept waiting', () => {
     render(<ConsentBanner />)
+    act(() => vi.advanceTimersByTime(60_000))
     act(() => {
       window.dispatchEvent(new Event('elegantsip:route'))
     })
-    expect(banner()).toBeTruthy()
+    expect(panel()).toBeNull()
   })
 
-  it('offers Accept and Decline side by side, and records the choice', () => {
+  it('opens from Cookie preferences and lets the visitor switch tracking off', () => {
     render(<ConsentBanner />)
-    act(() => vi.advanceTimersByTime(8000))
-    expect(screen.getByRole('button', { name: 'Accept' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Decline' }))
+    openPreferences()
+    expect(screen.getByText(/They are on for you/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Switch off' }))
     expect(setAnalyticsConsent).toHaveBeenCalledWith(false)
-    expect(banner()).toBeNull()
+    expect(panel()).toBeNull()
   })
 
-  it('does not ask again once a choice is made, but opens from Cookie preferences', () => {
+  it('says when tracking is off, and can switch it back on', () => {
     consent.value = false
     render(<ConsentBanner />)
-    act(() => vi.advanceTimersByTime(20000))
-    expect(banner()).toBeNull()
-    act(() => {
-      window.dispatchEvent(new Event('elegantsip:consent-open'))
-    })
-    expect(banner()).toBeTruthy()
+    openPreferences()
+    expect(screen.getByText(/They are switched off for you/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Allow' }))
+    expect(setAnalyticsConsent).toHaveBeenCalledWith(true)
   })
 })

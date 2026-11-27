@@ -32,20 +32,19 @@ afterEach(() => {
 })
 
 describe('consent', () => {
-  it('sends nothing to Google or Meta before the visitor accepts', () => {
+  it('sends to Google and Meta straight away, with no banner to accept first', () => {
+    track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
+    expect(metaTrack).toHaveBeenCalled()
+    expect(dataLayer().length).toBeGreaterThan(0)
+  })
+
+  it('sends nothing to Google or Meta once the visitor has switched tracking off, but Umami still counts', () => {
+    localStorage.setItem('elegant_sip_consent', 'denied')
     track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
     expect(metaTrack).not.toHaveBeenCalled()
     expect(metaServerEvent).not.toHaveBeenCalled()
     expect(dataLayer()).toHaveLength(0)
-  })
-
-  it('counts every event in cookie-free Umami, whatever the cookie choice', () => {
-    track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
     expect(umamiTrack).toHaveBeenCalledWith('add_to_cart', { product: 'first-flush', quantity: 1, value: 861, currency: 'INR' })
-    localStorage.setItem('elegant_sip_consent', 'denied')
-    track('view_item', { product: 'first-flush' })
-    expect(umamiTrack).toHaveBeenLastCalledWith('view_item', { product: 'first-flush' })
-    expect(metaTrack).not.toHaveBeenCalled()
   })
 
   it('never gives Umami the order number', () => {
