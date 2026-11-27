@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
-import ConsentBanner from './ConsentBanner'
+import CookiePreferences from './CookiePreferences'
 import SiteHeader from './SiteHeader'
 import LoadingOverlay from './LoadingOverlay'
 import PageSkeleton from './PageSkeleton'
@@ -321,7 +321,7 @@ export default function TeaVectorHomepage() {
         </div>
       )}
 
-      <ConsentBanner />
+      <CookiePreferences />
 
       {/* Route-change announcer — present from mount so updates are spoken. */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">

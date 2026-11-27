@@ -1,9 +1,9 @@
 /* ────────────────────────────────────────────────────────────────────────────
  * Marketing tags: Google Tag Manager, the Meta Pixel and Umami.
  *
- * None of these scripts is in index.html. They load only after the visitor accepts
- * the consent banner (now, or on a previous visit), so nothing reaches Google
- * or Meta from a visitor who declined or has not decided.
+ * None of these scripts is in index.html. Google and Meta load on startup unless
+ * the visitor has switched tracking off under Cookie preferences, so nothing
+ * reaches them from a visitor who switched it off.
  *
  * IDs can be overridden at build time; set either to an empty string to turn
  * that tag off entirely:
@@ -113,7 +113,7 @@ function loadMetaPixel(w: TagWindow) {
   fbq('track', 'PageView')
 }
 
-/** Loads the configured tags once. Call only with the visitor's consent. */
+/** Loads the configured tags once. Call only when tracking is not switched off. */
 export function loadMarketingTags() {
   if (loaded || typeof window === 'undefined') return
   loaded = true
@@ -126,7 +126,7 @@ let analyticsLoaded = false
 
 /**
  * Cookie-free analytics (Umami), loaded once on startup for every visitor,
- * without waiting for the consent banner. Its own snippet counts the store's
+ * whatever the Cookie preferences setting. Its own snippet counts the store's
  * in-app page changes by itself.
  */
 export function loadAnalytics() {
@@ -166,7 +166,7 @@ export interface MetaServerPayload {
   order?: string
 }
 
-/** Sends the server-side copy of a pixel event. Call only with the visitor's consent. */
+/** Sends the server-side copy of a pixel event. Call only when tracking is not switched off. */
 export function metaServerEvent(event: string, eventId: string, payload: MetaServerPayload = {}) {
   if (!META_PIXEL_ID || typeof window === 'undefined') return
   beacon('/v1/events/meta', { event, eventId, url: window.location.href, ...payload })

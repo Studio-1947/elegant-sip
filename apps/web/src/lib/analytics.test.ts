@@ -32,7 +32,15 @@ afterEach(() => {
 })
 
 describe('consent', () => {
-  it('sends nothing to Google or Meta before the visitor accepts', () => {
+  it('tracks with Google and Meta by default, with no choice made', () => {
+    expect(hasAnalyticsConsent()).toBe(true)
+    track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
+    expect(metaTrack).toHaveBeenCalled()
+    expect(dataLayer()).not.toHaveLength(0)
+  })
+
+  it('sends nothing to Google or Meta once switched off', () => {
+    localStorage.setItem('elegant_sip_consent', JSON.stringify({ v: 1, granted: false, at: Date.now() }))
     track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
     expect(metaTrack).not.toHaveBeenCalled()
     expect(metaServerEvent).not.toHaveBeenCalled()
@@ -43,6 +51,7 @@ describe('consent', () => {
     track('add_to_cart', { product: 'first-flush', quantity: 1, value: 86_100 })
     expect(umamiTrack).toHaveBeenCalledWith('add_to_cart', { product: 'first-flush', quantity: 1, value: 861, currency: 'INR' })
     localStorage.setItem('elegant_sip_consent', 'denied')
+    vi.clearAllMocks()
     track('view_item', { product: 'first-flush' })
     expect(umamiTrack).toHaveBeenLastCalledWith('view_item', { product: 'first-flush' })
     expect(metaTrack).not.toHaveBeenCalled()
@@ -55,14 +64,13 @@ describe('consent', () => {
     expect(data).toMatchObject({ value: 861, currency: 'INR' })
   })
 
-  it('records the choice with a date, and asks again after a year', () => {
+  it('records the choice with a date, and a switch-off never lapses', () => {
     setAnalyticsConsent(true)
     const saved = localStorage.getItem('elegant_sip_consent')!
     expect(JSON.parse(saved)).toMatchObject({ v: 1, granted: true })
     expect(readConsent(saved)).toBe(true)
     const day = 24 * 60 * 60 * 1000
-    expect(readConsent(JSON.stringify({ v: 1, granted: true, at: Date.now() - 364 * day }))).toBe(true)
-    expect(readConsent(JSON.stringify({ v: 1, granted: false, at: Date.now() - 366 * day }))).toBeNull()
+    expect(readConsent(JSON.stringify({ v: 1, granted: false, at: Date.now() - 3 * 366 * day }))).toBe(false)
     expect(readConsent('not json')).toBeNull()
   })
 
@@ -84,7 +92,7 @@ describe('consent', () => {
     expect(hasAnalyticsConsent()).toBe(true)
   })
 
-  it('declining removes Google and Meta cookies, and only those', () => {
+  it('switching off removes Google and Meta cookies, and only those', () => {
     document.cookie = '_ga=GA1.1.123; path=/'
     document.cookie = '_fbp=fb.1.123; path=/'
     document.cookie = 'es_cart_hint=1; path=/'

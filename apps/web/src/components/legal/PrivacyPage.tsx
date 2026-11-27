@@ -21,8 +21,8 @@ const ACCOUNT_AND_ORDER_ROWS: [string, string][] = [
 const BROWSER_ROWS: [string, string][] = [
   ['Sign-in cookie', 'Keep you signed in for up to 30 days, or until you sign out'],
   ['Cart, wishlist, coupon and order notes', 'Remember them between visits on this device'],
-  ['Cookie choice', 'Remember whether you accepted or declined analytics cookies'],
-  ['Google and Meta cookies (only after you accept)', 'Measure visits and ad performance, as described in section 4'],
+  ['Cookie choice', 'Remember whether you switched ad and analytics cookies off'],
+  ['Google and Meta cookies (unless you switch them off)', 'Measure visits and ad performance, as described in section 4'],
 ]
 
 const PROVIDER_ROWS: [string, string][] = [
@@ -31,7 +31,7 @@ const PROVIDER_ROWS: [string, string][] = [
   ['Our email delivery provider', 'Sends order, delivery and account emails. Receives your email address and the message'],
   ['Interakt and WhatsApp (Meta), only if you sign in with WhatsApp', 'Send your sign-in code. Receive your WhatsApp number and the code'],
   ['Hostinger', 'Hosts our server and database'],
-  ['Google (Tag Manager) and Meta (Pixel and Conversions API), only after you accept cookies', 'Measure visits and ad performance. Receive the events in section 4, never your name, email, phone or address'],
+  ['Google (Tag Manager) and Meta (Pixel and Conversions API), unless you switch their cookies off', 'Measure visits and ad performance. Receive the events in section 4, never your name, email, phone or address'],
 ]
 
 export default function PrivacyPage() {
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
     'What Elegant Sip collects, why, who receives it, how long it is kept, and your rights.',
   )
   return (
-    <LegalLayout label="Legal" title="Privacy Policy" updated="November 10, 2026">
+    <LegalLayout label="Legal" title="Privacy Policy" updated="November 27, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
         <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our") sells
         single-origin Darjeeling tea at elegantsip.in. This policy explains what personal data we
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
         <ul className={listClass}>
           <li>We collect what we need to run your account, take payment and deliver your tea.</li>
           <li>Payments are handled by Razorpay. We never see or store your card, UPI or bank details.</li>
-          <li>Analytics and ad measurement by Google and Meta run only if you accept cookies.</li>
+          <li>Analytics and ad measurement by Google and Meta are on by default. You can switch them off any time under Cookie preferences.</li>
           <li>We don't sell or rent your personal data, to anyone.</li>
           <li>You can ask us to see, correct or delete your data at any time (section 7).</li>
         </ul>
@@ -81,9 +81,12 @@ export default function PrivacyPage() {
             records that Indian tax law requires us to keep.
           </li>
           <li>
-            <strong className="text-[#1b261b]">With your consent:</strong> analytics and ad
-            measurement (section 4) and the newsletter. You can withdraw consent at any time, as
-            easily as you gave it.
+            <strong className="text-[#1b261b]">Analytics and ad measurement</strong> (section 4) run
+            by default, and you can switch them off at any time under Cookie preferences.
+          </li>
+          <li>
+            <strong className="text-[#1b261b]">With your consent:</strong> the newsletter. You can
+            unsubscribe at any time.
           </li>
         </ul>
       </Section>
@@ -93,16 +96,16 @@ export default function PrivacyPage() {
           <li>
             We use <strong className="text-[#1b261b]">Google Tag Manager</strong> and the{' '}
             <strong className="text-[#1b261b]">Meta Pixel</strong> to measure visits and to see which
-            of our ads lead to purchases. Neither loads until you{' '}
-            <strong className="text-[#1b261b]">accept</strong> the cookie banner. If you decline or
-            don't choose, nothing is sent to Google or Meta and the site works the same.
+            of our ads lead to purchases. Both load by default. If you switch them off under{' '}
+            <strong className="text-[#1b261b]">Cookie preferences</strong>, nothing more is sent to
+            Google or Meta and the site works the same.
           </li>
           <li>
             We also use <strong className="text-[#1b261b]">Umami</strong>, a privacy-friendly website
             analytics service, to count visits: which pages are viewed, where visitors come from, and
             shop steps such as viewing a tea, adding it to the cart and checking out (product, price
             and quantity). Umami sets no cookies, does not recognise you across other websites and
-            shares nothing with advertisers, so it runs for every visitor whatever your cookie choice.
+            shares nothing with advertisers, so it runs for every visitor whatever your cookie setting.
             It never receives your name, email, phone number, address or order number. Like any
             website request, it sees your IP address and browser type, which it uses only to count
             unique visits and does not store.
@@ -115,7 +118,7 @@ export default function PrivacyPage() {
             stays with us and is never sent to Google, Meta or anyone else.
           </li>
           <li>
-            Once you accept, Google and Meta set their own cookies and receive: the pages you view,
+            Unless you switch them off, Google and Meta set their own cookies and receive: the pages you view,
             the products you view or add to your cart (product, quantity and price), checkout steps,
             and, when you buy, the order value and number of items. Like any website request, they
             also see your IP address and browser type.
@@ -125,10 +128,10 @@ export default function PrivacyPage() {
             <strong className="text-[#1b261b]">Conversions API</strong>), together with your IP
             address, browser type and the ID in Meta's own cookie, so that ad results are still
             counted when a browser blocks Meta's script. Meta matches the two copies and counts
-            each event once. This also happens only after you accept, and stops when you withdraw.
+            each event once. This stops when you switch ad and analytics cookies off.
           </li>
           <li>
-            If you had accepted when you check out, we keep that IP address, browser type and Meta
+            If these cookies are on when you check out, we keep that IP address, browser type and Meta
             cookie ID with your order only until your payment is confirmed, so the purchase is
             counted even if you close the page before it loads. They are deleted once it has been
             reported.
@@ -139,9 +142,10 @@ export default function PrivacyPage() {
             any page view is recorded.
           </li>
           <li>
-            You can change your choice at any time with the{' '}
-            <strong className="text-[#1b261b]">Cookies</strong> link in the footer or the button
-            below. Withdrawing consent stops tracking from that moment.
+            You can switch ad and analytics cookies off (or back on) at any time with the{' '}
+            <strong className="text-[#1b261b]">Cookie preferences</strong> link in the footer or the
+            button below. Switching off stops tracking from that moment and removes Google's and
+            Meta's cookies from this browser.
           </li>
         </ul>
         {trackingConfigured() && (

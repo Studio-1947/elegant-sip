@@ -243,7 +243,7 @@ export default function CheckoutPage() {
         ...(coupon ? { couponCode: coupon } : {}),
         ...(notes ? { notes } : {}),
         // Lets the payment confirmation report the purchase to Meta, as the pixel would.
-        ...(hasAnalyticsConsent() === true ? { adConsent: true } : {}),
+        ...(hasAnalyticsConsent() ? { adConsent: true } : {}),
         // Where the customer came from, for our own sales-by-source report (not sent to ad platforms).
         ...(() => {
           const attribution = storedAttribution()

@@ -600,7 +600,7 @@ Legacy `/#/shop` links are migrated to `/shop` on boot (`migrateLegacyHashUrl`).
 Entry: `src/main.tsx` → `ErrorBoundary > AuthProvider > CartProvider > UiProvider`
 (Auth wraps Cart because the cart syncs the wishlist to the signed-in account.)
 → **`TeaVectorHomepage`** (app shell: loading overlay, fixed header, the route
-`switch`, footer, consent banner, route-change announcer).
+`switch`, footer, Cookie preferences panel, route-change announcer).
 
 ### Data layer
 
@@ -645,7 +645,8 @@ directions and the product page renders a "Visit the garden" cross-link.
   Rated" sort all use `getMergedRating()`.
 - `localReviews.ts` — customer reviews, shape-validated and capped on read.
 - `analytics.ts` — no-op unless `VITE_ANALYTICS_PROVIDER` is set, and events
-  fire **only after consent**. **Never pass PII** (emails, names, addresses) to
+  go to Google and Meta **unless the visitor switched tracking off** in Cookie
+  preferences (on by default). **Never pass PII** (emails, names, addresses) to
   `track()` — the privacy policy promises we don't.
 - `network.ts` — `shouldSkipHeavyMedia()`; Data Saver and 2G/3G get the poster
   instead of the scroll video.
