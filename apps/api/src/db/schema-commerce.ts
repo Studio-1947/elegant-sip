@@ -236,6 +236,47 @@ export const orderItems = pgTable(
   ],
 )
 
+/** One line of a synced cart, priced by the server when it was last synced. */
+export interface CartLineSnapshot {
+  productSlug: string
+  productName: string
+  variantSize: string
+  quantity: number
+  /** Paise. */
+  unitPrice: number
+}
+
+/*
+ * Shopping carts, synced from the browser so staff can see what was left
+ * behind. The browser keeps the working copy; this is a server-priced snapshot
+ * of it. The ID is a random UUID the browser makes, and a new one starts after
+ * each order. Carts that never became an order are deleted after 90 days.
+ */
+export const carts = pgTable(
+  'carts',
+  {
+    id: uuid('id').primaryKey(),
+    /** The signed-in shopper, if any. Kept once known, even if they sign out. */
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    items: jsonb('items').$type<CartLineSnapshot[]>().notNull().default(sql`'[]'::jsonb`),
+    itemCount: integer('item_count').notNull().default(0),
+    /** Paise, from the catalogue at the last sync. */
+    subtotal: integer('subtotal').notNull().default(0),
+    /** First time the shopper opened checkout with this cart. */
+    checkoutStartedAt: timestamp('checkout_started_at', { withTimezone: true }),
+    /** The order this cart became. Payment may still have been abandoned. */
+    orderId: uuid('order_id').references(() => orders.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Last change to the cart: the shopper's last activity. */
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('carts_updated_idx').on(t.updatedAt),
+    index('carts_user_idx').on(t.userId),
+    index('carts_order_idx').on(t.orderId),
+  ],
+)
+
 export const paymentStatus = pgEnum('payment_status', ['created', 'captured', 'failed', 'refunded'])
 
 export const returnRequestType = pgEnum('return_request_type', ['cancellation', 'return'])

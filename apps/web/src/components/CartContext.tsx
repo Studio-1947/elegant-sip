@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { getProduct, getVariant } from '../data/products'
 import { api, type CartAdjustment, type CartLine, type PricingQuote } from '../lib/api'
+import { cartId, newCartId } from '../lib/cartSession'
 import { useAuth } from './AuthContext'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -215,6 +216,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer)
   }, [cart, coupon])
 
+  /*
+   * Save a copy of the cart on the server whenever it changes (and when the
+   * shopper signs in, so the cart is linked to them), for the staff cart list.
+   * Debounced, fire-and-forget: a failed save never affects shopping. Not on
+   * first load, which is not a change.
+   */
+  const userId = user?.id ?? null
+  const syncStarted = useRef(false)
+  const skipSync = useRef(false)
+  useEffect(() => {
+    if (!syncStarted.current) {
+      syncStarted.current = true
+      return
+    }
+    if (skipSync.current) {
+      // Emptied by clearCart after an order: that cart is finished.
+      skipSync.current = false
+      return
+    }
+    const timer = window.setTimeout(() => {
+      void api.carts
+        .sync(cartId(), { items: cart.map((i) => ({ productSlug: i.productSlug, variantSize: i.size, quantity: i.quantity })) })
+        .catch(() => {})
+    }, 1500)
+    return () => window.clearTimeout(timer)
+  }, [cart, userId])
+
   /* Merge a guest wishlist into the account on sign-in, then follow the server. */
   const mergedWishlist = useRef(false)
   useEffect(() => {
@@ -277,6 +305,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const clearCart = useCallback(() => {
+    // The cart has become an order; the next one is a new cart.
+    newCartId()
+    skipSync.current = true
     setCart([])
     setCoupon(null)
     setQuote(null)

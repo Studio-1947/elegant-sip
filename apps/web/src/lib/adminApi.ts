@@ -53,6 +53,29 @@ export interface AdminCustomerDetail extends AdminCustomer {
   orders: { number: string; status: AdminOrderStatus; placedAt: string; total: number }[]
 }
 
+export type CartStatus = 'active' | 'abandoned' | 'payment_abandoned' | 'ordered'
+
+export interface AdminCart {
+  id: string
+  status: CartStatus
+  items: { productSlug: string; productName: string; variantSize: string; quantity: number; unitPrice: number }[]
+  itemCount: number
+  /** Paise, priced when the cart last changed. */
+  subtotal: number
+  createdAt: string
+  lastActivityAt: string
+  checkoutStartedAt: string | null
+  /** From the account, else the unpaid order. Null for a guest who never reached an order. */
+  customer: { userId: string | null; name: string | null; email: string | null; phone: string | null } | null
+  order: { number: string; status: AdminOrderStatus; total: number } | null
+}
+
+export interface AdminCartPage {
+  carts: AdminCart[]
+  total: number
+  summary: { days: number; counts: Record<CartStatus, number>; abandonedValue: number }
+}
+
 export interface ContactMessage {
   id: string
   reference: string
@@ -111,6 +134,9 @@ export const adminApi = {
     request<{ customers: AdminCustomer[]; total: number }>(`/v1/admin/customers${qs(query)}`),
   customer: (id: string) => request<AdminCustomerDetail>(`/v1/admin/customers/${encodeURIComponent(id)}`),
   setRole: (id: string, role: 'customer' | 'admin') => send<{ id: string; role: 'customer' | 'admin' }>('PATCH', `/v1/admin/customers/${encodeURIComponent(id)}/role`, { role }),
+
+  carts: (query: { status?: CartStatus; days?: number; limit?: number; offset?: number } = {}) =>
+    request<AdminCartPage>(`/v1/admin/carts${qs(query)}`),
 
   contactMessages: (query: { q?: string; limit?: number; offset?: number } = {}) =>
     request<{ messages: ContactMessage[]; total: number }>(`/v1/admin/contact-messages${qs(query)}`),

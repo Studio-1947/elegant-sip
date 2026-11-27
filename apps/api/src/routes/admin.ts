@@ -28,6 +28,7 @@ import { adminOrderRoutes } from './admin-orders.js'
 import { adminInventoryRoutes } from './admin-inventory.js'
 import { adminCustomerRoutes } from './admin-customers.js'
 import { adminReportRoutes } from './admin-reports.js'
+import { adminCartRoutes } from './carts.js'
 
 /** The status changes staff may make by hand. Anything else is a 409. */
 const STAFF_TRANSITIONS: Record<string, readonly string[]> = {
@@ -130,6 +131,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(adminInventoryRoutes)
   await app.register(adminCustomerRoutes)
   await app.register(adminReportRoutes)
+  await app.register(adminCartRoutes)
 
   app.get(
     '/admin/return-requests',

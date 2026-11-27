@@ -15,6 +15,7 @@ const ACCOUNT_AND_ORDER_ROWS: [string, string][] = [
   ['Cancellation and return requests', 'Review and resolve them'],
   ['Product reviews you post', 'Show them on product pages, with your name'],
   ['Messages from the contact form', 'Answer you'],
+  ['Your cart: the teas, pack sizes and quantities in it, when it last changed, whether you opened checkout, and your account if you are signed in', 'See which carts are left unfinished so we can improve the shop. Linked to your order if you place one; otherwise deleted after 90 days'],
   ['Newsletter email address', 'Send the newsletter you asked for'],
 ]
 
@@ -59,7 +60,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="2. What we collect and why">
-        <p>When you create an account, order, or contact us, we store the following on our server:</p>
+        <p>When you add teas to your cart, create an account, order, or contact us, we store the following on our server:</p>
         <DataTable rows={ACCOUNT_AND_ORDER_ROWS} />
         <p>Your browser also keeps a few things on your device:</p>
         <DataTable rows={BROWSER_ROWS} />

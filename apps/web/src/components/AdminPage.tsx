@@ -15,6 +15,7 @@ import AuditLog from './admin/AuditLog'
 import OrderDetailModal from './admin/OrderDetailModal'
 import InventoryPanel from './admin/InventoryPanel'
 import CustomersPanel from './admin/CustomersPanel'
+import CartsPanel from './admin/CartsPanel'
 import ReportsPanel from './admin/ReportsPanel'
 import MessagesPanel from './admin/MessagesPanel'
 import { cardClass, errorText, quietButton } from './admin/adminUi'
@@ -23,12 +24,12 @@ import Modal from './admin/ui/Modal'
 import { Spinner, Tabs } from './admin/ui/controls'
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Sxtaff dashboard: orders, returns, products, inventory, customers, reports,
+ * Staff dashboard: orders, returns, products, inventory, customers, carts, reports,
  * reviews, gardens, messages and settings, behind the admin role (the API
  * checks it again on every request).
  * ──────────────────────────────────────────────────────────────────────────── */
 
-type Section = 'orders' | 'returns' | 'products' | 'inventory' | 'customers' | 'reports' | 'reviews' | 'gardens' | 'messages' | 'settings'
+type Section = 'orders' | 'returns' | 'products' | 'inventory' | 'customers' | 'carts' | 'reports' | 'reviews' | 'gardens' | 'messages' | 'settings'
 
 function Gate({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -184,6 +185,7 @@ function Dashboard() {
               { value: 'products', label: 'Products' },
               { value: 'inventory', label: 'Inventory', badge: lowStock.length },
               { value: 'customers', label: 'Customers' },
+              { value: 'carts', label: 'Carts' },
               { value: 'reports', label: 'Reports' },
               { value: 'reviews', label: 'Reviews' },
               { value: 'gardens', label: 'Gardens' },
@@ -199,6 +201,7 @@ function Dashboard() {
           )}
           {section === 'inventory' && <InventoryPanel />}
           {section === 'customers' && <CustomersPanel onOpenOrder={setOpenOrder} />}
+          {section === 'carts' && <CartsPanel onOpenOrder={setOpenOrder} />}
           {section === 'reports' && <ReportsPanel />}
           {section === 'messages' && <MessagesPanel />}
           {section === 'reviews' && <ReviewQueue />}

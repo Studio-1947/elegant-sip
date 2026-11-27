@@ -5,6 +5,7 @@ import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
 import { cartLines, purchaseProps, track, trackingAllowed } from '../lib/analytics'
 import { storedAttribution } from '../lib/attribution'
+import { cartId } from '../lib/cartSession'
 import { rememberPendingPurchase } from '../lib/pendingPurchase'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
 import { api, ApiClientError, type PlaceOrderResult, type SavedAddress } from '../lib/api'
@@ -63,6 +64,10 @@ export default function CheckoutPage() {
     if (checkoutTracked.current || cart.length === 0) return
     checkoutTracked.current = true
     track('begin_checkout', { value: cartTotal, lines: cartLines(cart) })
+    // Tells the staff cart list this cart reached checkout.
+    void api.carts
+      .sync(cartId(), { items: cart.map((i) => ({ productSlug: i.productSlug, variantSize: i.size, quantity: i.quantity })), checkout: true })
+      .catch(() => {})
   }, [cart, cartTotal])
   const { user } = useAuth()
   const { openLogin } = useUi()
@@ -249,6 +254,8 @@ export default function CheckoutPage() {
           const attribution = storedAttribution()
           return attribution ? { attribution } : {}
         })(),
+        // So staff can see this cart became an order.
+        cartId: cartId(),
       }, { idempotencyKey: attempt.idempotencyKey, ...(user ? {} : { guestAccessToken: attempt.guestAccessToken }) })
 
       if (user && saveAddress) {

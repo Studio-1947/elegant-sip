@@ -676,6 +676,8 @@ export const api = {
       adConsent?: boolean
       /** Where the customer came from; see lib/attribution.ts. */
       attribution?: Attribution
+      /** The saved cart this order came from; see lib/cartSession.ts. */
+      cartId?: string
     }, requestKeys: { idempotencyKey: string; guestAccessToken?: string } ) =>
       request<PlaceOrderResult>('/v1/orders', {
         method: 'POST',
@@ -815,6 +817,12 @@ export const api = {
         `/v1/products/${encodeURIComponent(slug)}/reviews`,
         payload,
       ),
+  },
+
+  carts: {
+    /** Saves a copy of the cart for the staff cart list. The server prices it; no prices are sent. */
+    sync: (id: string, payload: { items: CartLine[]; checkout?: boolean }) =>
+      put<void>(`/v1/carts/${encodeURIComponent(id)}`, payload),
   },
 
   wishlist: {
