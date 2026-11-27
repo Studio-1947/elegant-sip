@@ -33,6 +33,7 @@ import { otpRoutes } from './routes/otp.js'
 import { pincodeRoutes } from './routes/pincode.js'
 import { cspReportRoutes } from './routes/csp.js'
 import { eventRoutes } from './routes/events.js'
+import { cartRoutes } from './routes/carts.js'
 
 function hasPinoPretty(): boolean {
   try {
@@ -187,6 +188,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Caddy's Content-Security-Policy names this exact path: /api/v1/csp-report.
   await app.register(cspReportRoutes, { prefix: '/v1' })
   await app.register(eventRoutes, { prefix: '/v1' })
+  await app.register(cartRoutes, { prefix: '/v1' })
 
   return app
 }

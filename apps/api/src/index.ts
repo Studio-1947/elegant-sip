@@ -7,6 +7,7 @@ import { syncStaleShipments } from './lib/fulfilment.js'
 import { startWatchdog } from './lib/watchdog.js'
 import { emailTransportConfigured } from './lib/email.js'
 import { startEmailOutboxWorker } from './lib/email-outbox.js'
+import { purgeStaleCarts } from './routes/carts.js'
 
 const app = await buildApp()
 
@@ -61,6 +62,12 @@ try {
     } catch (err) {
       // A later interval retries; never let a maintenance task take checkout down.
       app.log.error({ err }, 'pending-payment expiry sweep failed')
+    }
+    try {
+      const purged = await purgeStaleCarts()
+      if (purged > 0) app.log.info({ purged }, 'deleted carts past their retention period')
+    } catch (err) {
+      app.log.error({ err }, 'cart retention sweep failed')
     }
   }
   void expireOrders()

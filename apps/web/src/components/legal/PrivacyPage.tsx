@@ -15,6 +15,7 @@ const ACCOUNT_AND_ORDER_ROWS: [string, string][] = [
   ['Cancellation and return requests', 'Review and resolve them'],
   ['Product reviews you post', 'Show them on product pages, with your name'],
   ['Messages from the contact form', 'Answer you'],
+  ['Your cart: the teas, pack sizes and quantities in it, when it last changed, whether you opened checkout, and your account if you are signed in', 'See which carts are left unfinished so we can improve the shop. Linked to your order if you place one; otherwise deleted after 90 days'],
   ['Newsletter email address', 'Send the newsletter you asked for'],
 ]
 
@@ -40,7 +41,7 @@ export default function PrivacyPage() {
     'What Elegant Sip collects, why, who receives it, how long it is kept, and your rights.',
   )
   return (
-    <LegalLayout label="Legal" title="Privacy Policy" updated="November 10, 2026">
+    <LegalLayout label="Legal" title="Privacy Policy" updated="November 27, 2026">
       <p className="text-sm text-[#4a584a] leading-relaxed -mt-4">
         <strong className="text-[#1b261b]">Elegant Sip</strong> ("we," "us," "our") sells
         single-origin Darjeeling tea at elegantsip.in. This policy explains what personal data we
@@ -59,7 +60,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="2. What we collect and why">
-        <p>When you create an account, order, or contact us, we store the following on our server:</p>
+        <p>When you add teas to your cart, create an account, order, or contact us, we store the following on our server:</p>
         <DataTable rows={ACCOUNT_AND_ORDER_ROWS} />
         <p>Your browser also keeps a few things on your device:</p>
         <DataTable rows={BROWSER_ROWS} />
@@ -81,9 +82,12 @@ export default function PrivacyPage() {
             records that Indian tax law requires us to keep.
           </li>
           <li>
-            <strong className="text-[#1b261b]">With your consent:</strong> analytics and ad
-            measurement (section 4) and the newsletter. You can withdraw consent at any time, as
-            easily as you gave it.
+            <strong className="text-[#1b261b]">Analytics and ad measurement</strong> (section 4) run
+            by default, and you can switch them off at any time under Cookie preferences.
+          </li>
+          <li>
+            <strong className="text-[#1b261b]">With your consent:</strong> the newsletter. You can
+            unsubscribe at any time.
           </li>
         </ul>
       </Section>
@@ -102,7 +106,7 @@ export default function PrivacyPage() {
             analytics service, to count visits: which pages are viewed, where visitors come from, and
             shop steps such as viewing a tea, adding it to the cart and checking out (product, price
             and quantity). Umami sets no cookies, does not recognise you across other websites and
-            shares nothing with advertisers, so it runs for every visitor whatever your cookie choice.
+            shares nothing with advertisers, so it runs for every visitor whatever your cookie setting.
             It never receives your name, email, phone number, address or order number. Like any
             website request, it sees your IP address and browser type, which it uses only to count
             unique visits and does not store.

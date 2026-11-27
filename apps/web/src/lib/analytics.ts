@@ -14,7 +14,8 @@ import {
 /* ────────────────────────────────────────────────────────────────────────────
  * Analytics wrapper.
  *
- * Nothing is tracked until the visitor accepts the consent banner. After that:
+ * Tracking is on by default (no banner). A visitor can switch it off under
+ * "Cookie preferences" in the footer; until they do:
  * - Google Tag Manager and the Meta Pixel load (see tags.ts), and every event
  *   below is pushed to window.dataLayer and mapped to a Meta standard event.
  *   Each Meta event is sent twice with one event ID, by the pixel and through
@@ -54,16 +55,14 @@ export interface TrackedLine {
 }
 
 const CONSENT_KEY = 'elegant_sip_consent'
-/** A choice is asked for again after a year, as consent should not last forever. */
-const CONSENT_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000
-/** Fired to show the consent banner again ("Cookie preferences"). */
+/** Fired to open the Cookie preferences panel. */
 export const CONSENT_OPEN_EVENT = 'elegantsip:consent-open'
 
 export function analyticsProvider(): string | undefined {
   return import.meta.env.VITE_ANALYTICS_PROVIDER as string | undefined
 }
 
-/** True when anything at all would track, so the banner must ask. */
+/** True when anything at all would track, so Cookie preferences is offered. */
 export const trackingConfigured = () => Boolean(analyticsProvider()) || marketingTagsConfigured()
 
 /** The choice made on this page, for browsers that block storage. */
@@ -76,7 +75,11 @@ interface ConsentRecord {
   at: number
 }
 
-/** A stored choice, or null when there is none or it has expired. Exported for tests. */
+/**
+ * A stored choice, or null when there is none. A switch-off never expires:
+ * with tracking on by default, letting it lapse would quietly turn it back on.
+ * Exported for tests.
+ */
 export function readConsent(raw: string | null): boolean | null {
   if (!raw) return null
   // Choices saved before records carried a date.
@@ -85,7 +88,7 @@ export function readConsent(raw: string | null): boolean | null {
   try {
     const record = JSON.parse(raw) as Partial<ConsentRecord>
     if (record.v !== 1 || typeof record.granted !== 'boolean' || typeof record.at !== 'number') return null
-    return Date.now() - record.at > CONSENT_MAX_AGE_MS ? null : record.granted
+    return record.granted
   } catch {
     return null
   }
@@ -98,7 +101,7 @@ export function readConsent(raw: string | null): boolean | null {
  */
 export const trackingAllowed = (): boolean => hasAnalyticsConsent() !== false
 
-/** The visitor's saved choice: false = opted out, true = left on, null = never chose (or it expired). */
+/** The visitor's saved choice: false = opted out, true = left on, null = never chose. */
 export function hasAnalyticsConsent(): boolean | null {
   try {
     const stored = readConsent(localStorage.getItem(CONSENT_KEY))
@@ -109,7 +112,7 @@ export function hasAnalyticsConsent(): boolean | null {
   return consentThisPage
 }
 
-/** Google Analytics, Google Ads and Meta cookies, which only exist after consent. */
+/** Google Analytics, Google Ads and Meta cookies, removed when tracking is switched off. */
 const TRACKING_COOKIE = /^(_ga|_gid|_gat|_gcl_|_fbp|_fbc)/
 
 /** Deletes those cookies on every domain they may have been set for. */
@@ -154,7 +157,7 @@ export function initAnalytics() {
   if (trackingAllowed()) loadMarketingTags()
 }
 
-/** Shows the consent banner again so the visitor can change their choice. */
+/** Opens the Cookie preferences panel so the visitor can switch tracking on or off. */
 export function openConsentSettings() {
   window.dispatchEvent(new Event(CONSENT_OPEN_EVENT))
 }

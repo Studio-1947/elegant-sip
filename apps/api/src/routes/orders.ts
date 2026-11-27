@@ -38,6 +38,7 @@ import { customerRefunds } from '../lib/refunds.js'
 import { checkLowStock } from '../lib/low-stock.js'
 import { checkoutAdDetails } from '../lib/meta-purchase.js'
 import { getStoreSettings } from '../lib/settings.js'
+import { linkCartToOrder } from './carts.js'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Orders.
@@ -350,6 +351,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
           /** The customer accepted cookies; lets the payment webhook report the purchase to Meta. */
           adConsent: z.boolean().optional(),
           attribution: attributionSchema.optional().describe('Where the customer came from (utm tags, ad click or referring site). Stored for the admin sales-by-source report; never sent to an ad platform.'),
+          cartId: z.string().uuid().optional().describe('The browser cart this order came from (PUT /carts/{id}), so staff can see which carts became orders.'),
         }),
         headers: z
           .object({
@@ -380,7 +382,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       if (!paymentsEnabled) {
         throw new ApiError(503, 'payments_unavailable', 'Checkout unavailable', 'Online checkout will be available soon. Please check back shortly.')
       }
-      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes, adConsent, attribution } = request.body
+      const { items, email, shipping, billing = shipping, shippingMethod, couponCode, notes, adConsent, attribution, cartId } = request.body
       // Guests may check out only while staff have guest checkout switched on.
       if (!request.session && !(await getStoreSettings()).guestCheckoutEnabled) {
         throw new ApiError(401, 'unauthenticated', 'Sign in required', 'Sign in before checking out.')
@@ -594,6 +596,14 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       })
       // After commit, and not awaited: a staff email must not slow a checkout.
       void checkLowStock(result.items.map((l) => l.variantId), { log: request.log })
+      if (cartId) {
+        // Bookkeeping for the staff cart list; a failure here must not fail the checkout.
+        await linkCartToOrder(
+          cartId,
+          { id: result.order.id, userId },
+          result.items.map((l) => ({ productSlug: l.productSlug, productName: l.productName, variantSize: l.variantSize, quantity: l.quantity, unitPrice: l.unitPrice })),
+        ).catch((err: unknown) => request.log.warn({ err }, 'could not link cart to order'))
+      }
 
       const dto = toOrderDto({
         ...result.order,
