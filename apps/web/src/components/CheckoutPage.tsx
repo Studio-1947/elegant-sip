@@ -3,7 +3,7 @@ import { useCart } from './CartContext'
 import { useAuth } from './AuthContext'
 import { useUi } from './UiContext'
 import { Link, useDocumentMeta } from '../lib/router'
-import { cartLines, hasAnalyticsConsent, purchaseProps, track } from '../lib/analytics'
+import { cartLines, purchaseProps, track, trackingAllowed } from '../lib/analytics'
 import { storedAttribution } from '../lib/attribution'
 import { rememberPendingPurchase } from '../lib/pendingPurchase'
 import { getOrderPricing, SHIPPING_METHODS, type ShippingMethodId } from '../lib/pricing'
@@ -243,7 +243,7 @@ export default function CheckoutPage() {
         ...(coupon ? { couponCode: coupon } : {}),
         ...(notes ? { notes } : {}),
         // Lets the payment confirmation report the purchase to Meta, as the pixel would.
-        ...(hasAnalyticsConsent() ? { adConsent: true } : {}),
+        ...(trackingAllowed() ? { adConsent: true } : {}),
         // Where the customer came from, for our own sales-by-source report (not sent to ad platforms).
         ...(() => {
           const attribution = storedAttribution()

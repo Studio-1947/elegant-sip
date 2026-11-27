@@ -5,7 +5,7 @@ const consent = vi.hoisted(() => ({ value: true }))
 vi.mock('../lib/analytics', () => ({
   CONSENT_OPEN_EVENT: 'elegantsip:consent-open',
   trackingConfigured: () => true,
-  hasAnalyticsConsent: () => consent.value,
+  trackingAllowed: () => consent.value,
   setAnalyticsConsent: vi.fn(),
 }))
 

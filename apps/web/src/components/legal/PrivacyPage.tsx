@@ -21,7 +21,7 @@ const ACCOUNT_AND_ORDER_ROWS: [string, string][] = [
 const BROWSER_ROWS: [string, string][] = [
   ['Sign-in cookie', 'Keep you signed in for up to 30 days, or until you sign out'],
   ['Cart, wishlist, coupon and order notes', 'Remember them between visits on this device'],
-  ['Cookie choice', 'Remember whether you switched ad and analytics cookies off'],
+  ['Cookie choice', 'Remember whether you switched Google and Meta cookies off'],
   ['Google and Meta cookies (unless you switch them off)', 'Measure visits and ad performance, as described in section 4'],
 ]
 
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
         <ul className={listClass}>
           <li>We collect what we need to run your account, take payment and deliver your tea.</li>
           <li>Payments are handled by Razorpay. We never see or store your card, UPI or bank details.</li>
-          <li>Analytics and ad measurement by Google and Meta are on by default. You can switch them off any time under Cookie preferences.</li>
+          <li>We use Google and Meta to measure visits and ads. You can switch this off at any time under Cookie preferences.</li>
           <li>We don't sell or rent your personal data, to anyone.</li>
           <li>You can ask us to see, correct or delete your data at any time (section 7).</li>
         </ul>
@@ -96,9 +96,9 @@ export default function PrivacyPage() {
           <li>
             We use <strong className="text-[#1b261b]">Google Tag Manager</strong> and the{' '}
             <strong className="text-[#1b261b]">Meta Pixel</strong> to measure visits and to see which
-            of our ads lead to purchases. Both load by default. If you switch them off under{' '}
-            <strong className="text-[#1b261b]">Cookie preferences</strong>, nothing more is sent to
-            Google or Meta and the site works the same.
+            of our ads lead to purchases. Both load when you visit. You can switch them off at any
+            time under <strong className="text-[#1b261b]">Cookie preferences</strong> (in the footer
+            or below); from then on nothing is sent to Google or Meta, and the site works the same.
           </li>
           <li>
             We also use <strong className="text-[#1b261b]">Umami</strong>, a privacy-friendly website
@@ -128,10 +128,10 @@ export default function PrivacyPage() {
             <strong className="text-[#1b261b]">Conversions API</strong>), together with your IP
             address, browser type and the ID in Meta's own cookie, so that ad results are still
             counted when a browser blocks Meta's script. Meta matches the two copies and counts
-            each event once. This stops when you switch ad and analytics cookies off.
+            each event once. This stops when you switch tracking off.
           </li>
           <li>
-            If these cookies are on when you check out, we keep that IP address, browser type and Meta
+            Unless you had switched tracking off when you check out, we keep that IP address, browser type and Meta
             cookie ID with your order only until your payment is confirmed, so the purchase is
             counted even if you close the page before it loads. They are deleted once it has been
             reported.
@@ -142,10 +142,9 @@ export default function PrivacyPage() {
             any page view is recorded.
           </li>
           <li>
-            You can switch ad and analytics cookies off (or back on) at any time with the{' '}
+            You can switch Google and Meta off, or back on, at any time with the{' '}
             <strong className="text-[#1b261b]">Cookie preferences</strong> link in the footer or the
-            button below. Switching off stops tracking from that moment and removes Google's and
-            Meta's cookies from this browser.
+            button below. Switching off stops tracking from that moment and deletes their cookies.
           </li>
         </ul>
         {trackingConfigured() && (

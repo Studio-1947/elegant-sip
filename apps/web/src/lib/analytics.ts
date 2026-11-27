@@ -94,15 +94,22 @@ export function readConsent(raw: string | null): boolean | null {
   }
 }
 
-/** Whether Google and Meta may track: true unless the visitor switched it off. */
-export function hasAnalyticsConsent(): boolean {
+/**
+ * Tracking is on unless the visitor has switched it off in Cookie preferences.
+ * There is no banner to wait for: Google and Meta load on arrival, and an
+ * opt-out (false) is respected and remembered.
+ */
+export const trackingAllowed = (): boolean => hasAnalyticsConsent() !== false
+
+/** The visitor's saved choice: false = opted out, true = left on, null = never chose. */
+export function hasAnalyticsConsent(): boolean | null {
   try {
     const stored = readConsent(localStorage.getItem(CONSENT_KEY))
     if (stored !== null) return stored
   } catch {
     // Private mode or blocked storage: fall back to this page's choice.
   }
-  return consentThisPage ?? true
+  return consentThisPage
 }
 
 /** Google Analytics, Google Ads and Meta cookies, removed when tracking is switched off. */
@@ -143,11 +150,11 @@ export function setAnalyticsConsent(granted: boolean) {
   }
 }
 
-/** Loads tags on startup, unless the visitor switched tracking off. */
+/** Loads tags on startup, unless the visitor has opted out. */
 export function initAnalytics() {
-  // Cookie-free, so for everyone; Google and Meta unless switched off.
+  // Cookie-free, so for everyone, opted out or not.
   loadAnalytics()
-  if (hasAnalyticsConsent()) loadMarketingTags()
+  if (trackingAllowed()) loadMarketingTags()
 }
 
 /** Opens the Cookie preferences panel so the visitor can switch tracking on or off. */
@@ -285,8 +292,8 @@ export function track(event: AnalyticsEvent, props: Record<string, unknown> = {}
   delete forUmami.order
   umamiTrack(GA_NAMES[event] ?? event, forUmami)
 
-  // Everything else unless the visitor switched tracking off.
-  if (!hasAnalyticsConsent()) return
+  // Google and Meta for everyone who has not switched tracking off.
+  if (!trackingAllowed()) return
   const provider = analyticsProvider()
 
   if (provider === 'plausible') {

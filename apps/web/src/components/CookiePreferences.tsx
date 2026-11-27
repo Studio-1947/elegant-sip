@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CONSENT_OPEN_EVENT, hasAnalyticsConsent, setAnalyticsConsent, trackingConfigured } from '../lib/analytics'
+import { CONSENT_OPEN_EVENT, setAnalyticsConsent, trackingAllowed, trackingConfigured } from '../lib/analytics'
 import { Link } from '../lib/router'
 import { Switch } from './admin/ui/controls'
 
@@ -14,7 +14,7 @@ export default function CookiePreferences() {
 
   useEffect(() => {
     const show = () => {
-      setOn(hasAnalyticsConsent())
+      setOn(trackingAllowed())
       setOpen(true)
     }
     window.addEventListener(CONSENT_OPEN_EVENT, show)
