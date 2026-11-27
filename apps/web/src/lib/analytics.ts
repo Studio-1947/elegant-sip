@@ -91,7 +91,14 @@ export function readConsent(raw: string | null): boolean | null {
   }
 }
 
-/** null = no decision yet (or the last one has expired). */
+/**
+ * Tracking is on unless the visitor has switched it off in Cookie preferences.
+ * There is no banner to wait for: Google and Meta load on arrival, and an
+ * opt-out (false) is respected and remembered.
+ */
+export const trackingAllowed = (): boolean => hasAnalyticsConsent() !== false
+
+/** The visitor's saved choice: false = opted out, true = left on, null = never chose (or it expired). */
 export function hasAnalyticsConsent(): boolean | null {
   try {
     const stored = readConsent(localStorage.getItem(CONSENT_KEY))
@@ -140,11 +147,11 @@ export function setAnalyticsConsent(granted: boolean) {
   }
 }
 
-/** Loads tags on startup for a visitor who accepted on an earlier visit. */
+/** Loads tags on startup, unless the visitor has opted out. */
 export function initAnalytics() {
-  // Cookie-free, so for everyone; Google and Meta only after Accept.
+  // Cookie-free, so for everyone, opted out or not.
   loadAnalytics()
-  if (hasAnalyticsConsent() === true) loadMarketingTags()
+  if (trackingAllowed()) loadMarketingTags()
 }
 
 /** Shows the consent banner again so the visitor can change their choice. */
@@ -282,8 +289,8 @@ export function track(event: AnalyticsEvent, props: Record<string, unknown> = {}
   delete forUmami.order
   umamiTrack(GA_NAMES[event] ?? event, forUmami)
 
-  // Everything else only once the visitor has accepted the consent banner.
-  if (hasAnalyticsConsent() !== true) return
+  // Google and Meta for everyone who has not switched tracking off.
+  if (!trackingAllowed()) return
   const provider = analyticsProvider()
 
   if (provider === 'plausible') {
